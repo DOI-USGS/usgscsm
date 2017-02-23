@@ -1,0 +1,13 @@
+# Ignore the build and lib dirs
+build
+lib/*
+include/csm/*
+
+# iPython checkpoint items
+.ipynb_checkpoints/*
+
+# Ignore any executables
+bin/*
+
+# Ignore any Max stuff
+.DS_Store
