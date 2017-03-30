@@ -1,0 +1,38 @@
+{% set version = "0.1.0" %}
+
+package:
+  name: usgscam
+  version: {{ version }}
+
+source:
+  git_url: https://github.com/USGS-Astrogeology/CSM-CameraModel
+  git_rev: master
+  
+build:
+  number: 0
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - python >=3.*
+    - setuptools
+    - numpy >=1.10
+    - cython >=0.23
+    - libcsm >=3.0.1
+    - cycsm
+  run:
+    - python >=3.*
+    - numpy >=1.10
+    - libcsm >=3.0.1
+    - cycsm
+
+test:
+  requires:
+    - pytest
+
+  imports:
+    - usgscam
+
+about:
+  home: https://github.com/USGS-Astrogeology/CSM-CameraModel
+  license: Unlicense
