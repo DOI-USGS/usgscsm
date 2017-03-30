@@ -17,7 +17,7 @@ class TestPlugin:
     @pytest.fixture
     def i(self):
         csm_isd = isd.Isd()
-        with open(os.path.join(data_path,'isd.json'), 'r') as f:
+        with open(os.path.join(data_path,'EN1007907102M.json'), 'r') as f:
             d = json.load(f)
         for k, v in d.items():
             csm_isd.addparam(k, v)
@@ -31,9 +31,7 @@ class TestPlugin:
     def test_check_isd_construction(self, plugin, i):
         assert plugin.check_isd_construction(i, plugin.modelname(1))
 
-
-
-class TestMdisNac:
+class TestMdisWac:
     @pytest.fixture
     def model(self):
         return cam.mdis.MdisPlugin()
@@ -41,7 +39,7 @@ class TestMdisNac:
     @pytest.fixture
     def model(self):
         csm_isd = isd.Isd()
-        with open(os.path.join(data_path,'isd.json'), 'r') as f:
+        with open(os.path.join(data_path,'CW1071364100B_IU_5.json'), 'r') as f:
             d = json.load(f)
         for k, v in d.items():
             csm_isd.addparam(k, v)
@@ -50,8 +48,8 @@ class TestMdisNac:
         return plugin.from_isd(csm_isd, plugin.modelname(1))
 
     @pytest.mark.parametrize('image, ground',[
-                              ((512, 512, 0), (1129.25*1000, -1599.26*1000, 1455.28*1000)),
-                              ((100, 100, 0), (1115.95*1000, -1603.44*1000, 1460.93*1000))
+                              ((512, 512, 0), (-73589.5516508502, 562548.342040933, 2372508.44060771)),
+                              ((100, 100, 0), (-48020.2164819883, 539322.805489926, 2378549.41724731))
     ])
     def test_image_to_ground(self, model, image, ground):
         gx, gy, gz = ground
@@ -61,15 +59,55 @@ class TestMdisNac:
         assert z == pytest.approx(gz, rel=1)
 
     @pytest.mark.parametrize('image, ground',[
-                              ((512, 512, 0), (1129.25*1000, -1599.26*1000, 1455.28*1000)),
-                              ((100, 100, 0), (1115.95*1000, -1603.44*1000, 1460.93*1000))
+                              ((512, 512, 0), (-73589.5516508502, 562548.342040933, 2372508.44060771)),
+                              ((100, 100, 0), (-48020.2164819883, 539322.805489926, 2378549.41724731))
     ])
     def test_ground_to_image(self, model, image, ground):
         y, x = model.groundToImage(*ground)
         ix, iy, _ = image
 
-        assert x == ix
-        assert y == iy
+        assert x == pytest.approx(ix)
+        assert y == pytest.approx(iy)
+
+class TestMdisNac:
+    @pytest.fixture
+    def model(self):
+        return cam.mdis.MdisPlugin()
+
+    @pytest.fixture
+    def model(self):
+        csm_isd = isd.Isd()
+        with open(os.path.join(data_path,'EN1007907102M.json'), 'r') as f:
+            d = json.load(f)
+        for k, v in d.items():
+            csm_isd.addparam(k, v)
+
+        plugin = cam.mdis.MdisPlugin()
+        return plugin.from_isd(csm_isd, plugin.modelname(1))
+
+    @pytest.mark.parametrize('image, ground',[
+                              ((512, 512, 0), (1129256.7251961, -1599248.4677779, 1455285.5207515)),
+                              ((100, 100, 0), (1115975.1523941, -1603416.1960299, 1460934.0579053))
+    ])
+    def test_image_to_ground(self, model, image, ground):
+        gx, gy, gz = ground
+        x, y, z = model.imageToGround(*image)
+        assert x == pytest.approx(gx)
+        assert y == pytest.approx(gy)
+        assert z == pytest.approx(gz)
+
+
+
+    @pytest.mark.parametrize('image, ground',[
+                              ((512, 512, 0), (1129256.7251961431, -1599248.4677779, 1455285.5207515)),
+                              ((100, 100, 0), (1115975.1523941057, -1603416.1960299, 1460934.0579053))
+    ])
+    def test_ground_to_image(self, model, image, ground):
+        y, x = model.groundToImage(*ground)
+        ix, iy, _ = image
+
+        assert x == pytest.approx(ix)
+        assert y == pytest.approx(iy)
 
     def test_imagestart(self, model):
         assert model.imagestart == (1.0,9.0) # From the ik kernel
