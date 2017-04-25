@@ -11,7 +11,7 @@
 #include "MdisNacSensorModel.h"
 
 // Create static instance of self for plugin registration to work with csm::Plugin
-const MdisPlugin MdisPlugin::m_registeredPlugin;
+//const MdisPlugin MdisPlugin::m_registeredPlugin;
 
 MdisPlugin::MdisPlugin() {
 }
@@ -203,7 +203,7 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
   sensorModel->m_iTransS[0] = atof(imageSupportData.param("itrans_sample", 0).c_str());
   sensorModel->m_iTransS[1] = atof(imageSupportData.param("itrans_sample", 1).c_str());
   sensorModel->m_iTransS[2] = atof(imageSupportData.param("itrans_sample", 2).c_str());
-  
+
   if (imageSupportData.param("itrans_sample", 0) == "") {
     missingKeywords.push_back("itrans_sample missing first element");
   }
@@ -291,8 +291,8 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
 
     std::string errorMessage = "ISD is missing the necessary keywords: [";
 
-    for (int i = 0; i < missingKeywords.size(); i++) {
-      if (i == missingKeywords.size() - 1) {
+    for (int i = 0; i < (int)missingKeywords.size(); i++) {
+      if (i == (int)missingKeywords.size() - 1) {
         errorMessage += missingKeywords[i] + "]";
       }
       else {

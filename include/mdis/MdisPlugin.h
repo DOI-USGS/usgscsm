@@ -9,12 +9,12 @@
 # endif
 #else
 #  define MDIS_EXPORT_API
-#endif 
+#endif
 
 #include <string>
 
 #include <csm/Plugin.h>
-#include <csm/Version.h> 
+#include <csm/Version.h>
 
 namespace csm {
   class Isd;
@@ -55,15 +55,6 @@ class MDIS_EXPORT_API MdisPlugin : public csm::Plugin {
     virtual std::string convertISDToModelState(const csm::Isd &imageSupportData,
                                                const std::string &modelName,
                                                csm::WarningList *warnings = NULL) const;
-
-  private:
-    static const MdisPlugin m_registeredPlugin;
-
-    static const std::string m_pluginName;
-    static const std::string m_manufacturerName;
-    static const std::string m_releaseDate;
-    static const csm::Version m_csmVersion;
-    static const int m_numModels;
 
     // TODO when implementing, add any other necessary members.
 };
