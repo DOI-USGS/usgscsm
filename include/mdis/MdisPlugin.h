@@ -16,11 +16,6 @@
 #include <csm/Plugin.h>
 #include <csm/Version.h>
 
-namespace csm {
-  class Isd;
-  class Model;
-  class Warning;
-}
 
 class MDIS_EXPORT_API MdisPlugin : public csm::Plugin {
 
