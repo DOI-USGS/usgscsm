@@ -713,13 +713,13 @@ void MdisNacSensorModel::calcRotationMatrix(
 }
 
 void MdisNacSensorModel::losEllipsoidIntersect(
-      const double& height,
-      const double& xc,
-      const double& yc,
-      const double& zc,
-      const double& xl,
-      const double& yl,
-      const double& zl,
+      double& height,
+      double& xc,
+      double& yc,
+      double& zc,
+      double& xl,
+      double& yl,
+      double& zl,
       double&       x,
       double&       y,
       double&       z ) const
