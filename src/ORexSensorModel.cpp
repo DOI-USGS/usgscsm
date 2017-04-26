@@ -293,7 +293,7 @@ double ORexSensorModel::getImageTime(const csm::ImageCoord &imagePt) const {
   // check if the image point is in range
   if (imagePt.samp >= m_startingDetectorSample &&
       imagePt.samp <= (m_startingDetectorSample + m_nSamples) &&
-      imagePt.line >= m_startingDetectorSample &&
+      imagePt.line >= m_startingDetectorLine &&
       imagePt.line <= (m_startingDetectorLine + m_nLines)) {
     return m_ephemerisTime;
   }
@@ -308,7 +308,7 @@ csm::EcefCoord ORexSensorModel::getSensorPosition(const csm::ImageCoord &imagePt
   // check if the image point is in range
   if (imagePt.samp >= m_startingDetectorSample &&
       imagePt.samp <= (m_startingDetectorSample + m_nSamples) &&
-      imagePt.line >= m_startingDetectorSample &&
+      imagePt.line >= m_startingDetectorLine &&
       imagePt.line <= (m_startingDetectorLine + m_nLines)) {
     csm::EcefCoord sensorPosition;
     sensorPosition.x = m_spacecraftPosition[0];
