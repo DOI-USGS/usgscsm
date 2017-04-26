@@ -340,10 +340,10 @@ class MdisNacSensorModel : public csm::RasterGM {
     void calcRotationMatrix(double m[3][3]) const;
     void calcRotationMatrix(double m[3][3], const std::vector<double> &adjustments) const;
 
-    void losEllipsoidIntersect (const double& height,const double& xc,
-                                const double& yc, const double& zc,
-                                const double& xl, const double& yl,
-                                const double& zl,
+    void losEllipsoidIntersect (double height,double xc,
+                                double yc, double zc,
+                                double xl, double yl,
+                                double zl,
                                 double& x,double& y, double&  z) const;
 };
 
