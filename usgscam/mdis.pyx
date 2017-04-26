@@ -1,9 +1,11 @@
 import numpy as np
 import ast
+import json
 from cython.operator cimport dereference as deref
 
 from cycsm.csm import EcefCoord, ImageCoord
 from cycsm.isd cimport Isd
+from cycsm.version import Version
 
 cdef class MdisNacSensorModel:
     cdef:
@@ -261,20 +263,42 @@ cdef class MdisPlugin:
     def manufacturer(self):
         return self.thisptr.getManufacturer().decode()
 
-    #@property
-    #def releasedate(self):
-    #    return self.thisptr.getReleaseDate()
+    @property
+    def releasedate(self):
+        return self.thisptr.getReleaseDate().decode()
 
-    #@property
-    #def version(self):
-    #    return self.thisptr.getCsmVersion()
+    @property
+    def csmversion(self):
+        return Version(self.thisptr.getCsmVersion().version())
 
     @property
     def nmodels(self):
         return self.thisptr.getNumModels()
 
+
+    def modelfamily(self, modelindex):
+        return self.thisptr.getModelFamily(modelindex).decode()
+
+    def modelname_from_state(self, state):
+        state = state.encode()
+        res = self.thisptr.getModelNameFromModelState(state).decode()
+        return res
+
     def modelname(self, modelindex):
         return self.thisptr.getModelName(modelindex).decode()
+
+    def can_model_be_constructed_from_state(self, name, state):
+        name = name.encode()
+        state = state.encode()
+        return self.thisptr.canModelBeConstructedFromState(name, state)
+
+    def can_isd_be_converted_to_model_state(self, Isd isd, modelname):
+        modelname = modelname.encode()
+        return self.thisptr.canISDBeConvertedToModelState(isd.thisptr[0], modelname)
+
+    def convert_isd_to_state(self, Isd isd, modelname):
+        modelname = modelname.encode()
+        return json.loads(self.thisptr.convertISDToModelState(isd.thisptr[0], modelname).decode())
 
     def check_isd_construction(self, Isd isd, modelname):
         modelname = str(modelname).encode()
@@ -283,3 +307,8 @@ cdef class MdisPlugin:
     def from_isd(self, Isd isd, modelname):
         modelname = str(modelname).encode()
         return MdisNacSensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromISD(isd.thisptr[0], modelname)))
+
+    def from_state(self, state):
+        state = state.encode()
+        #self.thisptr.constructModelFromState(state)
+        return MdisNacSensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromState(state)))

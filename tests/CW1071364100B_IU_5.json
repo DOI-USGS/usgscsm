@@ -24,6 +24,7 @@
         0.0
     ],
     "kappa": -3.072868243248164,
+    "model_name": "ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so",
     "nlines": 1024,
     "nsamples": 1024,
     "odt_x": [
@@ -72,6 +73,12 @@
         0.013997772676294
     ],
     "x_sensor_origin": 28892.88978623381,
+    "x_sensor_velocity": 0,
+    "x_sun_position": 0,
     "y_sensor_origin": 633940.116378508,
-    "z_sensor_origin": 2683552.1331144567
+    "y_sensor_velocity": 0,
+    "y_sun_position": 0,
+    "z_sensor_origin": 2683552.1331144567,
+    "z_sensor_velocity": 0,
+    "z_sun_position": 0
 }

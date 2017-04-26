@@ -23,13 +23,81 @@ class TestPlugin:
             csm_isd.addparam(k, v)
         return csm_isd
 
-    def test_mdis_plugin(self, plugin):
-        assert plugin.name == 'UsgsAstroFrameMdisPluginCSM'
+    def test_nmodels(self, plugin):
         assert plugin.nmodels == 1
-        assert plugin.modelname(1) == 'ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so'
 
     def test_check_isd_construction(self, plugin, i):
         assert plugin.check_isd_construction(i, plugin.modelname(1))
+
+    def test_releasedate(self, plugin):
+        assert plugin.releasedate == "20170425"
+
+    def test_csmversion(self, plugin):
+        assert plugin.csmversion.version.decode() == "3.0.1"
+
+    def test_plugin_name(self, plugin):
+        assert plugin.name == 'UsgsAstroFrameMdisPluginCSM'
+
+    def test_modelname(self, plugin):
+        assert plugin.modelname(1) == 'ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so'
+
+    def test_modelfamily(self, plugin):
+        assert plugin.modelfamily(1) == 'Raster'
+
+    def test_modelname_from_state(self, plugin, i):
+        state = {'model_name': 'ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so'}
+        name = plugin.modelname_from_state(json.dumps(state))
+        assert name == state['model_name']
+
+    def test_modelname_from_state_bad_key(self, plugin):
+        state = {'mname':'foo'}
+        with pytest.raises(RuntimeError) as err:
+            name = plugin.modelname_from_state(json.dumps(state))
+        assert "'model_name'" in str(err.value)
+
+    def test_modelname_from_state_bad_name(self, plugin):
+        state = {'model_name':'foo'}
+        with pytest.raises(RuntimeError) as err:
+            name = plugin.modelname_from_state(json.dumps(state))
+        assert "Sensor model not supported." in str(err.value)
+
+    def test_can_model_be_constructed_from_state(self, plugin):
+        name = 'ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so'
+        with open(os.path.join(data_path,'nac_state.json'), 'r') as f:
+            state = json.load(f)
+        constructible = plugin.can_model_be_constructed_from_state(name, json.dumps(state))
+        assert constructible == True
+
+        name = 'foo'
+        constructible = plugin.can_model_be_constructed_from_state(name, json.dumps(state))
+        assert constructible == False
+
+    def test_can_isd_be_converted_to_model_state(self, plugin, i):
+        name = 'ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so'
+        res = plugin.can_isd_be_converted_to_model_state(i, name)
+        assert res == True
+
+    def test_convert_isd_to_model_state(self, plugin, i):
+        name = 'ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so'
+        state = plugin.convert_isd_to_state(i, name)
+        with open(os.path.join(data_path,'nac_state.json'), 'r') as f:
+            truth = json.load(f)
+        assert state == truth
+
+    def test_convert_isd_to_model_state_bad(self, plugin, i):
+        # Trash the isd and check error handling
+        i.clear_params("focal_length")
+        name = 'ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so'
+        with pytest.raises(RuntimeError) as err:
+            state = plugin.convert_isd_to_state(i, name)
+        assert "Sensor model support data" in str(err.value)
+
+    def test_construct_model_from_state(self, plugin):
+        with open(os.path.join(data_path,'nac_state.json'), 'r') as f:
+            state = json.load(f)
+        camera = plugin.from_state(json.dumps(state))
+        assert isinstance(camera, cam.mdis.MdisNacSensorModel)
+
 
 class TestMdisWac:
     @pytest.fixture

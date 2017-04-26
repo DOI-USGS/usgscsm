@@ -1,3 +1,4 @@
+
 #ifndef MdisNacSensorModel_h
 #define MdisNacSensorModel_h
 
@@ -25,6 +26,12 @@ class MdisNacSensorModel : public csm::RasterGM {
                                           double desiredPrecision=0.001,
                                           double *achievedPrecision=NULL,
                                           csm::WarningList *warnings=NULL) const;
+
+    virtual csm::ImageCoord groundToImage(const csm::EcefCoord& ground_pt,
+       const std::vector<double>& adjustments,
+       double                     desired_precision=0.001,
+       double*                    achieved_precision=NULL,
+       csm::WarningList*          warnings=NULL) const;
 
     /**
     * This function determines if a sample, line intersects the target body and if so, where
@@ -279,9 +286,6 @@ class MdisNacSensorModel : public csm::RasterGM {
     static const std::string _SENSOR_MODEL_NAME;
 
 
-
-
-
   protected:
 
     virtual bool setFocalPlane(double dx,double dy,double &undistortedX,double &undistortedY) const;
@@ -289,17 +293,26 @@ class MdisNacSensorModel : public csm::RasterGM {
     virtual void distortionJacobian(double x, double y, double &Jxx,
                                     double &Jxy, double &Jyx, double &Jyy) const;
 
+
   private:
+
+    // Input parameters
+    static const int m_numParameters;
+    static const std::string m_parameterName[];
+    std::vector<double> m_currentParameterValue;
+    std::vector<double> m_currentParameterCovariance;
+    std::vector<double> m_noAdjustments;
+    std::vector<double> m_odtX;
+    std::vector<double> m_odtY;
+
+    static const int         _NUM_STATE_KEYWORDS;
+    static const std::string _STATE_KEYWORD[];
 
     double m_transX[3];
     double m_transY[3];
     double m_majorAxis;
     double m_minorAxis;
-    double m_omega;
-    double m_phi;
-    double m_kappa;
     double m_focalLength;
-    double m_spacecraftPosition[3];
     double m_spacecraftVelocity[3];
     double m_sunPosition[3];
     double m_ccdCenter[2];
@@ -311,8 +324,6 @@ class MdisNacSensorModel : public csm::RasterGM {
     double m_ifov;
     std::string m_instrumentID;
     double m_focalLengthEpsilon;
-    double m_odtX[10];
-    double m_odtY[10];
     double m_originalHalfLines;
     std::string m_spacecraftName;
     double m_pixelPitch;
@@ -323,12 +334,16 @@ class MdisNacSensorModel : public csm::RasterGM {
     double m_boresight[3];
     int m_nLines;
     int m_nSamples;
+    int m_nParameters;
 
+    double getValue(int index,const std::vector<double> &adjustments) const;
     void calcRotationMatrix(double m[3][3]) const;
-    void losEllipsoidIntersect (double& height, double& xc,
-                                double& yc, double& zc,
-                                double& xl, double& yl,
-                                double& zl,
+    void calcRotationMatrix(double m[3][3], const std::vector<double> &adjustments) const;
+
+    void losEllipsoidIntersect (const double& height,const double& xc,
+                                const double& yc, const double& zc,
+                                const double& xl, const double& yl,
+                                const double& zl,
                                 double& x,double& y, double&  z) const;
 };
 

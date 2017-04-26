@@ -52,6 +52,17 @@ class MDIS_EXPORT_API MdisPlugin : public csm::Plugin {
                                                csm::WarningList *warnings = NULL) const;
 
     // TODO when implementing, add any other necessary members.
+
+private:
+    static const MdisPlugin m_registeredPlugin;
+    static const std::string _PLUGIN_NAME;
+    static const std::string _MANUFACTURER_NAME;
+    static const std::string _RELEASE_DATE;
+    static const int         _N_SENSOR_MODELS;
+    static const int         _NUM_ISD_KEYWORDS;
+    static const std::string _ISD_KEYWORD[];
+    static const int         _NUM_STATE_KEYWORDS;
+    static const std::string _STATE_KEYWORD[];
 };
 
 #endif

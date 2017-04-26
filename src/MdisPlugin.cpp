@@ -1,4 +1,5 @@
 #include "MdisPlugin.h"
+#include "MdisNacSensorModel.h"
 
 #include <cstdlib>
 #include <string>
@@ -8,10 +9,96 @@
 #include <csm/Plugin.h>
 #include <csm/Warning.h>
 
-#include "MdisNacSensorModel.h"
+#include <json/json.hpp>
 
-// Create static instance of self for plugin registration to work with csm::Plugin
-//const MdisPlugin MdisPlugin::m_registeredPlugin;
+
+using json = nlohmann::json;
+
+// Declaration of static variables
+const std::string MdisPlugin::_PLUGIN_NAME = "UsgsAstroFrameMdisPluginCSM";
+const std::string MdisPlugin::_MANUFACTURER_NAME = "UsgsAstrogeology";
+const std::string MdisPlugin::_RELEASE_DATE = "20170425";
+const int         MdisPlugin::_N_SENSOR_MODELS = 1;
+
+const int         MdisPlugin::_NUM_ISD_KEYWORDS = 36;
+const std::string MdisPlugin::_ISD_KEYWORD[] =
+{
+    "model_name",
+    "starting_detector_sample",
+    "starting_detector_line",
+    "target_name",
+    "ifov",
+    "instrument_id",
+    "focal_length",
+    "focal_length_epsilon",
+    "x_sensor_origin",
+    "y_sensor_origin",
+    "z_sensor_origin",
+    "x_sensor_velocity",
+    "y_sensor_velocity",
+    "z_sensor_velocity",
+    "x_sun_position",
+    "y_sun_position",
+    "z_sun_position",
+    "omega",
+    "phi",
+    "kappa",
+    "odt_x",
+    "odt_y",
+    "ccd_center",
+    "original_half_lines",
+    "original_half_samples",
+    "spacecraft_name",
+    "pixel_pitch",
+    "itrans_line",
+    "itrans_sample",
+    "ephemeris_time",
+    "boresight",
+    "nlines",
+    "nsamples",
+    "transx",
+    "transy",
+    "semi_major_axis",
+    "semi_minor_axis"
+};
+const int         MdisPlugin::_NUM_STATE_KEYWORDS = 30;
+const std::string MdisPlugin::_STATE_KEYWORD[] =
+{
+    "m_focalLength",
+    "m_iTransS",
+    "m_iTransL",
+    "m_boresight",
+    "m_transX",
+    "m_transY",
+    "m_majorAxis",
+    "m_minorAxis",
+    "m_spacecraftVelocity",
+    "m_sunPosition",
+    "m_startingDetectorSample",
+    "m_startingDetectorLine",
+    "m_targetName",
+    "m_ifov",
+    "m_instrumentID",
+    "m_focalLengthEpsilon",
+    "m_ccdCenter",
+    "m_line_pp",
+    "m_sample_pp",
+    "m_odtX",
+    "m_odtY",
+    "m_originalHalfLines",
+    "m_originalHalfSamples",
+    "m_spacecraftName",
+    "m_pixelPitch",
+    "m_ephemerisTime",
+    "m_nLines",
+    "m_nSamples",
+    "m_currentParameterValue",
+    "m_currentParameterCovariance"
+};
+
+
+// Static Instance of itself
+const MdisPlugin MdisPlugin::m_registeredPlugin;
 
 MdisPlugin::MdisPlugin() {
 }
@@ -22,27 +109,27 @@ MdisPlugin::~MdisPlugin() {
 
 
 std::string MdisPlugin::getPluginName() const {
-  return "UsgsAstroFrameMdisPluginCSM";
+  return _PLUGIN_NAME;
 }
 
 
 std::string MdisPlugin::getManufacturer() const {
-  return "UsgsAstrogeology";
+  return _MANUFACTURER_NAME;
 }
 
 
 std::string MdisPlugin::getReleaseDate() const {
-  return "TBA";
+  return _RELEASE_DATE;
 }
 
 
 csm::Version MdisPlugin::getCsmVersion() const {
-  return csm::Version(3, 1, 0);
+  return CURRENT_CSM_VERSION;
 }
 
 
 size_t MdisPlugin::getNumModels() const {
-  return 1;
+  return _N_SENSOR_MODELS;
 }
 
 
@@ -53,12 +140,11 @@ std::string MdisPlugin::getModelName(size_t modelIndex) const {
 
 
 std::string MdisPlugin::getModelFamily(size_t modelIndex) const {
-  return "Raster";
+  return CSM_RASTER_FAMILY;
 }
 
 
 csm::Version MdisPlugin::getModelVersion(const std::string &modelName) const {
-
   return csm::Version(1, 0, 0);
 }
 
@@ -66,25 +152,99 @@ csm::Version MdisPlugin::getModelVersion(const std::string &modelName) const {
 bool MdisPlugin::canModelBeConstructedFromState(const std::string &modelName,
                                                 const std::string &modelState,
                                                 csm::WarningList *warnings) const {
-  return false;
+  bool constructible = true;
+
+  // Get the model name from the model state
+  std::string model_name_from_state;
+  model_name_from_state = getModelNameFromModelState(modelState, warnings);
+
+  // Check that the plugin supports the model
+  if (modelName != model_name_from_state ||
+      modelName != MdisNacSensorModel::_SENSOR_MODEL_NAME){
+          constructible = false;
+      }
+
+  // Check that the necessary keys are there (this does not chek values at all.)
+  auto state = json::parse(modelState);
+  for(auto &key : _STATE_KEYWORD){
+      if (state.find(key) == state.end()){
+          constructible = false;
+      }
+  }
+  return constructible;
 }
 
 
 bool MdisPlugin::canModelBeConstructedFromISD(const csm::Isd &imageSupportData,
                                               const std::string &modelName,
                                               csm::WarningList *warnings) const {
-
-  if (modelName != MdisNacSensorModel::_SENSOR_MODEL_NAME) {
-    return false;
-  }
-
-  return true;
+  return canISDBeConvertedToModelState(imageSupportData, modelName, warnings);
 }
 
 
-csm::Model *MdisPlugin::constructModelFromState(const std::string&modelState,
+csm::Model *MdisPlugin::constructModelFromState(const std::string& modelState,
                                                 csm::WarningList *warnings) const {
-  return NULL;
+    csm::Model *sensor_model = 0;
+
+    // Get the sensor model name from the sensor model state
+    std::string model_name_from_state = getModelNameFromModelState(modelState);
+
+    if (model_name_from_state != MdisNacSensorModel::_SENSOR_MODEL_NAME){
+        csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
+        std::string aMessage = "Model name from state is not recognized.";
+        std::string aFunction = "MdisPlugin::constructModelFromState()";
+        throw csm::Error(aErrorType, aMessage, aFunction);
+    }
+
+    // Check that all of the necessary keys are included
+    canModelBeConstructedFromState(model_name_from_state, modelState);
+
+    // Create the model from the state
+    MdisNacSensorModel* mdsensor_model = new MdisNacSensorModel();
+
+    auto state = json::parse(modelState);
+
+    mdsensor_model->m_focalLength = state["m_focalLength"];
+    mdsensor_model->m_majorAxis = state["m_majorAxis"];
+    mdsensor_model->m_minorAxis = state["m_minorAxis"];
+    mdsensor_model->m_startingDetectorLine = state["m_startingDetectorLine"];
+    mdsensor_model->m_startingDetectorSample = state["m_startingDetectorSample"];
+    mdsensor_model->m_ifov = state["m_ifov"];
+    mdsensor_model->m_instrumentID = state["m_instrumentID"];
+    mdsensor_model->m_focalLengthEpsilon = state["m_focalLengthEpsilon"];
+    mdsensor_model->m_line_pp = state["m_line_pp"];
+    mdsensor_model->m_sample_pp = state["m_sample_pp"];
+    mdsensor_model->m_originalHalfLines = state["m_originalHalfLines"];
+    mdsensor_model->m_originalHalfSamples = state["m_originalHalfSamples"];
+    mdsensor_model->m_spacecraftName = state["m_spacecraftName"];
+    mdsensor_model->m_pixelPitch = state["m_pixelPitch"];
+    mdsensor_model->m_ephemerisTime = state["m_ephemerisTime"];
+    mdsensor_model->m_nLines = state["m_nLines"];
+    mdsensor_model->m_nSamples = state["m_nSamples"];
+
+    mdsensor_model->m_ccdCenter[0] = state["m_ccdCenter"][0];
+    mdsensor_model->m_ccdCenter[1] = state["m_ccdCenter"][1];
+
+    for (int i=0;i<3;i++){
+        mdsensor_model->m_boresight[i] = state["m_boresight"][i];
+        mdsensor_model->m_iTransS[i] = state["m_iTransS"][i];
+        mdsensor_model->m_iTransL[i] = state["m_iTransL"][i];
+        mdsensor_model->m_transX[i] = state["m_transX"][i];
+        mdsensor_model->m_transY[i] = state["m_transY"][i];
+        mdsensor_model->m_spacecraftVelocity[i] = state["m_spacecraftVelocity"][i];
+        mdsensor_model->m_sunPosition[i] = state["m_sunPosition"][i];
+    }
+
+    // Having types as vectors, instead of arrays makes interoperability with
+    // the JSON library very easy.
+    mdsensor_model->m_currentParameterValue = state["m_currentParameterValue"].get<std::vector<double>>();
+    mdsensor_model->m_odtX = state["m_odtX"].get<std::vector<double>>();
+    mdsensor_model->m_odtY = state["m_odtY"].get<std::vector<double>>();
+
+    mdsensor_model->m_currentParameterCovariance = state["m_currentParameterCovariance"].get<std::vector<double>>();
+
+sensor_model = mdsensor_model;
+return sensor_model;
 }
 
 
@@ -124,11 +284,11 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
   sensorModel->m_focalLengthEpsilon =
       atof(imageSupportData.param("focal_length_epsilon").c_str());
 
-  sensorModel->m_spacecraftPosition[0] =
+  sensorModel->m_currentParameterValue[0] =
       atof(imageSupportData.param("x_sensor_origin").c_str());
-  sensorModel->m_spacecraftPosition[1] =
+  sensorModel->m_currentParameterValue[1] =
       atof(imageSupportData.param("y_sensor_origin").c_str());
-  sensorModel->m_spacecraftPosition[2] =
+  sensorModel->m_currentParameterValue[2] =
       atof(imageSupportData.param("z_sensor_origin").c_str());
   if (imageSupportData.param("x_sensor_origin") == "") {
     missingKeywords.push_back("x_sensor_origin");
@@ -156,9 +316,9 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
       atof(imageSupportData.param("z_sun_position").c_str());
   // sun position is not strictly necessary, but is required for getIlluminationDirection.
 
-  sensorModel->m_omega = atof(imageSupportData.param("omega").c_str());
-  sensorModel->m_phi = atof(imageSupportData.param("phi").c_str());
-  sensorModel->m_kappa = atof(imageSupportData.param("kappa").c_str());
+  sensorModel->m_currentParameterValue[3] = atof(imageSupportData.param("omega").c_str());
+  sensorModel->m_currentParameterValue[4] = atof(imageSupportData.param("phi").c_str());
+  sensorModel->m_currentParameterValue[5] = atof(imageSupportData.param("kappa").c_str());
   if (imageSupportData.param("omega") == "") {
     missingKeywords.push_back("omega");
   }
@@ -311,19 +471,62 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
 
 std::string MdisPlugin::getModelNameFromModelState(const std::string &modelState,
                                                    csm::WarningList *warnings) const {
-  return "state";
+  std::string name;
+  auto state = json::parse(modelState);
+  if(state.find("model_name") != state.end()){
+      name = state["model_name"];
+  }
+  else{
+      csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
+      std::string aMessage = "No 'model_name' key in the model state object.";
+      std::string aFunction = "MdisPlugin::getModelNameFromModelState";
+      csm::Error csmErr(aErrorType, aMessage, aFunction);
+      throw(csmErr);
+  }
+
+  if (name != MdisNacSensorModel::_SENSOR_MODEL_NAME){
+      csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
+      std::string aMessage = "Sensor model not supported.";
+      std::string aFunction = "MdisPlugin::getModelNameFromModelState()";
+      csm::Error csmErr(aErrorType, aMessage, aFunction);
+      throw(csmErr);
+  }
+
+
+  return MdisNacSensorModel::_SENSOR_MODEL_NAME;
 }
 
 
 bool MdisPlugin::canISDBeConvertedToModelState(const csm::Isd &imageSupportData,
                                                const std::string &modelName,
                                                csm::WarningList *warnings) const {
-  return false;
+  bool convertible = true;
+  if (modelName !=MdisNacSensorModel::_SENSOR_MODEL_NAME){
+      convertible = false;
+  }
+
+  std::string value;
+  for(auto &key : _ISD_KEYWORD){
+      value = imageSupportData.param(key);
+      if (value.empty()){
+          convertible = false;
+      }
+  }
+  return convertible;
 }
 
 
 std::string MdisPlugin::convertISDToModelState(const csm::Isd &imageSupportData,
                                                const std::string &modelName,
                                                csm::WarningList *warnings) const {
-  return "state";
+  csm::Model* sensor_model = constructModelFromISD(
+                             imageSupportData, modelName);
+
+  if (sensor_model == 0){
+      csm::Error::ErrorType aErrorType = csm::Error::ISD_NOT_SUPPORTED;
+      std::string aMessage = "ISD not supported: ";
+      std::string aFunction = "MdisPlugin::convertISDToModelState()";
+      throw csm::Error(aErrorType, aMessage, aFunction);
+  }
+  return sensor_model->getModelState();
 }
