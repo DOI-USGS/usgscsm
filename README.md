@@ -1,5 +1,7 @@
 # CSM-CameraModel
 
+[![Build Status](https://travis-ci.org/USGS-Astrogeology/CSM-CameraModel.svg?branch=master)](https://travis-ci.org/USGS-Astrogeology/CSM-CameraModel)
+
 This repository stores USGS CSM compliant camera models and the associated
 plugins.  These camera models are compliant with the [Community Sensor
 Model](https://github.com/sminster/csm) and can be utilized within any application supporting the CSM.
