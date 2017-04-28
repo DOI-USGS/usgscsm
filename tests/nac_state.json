@@ -72,6 +72,8 @@
     "m_line_pp": 0.0,
     "m_majorAxis": 2439400,
     "m_minorAxis": 2439400,
+    "m_minElevation": -100,
+    "m_maxElevation": 100,
     "m_nLines": 1024,
     "m_nSamples": 1024,
     "m_odtX": [

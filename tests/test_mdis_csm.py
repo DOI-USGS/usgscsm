@@ -138,6 +138,9 @@ class TestMdisWac:
         assert y == pytest.approx(iy)
 
 class TestMdisNac:
+
+    time = 418855170.49264956
+
     @pytest.fixture
     def model(self):
         return cam.mdis.MdisPlugin()
@@ -190,17 +193,8 @@ class TestMdisNac:
         assert y == pytest.approx(60633907522.72863)
         assert z == pytest.approx(2439.4*1000 - -38729485.77334732)
 
-    def test_heightrange(self, model):
-        with pytest.raises(NotImplementedError) as e:
-            model.heightrange()
-
-    def test_imagerange(self, model):
-        with pytest.raises(NotImplementedError) as e:
-            model.imagerange()
-
     def test_sensorposition_time(self, model):
-        with pytest.raises(NotImplementedError) as e:
-            model.sensor_time_position(12345.0)
+        x, y, z = model.sensor_time_position(self.time)
 
     def test_sensorposition_coordinate(self, model):
         x, y, z = model.sensor_coordinate_position(512.0, 512.0)
@@ -209,8 +203,10 @@ class TestMdisNac:
         assert z == pytest.approx(2082707.61)
 
     def test_sensorvelocity_time(self, model):
-        with pytest.raises(NotImplementedError) as e:
-            model.sensor_time_velocity(12345.0)
+        x, y, z = model.sensor_time_velocity(self.time)
+        assert x == 0
+        assert y == 0
+        assert z == 0
 
     def test_sensorvelcity_coordinate(self, model):
         x, y, z = model.sensor_coordinate_velocity(512.0, 512.0)
@@ -237,3 +233,104 @@ class TestMdisNac:
         assert point['x'] == pytest.approx(1728181.03)
         assert point['y'] == pytest.approx(-2088202.59)
         assert point['z'] == pytest.approx(2082707.61)
+
+    def test_imagerange(self, model):
+        min_pt, max_pt = model.imagerange
+        assert min_pt == (1.0, 9.0)
+        assert max_pt == (1024, 1024)
+
+    def test_heightrange(self, model):
+        assert model.heightrange == (-100,100)
+
+    def test_version(self, model):
+        assert model.version.version.decode() == "0.1.0"
+
+    def test_modelname(self, model):
+        assert model.name == "ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so"
+
+    def test_sensortype(self, model):
+        assert model.sensortype == "EO"
+
+    def test_sensormode(self, model):
+        assert model.sensormode == "FRAME"
+
+    @pytest.mark.parametrize('image, ground, truth',[
+        ((512, 512, 0), (1129256.7251961431, -1599248.4677779, 1455285.5207515),
+        (-0.022112677416771476, -0.022440933181201217)),
+        ((100, 100, 0), (1115975.1523941057, -1603416.1960299, 1460934.0579053),
+        (-0.021533852098798434, -0.022313040556070973))
+    ])
+    def test_compute_sensor_partials_with_image(self, model, image, ground, truth):
+        partials = model.compute_sensor_partials(0, *ground, line=image[0], sample=image[1])
+        assert partials == truth
+
+    @pytest.mark.parametrize('ground, truth',[
+        ((1129256.7251961431, -1599248.4677779, 1455285.5207515),
+        (-0.022112677416771476, -0.022440933181201217)),
+        ((1115975.1523941057, -1603416.1960299, 1460934.0579053),
+        (-0.021533852098798434, -0.022313040556070973))
+    ])
+    def test_compute_sensor_partials_without_image(self, model, ground, truth):
+        partials = model.compute_sensor_partials(0, *ground)
+        assert pytest.approx(partials, 0.1) == truth
+
+    @pytest.mark.parametrize('ground, truth',[
+        ((1129256.7251961431, -1599248.4677779, 1455285.5207515),
+         [(-0.022112677416771476, -0.022440933181201217),
+         (0.011881799159482398, -0.032259811189305765),
+         (0.03036786720906548, -0.0037186004832392427),
+         (-491255.371471137, 1.759792667144211e-08),
+         (-18407.9265443473, -66608.06733288719),
+         (46820.35586710303, -136243.26154801922)]),
+        ((1115975.1523941057, -1603416.1960299, 1460934.0579053),
+         [(-0.021533852098798434, -0.022313040556070973),
+         (0.011931088289486524, -0.032481524362651726),
+         (0.030504941456740653, -0.003355589999443964),
+         (-524050.03508186026, -6640.755516575846),
+         (-20179.090856298106, -67377.90738139131),
+         (49348.36109812631, -145968.62944389175)])
+    ])
+    def test_compute_all_sensor_partials_without_image(self, model, ground, truth):
+        partials = model.compute_all_sensor_partials(*ground)
+        for i in range(len(partials)):
+            assert pytest.approx(partials[i], 0.1) == truth[i]
+
+    @pytest.mark.parametrize('image, ground, truth',[
+        ((512, 512, 0), (1129256.7251961431, -1599248.4677779, 1455285.5207515),
+        ((-0.022112677416771476, -0.022440933181201217),
+         (0.011881799159482398, -0.032259811189305765),
+         (0.03036786720906548, -0.0037186004832392427),
+         (-491255.371471137, 1.759792667144211e-08),
+         (-18407.9265443473, -66608.06733288719),
+         (46820.35586710303, -136243.26154801922))),
+        ((100, 100, 0), (1115975.1523941057, -1603416.1960299, 1460934.0579053),
+        ((-0.021533852098798434, -0.022313040556070973),
+         (0.011931088289486524, -0.032481524362651726),
+         (0.030504941456740653, -0.003355589999443964),
+         (-524050.03508186026, -6640.755516575846),
+         (-20179.090856298106, -67377.90738139131),
+         (49348.36109812631, -145968.62944389175)))
+    ])
+    def test_compute_all_sensor_partials_with_image(self, model, image, ground, truth):
+        partials = model.compute_all_sensor_partials(*ground, line=image[0], sample=image[1])
+        for i in range(len(partials)):
+            assert pytest.approx(partials[i], 0.1) == truth[i]
+
+    @pytest.mark.parametrize('ground, truth',[
+        ((1129256.7251961431, -1599248.4677779, 1455285.5207515),
+        [0.019424449430102384, -0.08345396655672399, -0.08357840280904191,
+         -0.022145787236569233, 0.27363142654460765,0.23438267062135587]),
+        ((1115975.1523941057, -1603416.1960299, 1460934.0579053),
+        [0.017765091042620192,-0.07292865138581625,-0.07435297169065827,
+        -0.02015836541725924, 0.2536340138413847,0.21760235526959235])
+    ])
+    def test_compute_ground_partials(self, model, ground, truth):
+        partials = model.compute_ground_partials(*ground)
+        assert partials == truth
+
+    def test_get_set_parameter_type(self, model):
+        ptype = model.get_parameter_type(0)
+        assert ptype.name == 'REAL'
+        model.set_parameter_type(0, 0)
+        ptype = model.get_parameter_type(0)
+        assert ptype.name == 'NONE'

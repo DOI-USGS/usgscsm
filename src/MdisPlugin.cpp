@@ -61,7 +61,7 @@ const std::string MdisPlugin::_ISD_KEYWORD[] =
     "semi_major_axis",
     "semi_minor_axis"
 };
-const int         MdisPlugin::_NUM_STATE_KEYWORDS = 30;
+const int         MdisPlugin::_NUM_STATE_KEYWORDS = 32;
 const std::string MdisPlugin::_STATE_KEYWORD[] =
 {
     "m_focalLength",
@@ -83,6 +83,8 @@ const std::string MdisPlugin::_STATE_KEYWORD[] =
     "m_ccdCenter",
     "m_line_pp",
     "m_sample_pp",
+    "m_minElevation",
+    "m_maxElevation",
     "m_odtX",
     "m_odtY",
     "m_originalHalfLines",
@@ -221,6 +223,8 @@ csm::Model *MdisPlugin::constructModelFromState(const std::string& modelState,
     mdsensor_model->m_ephemerisTime = state["m_ephemerisTime"];
     mdsensor_model->m_nLines = state["m_nLines"];
     mdsensor_model->m_nSamples = state["m_nSamples"];
+    mdsensor_model->m_minElevation = state["m_minElevation"];
+    mdsensor_model->m_maxElevation = state["m_maxElevation"];
 
     mdsensor_model->m_ccdCenter[0] = state["m_ccdCenter"][0];
     mdsensor_model->m_ccdCenter[1] = state["m_ccdCenter"][1];
@@ -446,6 +450,14 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
     sensorModel->m_minorAxis = 1000 * atof(imageSupportData.param("semi_minor_axis").c_str());
   }
 
+  sensorModel->m_minElevation = atof(imageSupportData.param("min_elevation").c_str());
+  sensorModel->m_maxElevation = atof(imageSupportData.param("max_elevation").c_str());
+  if (imageSupportData.param("min_elevation") == ""){
+      missingKeywords.push_back("min_elevation");
+  }
+  if (imageSupportData.param("max_elevation") == ""){
+      missingKeywords.push_back("max_elevation");
+  }
   // If we are missing necessary keywords from ISD, we cannot create a valid sensor model.
   if (missingKeywords.size() != 0) {
 

@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "csm/RasterGM.h"
-
+#include "csm/CorrelationModel.h"
 
 class MdisNacSensorModel : public csm::RasterGM {
   // MdisPlugin needs to access private members
@@ -123,6 +123,19 @@ class MdisNacSensorModel : public csm::RasterGM {
                                                                 double desiredPrecision=0.001,
                                                                 double *achievedPrecision=NULL,
                                                                 csm::WarningList *warnings=NULL) const;
+
+    virtual std::vector<csm::RasterGM::SensorPartials> computeAllSensorPartials (const csm::EcefCoord& groundPt,
+                                                                csm::param::Set pSet = csm::param::VALID,
+                                                                double desiredPrecision = 0.001,
+                                                                double *achievedPrecision = NULL,
+                                                                csm::WarningList* warnings = NULL) const;
+
+    virtual std::vector<csm::RasterGM::SensorPartials> computeAllSensorPartials (const csm::ImageCoord& imagePt,
+                                                                const csm::EcefCoord& groundPt,
+                                                                csm::param::Set pSet = csm::param::VALID,
+                                                                double desiredPrecision = 0.001,
+                                                                double *achievedPrecision = NULL,
+                                                                csm::WarningList* warnings = NULL) const;
 
     virtual std::vector<double> computeGroundPartials(const csm::EcefCoord &groundPt) const;
 
@@ -301,6 +314,7 @@ class MdisNacSensorModel : public csm::RasterGM {
     static const std::string m_parameterName[];
     std::vector<double> m_currentParameterValue;
     std::vector<double> m_currentParameterCovariance;
+    std::vector<csm::param::Type> m_parameterType;
     std::vector<double> m_noAdjustments;
     std::vector<double> m_odtX;
     std::vector<double> m_odtY;
@@ -316,6 +330,8 @@ class MdisNacSensorModel : public csm::RasterGM {
     double m_spacecraftVelocity[3];
     double m_sunPosition[3];
     double m_ccdCenter[2];
+    double m_minElevation;
+    double m_maxElevation;
     double m_line_pp;
     double m_sample_pp;
     double m_startingDetectorSample;
@@ -335,6 +351,8 @@ class MdisNacSensorModel : public csm::RasterGM {
     int m_nLines;
     int m_nSamples;
     int m_nParameters;
+
+    csm::NoCorrelationModel _no_corr_model;
 
     double getValue(int index,const std::vector<double> &adjustments) const;
     void calcRotationMatrix(double m[3][3]) const;

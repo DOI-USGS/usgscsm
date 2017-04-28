@@ -2,11 +2,14 @@ from libcpp.string cimport string
 from libcpp.cast cimport dynamic_cast
 from libcpp cimport bool
 from libcpp.pair cimport pair
+from libcpp.vector cimport vector
 
 from cycsm.isd cimport CppIsd
-from cycsm.csm cimport CppEcefCoord, CppImageCoord, CppImageVector, CppEcefVector, CppEcefLocus
+from cycsm.csm cimport CppEcefCoord, CppImageCoord, CppImageVector, CppEcefVector, CppEcefLocus, CppSet, CppType
 from cycsm.model cimport CppModel
 from cycsm.version cimport CppVersion
+from cycsm.correlationmodel cimport CppNoCorrelationModel
+from cycsm.rastergm cimport CppSensorPartials
 
 cdef extern from "MdisNacSensorModel.h":
     cdef cppclass CppMdisNacSensorModel "MdisNacSensorModel":
@@ -17,25 +20,49 @@ cdef extern from "MdisNacSensorModel.h":
         CppImageVector getImageSize()
 
         string getModelState()
-        string getModelName()
         CppEcefVector getIlluminationDirection(CppEcefCoord &groundPoint)
         CppEcefCoord getSensorPosition(CppImageCoord &imagePt)
-        CppEcefCoord getSensorPosition(double time)
         CppEcefVector getSensorVelocity(CppImageCoord &imagePt)
-        CppEcefVector getSensorVelocity(double time)
         CppEcefLocus imageToProximateImagingLocus(CppImageCoord &imagePt,
                                                    CppEcefCoord &groundPt,
                                                    double desiredPrecision)
         CppEcefLocus imageToRemoteImagingLocus(CppImageCoord &imagePt,
                                                   double desiredPrecision)
+        CppSensorPartials computeSensorPartials(int index,
+                                                CppImageCoord &imagePt,
+                                                CppEcefCoord &groundPt,
+                                                double desiredPrecision) except +
 
-        #TODO: IMPLEMENT FOR CYTHON
-        # CppSensorPartials computeSensorPartials(int index, CppEcefCoord &groundPt)
-        # CppVersion getVersion()
+        # Newly implemented
+        CppSensorPartials computeSensorPartials(int index,
+                                                CppEcefCoord &groundPt,
+                                                double desiredPrecision) except +
 
-        #TODO: IMPLEMENT FOR CYTHON AND CPP
+
+        vector[CppSensorPartials] computeAllSensorPartials(CppEcefCoord &groundPt,
+                                                           CppSet pset,
+                                                           double desiredPrecision) except +
+
+        vector[CppSensorPartials] computeAllSensorPartials(CppImageCoord &imagePt,
+                                                           CppEcefCoord &groundPt,
+                                                           CppSet pset,
+                                                           double desiredPrecision) except +
+
+        CppType getParameterType(int index) except +
+        void setParameterType(int index, CppType pType) except +
+
+        vector[double] computeGroundPartials(CppEcefCoord &groundPt)
+
         pair[CppImageCoord, CppImageCoord] getValidImageRange()
         pair[double, double] getValidHeightRange()
+        CppEcefVector getSensorVelocity(double time) except +
+        CppEcefCoord getSensorPosition(double time) except +
+        CppVersion getVersion()
+        string getModelName()
+        string getSensorType()
+        string getSensorMode()
+        CppNoCorrelationModel getCorrelationModel() # Not wrapped
+
 
 cdef extern from "MdisPlugin.h":
     cdef cppclass CppMdisPlugin "MdisPlugin":

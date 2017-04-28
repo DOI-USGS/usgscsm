@@ -24,6 +24,8 @@
         0.0
     ],
     "kappa": -0.963008015000929,
+    "min_elevation": -100,
+    "max_elevation": 100,
     "model_name": "ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so",
     "nlines": 1024,
     "nsamples": 1024,

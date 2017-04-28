@@ -24,7 +24,7 @@ const std::string MdisNacSensorModel::m_parameterName[] = {
   "Kappa (radians)"         // 5
 };
 
-const int         MdisNacSensorModel::_NUM_STATE_KEYWORDS = 30;
+const int         MdisNacSensorModel::_NUM_STATE_KEYWORDS = 32;
 const std::string MdisNacSensorModel::_STATE_KEYWORD[] =
 {
     "m_focalLength",
@@ -46,6 +46,8 @@ const std::string MdisNacSensorModel::_STATE_KEYWORD[] =
     "m_ccdCenter",
     "m_line_pp",
     "m_sample_pp",
+    "m_minElevation",
+    "m_maxElevation",
     "m_odtX",
     "m_odtY",
     "m_originalHalfLines",
@@ -55,6 +57,8 @@ const std::string MdisNacSensorModel::_STATE_KEYWORD[] =
     "m_ephemerisTime",
     "m_nLines",
     "m_nSamples",
+    "m_minElevation",
+    "m_maxElevation",
     "m_currentParameterValue",
     "m_currentParameterCovariance"
 };
@@ -129,6 +133,9 @@ MdisNacSensorModel::MdisNacSensorModel() {
   m_currentParameterValue.assign(m_numParameters, 0.0);
   m_currentParameterCovariance.assign(m_numParameters*m_numParameters,0.0);
   m_noAdjustments.assign(m_numParameters,0.0);
+
+  m_parameterType.assign(m_numParameters, csm::param::REAL);
+
 }
 
 
@@ -170,15 +177,13 @@ csm::ImageCoord MdisNacSensorModel::groundToImage(
     double*                    achieved_precision,
     csm::WarningList*          warnings ) const {
 
-  double x, y, z;
-  x = groundPt.x;
-  y = groundPt.y;
-  z = groundPt.z;
+  double x = groundPt.x;
+  double y = groundPt.y;
+  double z = groundPt.z;
 
-  double xo, yo, zo;
-  xo = x - getValue(0,adjustments);
-  yo = y - getValue(1,adjustments);
-  zo = z - getValue(2,adjustments);
+  double xo = x - getValue(0,adjustments);
+  double yo = y - getValue(1,adjustments);
+  double zo = z - getValue(2,adjustments);
 
   double f;
   f = m_focalLength;
@@ -347,18 +352,14 @@ csm::ImageVector MdisNacSensorModel::getImageSize() const {
 
 
 std::pair<csm::ImageCoord, csm::ImageCoord> MdisNacSensorModel::getValidImageRange() const {
-
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getValidImageRange");
+    csm::ImageCoord min_pt(m_startingDetectorLine, m_startingDetectorSample);
+    csm::ImageCoord max_pt(m_nLines, m_nSamples);
+    return std::pair<csm::ImageCoord, csm::ImageCoord>(min_pt, max_pt);
 }
 
 
 std::pair<double, double> MdisNacSensorModel::getValidHeightRange() const {
-
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getValidHeightRange");
+    return std::pair<double, double>(m_minElevation, m_maxElevation);
 }
 
 
@@ -412,10 +413,19 @@ csm::EcefCoord MdisNacSensorModel::getSensorPosition(const csm::ImageCoord &imag
 
 
 csm::EcefCoord MdisNacSensorModel::getSensorPosition(double time) const {
+    if (time == m_ephemerisTime){
+        csm::EcefCoord sensorPosition;
+        sensorPosition.x = m_currentParameterValue[0];
+        sensorPosition.y = m_currentParameterValue[1];
+        sensorPosition.z = m_currentParameterValue[2];
 
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getSensorPosition");
+        return sensorPosition;
+    } else {
+        std::string aMessage = "Valid image time is %d", m_ephemerisTime;
+        throw csm::Error(csm::Error::BOUNDS,
+                         aMessage,
+                         "MdisNacSensorModel::getSensorPosition");
+    }
 }
 
 
@@ -437,21 +447,30 @@ csm::EcefVector MdisNacSensorModel::getSensorVelocity(const csm::ImageCoord &ima
 
 
 csm::EcefVector MdisNacSensorModel::getSensorVelocity(double time) const {
-
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getSensorVelocity");
+    if (time == m_ephemerisTime){
+        return csm::EcefVector {
+          m_spacecraftVelocity[0],
+          m_spacecraftVelocity[1],
+          m_spacecraftVelocity[2]
+        };
+    } else {
+        std::string aMessage = "Valid image time is %d", m_ephemerisTime;
+        throw csm::Error(csm::Error::BOUNDS,
+                         aMessage,
+                         "MdisNacSensorModel::getSensorVelocity");
+    }
 }
 
 
-csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int index, const csm::EcefCoord &groundPt,
+csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int index,
+                                           const csm::EcefCoord &groundPt,
                                            double desiredPrecision,
                                            double *achievedPrecision,
                                            csm::WarningList *warnings) const {
 
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::computeSensorPartials");
+    csm::ImageCoord img_pt = groundToImage(groundPt, desiredPrecision, achievedPrecision);
+
+    return computeSensorPartials(index, img_pt, groundPt, desiredPrecision, achievedPrecision);
 }
 
 
@@ -476,13 +495,14 @@ csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int inde
                                           double *achievedPrecision,
                                           csm::WarningList *warnings) const {
 
+
   const double delta = 1.0;
-  std::vector<double> adjustments(m_numParameters, 0.0);
-  adjustments[index] = delta;
+  // Update the parameter
+  std::vector<double>adj(m_numParameters, 0.0);
+  adj[index] = delta;
 
-  csm::ImageCoord imagePt1 = groundToImage(groundPt,adjustments,desiredPrecision,achievedPrecision);
+  csm::ImageCoord imagePt1 = groundToImage(groundPt,adj,desiredPrecision,achievedPrecision);
 
-  cout << "Img1 line:  " << imagePt1.line << " ,Img1 sample:  " << imagePt1.samp << endl;
   csm::RasterGM::SensorPartials partials;
 
   partials.first = (imagePt1.line - imagePt.line)/delta;
@@ -492,20 +512,90 @@ csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int inde
 
 }
 
+std::vector<csm::RasterGM::SensorPartials> MdisNacSensorModel::computeAllSensorPartials(
+    const csm::ImageCoord& imagePt,
+    const csm::EcefCoord& groundPt,
+    csm::param::Set pset,
+    double desiredPrecision,
+    double *achievedPrecision,
+    csm::WarningList *warnings) const
+    {
+        std::vector<int> indices = getParameterSetIndices(pset);
+        size_t num = indices.size();
+        std::vector<csm::RasterGM::SensorPartials> partials;
+        for (int index = 0;index < num;index++){
+            partials.push_back(computeSensorPartials(
+                                indices[index],
+                                imagePt, groundPt,
+                                desiredPrecision, achievedPrecision, warnings));
+        }
+        return partials;
+    }
+
+std::vector<csm::RasterGM::SensorPartials> MdisNacSensorModel::computeAllSensorPartials(
+    const csm::EcefCoord& groundPt,
+    csm::param::Set pset,
+    double desiredPrecision,
+    double *achievedPrecision,
+    csm::WarningList *warnings) const
+    {
+        csm::ImageCoord imagePt = groundToImage(groundPt,
+                                    desiredPrecision, achievedPrecision, warnings);
+        return computeAllSensorPartials(imagePt, groundPt,
+                                    pset, desiredPrecision, achievedPrecision, warnings);
+    }
 
 std::vector<double> MdisNacSensorModel::computeGroundPartials(const csm::EcefCoord &groundPt) const {
 
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::computeGroundPartials");
+    // Partials of line, sample wrt X, Y, Z
+    // Uses collinearity equations
+    std::vector<double> partials(6, 0.0);
+
+    double m[3][3];
+    calcRotationMatrix(m, m_noAdjustments);
+
+    double xo, yo, zo;
+    xo = groundPt.x - m_currentParameterValue[0];
+    yo = groundPt.y - m_currentParameterValue[1];
+    zo = groundPt.z - m_currentParameterValue[2];
+
+    double u, v, w;
+    u = m[0][0] * xo + m[0][1] * yo + m[0][2] * zo;
+    v = m[1][0] * xo + m[1][1] * yo + m[1][2] * zo;
+    w = m[2][0] * xo + m[2][1] * yo + m[2][2] * zo;
+
+    double fdw, udw, vdw;
+    fdw = m_focalLength / w;
+    udw = u / w;
+    vdw = v / w;
+
+    double upx, vpx, wpx;
+    upx = m[0][0];
+    vpx = m[1][0];
+    wpx = m[2][0];
+    partials[0] = -fdw * ( upx - udw * wpx );
+    partials[3] = -fdw * ( vpx - vdw * wpx );
+
+    double upy, vpy, wpy;
+    upy = m[0][1];
+    vpy = m[1][1];
+    wpy = m[2][1];
+    partials[1] = -fdw * ( upy - udw * wpy );
+    partials[4] = -fdw * ( vpy - vdw * wpy );
+
+    double upz, vpz, wpz;
+    upz = m[0][2];
+    vpz = m[1][2];
+    wpz = m[2][2];
+    partials[2] = -fdw * ( upz - udw * wpz );
+    partials[5] = -fdw * ( vpz - vdw * wpz );
+
+    return partials;
 }
 
 
 const csm::CorrelationModel& MdisNacSensorModel::getCorrelationModel() const {
-
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "MdisNacSensorModel::getCorrelationModel");
+    return _no_corr_model;
 }
 
 
@@ -519,16 +609,12 @@ std::vector<double> MdisNacSensorModel::getUnmodeledCrossCovariance(const csm::I
 
 
 csm::Version MdisNacSensorModel::getVersion() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "MdisNacSensorModel::getVersion");
+    return csm::Version(0,1,0);
 }
 
 
 std::string MdisNacSensorModel::getModelName() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "MdisNacSensorModel::getModelName");
+    return _SENSOR_MODEL_NAME;
 }
 
 
@@ -583,16 +669,12 @@ std::string MdisNacSensorModel::getTrajectoryIdentifier() const {
 
 
 std::string MdisNacSensorModel::getSensorType() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "MdisNacSensorModel::getSensorType");
+    return CSM_SENSOR_TYPE_EO;
 }
 
 
 std::string MdisNacSensorModel::getSensorMode() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "MdisNacSensorModel::getSensorMode");
+    return CSM_SENSOR_MODE_FRAME;
 }
 
 
@@ -627,6 +709,8 @@ std::string MdisNacSensorModel::getModelState() const {
       {"m_ccdCenter", {m_ccdCenter[0], m_ccdCenter[1]}},
       {"m_line_pp", m_line_pp},
       {"m_sample_pp", m_sample_pp},
+      {"m_minElevation", m_minElevation},
+      {"m_maxElevation", m_maxElevation},
       {"m_odtX", {m_odtX[0], m_odtX[1], m_odtX[2], m_odtX[3], m_odtX[4],
                   m_odtX[5], m_odtX[6], m_odtX[7], m_odtX[8], m_odtX[9]}},
       {"m_odtY", {m_odtY[0], m_odtY[1], m_odtY[2], m_odtY[3], m_odtY[4],
@@ -720,22 +804,17 @@ double MdisNacSensorModel::getParameterValue(int index) const {
 
 
 void MdisNacSensorModel::setParameterValue(int index, double value) {
-
   m_currentParameterValue[index] = value;
 }
 
 
 csm::param::Type MdisNacSensorModel::getParameterType(int index) const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "MdisNacSensorModel::getParameterType");
+  return m_parameterType[index];
 }
 
 
 void MdisNacSensorModel::setParameterType(int index, csm::param::Type pType) {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "MdisNacSensorModel::setParameterType");
+    m_parameterType[index] = pType;
 }
 
 

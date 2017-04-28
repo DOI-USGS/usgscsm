@@ -3,9 +3,10 @@ import ast
 import json
 from cython.operator cimport dereference as deref
 
-from cycsm.csm import EcefCoord, ImageCoord
+from cycsm.csm import EcefCoord, ImageCoord, Set, Type
 from cycsm.isd cimport Isd
 from cycsm.version import Version
+from cycsm.correlationmodel cimport NoCorrelationModel, CppNoCorrelationModel
 
 cdef class MdisNacSensorModel:
     cdef:
@@ -51,7 +52,6 @@ cdef class MdisNacSensorModel:
            The x, y, z ground intersection coordinate in ECEF
         """
         pt = ImageCoord(line, sample)
-        #TODO: Return the straight floats without the update to an EcefCoord
         e = self.thisptr.imageToGround(pt._ptr, height, precision)
         return [e.x, e.y, e.z]
 
@@ -143,6 +143,36 @@ cdef class MdisNacSensorModel:
         res = self.thisptr.imageToRemoteImagingLocus(i._ptr, precision)
         return res.point, res.direction
 
+    def compute_sensor_partials(self, index, x, y, z, line=None, sample=None, double precision=0.001):
+        g = EcefCoord(x, y, z)
+        if line != None and sample != None:
+            i = ImageCoord(line, sample)
+            partials = self.thisptr.computeSensorPartials(<int>index, <CppImageCoord>i._ptr, <CppEcefCoord>g._ptr, <double>precision)
+        else:
+            partials = self.thisptr.computeSensorPartials(<int>index, <CppEcefCoord>g._ptr, <double>precision)
+        return partials
+
+    def compute_all_sensor_partials(self, x, y, z, param=0, line=None, sample=None, double precision=0.001):
+        g = EcefCoord(x,y,z)
+        pset = Set(param)
+        if line != None and sample != None:
+            i = ImageCoord(line, sample)
+            partials = self.thisptr.computeAllSensorPartials(<CppImageCoord>i._ptr, <CppEcefCoord>g._ptr, <CppSet>pset, <double>precision)
+        else:
+            partials = self.thisptr.computeAllSensorPartials(<CppEcefCoord>g._ptr, pset, <double>precision)
+        return partials
+
+    def compute_ground_partials(self, x, y, z):
+        g = EcefCoord(x,y,z)
+        return self.thisptr.computeGroundPartials(g._ptr)
+
+    def get_parameter_type(self, index):
+        return Type(self.thisptr.getParameterType(index))
+
+    def set_parameter_type(self, int index, ptype):
+        ptype = Type(ptype)
+        self.thisptr.setParameterType(index, ptype);
+
     @property
     def imagesize(self):
         """
@@ -184,19 +214,47 @@ cdef class MdisNacSensorModel:
         return self.thisptr.getModelName().decode()
 
     @property
+    def sensortype(self):
+        return self.thisptr.getSensorType().decode()
+
+    @property
+    def sensormode(self):
+        return self.thisptr.getSensorMode().decode()
+
+    @property
     def imagerange(self):
-        raise NotImplementedError
-        #self.thisptr.getValidImageRange()
+        """
+        Get the start and stop pixel counts as a tuple in
+        the form: ((min_pt.line, min_pt.sample), (max_pt.line, max_pt.sample))
+        """
+        min_pt, max_pt = self.thisptr.getValidImageRange()
+        return (min_pt['line'], min_pt['samp']),\
+               (max_pt['line'], max_pt['samp'])
 
     @property
     def heightrange(self):
-        raise NotImplementedError
-        #return self.thisptr.getValidHeightRange()
+        return self.thisptr.getValidHeightRange()
+
+    @property
+    def version(self):
+        return Version(self.thisptr.getVersion().version())
 
     def sensor_time_position(self, time):
-        raise NotImplementedError
-        #res = self.thisptr.getSensorPosition(<double> time)
-        #return [res.x, res.y, res.z]
+        """
+        Compute the sensor position given an image time.
+
+        Parameters
+        ----------
+        time : numeric
+               The image time
+
+        Returns
+        -------
+         : list
+           The sensor position vector in ECEF coordinates (m).
+        """
+        res = self.thisptr.getSensorPosition(<double> time)
+        return [res.x, res.y, res.z]
 
     def sensor_coordinate_position(self, line, sample):
         """
@@ -219,7 +277,8 @@ cdef class MdisNacSensorModel:
         return [res.x, res.y, res.z]
 
     def sensor_time_velocity(self, time):
-        raise NotImplementedError
+        res = self.thisptr.getSensorVelocity(<double> time)
+        return [res.x, res.y, res.z]
 
     def sensor_coordinate_velocity(self, line, sample):
         i = ImageCoord(line, sample)
