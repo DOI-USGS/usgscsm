@@ -14,6 +14,7 @@ LIBRARY_DIRS = []  # This assumes that libcsmapi is installed in a standard plac
 LIBRARIES = ['csmapi']
 COMPILE_ARGS = ['-g', '-std=c++11']#, '-stdlib=libc++']
 
+print('KEY:', os.environ['CC'])
 
 def generate_extension(path_name, sources):
     return Extension(path_name,
