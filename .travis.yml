@@ -44,5 +44,4 @@ script:
 
 after_success:
   - coveralls
-  - conda install conda-build && conda install anaconda-client && conda config --set anaconda_upload yes &&
-  conda build --token $CONDA_UPLOAD_TOKEN .
+  - conda install conda-build && conda install anaconda-client && conda config --set anaconda_upload yes && conda build --token $CONDA_UPLOAD_TOKEN .
