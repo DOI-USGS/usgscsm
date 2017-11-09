@@ -1,11 +1,21 @@
-language: python
+language: generic
 
-python:
-  - "3.5"
-  - "3.6"
-os:
-  - linux
-  - osx
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.9
+      env:
+        - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+    - os: osx
+      osx_image: xcode9.1
+      sudo: false
+      compiler:
+        - clang
 
 branches:
   only:
