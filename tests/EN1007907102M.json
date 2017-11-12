@@ -10,8 +10,8 @@
     ],
     "ephemeris_time": 418855170.49264956,
     "focal_length": 549.2347965210602,
-    "focal_length_epsilon": 0.5,
     "ifov": 25.44,
+    "focal_length_epsilon": 0.5,
     "instrument_id": "MDIS-NAC",
     "itrans_line": [
         0.0,
@@ -26,7 +26,7 @@
     "kappa": -0.963008015000929,
     "min_elevation": -100,
     "max_elevation": 100,
-    "model_name": "ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so",
+    "model_name": "MDISNAC_USGSAstro_1_Linux64_csm30.so",
     "nlines": 1024,
     "nsamples": 1024,
     "odt_x": [

@@ -7,13 +7,14 @@
 #include <json/json.hpp>
 
 #include <csm/Error.h>
+#include <csm/Version.h>
 
 using json = nlohmann::json;
 using namespace std;
 
 // Declaration of static variables
 const std::string MdisNacSensorModel::_SENSOR_MODEL_NAME
-                                      = "ISIS_MDISNAC_USGSAstro_1_Linux64_csm30.so";
+                                      = "MDISNAC_USGSAstro_1_Linux64_csm30.so";
 const int MdisNacSensorModel::m_numParameters = 6;
 const std::string MdisNacSensorModel::m_parameterName[] = {
   "X Sensor Position (m)",  // 0

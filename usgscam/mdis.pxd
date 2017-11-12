@@ -8,7 +8,7 @@ from cycsm.isd cimport CppIsd
 from cycsm.csm cimport CppEcefCoord, CppImageCoord, CppImageVector, CppEcefVector, CppEcefLocus, CppSet, CppType
 from cycsm.model cimport CppModel
 from cycsm.version cimport CppVersion
-from cycsm.correlationmodel cimport CppNoCorrelationModel
+#from cycsm.correlationmodel cimport CppNoCorrelationModel
 from cycsm.rastergm cimport CppSensorPartials
 
 cdef extern from "MdisNacSensorModel.h":
@@ -61,7 +61,7 @@ cdef extern from "MdisNacSensorModel.h":
         string getModelName()
         string getSensorType()
         string getSensorMode()
-        CppNoCorrelationModel getCorrelationModel() # Not wrapped
+        #CppNoCorrelationModel getCorrelationModel() # Not wrapped
 
 
 cdef extern from "MdisPlugin.h":
@@ -78,7 +78,7 @@ cdef extern from "MdisPlugin.h":
         string getModelFamily(size_t modelIndex)
         bool canModelBeConstructedFromISD(CppIsd isd, const string modelname) except +
         bool canModelBeConstructedFromState(const string modelName, const string modelState) except +
-        bool canISDBeConvertedToModelState(CppIsd isd, const string modelName) except +
+        bool canISDBeConvertedToModelState(CppIsd isd, const string modelName) except *
         string convertISDToModelState(CppIsd isd, const string modelname) except +
         CppModel *constructModelFromISD(CppIsd &isd, string &modelname) except +
         CppModel *constructModelFromState(string modelState) except +

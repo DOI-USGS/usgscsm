@@ -6,7 +6,7 @@ from cython.operator cimport dereference as deref
 from cycsm.csm import EcefCoord, ImageCoord, Set, Type
 from cycsm.isd cimport Isd
 from cycsm.version import Version
-from cycsm.correlationmodel cimport NoCorrelationModel, CppNoCorrelationModel
+#from cycsm.correlationmodel cimport NoCorrelationModel, CppNoCorrelationModel
 
 cdef class MdisNacSensorModel:
     cdef:
@@ -235,9 +235,9 @@ cdef class MdisNacSensorModel:
     def heightrange(self):
         return self.thisptr.getValidHeightRange()
 
-    @property
-    def version(self):
-        return Version(self.thisptr.getVersion().version())
+    #@property
+    #def version(self):
+    #    return self.thisptr.getVersion().major#.version
 
     def sensor_time_position(self, time):
         """
@@ -326,9 +326,9 @@ cdef class MdisPlugin:
     def releasedate(self):
         return self.thisptr.getReleaseDate().decode()
 
-    @property
-    def csmversion(self):
-        return Version(self.thisptr.getCsmVersion().version())
+    #@property
+    #def csmversion(self):
+    #    return self.thisptr.getCsmVersion().major#.version
 
     @property
     def nmodels(self):
@@ -352,6 +352,7 @@ cdef class MdisPlugin:
         return self.thisptr.canModelBeConstructedFromState(name, state)
 
     def can_isd_be_converted_to_model_state(self, Isd isd, modelname):
+        print(modelname, type(isd))
         modelname = modelname.encode()
         return self.thisptr.canISDBeConvertedToModelState(isd.thisptr[0], modelname)
 

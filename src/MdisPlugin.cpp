@@ -8,6 +8,7 @@
 #include <csm/Error.h>
 #include <csm/Plugin.h>
 #include <csm/Warning.h>
+#include <csm/Version.h>
 
 #include <json/json.hpp>
 
@@ -23,14 +24,36 @@ const int         MdisPlugin::_N_SENSOR_MODELS = 1;
 const int         MdisPlugin::_NUM_ISD_KEYWORDS = 36;
 const std::string MdisPlugin::_ISD_KEYWORD[] =
 {
-    "model_name",
-    "starting_detector_sample",
-    "starting_detector_line",
-    "target_name",
-    "ifov",
-    "instrument_id",
+    "boresight",
+    "ccd_center",
+    "ephemeris_time",
     "focal_length",
     "focal_length_epsilon",
+    "ifov",
+    "instrument_id",
+    "itrans_line",
+    "itrans_sample",
+    "kappa",
+    "min_elevation",
+    "max_elevation",
+    "model_name",
+    "nlines",
+    "nsamples",
+    "odt_x",
+    "odt_y",
+    "omega",
+    "original_half_lines",
+    "original_half_samples",
+    "phi",
+    "pixel_pitch",
+    "semi_major_axis",
+    "semi_minor_axis",
+    "spacecraft_name",
+    "starting_detector_line",
+    "starting_detector_sample",
+    "target_name",
+    "transx",
+    "transy",
     "x_sensor_origin",
     "y_sensor_origin",
     "z_sensor_origin",
@@ -39,28 +62,9 @@ const std::string MdisPlugin::_ISD_KEYWORD[] =
     "z_sensor_velocity",
     "x_sun_position",
     "y_sun_position",
-    "z_sun_position",
-    "omega",
-    "phi",
-    "kappa",
-    "odt_x",
-    "odt_y",
-    "ccd_center",
-    "original_half_lines",
-    "original_half_samples",
-    "spacecraft_name",
-    "pixel_pitch",
-    "itrans_line",
-    "itrans_sample",
-    "ephemeris_time",
-    "boresight",
-    "nlines",
-    "nsamples",
-    "transx",
-    "transy",
-    "semi_major_axis",
-    "semi_minor_axis"
+    "z_sun_position"
 };
+
 const int         MdisPlugin::_NUM_STATE_KEYWORDS = 32;
 const std::string MdisPlugin::_STATE_KEYWORD[] =
 {
@@ -165,7 +169,6 @@ bool MdisPlugin::canModelBeConstructedFromState(const std::string &modelName,
       modelName != MdisNacSensorModel::_SENSOR_MODEL_NAME){
           constructible = false;
       }
-
   // Check that the necessary keys are there (this does not chek values at all.)
   auto state = json::parse(modelState);
   for(auto &key : _STATE_KEYWORD){
@@ -206,33 +209,36 @@ csm::Model *MdisPlugin::constructModelFromState(const std::string& modelState,
 
     auto state = json::parse(modelState);
 
+    mdsensor_model->m_ccdCenter[0] = state["m_ccdCenter"][0];
+    mdsensor_model->m_ccdCenter[1] = state["m_ccdCenter"][1];
+    mdsensor_model->m_ephemerisTime = state["m_ephemerisTime"];
     mdsensor_model->m_focalLength = state["m_focalLength"];
+    mdsensor_model->m_focalLengthEpsilon = state["m_focalLengthEpsilon"];
+    mdsensor_model->m_ifov = state["m_ifov"];
+    mdsensor_model->m_instrumentID = state["m_instrumentID"];
+
     mdsensor_model->m_majorAxis = state["m_majorAxis"];
     mdsensor_model->m_minorAxis = state["m_minorAxis"];
     mdsensor_model->m_startingDetectorLine = state["m_startingDetectorLine"];
     mdsensor_model->m_startingDetectorSample = state["m_startingDetectorSample"];
-    mdsensor_model->m_ifov = state["m_ifov"];
-    mdsensor_model->m_instrumentID = state["m_instrumentID"];
-    mdsensor_model->m_focalLengthEpsilon = state["m_focalLengthEpsilon"];
     mdsensor_model->m_line_pp = state["m_line_pp"];
     mdsensor_model->m_sample_pp = state["m_sample_pp"];
     mdsensor_model->m_originalHalfLines = state["m_originalHalfLines"];
     mdsensor_model->m_originalHalfSamples = state["m_originalHalfSamples"];
     mdsensor_model->m_spacecraftName = state["m_spacecraftName"];
     mdsensor_model->m_pixelPitch = state["m_pixelPitch"];
-    mdsensor_model->m_ephemerisTime = state["m_ephemerisTime"];
     mdsensor_model->m_nLines = state["m_nLines"];
     mdsensor_model->m_nSamples = state["m_nSamples"];
     mdsensor_model->m_minElevation = state["m_minElevation"];
     mdsensor_model->m_maxElevation = state["m_maxElevation"];
 
-    mdsensor_model->m_ccdCenter[0] = state["m_ccdCenter"][0];
-    mdsensor_model->m_ccdCenter[1] = state["m_ccdCenter"][1];
+
 
     for (int i=0;i<3;i++){
         mdsensor_model->m_boresight[i] = state["m_boresight"][i];
-        mdsensor_model->m_iTransS[i] = state["m_iTransS"][i];
         mdsensor_model->m_iTransL[i] = state["m_iTransL"][i];
+        mdsensor_model->m_iTransS[i] = state["m_iTransS"][i];
+
         mdsensor_model->m_transX[i] = state["m_transX"][i];
         mdsensor_model->m_transY[i] = state["m_transY"][i];
         mdsensor_model->m_spacecraftVelocity[i] = state["m_spacecraftVelocity"][i];
@@ -262,7 +268,6 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
                      "Sensor model support data provided is not supported by this plugin",
                      "MdisPlugin::constructModelFromISD");
   }
-
   MdisNacSensorModel *sensorModel = new MdisNacSensorModel();
 
   // Keep track of necessary keywords that are missing from the ISD.
