@@ -15,14 +15,14 @@ detect_binary_files_with_prefix: true
 
 requirements:
   build:
-    - python >=3.*
+    - python
     - setuptools
     - numpy >=1.10
     - cython >=0.23
     - libcsm >=3.0.1
     - cycsm
   run:
-    - python >=3.*
+    - python
     - numpy >=1.10
     - libcsm >=3.0.1
     - cycsm

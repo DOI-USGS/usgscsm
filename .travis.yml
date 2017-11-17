@@ -50,7 +50,7 @@ install:
 
 script:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-        CC=gcc-4.9 python setup.py install;
+        CC=gcc-6 CXX=gcc-6 python setup.py install;
     else
         python setup.py instal;
     fi
