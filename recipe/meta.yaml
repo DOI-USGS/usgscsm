@@ -7,9 +7,11 @@ package:
 source:
   git_url: https://github.com/USGS-Astrogeology/CSM-CameraModel
   git_rev: master
-  
+
 build:
   number: 0
+
+detect_binary_files_with_prefix: true
 
 requirements:
   build:

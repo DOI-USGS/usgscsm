@@ -8,7 +8,7 @@ from cycsm.isd cimport CppIsd
 from cycsm.csm cimport CppEcefCoord, CppImageCoord, CppImageVector, CppEcefVector, CppEcefLocus, CppSet, CppType
 from cycsm.model cimport CppModel
 from cycsm.version cimport CppVersion
-#from cycsm.correlationmodel cimport CppNoCorrelationModel
+from cycsm.correlationmodel cimport CppNoCorrelationModel
 from cycsm.rastergm cimport CppSensorPartials
 
 cdef extern from "MdisNacSensorModel.h":

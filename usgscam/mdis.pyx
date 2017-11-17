@@ -334,7 +334,7 @@ cdef class MdisPlugin:
     def nmodels(self):
         return self.thisptr.getNumModels()
 
-
+    
     def modelfamily(self, modelindex):
         return self.thisptr.getModelFamily(modelindex).decode()
 

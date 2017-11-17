@@ -5,13 +5,15 @@ import sysconfig
 from setuptools import setup, Extension, find_packages
 from Cython.Build import cythonize
 
+import cycsm
+
 # Look for the csmapi headers in the standard location
 incdir = os.path.dirname(sysconfig.get_path('include'))
 
 INCLUDE_DIRS = ['include/json', 'include/mdis', 'include/orex',
                 'include/', incdir, os.path.join(incdir, 'csm')]
 LIBRARY_DIRS = []  # This assumes that libcsmapi is installed in a standard place
-LIBRARIES = ['csmapi']
+LIBRARIES = [csmapi]
 COMPILE_ARGS = ['-g', '-std=c++11']#, '-stdlib=libc++']
 
 def generate_extension(path_name, sources):
@@ -21,7 +23,6 @@ def generate_extension(path_name, sources):
                 language='c++',
                 include_dirs=INCLUDE_DIRS,
                 runtime_library_dirs=LIBRARY_DIRS,
-                library_dirs=LIBRARY_DIRS,
                 libraries=LIBRARIES)
 
 if sys.platform == 'darwin':
