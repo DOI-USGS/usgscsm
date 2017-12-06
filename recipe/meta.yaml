@@ -9,7 +9,7 @@ source:
   git_rev: master
 
 build:
-  number: 1
+  number: 2
 
 detect_binary_files_with_prefix: true
 
@@ -18,14 +18,16 @@ requirements:
     - python
     - setuptools
     - numpy >=1.10
-    - cython >=0.23
+    - cython >=0.27
     - libcsm
     - cycsm
+    - vc 14  # [win and py>=35]
   run:
     - python
     - numpy >=1.10
     - libcsm
     - cycsm
+    - vc 14  # [win and py>=35]
 
 test:
   requires:
