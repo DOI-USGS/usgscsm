@@ -5,8 +5,6 @@ import sysconfig
 from setuptools import setup, Extension, find_packages
 from Cython.Build import cythonize
 
-import cycsm
-
 # Look for the csmapi headers in the standard location
 incdir = os.path.dirname(sysconfig.get_path('include'))
 
@@ -20,9 +18,9 @@ if sys.platform == 'darwin':
     COMPILE_ARGS.append('-mmacosx-version-min=10.9')
 elif sys.platform.startswith("win"):
     try:
-        INCLUDE_DIRS.append(os.environ['LIBRARY_INC'])
         INCLUDE_DIRS.append(os.path.join(os.environ['LIBRARY_INC'], 'csm'))
     except: pass
+    COMPILE_ARGS = []
 
 def generate_extension(path_name, sources):
     return Extension(path_name,
