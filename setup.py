@@ -16,6 +16,14 @@ LIBRARY_DIRS = []  # This assumes that libcsmapi is installed in a standard plac
 LIBRARIES = ['csmapi']
 COMPILE_ARGS = ['-g', '-std=c++11']#, '-stdlib=libc++']
 
+if sys.platform == 'darwin':
+    COMPILE_ARGS.append('-mmacosx-version-min=10.9')
+elif sys.platform.startswith("win"):
+    try:
+        INCLUDE_DIRS.append(os.environ['LIBRARY_INC'])
+        INCLUDE_DIRS.append(os.path.join(os.environ['LIBRARY_INC'], 'csm'))
+    except: pass
+
 def generate_extension(path_name, sources):
     return Extension(path_name,
                 sources=sources,
@@ -24,9 +32,6 @@ def generate_extension(path_name, sources):
                 include_dirs=INCLUDE_DIRS,
                 runtime_library_dirs=LIBRARY_DIRS,
                 libraries=LIBRARIES)
-
-if sys.platform == 'darwin':
-    COMPILE_ARGS.append('-mmacosx-version-min=10.9')
 
 # Create the extensions
 extensions = [generate_extension('usgscam.mdis', ['usgscam/mdis.pyx',
