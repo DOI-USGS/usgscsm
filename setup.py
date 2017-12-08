@@ -19,7 +19,7 @@ if sys.platform == 'darwin':
 elif sys.platform.startswith("win"):
     try:
         INCLUDE_DIRS.append(os.path.join(os.environ['LIBRARY_INC'], 'csm'))
-        WLIBRARY_DIRS = [os.path.join(os.environ['LIBRARY_LIB']]
+        WLIBRARY_DIRS = [os.path.join(os.environ['LIBRARY_LIB'])]
     except: pass
     COMPILE_ARGS = []
 
