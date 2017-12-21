@@ -174,6 +174,7 @@ bool MdisPlugin::canModelBeConstructedFromState(const std::string &modelName,
   for(auto &key : _STATE_KEYWORD){
       if (state.find(key) == state.end()){
           constructible = false;
+          break;
       }
   }
   return constructible;
@@ -201,8 +202,12 @@ csm::Model *MdisPlugin::constructModelFromState(const std::string& modelState,
         throw csm::Error(aErrorType, aMessage, aFunction);
     }
 
-    // Check that all of the necessary keys are included
-    canModelBeConstructedFromState(model_name_from_state, modelState);
+    if (!canModelBeConstructedFromState(model_name_from_state, modelState)){
+        csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
+        std::string aMessage = "Model state is not valid.";
+        std::string aFunction = "MdisPlugin::constructModelFromState()";
+        throw csm::Error(aErrorType, aMessage, aFunction);
+    }
 
     // Create the model from the state
     MdisNacSensorModel* mdsensor_model = new MdisNacSensorModel();
@@ -231,8 +236,6 @@ csm::Model *MdisPlugin::constructModelFromState(const std::string& modelState,
     mdsensor_model->m_nSamples = state["m_nSamples"];
     mdsensor_model->m_minElevation = state["m_minElevation"];
     mdsensor_model->m_maxElevation = state["m_maxElevation"];
-
-
 
     for (int i=0;i<3;i++){
         mdsensor_model->m_boresight[i] = state["m_boresight"][i];

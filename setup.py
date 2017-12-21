@@ -9,6 +9,7 @@ from Cython.Build import cythonize
 incdir = os.path.dirname(sysconfig.get_path('include'))
 
 INCLUDE_DIRS = ['include/json', 'include/mdis', 'include/orex',
+                'include/genericls',
                 'include/', incdir, os.path.join(incdir, 'csm')]
 LIBRARY_DIRS = []  # This assumes that libcsmapi is installed in a standard place
 LIBRARIES = ['csmapi']
@@ -37,7 +38,12 @@ extensions = [generate_extension('usgscam.mdis', ['usgscam/mdis.pyx',
                                                   'src/MdisSensorModel.cpp']),
               generate_extension('usgscam.orex', ['usgscam/orex.pyx',
                                                   'src/ORexPlugin.cpp',
-                                                  'src/ORexSensorModel.cpp'])]
+                                                  'src/ORexSensorModel.cpp']),
+              generate_extension('usgscam.genericls', ['usgscam/genericls.pyx',
+                                                       'src/UsgsAstroLsISD.cpp',
+                                                       'src/UsgsAstroLsPlugin.cpp',
+                                                       'src/UsgsAstroLsSensorModel.cpp',
+                                                       'src/UsgsAstroLsStateData.cpp'])]
 
 setup(
     name='usgscam',
