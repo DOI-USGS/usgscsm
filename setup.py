@@ -20,7 +20,6 @@ if sys.platform == 'darwin':
 elif sys.platform.startswith("win"):
     try:
         INCLUDE_DIRS.append(os.path.join(os.environ['LIBRARY_INC'], 'csm'))
-        WLIBRARY_DIRS = [os.path.join(os.environ['LIBRARY_LIB'])]
     except: pass
     COMPILE_ARGS = []
 
@@ -31,7 +30,6 @@ def generate_extension(path_name, sources):
                 language='c++',
                 include_dirs=INCLUDE_DIRS,
                 runtime_library_dirs=LIBRARY_DIRS,
-                library_dirs=WLIBRARY_DIRS
                 libraries=LIBRARIES)
 
 # Create the extensions
