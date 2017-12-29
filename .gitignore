@@ -12,7 +12,6 @@ bin/*
 # Ignore any Max stuff
 .DS_Store
 
-*.cpp
 *.cpython*
 __pycache__
 __pycache__/*
