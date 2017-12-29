@@ -40,7 +40,6 @@ extensions = [generate_extension('usgscam.mdis', ['usgscam/mdis.pyx',
                                                   'src/ORexPlugin.cpp',
                                                   'src/ORexSensorModel.cpp']),
               generate_extension('usgscam.genericls', ['usgscam/genericls.pyx',
-                                                       'src/UsgsAstroLsISD.cpp',
                                                        'src/UsgsAstroLsPlugin.cpp',
                                                        'src/UsgsAstroLsSensorModel.cpp',
                                                        'src/UsgsAstroLsStateData.cpp'])]
