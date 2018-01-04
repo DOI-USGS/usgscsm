@@ -9,6 +9,7 @@ from Cython.Build import cythonize
 incdir = os.path.dirname(sysconfig.get_path('include'))
 
 INCLUDE_DIRS = ['include/json', 'include/mdis', 'include/orex',
+                'include/genericls',
                 'include/', incdir, os.path.join(incdir, 'csm')]
 LIBRARY_DIRS = []  # This assumes that libcsmapi is installed in a standard place
 LIBRARIES = ['csmapi']
@@ -19,7 +20,6 @@ if sys.platform == 'darwin':
 elif sys.platform.startswith("win"):
     try:
         INCLUDE_DIRS.append(os.path.join(os.environ['LIBRARY_INC'], 'csm'))
-        WLIBRARY_DIRS = [os.path.join(os.environ['LIBRARY_LIB'])]
     except: pass
     COMPILE_ARGS = []
 
@@ -30,7 +30,6 @@ def generate_extension(path_name, sources):
                 language='c++',
                 include_dirs=INCLUDE_DIRS,
                 runtime_library_dirs=LIBRARY_DIRS,
-                library_dirs=WLIBRARY_DIRS
                 libraries=LIBRARIES)
 
 # Create the extensions
@@ -39,7 +38,11 @@ extensions = [generate_extension('usgscam.mdis', ['usgscam/mdis.pyx',
                                                   'src/MdisSensorModel.cpp']),
               generate_extension('usgscam.orex', ['usgscam/orex.pyx',
                                                   'src/ORexPlugin.cpp',
-                                                  'src/ORexSensorModel.cpp'])]
+                                                  'src/ORexSensorModel.cpp']),
+              generate_extension('usgscam.genericls', ['usgscam/genericls.pyx',
+                                                       'src/UsgsAstroLsPlugin.cpp',
+                                                       'src/UsgsAstroLsSensorModel.cpp',
+                                                       'src/UsgsAstroLsStateData.cpp'])]
 
 setup(
     name='usgscam',
