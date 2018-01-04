@@ -58,6 +58,7 @@ before_install:
   # Create the env
   - conda create -q -n test python=$PYTHON_VERSION
   - source activate test
+  - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)"
 
 install:
   # Install dependencies
