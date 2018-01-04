@@ -21,7 +21,7 @@ cdef extern from "UsgsAstroLsSensorModel.h":
         CppImageVector getImageSize()
 
         string getModelState()
-        CppEcefVector getIlluminationDirection(CppEcefCoord &groundPoint)
+        CppEcefVector getIlluminationDirection(CppEcefCoord &groundPoint) except +
         CppEcefCoord getSensorPosition(CppImageCoord &imagePt)
         CppEcefVector getSensorVelocity(CppImageCoord &imagePt)
         CppEcefLocus imageToProximateImagingLocus(CppImageCoord &imagePt,

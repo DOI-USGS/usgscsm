@@ -163,7 +163,7 @@ void UsgsAstroLsSensorModel::updateState()
    zo /= omag;
    double triple_product = xn*xo + yn*yo + zn*zo;
    _data.m_ImageFlipFlag = 0;
-   if (triple_product < 0.0)
+   if (triple_product > 0.0)
       _data.m_ImageFlipFlag = 1;
 }
 
@@ -880,7 +880,6 @@ double UsgsAstroLsSensorModel::getImageTime(
    double lineUSGSFull = lineCSMFull + 0.5;
 
    // USGS timing reference leftmost-side 1st full row
-
    double timeUsgs = _data.m_IntTime * (lineUSGSFull - 0.5)
       + _data.m_StartingEphemerisTime;
 
@@ -1562,7 +1561,7 @@ void UsgsAstroLsSensorModel::lagrangeInterp(
 
    double fndex = (time - startTime) / delTime;
    int    index = int(fndex);
-  
+
    //Time outside range
    //printf("%f | %i\n", fndex, index);
    //if (index < 0 || index >= numTime - 1) {
@@ -1653,14 +1652,14 @@ void UsgsAstroLsSensorModel::lagrangeInterp(
       d[6] = -tp3 * tp2 * tp1 * tau * tm1 * tm2 *       tm4 / 720.0;
       d[7] = tp3 * tp2 * tp1 * tau * tm1 * tm2 * tm3 / 5040.0;
    }
-   
+
    // Compute interpolated point
    int    indx0 = index - order / 2 + 1;
    for (int i = 0; i < vectorLength; i++)
    {
       valueVector[i] = 0.0;
    }
-   
+
    for (int i = 0; i < order; i++)
    {
       int jndex = vectorLength * (indx0 + i);

@@ -304,6 +304,7 @@ bool UsgsAstroLsPlugin::canModelBeConstructedFromISD(
    for(auto &key : mISD_KEYWORDS){
        value = image_support_data.param(key);
        if (value.empty()){
+           std::cout<<key<<"\n"<<std::endl;
            constructible = false;
        }
    }
@@ -392,7 +393,7 @@ std::string UsgsAstroLsPlugin::convertISDToModelState(
    if (!canModelBeConstructedFromISD(image_support_data, model_name)){
        throw csm::Error(csm::Error::ISD_NOT_SUPPORTED,
                         "Sensor model support data provided is not supported by this plugin",
-                        "MdisPlugin::constructModelFromISD");
+                        "GenericLsPlugin::constructModelFromISD");
    }
 
    // Instantiate UsgsAstroLineScanner sensor model
