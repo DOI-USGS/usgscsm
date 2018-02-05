@@ -10,7 +10,7 @@ from cycsm.isd cimport Isd
 from cycsm.version import Version
 
 
-cdef class GenericLsSensorModel:
+cdef class SensorModel:
     cdef:
         CppGenericLsSensorModel *thisptr
 
@@ -25,8 +25,8 @@ cdef class GenericLsSensorModel:
 
     @staticmethod
     cdef factory(CppGenericLsSensorModel *obj):
-        py_obj = result = GenericLsSensorModel.__new__(GenericLsSensorModel, _raw=True)
-        (<GenericLsSensorModel>py_obj).thisptr = obj
+        py_obj = result = SensorModel.__new__(SensorModel, _raw=True)
+        (<SensorModel>py_obj).thisptr = obj
         return result
 
     def imageToGround(self, line, sample, double height, double precision=0.001):
@@ -315,7 +315,7 @@ cdef class GenericLsSensorModel:
         return [res.x, res.y, res.z]
 
 
-cdef class GenericLsPlugin:
+cdef class Plugin:
     cdef:
         CppGenericLsPlugin *thisptr
 
@@ -375,9 +375,9 @@ cdef class GenericLsPlugin:
 
     def from_isd(self, Isd isd, modelname):
         modelname = str(modelname).encode()
-        return GenericLsSensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromISD(isd.thisptr[0], modelname)))
+        return SensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromISD(isd.thisptr[0], modelname)))
 
     def from_state(self, state):
         state = state.encode()
         #self.thisptr.constructModelFromState(state)
-        return GenericLsSensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromState(state)))
+        return SensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromState(state)))

@@ -1,5 +1,5 @@
-#include "MdisPlugin.h"
-#include "MdisNacSensorModel.h"
+#include "UsgsAstroFramePlugin.h"
+#include "UsgsAstroFrameSensorModel.h"
 
 #include <cstdlib>
 #include <string>
@@ -16,13 +16,13 @@
 using json = nlohmann::json;
 
 // Declaration of static variables
-const std::string MdisPlugin::_PLUGIN_NAME = "UsgsAstroFrameMdisPluginCSM";
-const std::string MdisPlugin::_MANUFACTURER_NAME = "UsgsAstrogeology";
-const std::string MdisPlugin::_RELEASE_DATE = "20170425";
-const int         MdisPlugin::_N_SENSOR_MODELS = 1;
+const std::string UsgsAstroFramePlugin::_PLUGIN_NAME = "UsgsAstroFramePluginCSM";
+const std::string UsgsAstroFramePlugin::_MANUFACTURER_NAME = "UsgsAstrogeology";
+const std::string UsgsAstroFramePlugin::_RELEASE_DATE = "20170425";
+const int         UsgsAstroFramePlugin::_N_SENSOR_MODELS = 1;
 
-const int         MdisPlugin::_NUM_ISD_KEYWORDS = 36;
-const std::string MdisPlugin::_ISD_KEYWORD[] =
+const int         UsgsAstroFramePlugin::_NUM_ISD_KEYWORDS = 36;
+const std::string UsgsAstroFramePlugin::_ISD_KEYWORD[] =
 {
     "boresight",
     "ccd_center",
@@ -65,8 +65,8 @@ const std::string MdisPlugin::_ISD_KEYWORD[] =
     "z_sun_position"
 };
 
-const int         MdisPlugin::_NUM_STATE_KEYWORDS = 32;
-const std::string MdisPlugin::_STATE_KEYWORD[] =
+const int         UsgsAstroFramePlugin::_NUM_STATE_KEYWORDS = 32;
+const std::string UsgsAstroFramePlugin::_STATE_KEYWORD[] =
 {
     "m_focalLength",
     "m_iTransS",
@@ -104,58 +104,58 @@ const std::string MdisPlugin::_STATE_KEYWORD[] =
 
 
 // Static Instance of itself
-const MdisPlugin MdisPlugin::m_registeredPlugin;
+const UsgsAstroFramePlugin UsgsAstroFramePlugin::m_registeredPlugin;
 
-MdisPlugin::MdisPlugin() {
+UsgsAstroFramePlugin::UsgsAstroFramePlugin() {
 }
 
 
-MdisPlugin::~MdisPlugin() {
+UsgsAstroFramePlugin::~UsgsAstroFramePlugin() {
 }
 
 
-std::string MdisPlugin::getPluginName() const {
+std::string UsgsAstroFramePlugin::getPluginName() const {
   return _PLUGIN_NAME;
 }
 
 
-std::string MdisPlugin::getManufacturer() const {
+std::string UsgsAstroFramePlugin::getManufacturer() const {
   return _MANUFACTURER_NAME;
 }
 
 
-std::string MdisPlugin::getReleaseDate() const {
+std::string UsgsAstroFramePlugin::getReleaseDate() const {
   return _RELEASE_DATE;
 }
 
 
-csm::Version MdisPlugin::getCsmVersion() const {
+csm::Version UsgsAstroFramePlugin::getCsmVersion() const {
   return CURRENT_CSM_VERSION;
 }
 
 
-size_t MdisPlugin::getNumModels() const {
+size_t UsgsAstroFramePlugin::getNumModels() const {
   return _N_SENSOR_MODELS;
 }
 
 
-std::string MdisPlugin::getModelName(size_t modelIndex) const {
+std::string UsgsAstroFramePlugin::getModelName(size_t modelIndex) const {
 
-  return MdisNacSensorModel::_SENSOR_MODEL_NAME;
+  return UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME;
 }
 
 
-std::string MdisPlugin::getModelFamily(size_t modelIndex) const {
+std::string UsgsAstroFramePlugin::getModelFamily(size_t modelIndex) const {
   return CSM_RASTER_FAMILY;
 }
 
 
-csm::Version MdisPlugin::getModelVersion(const std::string &modelName) const {
+csm::Version UsgsAstroFramePlugin::getModelVersion(const std::string &modelName) const {
   return csm::Version(1, 0, 0);
 }
 
 
-bool MdisPlugin::canModelBeConstructedFromState(const std::string &modelName,
+bool UsgsAstroFramePlugin::canModelBeConstructedFromState(const std::string &modelName,
                                                 const std::string &modelState,
                                                 csm::WarningList *warnings) const {
   bool constructible = true;
@@ -166,7 +166,7 @@ bool MdisPlugin::canModelBeConstructedFromState(const std::string &modelName,
 
   // Check that the plugin supports the model
   if (modelName != model_name_from_state ||
-      modelName != MdisNacSensorModel::_SENSOR_MODEL_NAME){
+      modelName != UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME){
           constructible = false;
       }
   // Check that the necessary keys are there (this does not chek values at all.)
@@ -181,36 +181,36 @@ bool MdisPlugin::canModelBeConstructedFromState(const std::string &modelName,
 }
 
 
-bool MdisPlugin::canModelBeConstructedFromISD(const csm::Isd &imageSupportData,
+bool UsgsAstroFramePlugin::canModelBeConstructedFromISD(const csm::Isd &imageSupportData,
                                               const std::string &modelName,
                                               csm::WarningList *warnings) const {
   return canISDBeConvertedToModelState(imageSupportData, modelName, warnings);
 }
 
 
-csm::Model *MdisPlugin::constructModelFromState(const std::string& modelState,
+csm::Model *UsgsAstroFramePlugin::constructModelFromState(const std::string& modelState,
                                                 csm::WarningList *warnings) const {
     csm::Model *sensor_model = 0;
 
     // Get the sensor model name from the sensor model state
     std::string model_name_from_state = getModelNameFromModelState(modelState);
 
-    if (model_name_from_state != MdisNacSensorModel::_SENSOR_MODEL_NAME){
+    if (model_name_from_state != UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME){
         csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
         std::string aMessage = "Model name from state is not recognized.";
-        std::string aFunction = "MdisPlugin::constructModelFromState()";
+        std::string aFunction = "UsgsAstroFramePlugin::constructModelFromState()";
         throw csm::Error(aErrorType, aMessage, aFunction);
     }
 
     if (!canModelBeConstructedFromState(model_name_from_state, modelState)){
         csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
         std::string aMessage = "Model state is not valid.";
-        std::string aFunction = "MdisPlugin::constructModelFromState()";
+        std::string aFunction = "UsgsAstroFramePlugin::constructModelFromState()";
         throw csm::Error(aErrorType, aMessage, aFunction);
     }
 
     // Create the model from the state
-    MdisNacSensorModel* mdsensor_model = new MdisNacSensorModel();
+    UsgsAstroFrameSensorModel* mdsensor_model = new UsgsAstroFrameSensorModel();
 
     auto state = json::parse(modelState);
 
@@ -261,7 +261,7 @@ return sensor_model;
 }
 
 
-csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
+csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSupportData,
                                               const std::string &modelName,
                                               csm::WarningList *warnings) const {
 
@@ -269,9 +269,9 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
   if (!canModelBeConstructedFromISD(imageSupportData, modelName)) {
     throw csm::Error(csm::Error::ISD_NOT_SUPPORTED,
                      "Sensor model support data provided is not supported by this plugin",
-                     "MdisPlugin::constructModelFromISD");
+                     "UsgsAstroFramePlugin::constructModelFromISD");
   }
-  MdisNacSensorModel *sensorModel = new MdisNacSensorModel();
+  UsgsAstroFrameSensorModel *sensorModel = new UsgsAstroFrameSensorModel();
 
   // Keep track of necessary keywords that are missing from the ISD.
   std::vector<std::string> missingKeywords;
@@ -482,14 +482,14 @@ csm::Model *MdisPlugin::constructModelFromISD(const csm::Isd &imageSupportData,
 
     throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
                      errorMessage,
-                     "MdisPlugin::constructModelFromISD");
+                     "UsgsAstroFramePlugin::constructModelFromISD");
   }
 
   return sensorModel;
 }
 
 
-std::string MdisPlugin::getModelNameFromModelState(const std::string &modelState,
+std::string UsgsAstroFramePlugin::getModelNameFromModelState(const std::string &modelState,
                                                    csm::WarningList *warnings) const {
   std::string name;
   auto state = json::parse(modelState);
@@ -499,29 +499,29 @@ std::string MdisPlugin::getModelNameFromModelState(const std::string &modelState
   else{
       csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
       std::string aMessage = "No 'model_name' key in the model state object.";
-      std::string aFunction = "MdisPlugin::getModelNameFromModelState";
+      std::string aFunction = "UsgsAstroFramePlugin::getModelNameFromModelState";
       csm::Error csmErr(aErrorType, aMessage, aFunction);
       throw(csmErr);
   }
 
-  if (name != MdisNacSensorModel::_SENSOR_MODEL_NAME){
+  if (name != UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME){
       csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
       std::string aMessage = "Sensor model not supported.";
-      std::string aFunction = "MdisPlugin::getModelNameFromModelState()";
+      std::string aFunction = "UsgsAstroFramePlugin::getModelNameFromModelState()";
       csm::Error csmErr(aErrorType, aMessage, aFunction);
       throw(csmErr);
   }
 
 
-  return MdisNacSensorModel::_SENSOR_MODEL_NAME;
+  return UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME;
 }
 
 
-bool MdisPlugin::canISDBeConvertedToModelState(const csm::Isd &imageSupportData,
+bool UsgsAstroFramePlugin::canISDBeConvertedToModelState(const csm::Isd &imageSupportData,
                                                const std::string &modelName,
                                                csm::WarningList *warnings) const {
   bool convertible = true;
-  if (modelName !=MdisNacSensorModel::_SENSOR_MODEL_NAME){
+  if (modelName !=UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME){
       convertible = false;
   }
 
@@ -536,7 +536,7 @@ bool MdisPlugin::canISDBeConvertedToModelState(const csm::Isd &imageSupportData,
 }
 
 
-std::string MdisPlugin::convertISDToModelState(const csm::Isd &imageSupportData,
+std::string UsgsAstroFramePlugin::convertISDToModelState(const csm::Isd &imageSupportData,
                                                const std::string &modelName,
                                                csm::WarningList *warnings) const {
   csm::Model* sensor_model = constructModelFromISD(
@@ -545,7 +545,7 @@ std::string MdisPlugin::convertISDToModelState(const csm::Isd &imageSupportData,
   if (sensor_model == 0){
       csm::Error::ErrorType aErrorType = csm::Error::ISD_NOT_SUPPORTED;
       std::string aMessage = "ISD not supported: ";
-      std::string aFunction = "MdisPlugin::convertISDToModelState()";
+      std::string aFunction = "UsgsAstroFramePlugin::convertISDToModelState()";
       throw csm::Error(aErrorType, aMessage, aFunction);
   }
   return sensor_model->getModelState();

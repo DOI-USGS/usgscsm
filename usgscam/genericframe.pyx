@@ -8,7 +8,7 @@ from cycsm.isd cimport Isd
 from cycsm.version import Version
 #from cycsm.correlationmodel cimport NoCorrelationModel, CppNoCorrelationModel
 
-cdef class FrameSensorModel:
+cdef class SensorModel:
     cdef:
         CppFrameSensorModel *thisptr
 
@@ -23,8 +23,8 @@ cdef class FrameSensorModel:
 
     @staticmethod
     cdef factory(CppFrameSensorModel *obj):
-        py_obj = result = FrameSensorModel.__new__(FrameSensorModel, _raw=True)
-        (<FrameSensorModel>py_obj).thisptr = obj
+        py_obj = result = SensorModel.__new__(SensorModel, _raw=True)
+        (<SensorModel>py_obj).thisptr = obj
         return result
 
     def imageToGround(self, line, sample, double height, double precision=0.001):
@@ -304,12 +304,12 @@ cdef class FrameSensorModel:
         res = self.thisptr.getIlluminationDirection(pt._ptr)
         return [res.x, res.y, res.z]
 
-cdef class MdisPlugin:
+cdef class Plugin:
     cdef:
-        CppMdisPlugin *thisptr
+        CppUsgsAstroFramePlugin *thisptr
 
     def __cinit__(self):
-        self.thisptr = new CppMdisPlugin()
+        self.thisptr = new CppUsgsAstroFramePlugin()
 
     def __dealloc__(self):
         del self.thisptr
@@ -366,9 +366,9 @@ cdef class MdisPlugin:
 
     def from_isd(self, Isd isd, modelname):
         modelname = str(modelname).encode()
-        return FrameSensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromISD(isd.thisptr[0], modelname)))
+        return SensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromISD(isd.thisptr[0], modelname)))
 
     def from_state(self, state):
         state = state.encode()
         #self.thisptr.constructModelFromState(state)
-        return FrameSensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromState(state)))
+        return SensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromState(state)))

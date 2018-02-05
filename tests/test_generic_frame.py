@@ -14,7 +14,7 @@ class TestCassiniNAC:
         path = os.path.join(data_path,'cassini_nac.json')
         with open(path, 'r') as f:
             csm_isd = isd.Isd.load(f)
-        plugin = cam.mdis.MdisPlugin()
+        plugin = cam.genericframe.Plugin()
         return plugin.from_isd(csm_isd, plugin.modelname(1))
 
     @pytest.mark.parametrize('image, ground',[
@@ -52,7 +52,7 @@ class TestMdisWac:
         for k, v in d.items():
             csm_isd.addparam(k, v)
 
-        plugin = cam.mdis.MdisPlugin()
+        plugin = cam.genericframe.Plugin()
         return plugin.from_isd(csm_isd, plugin.modelname(1))
 
     @pytest.mark.parametrize('image, ground',[
@@ -83,7 +83,7 @@ class TestMdisNac:
 
     @pytest.fixture
     def model(self):
-        return cam.mdis.MdisPlugin()
+        return cam.genericframe.Plugin()
 
     @pytest.fixture
     def model(self):
@@ -93,7 +93,7 @@ class TestMdisNac:
         for k, v in d.items():
             csm_isd.addparam(k, v)
 
-        plugin = cam.mdis.MdisPlugin()
+        plugin = cam.genericframe.Plugin()
         return plugin.from_isd(csm_isd, plugin.modelname(1))
 
     @pytest.mark.parametrize('image, ground',[

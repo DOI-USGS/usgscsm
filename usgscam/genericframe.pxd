@@ -11,9 +11,9 @@ from cycsm.version cimport CppVersion
 from cycsm.correlationmodel cimport CppNoCorrelationModel
 from cycsm.rastergm cimport CppSensorPartials
 
-cdef extern from "MdisNacSensorModel.h":
-    cdef cppclass CppFrameSensorModel "MdisNacSensorModel":
-        CppMdisNacSensorModel() except +
+cdef extern from "UsgsAstroFrameSensorModel.h":
+    cdef cppclass CppFrameSensorModel "UsgsAstroFrameSensorModel":
+        CppUsgsAstroFrameNacSensorModel() except +
         CppEcefCoord imageToGround(CppImageCoord imagePt, double height, double precision) except +
         CppImageCoord groundToImage(CppEcefCoord groundPt, double desiredPrecision) except +
         CppImageCoord getImageStart()
@@ -64,9 +64,9 @@ cdef extern from "MdisNacSensorModel.h":
         #CppNoCorrelationModel getCorrelationModel() # Not wrapped
 
 
-cdef extern from "MdisPlugin.h":
-    cdef cppclass CppMdisPlugin "MdisPlugin":
-        CppMdisPlugin() except +
+cdef extern from "UsgsAstroFramePlugin.h":
+    cdef cppclass CppUsgsAstroFramePlugin "UsgsAstroFramePlugin":
+        CppUsgsAstroFramePlugin() except +
 
         string getPluginName()
         string getManufacturer()
@@ -85,4 +85,4 @@ cdef extern from "MdisPlugin.h":
 
 #  For casting from the CSM Model into our specific camera model - I hope.
 cdef extern from *:
-    CppFrameSensorModel* dynamic_cast_model_ptr "dynamic_cast<MdisNacSensorModel*>"(CppModel*) except NULL
+    CppFrameSensorModel* dynamic_cast_model_ptr "dynamic_cast<UsgsAstroFrameSensorModel*>"(CppModel*) except NULL
