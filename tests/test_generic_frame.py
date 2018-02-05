@@ -8,11 +8,42 @@ import usgscam as cam
 
 data_path = os.path.dirname(__file__)
 
-class TestMdisWac:
+class TestCassiniNAC:
     @pytest.fixture
-    def model(self):
-        return cam.mdis.MdisPlugin()
+    def cassini_model(self):
+        path = os.path.join(data_path,'cassini_nac.json')
+        with open(path, 'r') as f:
+            csm_isd = isd.Isd.load(f)
+        plugin = cam.mdis.MdisPlugin()
+        return plugin.from_isd(csm_isd, plugin.modelname(1))
 
+    @pytest.mark.parametrize('image, ground',[
+                              ((512, 512, 0), (232745.39404384792, 108032.64063985727, 1416.4229696467519)),
+                              ((1024, 1024, 0), (208934.79595478065, 147272.0343555567, 21924.160632191226)),
+                              ((0, 0, 0), (247048.74337707553, 68020.01669191488, -13280.94752286654))
+    ])
+    def test_image_to_ground(self, cassini_model, image, ground):
+        gx, gy, gz = ground
+        x, y, z = cassini_model.imageToGround(*image)
+
+        assert x == pytest.approx(gx, rel=1)
+        assert y == pytest.approx(gy, rel=1)
+        assert z == pytest.approx(gz, rel=1)
+
+    @pytest.mark.parametrize('image, ground',[
+                              ((512, 512, 0), (232745.39404384792, 108032.64063985727, 1416.4229696467519)),
+                              ((1024, 1024, 0), (208934.79595478065, 147272.0343555567, 21924.160632191226)),
+                              ((0, 0, 0), (247048.74337707553, 68020.01669191488, -13280.94752286654))
+    ])
+    def test_ground_to_image(self, cassini_model, image, ground):
+        y, x = cassini_model.groundToImage(*ground)
+        ix, iy, _ = image
+        assert ix == pytest.approx(x, rel=11)
+        assert iy == pytest.approx(y, rel=11)
+
+
+
+class TestMdisWac:
     @pytest.fixture
     def model(self):
         csm_isd = isd.Isd()
@@ -155,7 +186,7 @@ class TestMdisNac:
     #    assert model.version.version.decode() == "0.1.0"
 
     def test_modelname(self, model):
-        assert model.name == "MDISNAC_USGSAstro_1_Linux64_csm30.so"
+        assert model.name == "USGS_ASTRO_FRAME_SENSOR_MODEL"
 
     def test_sensortype(self, model):
         assert model.sensortype == "EO"

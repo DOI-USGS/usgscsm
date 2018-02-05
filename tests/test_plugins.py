@@ -60,7 +60,7 @@ def test_plugin_name(plugin, expected):
 
 
 @pytest.mark.parametrize('plugin, expected',
-                         [(mdis_plugin(), "MDISNAC_USGSAstro_1_Linux64_csm30.so"),
+                         [(mdis_plugin(), "USGS_ASTRO_FRAME_SENSOR_MODEL"),
                           (genericls_plugin(), "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL")])
 def test_modelname(plugin, expected):
     assert plugin.modelname(1) == expected
@@ -73,7 +73,7 @@ def test_modelfamily(plugin, expected):
 
 
 @pytest.mark.parametrize('plugin, state',
-                         [(mdis_plugin(), {'model_name':'MDISNAC_USGSAstro_1_Linux64_csm30.so'}),
+                         [(mdis_plugin(), {'model_name':'USGS_ASTRO_FRAME_SENSOR_MODEL'}),
                           (genericls_plugin(), {"STA_SENSOR_MODEL_NAME":"USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL"})])
 def test_modelname_from_state(plugin, state):
     name = plugin.modelname_from_state(json.dumps(state))
@@ -81,7 +81,7 @@ def test_modelname_from_state(plugin, state):
 
 
 @pytest.mark.parametrize('plugin, state',
-                         [(mdis_plugin(), {'bad_name':'MDISNAC_USGSAstro_1_Linux64_csm30.so'}),
+                         [(mdis_plugin(), {'bad_name':'USGS_ASTRO_FRAME_SENSOR_MODEL'}),
                           (genericls_plugin(), {"BADKEY_GOODVALUE":"USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL"})])
 def test_modelname_from_state_bad_key(plugin, state):
     with pytest.raises(RuntimeError) as err:
@@ -99,7 +99,7 @@ def test_modelname_from_state_bad_name(plugin, state):
 
 
 @pytest.mark.parametrize('plugin, name, state',
-                         [(mdis_plugin(), "MDISNAC_USGSAstro_1_Linux64_csm30.so", nac_state()),
+                         [(mdis_plugin(), "USGS_ASTRO_FRAME_SENSOR_MODEL", nac_state()),
                           (genericls_plugin(), "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", ctx_state())])
 def test_can_model_be_constructed_from_state(plugin, name, state):
     try:
@@ -114,7 +114,7 @@ def test_can_model_be_constructed_from_state(plugin, name, state):
 
 
 @pytest.mark.parametrize('plugin, name, i',
-                         [(mdis_plugin(), 'MDISNAC_USGSAstro_1_Linux64_csm30.so', mdis_isd()),
+                         [(mdis_plugin(), 'USGS_ASTRO_FRAME_SENSOR_MODEL', mdis_isd()),
                           (genericls_plugin(), "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", genericls_isd())])
 def test_can_isd_be_converted_to_model_state(plugin, name, i):
     res = plugin.can_isd_be_converted_to_model_state(i, name)
@@ -122,7 +122,7 @@ def test_can_isd_be_converted_to_model_state(plugin, name, i):
 
 
 @pytest.mark.parametrize('plugin, name, i, state',
-                         [(mdis_plugin(), 'MDISNAC_USGSAstro_1_Linux64_csm30.so', mdis_isd(), nac_state()),
+                         [(mdis_plugin(), 'USGS_ASTRO_FRAME_SENSOR_MODEL', mdis_isd(), nac_state()),
                           (genericls_plugin(), "USGS_ASTRO_LINE_SCANNER_PLUGIN", genericls_isd(), ctx_state())])
 def test_convert_isd_to_model_state(plugin, name, i, state):
     pstate = plugin.convert_isd_to_state(i, name)
@@ -132,7 +132,7 @@ def test_convert_isd_to_model_state(plugin, name, i, state):
 
 @pytest.mark.parametrize('plugin, i, name, param',
                          [(mdis_plugin(), mdis_isd(),
-                           'MDISNAC_USGSAstro_1_Linux64_csm30.so', "focal_length"),
+                           'USGS_ASTRO_FRAME_SENSOR_MODEL', "focal_length"),
                           (genericls_plugin(), genericls_isd(),
                            "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", "FOCAL")])
 def test_convert_isd_to_model_state_bad(plugin, i, name, param):
@@ -143,13 +143,13 @@ def test_convert_isd_to_model_state_bad(plugin, i, name, param):
     assert "Sensor model support data" in str(err.value)
 
 
-@pytest.mark.parametrize('plugin, state, instance', [(mdis_plugin(), nac_state(), cam.mdis.MdisNacSensorModel),
+@pytest.mark.parametrize('plugin, state, instance', [(mdis_plugin(), nac_state(), cam.mdis.FrameSensorModel),
                                               (genericls_plugin(), ctx_state(), cam.genericls.GenericLsSensorModel)])
 def test_construct_model_from_state(plugin, state, instance):
     camera = plugin.from_state(json.dumps(state))
     assert isinstance(camera, instance)
 
-@pytest.mark.parametrize('plugin, state, instance', [(mdis_plugin(), nac_state(), cam.mdis.MdisNacSensorModel),
+@pytest.mark.parametrize('plugin, state, instance', [(mdis_plugin(), nac_state(), cam.mdis.FrameSensorModel),
                                               (genericls_plugin(), ctx_state(), cam.genericls.GenericLsSensorModel)])
 def test_construct_model_from_bad_state(plugin, state, instance):
     # Remove the an entry from the state, making it invalid
@@ -160,7 +160,7 @@ def test_construct_model_from_bad_state(plugin, state, instance):
     assert "Model state is not" in str(err.value)
 
 @pytest.mark.parametrize('plugin, isd, modelname',
-                         [(mdis_plugin(), mdis_isd(), 'MDISNAC_USGSAstro_1_Linux64_csm30.so'),
+                         [(mdis_plugin(), mdis_isd(), 'USGS_ASTRO_FRAME_SENSOR_MODEL'),
                           (genericls_plugin(), genericls_isd(), "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL")])
 def test_can_mode_be_constructed_from_isd(plugin, isd, modelname):
     assert plugin.check_isd_construction(isd, modelname)

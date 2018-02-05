@@ -8,13 +8,13 @@ from cycsm.isd cimport Isd
 from cycsm.version import Version
 #from cycsm.correlationmodel cimport NoCorrelationModel, CppNoCorrelationModel
 
-cdef class MdisNacSensorModel:
+cdef class FrameSensorModel:
     cdef:
-        CppMdisNacSensorModel *thisptr
+        CppFrameSensorModel *thisptr
 
     def __cinit__(self, _raw=False):
         if _raw is False:
-            self.thisptr = new CppMdisNacSensorModel()
+            self.thisptr = new CppFrameSensorModel()
         else:
             self.thisptr = NULL
 
@@ -22,9 +22,9 @@ cdef class MdisNacSensorModel:
         del self.thisptr
 
     @staticmethod
-    cdef factory(CppMdisNacSensorModel *obj):
-        py_obj = result = MdisNacSensorModel.__new__(MdisNacSensorModel, _raw=True)
-        (<MdisNacSensorModel>py_obj).thisptr = obj
+    cdef factory(CppFrameSensorModel *obj):
+        py_obj = result = FrameSensorModel.__new__(FrameSensorModel, _raw=True)
+        (<FrameSensorModel>py_obj).thisptr = obj
         return result
 
     def imageToGround(self, line, sample, double height, double precision=0.001):
@@ -334,7 +334,7 @@ cdef class MdisPlugin:
     def nmodels(self):
         return self.thisptr.getNumModels()
 
-    
+
     def modelfamily(self, modelindex):
         return self.thisptr.getModelFamily(modelindex).decode()
 
@@ -366,9 +366,9 @@ cdef class MdisPlugin:
 
     def from_isd(self, Isd isd, modelname):
         modelname = str(modelname).encode()
-        return MdisNacSensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromISD(isd.thisptr[0], modelname)))
+        return FrameSensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromISD(isd.thisptr[0], modelname)))
 
     def from_state(self, state):
         state = state.encode()
         #self.thisptr.constructModelFromState(state)
-        return MdisNacSensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromState(state)))
+        return FrameSensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromState(state)))

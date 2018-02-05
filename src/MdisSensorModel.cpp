@@ -14,7 +14,7 @@ using namespace std;
 
 // Declaration of static variables
 const std::string MdisNacSensorModel::_SENSOR_MODEL_NAME
-                                      = "MDISNAC_USGSAstro_1_Linux64_csm30.so";
+                                      = "USGS_ASTRO_FRAME_SENSOR_MODEL";
 const int MdisNacSensorModel::m_numParameters = 6;
 const std::string MdisNacSensorModel::m_parameterName[] = {
   "X Sensor Position (m)",  // 0
@@ -202,6 +202,7 @@ csm::ImageCoord MdisNacSensorModel::groundToImage(
   // Apply the distortion to the line/sample location and then convert back to line/sample
   double distortedx, distortedy;
   distortionFunction(undistortedx, undistortedy, distortedx, distortedy);
+
 
   //Convert distorted mm into line/sample
   double sample, line;
@@ -1137,7 +1138,6 @@ void MdisNacSensorModel::distortionFunction(double ux, double uy, double &dx, do
 
   dx = 0.0;
   dy = 0.0;
-
   for (int i = 0; i < 10; i++) {
     dx = dx + f[i] * m_odtX[i];
     dy = dy + f[i] * m_odtY[i];

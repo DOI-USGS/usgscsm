@@ -12,7 +12,7 @@ from cycsm.correlationmodel cimport CppNoCorrelationModel
 from cycsm.rastergm cimport CppSensorPartials
 
 cdef extern from "MdisNacSensorModel.h":
-    cdef cppclass CppMdisNacSensorModel "MdisNacSensorModel":
+    cdef cppclass CppFrameSensorModel "MdisNacSensorModel":
         CppMdisNacSensorModel() except +
         CppEcefCoord imageToGround(CppImageCoord imagePt, double height, double precision) except +
         CppImageCoord groundToImage(CppEcefCoord groundPt, double desiredPrecision) except +
@@ -85,4 +85,4 @@ cdef extern from "MdisPlugin.h":
 
 #  For casting from the CSM Model into our specific camera model - I hope.
 cdef extern from *:
-    CppMdisNacSensorModel* dynamic_cast_model_ptr "dynamic_cast<MdisNacSensorModel*>"(CppModel*) except NULL
+    CppFrameSensorModel* dynamic_cast_model_ptr "dynamic_cast<MdisNacSensorModel*>"(CppModel*) except NULL
