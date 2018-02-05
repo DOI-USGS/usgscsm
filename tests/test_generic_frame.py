@@ -35,7 +35,6 @@ class TestCassiniNAC:
 
 
 
-
 class TestMdisWac:
     @pytest.mark.parametrize('image, ground',[
                               ((512, 512, 0), (-73589.5516508502, 562548.342040933, 2372508.44060771)),
