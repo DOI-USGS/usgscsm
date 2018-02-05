@@ -1,6 +1,6 @@
 
-#ifndef MdisNacSensorModel_h
-#define MdisNacSensorModel_h
+#ifndef UsgsAstroFrameSensorModel_h
+#define UsgsAstroFrameSensorModel_h
 
 #include <cmath>
 #include <iostream>
@@ -9,13 +9,13 @@
 #include "csm/RasterGM.h"
 #include "csm/CorrelationModel.h"
 
-class MdisNacSensorModel : public csm::RasterGM {
-  // MdisPlugin needs to access private members
-  friend class MdisPlugin;
+class UsgsAstroFrameSensorModel : public csm::RasterGM {
+  // UsgsAstroFramePlugin needs to access private members
+  friend class UsgsAstroFramePlugin;
 
   public:
-    MdisNacSensorModel();
-    ~MdisNacSensorModel();
+    UsgsAstroFrameSensorModel();
+    ~UsgsAstroFrameSensorModel();
 
     virtual csm::ImageCoord groundToImage(const csm::EcefCoord &groundPt,
                                      double desiredPrecision=0.001,

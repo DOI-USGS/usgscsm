@@ -417,7 +417,7 @@ std::string UsgsAstroLsStateData::getModelNameFromModelState(
    } else {
        csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
        std::string aMessage = "No 'STA_SENSOR_MODEL_NAME' key in the model state object.";
-       std::string aFunction = "MdisPlugin::getModelNameFromModelState";
+       std::string aFunction = "UsgsAstroLsPlugin::getModelNameFromModelState";
        csm::Error csmErr(aErrorType, aMessage, aFunction);
        throw(csmErr);
    }

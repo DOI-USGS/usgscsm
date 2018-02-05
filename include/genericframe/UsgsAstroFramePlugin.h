@@ -1,14 +1,14 @@
-#ifndef MdisPlugin_h
-#define MdisPlugin_h
+#ifndef UsgsAstroFramePlugin_h
+#define UsgsAstroFramePlugin_h
 
 #ifdef _WIN32
-#  ifdef MDIS_LIBRARY
-#    define MDIS_EXPORT_API __declspec(dllexport)
+#  ifdef FRAME_LIBRARY
+#    define  USGSASTROFRAME_EXPORT_API __declspec(dllexport)
 #  else
-#    define MDIS_EXPORT_API __declspec(dllimport)
+#    define  USGSASTROFRAME_EXPORT_API __declspec(dllimport)
 # endif
 #else
-#  define MDIS_EXPORT_API
+#  define  USGSASTROFRAME_EXPORT_API
 #endif
 
 #include <string>
@@ -17,11 +17,11 @@
 #include <csm/Version.h>
 
 
-class MDIS_EXPORT_API MdisPlugin : public csm::Plugin {
+class USGSASTROFRAME_EXPORT_API UsgsAstroFramePlugin : public csm::Plugin {
 
   public:
-    MdisPlugin();
-    ~MdisPlugin();
+    UsgsAstroFramePlugin();
+    ~UsgsAstroFramePlugin();
 
     virtual std::string getPluginName() const;
     virtual std::string getManufacturer() const;
@@ -54,7 +54,7 @@ class MDIS_EXPORT_API MdisPlugin : public csm::Plugin {
     // TODO when implementing, add any other necessary members.
 
 private:
-    static const MdisPlugin m_registeredPlugin;
+    static const UsgsAstroFramePlugin m_registeredPlugin;
     static const std::string _PLUGIN_NAME;
     static const std::string _MANUFACTURER_NAME;
     static const std::string _RELEASE_DATE;

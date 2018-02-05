@@ -1,4 +1,4 @@
-#include "MdisNacSensorModel.h"
+#include "UsgsAstroFrameSensorModel.h"
 
 #include <iomanip>
 #include <iostream>
@@ -13,10 +13,10 @@ using json = nlohmann::json;
 using namespace std;
 
 // Declaration of static variables
-const std::string MdisNacSensorModel::_SENSOR_MODEL_NAME
-                                      = "MDISNAC_USGSAstro_1_Linux64_csm30.so";
-const int MdisNacSensorModel::m_numParameters = 6;
-const std::string MdisNacSensorModel::m_parameterName[] = {
+const std::string UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME
+                                      = "USGS_ASTRO_FRAME_SENSOR_MODEL";
+const int UsgsAstroFrameSensorModel::m_numParameters = 6;
+const std::string UsgsAstroFrameSensorModel::m_parameterName[] = {
   "X Sensor Position (m)",  // 0
   "Y Sensor Position (m)",  // 1
   "Z Sensor Position (m)",  // 2
@@ -25,8 +25,8 @@ const std::string MdisNacSensorModel::m_parameterName[] = {
   "Kappa (radians)"         // 5
 };
 
-const int         MdisNacSensorModel::_NUM_STATE_KEYWORDS = 32;
-const std::string MdisNacSensorModel::_STATE_KEYWORD[] =
+const int         UsgsAstroFrameSensorModel::_NUM_STATE_KEYWORDS = 32;
+const std::string UsgsAstroFrameSensorModel::_STATE_KEYWORD[] =
 {
     "m_focalLength",
     "m_iTransS",
@@ -64,7 +64,7 @@ const std::string MdisNacSensorModel::_STATE_KEYWORD[] =
     "m_currentParameterCovariance"
 };
 
-MdisNacSensorModel::MdisNacSensorModel() {
+UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
 
   m_transX[0] = 0.0;
   m_transX[1] = 0.0;
@@ -140,11 +140,11 @@ MdisNacSensorModel::MdisNacSensorModel() {
 }
 
 
-MdisNacSensorModel::~MdisNacSensorModel() {}
+UsgsAstroFrameSensorModel::~UsgsAstroFrameSensorModel() {}
 
 
 /**
- * @brief MdisNacSensorModel::groundToImage
+ * @brief UsgsAstroFrameSensorModel::groundToImage
  * @param groundPt
  * @param desiredPrecision
  * @param achievedPrecision
@@ -152,7 +152,7 @@ MdisNacSensorModel::~MdisNacSensorModel() {}
  * @return Returns <line, sample> coordinate in the image corresponding to the ground point
  * without bundle adjustment correction.
  */
-csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt,
+csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(const csm::EcefCoord &groundPt,
                               double desiredPrecision,
                               double *achievedPrecision,
                               csm::WarningList *warnings) const {
@@ -162,7 +162,7 @@ csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt
 
 
 /**
- * @brief MdisNacSensorModel::groundToImage
+ * @brief UsgsAstroFrameSensorModel::groundToImage
  * @param groundPt
  * @param adjustments
  * @param desired_precision
@@ -171,7 +171,7 @@ csm::ImageCoord MdisNacSensorModel::groundToImage(const csm::EcefCoord &groundPt
  * @return Returns <line,sample> coordinate in the image corresponding to the ground point.
  * This function applies bundle adjustments to the final value.
  */
-csm::ImageCoord MdisNacSensorModel::groundToImage(
+csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
     const csm::EcefCoord&      groundPt,
     const std::vector<double>& adjustments,
     double                     desired_precision,
@@ -203,6 +203,7 @@ csm::ImageCoord MdisNacSensorModel::groundToImage(
   double distortedx, distortedy;
   distortionFunction(undistortedx, undistortedy, distortedx, distortedy);
 
+
   //Convert distorted mm into line/sample
   double sample, line;
   sample = m_iTransS[0] + m_iTransS[1] * distortedx + m_iTransS[2] * distortedx + m_ccdCenter[0] - 0.5;
@@ -212,18 +213,18 @@ csm::ImageCoord MdisNacSensorModel::groundToImage(
 }
 
 
-csm::ImageCoordCovar MdisNacSensorModel::groundToImage(const csm::EcefCoordCovar &groundPt,
+csm::ImageCoordCovar UsgsAstroFrameSensorModel::groundToImage(const csm::EcefCoordCovar &groundPt,
                                    double desiredPrecision,
                                    double *achievedPrecision,
                                    csm::WarningList *warnings) const {
 
     throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
       "Unsupported function",
-      "MdisNacSensorModel::groundToImage");
+      "UsgsAstroFrameSensorModel::groundToImage");
 }
 
 
-csm::EcefCoord MdisNacSensorModel::imageToGround(const csm::ImageCoord &imagePt,
+csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &imagePt,
                                                  double height,
                                                  double desiredPrecision,
                                                  double *achievedPrecision,
@@ -274,17 +275,17 @@ csm::EcefCoord MdisNacSensorModel::imageToGround(const csm::ImageCoord &imagePt,
 }
 
 
-csm::EcefCoordCovar MdisNacSensorModel::imageToGround(const csm::ImageCoordCovar &imagePt, double height,
+csm::EcefCoordCovar UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoordCovar &imagePt, double height,
                                   double heightVariance, double desiredPrecision,
                                   double *achievedPrecision,
                                   csm::WarningList *warnings) const {
     throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
       "Unsupported function",
-      "MdisNacSensorModel::imageToGround");
+      "UsgsAstroFrameSensorModel::imageToGround");
 }
 
 
-csm::EcefLocus MdisNacSensorModel::imageToProximateImagingLocus(const csm::ImageCoord &imagePt,
+csm::EcefLocus UsgsAstroFrameSensorModel::imageToProximateImagingLocus(const csm::ImageCoord &imagePt,
                                                                 const csm::EcefCoord &groundPt,
                                                                 double desiredPrecision,
                                                                 double *achievedPrecision,
@@ -294,7 +295,7 @@ csm::EcefLocus MdisNacSensorModel::imageToProximateImagingLocus(const csm::Image
 }
 
 
-csm::EcefLocus MdisNacSensorModel::imageToRemoteImagingLocus(const csm::ImageCoord &imagePt,
+csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(const csm::ImageCoord &imagePt,
                                                              double desiredPrecision,
                                                              double *achievedPrecision,
                                                              csm::WarningList *warnings) const {
@@ -334,7 +335,7 @@ csm::EcefLocus MdisNacSensorModel::imageToRemoteImagingLocus(const csm::ImageCoo
 }
 
 
-csm::ImageCoord MdisNacSensorModel::getImageStart() const {
+csm::ImageCoord UsgsAstroFrameSensorModel::getImageStart() const {
 
   csm::ImageCoord start;
   start.samp = m_startingDetectorSample;
@@ -343,7 +344,7 @@ csm::ImageCoord MdisNacSensorModel::getImageStart() const {
 }
 
 
-csm::ImageVector MdisNacSensorModel::getImageSize() const {
+csm::ImageVector UsgsAstroFrameSensorModel::getImageSize() const {
 
   csm::ImageVector size;
   size.line = m_nLines;
@@ -352,19 +353,19 @@ csm::ImageVector MdisNacSensorModel::getImageSize() const {
 }
 
 
-std::pair<csm::ImageCoord, csm::ImageCoord> MdisNacSensorModel::getValidImageRange() const {
+std::pair<csm::ImageCoord, csm::ImageCoord> UsgsAstroFrameSensorModel::getValidImageRange() const {
     csm::ImageCoord min_pt(m_startingDetectorLine, m_startingDetectorSample);
     csm::ImageCoord max_pt(m_nLines, m_nSamples);
     return std::pair<csm::ImageCoord, csm::ImageCoord>(min_pt, max_pt);
 }
 
 
-std::pair<double, double> MdisNacSensorModel::getValidHeightRange() const {
+std::pair<double, double> UsgsAstroFrameSensorModel::getValidHeightRange() const {
     return std::pair<double, double>(m_minElevation, m_maxElevation);
 }
 
 
-csm::EcefVector MdisNacSensorModel::getIlluminationDirection(const csm::EcefCoord &groundPt) const {
+csm::EcefVector UsgsAstroFrameSensorModel::getIlluminationDirection(const csm::EcefCoord &groundPt) const {
   // ground (body-fixed) - sun (body-fixed) gives us the illumination direction.
   return csm::EcefVector {
     groundPt.x - m_sunPosition[0],
@@ -374,7 +375,7 @@ csm::EcefVector MdisNacSensorModel::getIlluminationDirection(const csm::EcefCoor
 }
 
 
-double MdisNacSensorModel::getImageTime(const csm::ImageCoord &imagePt) const {
+double UsgsAstroFrameSensorModel::getImageTime(const csm::ImageCoord &imagePt) const {
 
   // check if the image point is in range
   if (imagePt.samp >= m_startingDetectorSample &&
@@ -386,12 +387,12 @@ double MdisNacSensorModel::getImageTime(const csm::ImageCoord &imagePt) const {
   else {
     throw csm::Error(csm::Error::BOUNDS,
                      "Image Coordinate out of Bounds",
-                     "MdisNacSensorModel::getImageTime");
+                     "UsgsAstroFrameSensorModel::getImageTime");
   }
 }
 
 
-csm::EcefCoord MdisNacSensorModel::getSensorPosition(const csm::ImageCoord &imagePt) const {
+csm::EcefCoord UsgsAstroFrameSensorModel::getSensorPosition(const csm::ImageCoord &imagePt) const {
 
   // check if the image point is in range
   if (imagePt.samp >= m_startingDetectorSample &&
@@ -408,12 +409,12 @@ csm::EcefCoord MdisNacSensorModel::getSensorPosition(const csm::ImageCoord &imag
   else {
     throw csm::Error(csm::Error::BOUNDS,
                      "Image Coordinate out of Bounds",
-                     "MdisNacSensorModel::getSensorPosition");
+                     "UsgsAstroFrameSensorModel::getSensorPosition");
   }
 }
 
 
-csm::EcefCoord MdisNacSensorModel::getSensorPosition(double time) const {
+csm::EcefCoord UsgsAstroFrameSensorModel::getSensorPosition(double time) const {
     if (time == m_ephemerisTime){
         csm::EcefCoord sensorPosition;
         sensorPosition.x = m_currentParameterValue[0];
@@ -425,17 +426,17 @@ csm::EcefCoord MdisNacSensorModel::getSensorPosition(double time) const {
         std::string aMessage = "Valid image time is %d", m_ephemerisTime;
         throw csm::Error(csm::Error::BOUNDS,
                          aMessage,
-                         "MdisNacSensorModel::getSensorPosition");
+                         "UsgsAstroFrameSensorModel::getSensorPosition");
     }
 }
 
 
-csm::EcefVector MdisNacSensorModel::getSensorVelocity(const csm::ImageCoord &imagePt) const {
+csm::EcefVector UsgsAstroFrameSensorModel::getSensorVelocity(const csm::ImageCoord &imagePt) const {
   // Make sure the passed coordinate is with the image dimensions.
   if (imagePt.samp < 0.0 || imagePt.samp > m_nSamples ||
       imagePt.line < 0.0 || imagePt.line > m_nLines) {
     throw csm::Error(csm::Error::BOUNDS, "Image coordinate out of bounds.",
-                     "MdisNacSensorModel::getSensorVelocity");
+                     "UsgsAstroFrameSensorModel::getSensorVelocity");
   }
 
   // Since this is a frame, just return the sensor velocity the ISD gave us.
@@ -447,7 +448,7 @@ csm::EcefVector MdisNacSensorModel::getSensorVelocity(const csm::ImageCoord &ima
 }
 
 
-csm::EcefVector MdisNacSensorModel::getSensorVelocity(double time) const {
+csm::EcefVector UsgsAstroFrameSensorModel::getSensorVelocity(double time) const {
     if (time == m_ephemerisTime){
         return csm::EcefVector {
           m_spacecraftVelocity[0],
@@ -458,12 +459,12 @@ csm::EcefVector MdisNacSensorModel::getSensorVelocity(double time) const {
         std::string aMessage = "Valid image time is %d", m_ephemerisTime;
         throw csm::Error(csm::Error::BOUNDS,
                          aMessage,
-                         "MdisNacSensorModel::getSensorVelocity");
+                         "UsgsAstroFrameSensorModel::getSensorVelocity");
     }
 }
 
 
-csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int index,
+csm::RasterGM::SensorPartials UsgsAstroFrameSensorModel::computeSensorPartials(int index,
                                            const csm::EcefCoord &groundPt,
                                            double desiredPrecision,
                                            double *achievedPrecision,
@@ -476,7 +477,7 @@ csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int inde
 
 
 /**
- * @brief MdisNacSensorModel::computeSensorPartials
+ * @brief UsgsAstroFrameSensorModel::computeSensorPartials
  * @param index
  * @param imagePt
  * @param groundPt
@@ -489,7 +490,7 @@ csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int inde
  * the partials.  It is more accurate, but it might be costlier calculation-wise.
  *
  */
-csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int index,
+csm::RasterGM::SensorPartials UsgsAstroFrameSensorModel::computeSensorPartials(int index,
                                           const csm::ImageCoord &imagePt,
                                           const csm::EcefCoord &groundPt,
                                           double desiredPrecision,
@@ -513,7 +514,7 @@ csm::RasterGM::SensorPartials MdisNacSensorModel::computeSensorPartials(int inde
 
 }
 
-std::vector<csm::RasterGM::SensorPartials> MdisNacSensorModel::computeAllSensorPartials(
+std::vector<csm::RasterGM::SensorPartials> UsgsAstroFrameSensorModel::computeAllSensorPartials(
     const csm::ImageCoord& imagePt,
     const csm::EcefCoord& groundPt,
     csm::param::Set pset,
@@ -533,7 +534,7 @@ std::vector<csm::RasterGM::SensorPartials> MdisNacSensorModel::computeAllSensorP
         return partials;
     }
 
-std::vector<csm::RasterGM::SensorPartials> MdisNacSensorModel::computeAllSensorPartials(
+std::vector<csm::RasterGM::SensorPartials> UsgsAstroFrameSensorModel::computeAllSensorPartials(
     const csm::EcefCoord& groundPt,
     csm::param::Set pset,
     double desiredPrecision,
@@ -546,7 +547,7 @@ std::vector<csm::RasterGM::SensorPartials> MdisNacSensorModel::computeAllSensorP
                                     pset, desiredPrecision, achievedPrecision, warnings);
     }
 
-std::vector<double> MdisNacSensorModel::computeGroundPartials(const csm::EcefCoord &groundPt) const {
+std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::EcefCoord &groundPt) const {
 
     // Partials of line, sample wrt X, Y, Z
     // Uses collinearity equations
@@ -595,98 +596,98 @@ std::vector<double> MdisNacSensorModel::computeGroundPartials(const csm::EcefCoo
 }
 
 
-const csm::CorrelationModel& MdisNacSensorModel::getCorrelationModel() const {
+const csm::CorrelationModel& UsgsAstroFrameSensorModel::getCorrelationModel() const {
     return _no_corr_model;
 }
 
 
-std::vector<double> MdisNacSensorModel::getUnmodeledCrossCovariance(const csm::ImageCoord &pt1,
+std::vector<double> UsgsAstroFrameSensorModel::getUnmodeledCrossCovariance(const csm::ImageCoord &pt1,
                                                 const csm::ImageCoord &pt2) const {
 
     throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
       "Unsupported function",
-      "MdisNacSensorModel::getUnmodeledCrossCovariance");
+      "UsgsAstroFrameSensorModel::getUnmodeledCrossCovariance");
 }
 
 
-csm::Version MdisNacSensorModel::getVersion() const {
+csm::Version UsgsAstroFrameSensorModel::getVersion() const {
     return csm::Version(0,1,0);
 }
 
 
-std::string MdisNacSensorModel::getModelName() const {
+std::string UsgsAstroFrameSensorModel::getModelName() const {
     return _SENSOR_MODEL_NAME;
 }
 
 
-std::string MdisNacSensorModel::getPedigree() const {
+std::string UsgsAstroFrameSensorModel::getPedigree() const {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::getPedigree");
+                   "UsgsAstroFrameSensorModel::getPedigree");
 }
 
 
-std::string MdisNacSensorModel::getImageIdentifier() const {
+std::string UsgsAstroFrameSensorModel::getImageIdentifier() const {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::getImageIdentifier");
+                   "UsgsAstroFrameSensorModel::getImageIdentifier");
 }
 
 
-void MdisNacSensorModel::setImageIdentifier(const std::string& imageId,
+void UsgsAstroFrameSensorModel::setImageIdentifier(const std::string& imageId,
                                             csm::WarningList* warnings) {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::setImageIdentifier");
+                   "UsgsAstroFrameSensorModel::setImageIdentifier");
 }
 
 
-std::string MdisNacSensorModel::getSensorIdentifier() const {
+std::string UsgsAstroFrameSensorModel::getSensorIdentifier() const {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::getSensorIdentifier");
+                   "UsgsAstroFrameSensorModel::getSensorIdentifier");
 }
 
 
-std::string MdisNacSensorModel::getPlatformIdentifier() const {
+std::string UsgsAstroFrameSensorModel::getPlatformIdentifier() const {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::getPlatformIdentifier");
+                   "UsgsAstroFrameSensorModel::getPlatformIdentifier");
 }
 
 
-std::string MdisNacSensorModel::getCollectionIdentifier() const {
+std::string UsgsAstroFrameSensorModel::getCollectionIdentifier() const {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::getCollectionIdentifier");
+                   "UsgsAstroFrameSensorModel::getCollectionIdentifier");
 }
 
 
-std::string MdisNacSensorModel::getTrajectoryIdentifier() const {
+std::string UsgsAstroFrameSensorModel::getTrajectoryIdentifier() const {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::getTrajectoryIdentifier");
+                   "UsgsAstroFrameSensorModel::getTrajectoryIdentifier");
 }
 
 
-std::string MdisNacSensorModel::getSensorType() const {
+std::string UsgsAstroFrameSensorModel::getSensorType() const {
     return CSM_SENSOR_TYPE_EO;
 }
 
 
-std::string MdisNacSensorModel::getSensorMode() const {
+std::string UsgsAstroFrameSensorModel::getSensorMode() const {
     return CSM_SENSOR_MODE_FRAME;
 }
 
 
-std::string MdisNacSensorModel::getReferenceDateAndTime() const {
+std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::getReferenceDateAndTime");
+                   "UsgsAstroFrameSensorModel::getReferenceDateAndTime");
 }
 
 
-std::string MdisNacSensorModel::getModelState() const {
+std::string UsgsAstroFrameSensorModel::getModelState() const {
     json state = {
       {"model_name", _SENSOR_MODEL_NAME},
       {"m_focalLength" , m_focalLength},
@@ -732,40 +733,40 @@ std::string MdisNacSensorModel::getModelState() const {
 }
 
 
-void MdisNacSensorModel::replaceModelState(const std::string& argState) {
+void UsgsAstroFrameSensorModel::replaceModelState(const std::string& argState) {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::replaceModelState");
+                   "UsgsAstroFrameSensorModel::replaceModelState");
 }
 
 
-csm::EcefCoord MdisNacSensorModel::getReferencePoint() const {
+csm::EcefCoord UsgsAstroFrameSensorModel::getReferencePoint() const {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::getReferencePoint");
+                   "UsgsAstroFrameSensorModel::getReferencePoint");
 }
 
 
-void MdisNacSensorModel::setReferencePoint(const csm::EcefCoord &groundPt) {
+void UsgsAstroFrameSensorModel::setReferencePoint(const csm::EcefCoord &groundPt) {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::setReferencePoint");
+                   "UsgsAstroFrameSensorModel::setReferencePoint");
 }
 
 
-int MdisNacSensorModel::getNumParameters() const {
+int UsgsAstroFrameSensorModel::getNumParameters() const {
 
   return m_numParameters;
 }
 
 
-std::string MdisNacSensorModel::getParameterName(int index) const {
+std::string UsgsAstroFrameSensorModel::getParameterName(int index) const {
 
   return m_parameterName[index];
 }
 
 
-std::string MdisNacSensorModel::getParameterUnits(int index) const {
+std::string UsgsAstroFrameSensorModel::getParameterUnits(int index) const {
 
   if (index < 3) {
     return "m";
@@ -776,104 +777,104 @@ std::string MdisNacSensorModel::getParameterUnits(int index) const {
 }
 
 
-bool MdisNacSensorModel::hasShareableParameters() const {
+bool UsgsAstroFrameSensorModel::hasShareableParameters() const {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::hasShareableParameters");
+                   "UsgsAstroFrameSensorModel::hasShareableParameters");
 }
 
 
-bool MdisNacSensorModel::isParameterShareable(int index) const {
+bool UsgsAstroFrameSensorModel::isParameterShareable(int index) const {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::isParameterShareable");
+                   "UsgsAstroFrameSensorModel::isParameterShareable");
 }
 
 
-csm::SharingCriteria MdisNacSensorModel::getParameterSharingCriteria(int index) const {
+csm::SharingCriteria UsgsAstroFrameSensorModel::getParameterSharingCriteria(int index) const {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::getParameterSharingCriteria");
+                   "UsgsAstroFrameSensorModel::getParameterSharingCriteria");
 }
 
 
-double MdisNacSensorModel::getParameterValue(int index) const {
+double UsgsAstroFrameSensorModel::getParameterValue(int index) const {
 
   return m_currentParameterValue[index];
 
 }
 
 
-void MdisNacSensorModel::setParameterValue(int index, double value) {
+void UsgsAstroFrameSensorModel::setParameterValue(int index, double value) {
   m_currentParameterValue[index] = value;
 }
 
 
-csm::param::Type MdisNacSensorModel::getParameterType(int index) const {
+csm::param::Type UsgsAstroFrameSensorModel::getParameterType(int index) const {
   return m_parameterType[index];
 }
 
 
-void MdisNacSensorModel::setParameterType(int index, csm::param::Type pType) {
+void UsgsAstroFrameSensorModel::setParameterType(int index, csm::param::Type pType) {
     m_parameterType[index] = pType;
 }
 
 
-double MdisNacSensorModel::getParameterCovariance(int index1, int index2) const {
+double UsgsAstroFrameSensorModel::getParameterCovariance(int index1, int index2) const {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::getParameterCovariance");
+                   "UsgsAstroFrameSensorModel::getParameterCovariance");
 }
 
 
-void MdisNacSensorModel::setParameterCovariance(int index1, int index2, double covariance) {
+void UsgsAstroFrameSensorModel::setParameterCovariance(int index1, int index2, double covariance) {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::setParameterCovariance");
+                   "UsgsAstroFrameSensorModel::setParameterCovariance");
 }
 
 
-int MdisNacSensorModel::getNumGeometricCorrectionSwitches() const {
+int UsgsAstroFrameSensorModel::getNumGeometricCorrectionSwitches() const {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::getNumGeometricCorrectionSwitches");
+                   "UsgsAstroFrameSensorModel::getNumGeometricCorrectionSwitches");
 }
 
 
-std::string MdisNacSensorModel::getGeometricCorrectionName(int index) const {
+std::string UsgsAstroFrameSensorModel::getGeometricCorrectionName(int index) const {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::getGeometricCorrectionName");
+                   "UsgsAstroFrameSensorModel::getGeometricCorrectionName");
 }
 
 
-void MdisNacSensorModel::setGeometricCorrectionSwitch(int index,
+void UsgsAstroFrameSensorModel::setGeometricCorrectionSwitch(int index,
                                                       bool value,
                                                       csm::param::Type pType) {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::setGeometricCorrectionSwitch");
+                   "UsgsAstroFrameSensorModel::setGeometricCorrectionSwitch");
 }
 
 
-bool MdisNacSensorModel::getGeometricCorrectionSwitch(int index) const {
+bool UsgsAstroFrameSensorModel::getGeometricCorrectionSwitch(int index) const {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::getGeometricCorrectionSwitch");
+                   "UsgsAstroFrameSensorModel::getGeometricCorrectionSwitch");
 }
 
 
-std::vector<double> MdisNacSensorModel::getCrossCovarianceMatrix(
+std::vector<double> UsgsAstroFrameSensorModel::getCrossCovarianceMatrix(
     const GeometricModel &comparisonModel,
     csm::param::Set pSet,
     const GeometricModelList &otherModels) const {
   throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
                    "Unsupported function",
-                   "MdisNacSensorModel::getCrossCovarianceMatrix");
+                   "UsgsAstroFrameSensorModel::getCrossCovarianceMatrix");
 }
 
 
-void MdisNacSensorModel::calcRotationMatrix(
+void UsgsAstroFrameSensorModel::calcRotationMatrix(
     double m[3][3]) const {
 
   // Trigonometric functions for rotation matrix
@@ -898,7 +899,7 @@ void MdisNacSensorModel::calcRotationMatrix(
 }
 
 
-void MdisNacSensorModel::calcRotationMatrix(
+void UsgsAstroFrameSensorModel::calcRotationMatrix(
   double m[3][3], const std::vector<double> &adjustments) const {
 
   // Trigonometric functions for rotation matrix
@@ -921,7 +922,7 @@ void MdisNacSensorModel::calcRotationMatrix(
 }
 
 
-void MdisNacSensorModel::losEllipsoidIntersect(
+void UsgsAstroFrameSensorModel::losEllipsoidIntersect(
       const double height,
       const double xc,
       const double yc,
@@ -989,7 +990,7 @@ void MdisNacSensorModel::losEllipsoidIntersect(
  *       algorithm.
  * @todo Add error handling for near-zero determinant.
 */
-bool MdisNacSensorModel::setFocalPlane(double dx,double dy,
+bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
                                        double &undistortedX,
                                        double &undistortedY ) const {
 
@@ -1068,7 +1069,7 @@ bool MdisNacSensorModel::setFocalPlane(double dx,double dy,
  * @param Jyx  Partial_yx
  * @param Jyy  Partial_yy
  */
-void MdisNacSensorModel::distortionJacobian(double x, double y, double &Jxx, double &Jxy,
+void UsgsAstroFrameSensorModel::distortionJacobian(double x, double y, double &Jxx, double &Jxy,
                                             double &Jyx, double &Jyy) const {
 
   double d_dx[10];
@@ -1121,7 +1122,7 @@ void MdisNacSensorModel::distortionJacobian(double x, double y, double &Jxx, dou
  * @param dx Result distorted x
  * @param dy Result distorted y
  */
-void MdisNacSensorModel::distortionFunction(double ux, double uy, double &dx, double &dy) const {
+void UsgsAstroFrameSensorModel::distortionFunction(double ux, double uy, double &dx, double &dy) const {
 
   double f[10];
   f[0] = 1;
@@ -1137,7 +1138,6 @@ void MdisNacSensorModel::distortionFunction(double ux, double uy, double &dx, do
 
   dx = 0.0;
   dy = 0.0;
-
   for (int i = 0; i < 10; i++) {
     dx = dx + f[i] * m_odtX[i];
     dy = dy + f[i] * m_odtY[i];
@@ -1146,7 +1146,7 @@ void MdisNacSensorModel::distortionFunction(double ux, double uy, double &dx, do
 
 /***** Helper Functions *****/
 
-double MdisNacSensorModel::getValue(
+double UsgsAstroFrameSensorModel::getValue(
    int index,
    const std::vector<double> &adjustments) const
 {

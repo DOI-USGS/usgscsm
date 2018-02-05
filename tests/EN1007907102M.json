@@ -26,7 +26,7 @@
     "kappa": -0.963008015000929,
     "min_elevation": -100,
     "max_elevation": 100,
-    "model_name": "MDISNAC_USGSAstro_1_Linux64_csm30.so",
+    "model_name": "USGS_ASTRO_FRAME_SENSOR_MODEL",
     "nlines": 1024,
     "nsamples": 1024,
     "odt_x": [

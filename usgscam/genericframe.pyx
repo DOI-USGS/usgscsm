@@ -8,13 +8,13 @@ from cycsm.isd cimport Isd
 from cycsm.version import Version
 #from cycsm.correlationmodel cimport NoCorrelationModel, CppNoCorrelationModel
 
-cdef class MdisNacSensorModel:
+cdef class SensorModel:
     cdef:
-        CppMdisNacSensorModel *thisptr
+        CppFrameSensorModel *thisptr
 
     def __cinit__(self, _raw=False):
         if _raw is False:
-            self.thisptr = new CppMdisNacSensorModel()
+            self.thisptr = new CppFrameSensorModel()
         else:
             self.thisptr = NULL
 
@@ -22,9 +22,9 @@ cdef class MdisNacSensorModel:
         del self.thisptr
 
     @staticmethod
-    cdef factory(CppMdisNacSensorModel *obj):
-        py_obj = result = MdisNacSensorModel.__new__(MdisNacSensorModel, _raw=True)
-        (<MdisNacSensorModel>py_obj).thisptr = obj
+    cdef factory(CppFrameSensorModel *obj):
+        py_obj = result = SensorModel.__new__(SensorModel, _raw=True)
+        (<SensorModel>py_obj).thisptr = obj
         return result
 
     def imageToGround(self, line, sample, double height, double precision=0.001):
@@ -304,12 +304,12 @@ cdef class MdisNacSensorModel:
         res = self.thisptr.getIlluminationDirection(pt._ptr)
         return [res.x, res.y, res.z]
 
-cdef class MdisPlugin:
+cdef class Plugin:
     cdef:
-        CppMdisPlugin *thisptr
+        CppUsgsAstroFramePlugin *thisptr
 
     def __cinit__(self):
-        self.thisptr = new CppMdisPlugin()
+        self.thisptr = new CppUsgsAstroFramePlugin()
 
     def __dealloc__(self):
         del self.thisptr
@@ -334,7 +334,7 @@ cdef class MdisPlugin:
     def nmodels(self):
         return self.thisptr.getNumModels()
 
-    
+
     def modelfamily(self, modelindex):
         return self.thisptr.getModelFamily(modelindex).decode()
 
@@ -366,9 +366,9 @@ cdef class MdisPlugin:
 
     def from_isd(self, Isd isd, modelname):
         modelname = str(modelname).encode()
-        return MdisNacSensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromISD(isd.thisptr[0], modelname)))
+        return SensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromISD(isd.thisptr[0], modelname)))
 
     def from_state(self, state):
         state = state.encode()
         #self.thisptr.constructModelFromState(state)
-        return MdisNacSensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromState(state)))
+        return SensorModel.factory(dynamic_cast_model_ptr(self.thisptr.constructModelFromState(state)))

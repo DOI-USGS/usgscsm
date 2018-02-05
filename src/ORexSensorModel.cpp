@@ -409,7 +409,7 @@ csm::Version ORexSensorModel::getVersion() const {
 
 
 std::string ORexSensorModel::getModelName() const {
-  return "UsgsAstroFrameMdisPluginCSM";
+  return "UsgsAstroFramePluginCSM";
 }
 
 
