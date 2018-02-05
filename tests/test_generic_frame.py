@@ -42,7 +42,6 @@ class TestCassiniNAC:
         assert iy == pytest.approx(y, rel=11)
 
 
-
 class TestMdisWac:
     @pytest.fixture
     def model(self):
@@ -79,7 +78,6 @@ class TestMdisWac:
 
 class TestMdisNac:
 
-    time = 418855170.49264956
 
     @pytest.fixture
     def model(self):
@@ -133,8 +131,12 @@ class TestMdisNac:
         assert y == pytest.approx(60633907522.72863)
         assert z == pytest.approx(2439.4*1000 - -38729485.77334732)
 
-    def test_sensorposition_time(self, model):
-        x, y, z = model.sensor_time_position(self.time)
+
+    @pytest.mark.parametrize('time',[
+                             (418855170.49264956),
+    ])
+    def test_sensorposition_time(self, model, time):
+        x, y, z = model.sensor_time_position(time)
 
     def test_sensorposition_coordinate(self, model):
         x, y, z = model.sensor_coordinate_position(512.0, 512.0)
@@ -142,8 +144,11 @@ class TestMdisNac:
         assert y == pytest.approx(-2088202.59)
         assert z == pytest.approx(2082707.61)
 
-    def test_sensorvelocity_time(self, model):
-        x, y, z = model.sensor_time_velocity(self.time)
+    @pytest.mark.parametrize('time',[
+                             (418855170.49264956),
+    ])
+    def test_sensorvelocity_time(self, model, time):
+        x, y, z = model.sensor_time_velocity(time)
         assert x == 0
         assert y == 0
         assert z == 0
