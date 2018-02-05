@@ -78,11 +78,6 @@ class TestMdisWac:
 
 class TestMdisNac:
 
-
-    @pytest.fixture
-    def model(self):
-        return cam.genericframe.Plugin()
-
     @pytest.fixture
     def model(self):
         csm_isd = isd.Isd()
