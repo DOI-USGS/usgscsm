@@ -21,6 +21,15 @@ cdef class SensorModel:
     def __dealloc__(self):
         del self.thisptr
 
+    def __getstate__(self):
+        """
+        Get the object state to support serialization via pickle.
+        """
+        return self.state.encode()
+
+    def __setstate__(self, state):
+        self.state = state
+
     @staticmethod
     cdef factory(CppFrameSensorModel *obj):
         py_obj = result = SensorModel.__new__(SensorModel, _raw=True)
@@ -201,10 +210,16 @@ cdef class SensorModel:
     @property
     def state(self):
         """
-        The current state of the model, as a string, that can be used to
-        reinstantiate the model using the replace_model_state method.
+        The current state of the model, as a JSON string.
         """
         return self.thisptr.getModelState().decode()
+
+    @state.setter
+    def state(self, state):
+        """
+        Replace the current current model state with the passed model state
+        """
+        self.thisptr.replaceModelState(state)
 
     @property
     def name(self):
