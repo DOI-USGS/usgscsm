@@ -62,7 +62,7 @@ cdef extern from "UsgsAstroFrameSensorModel.h":
         string getSensorType()
         string getSensorMode()
         #CppNoCorrelationModel getCorrelationModel() # Not wrapped
-
+        void replaceModelState(const string& argState);
 
 cdef extern from "UsgsAstroFramePlugin.h":
     cdef cppclass CppUsgsAstroFramePlugin "UsgsAstroFramePlugin":

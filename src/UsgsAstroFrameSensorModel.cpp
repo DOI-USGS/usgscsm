@@ -733,10 +733,59 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
 }
 
 
-void UsgsAstroFrameSensorModel::replaceModelState(const std::string& argState) {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::replaceModelState");
+void UsgsAstroFrameSensorModel::replaceModelState(const std::string& modelState) {
+    auto state = json::parse(modelState);
+    for(auto &key : _STATE_KEYWORD){
+        if (state.find(key) == state.end()){
+            csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
+            std::string aMessage = "State key %s mission", key;
+            std::string aFunction = "UsgsAstroFramePlugin::replaceModelState()";
+            throw csm::Error(aErrorType, aMessage, aFunction);
+        }
+        // TODO: This is pulled right out of the plugin - good reason to have the state be a
+        // distinct class a la the generic line scan model.
+        m_ccdCenter[0] = state["m_ccdCenter"][0];
+        m_ccdCenter[1] = state["m_ccdCenter"][1];
+        m_ephemerisTime = state["m_ephemerisTime"];
+        m_focalLength = state["m_focalLength"];
+        m_focalLengthEpsilon = state["m_focalLengthEpsilon"];
+        m_ifov = state["m_ifov"];
+        m_instrumentID = state["m_instrumentID"];
+
+        m_majorAxis = state["m_majorAxis"];
+        m_minorAxis = state["m_minorAxis"];
+        m_startingDetectorLine = state["m_startingDetectorLine"];
+        m_startingDetectorSample = state["m_startingDetectorSample"];
+        m_line_pp = state["m_line_pp"];
+        m_sample_pp = state["m_sample_pp"];
+        m_originalHalfLines = state["m_originalHalfLines"];
+        m_originalHalfSamples = state["m_originalHalfSamples"];
+        m_spacecraftName = state["m_spacecraftName"];
+        m_pixelPitch = state["m_pixelPitch"];
+        m_nLines = state["m_nLines"];
+        m_nSamples = state["m_nSamples"];
+        m_minElevation = state["m_minElevation"];
+        m_maxElevation = state["m_maxElevation"];
+
+        for (int i=0;i<3;i++){
+            m_boresight[i] = state["m_boresight"][i];
+            m_iTransL[i] = state["m_iTransL"][i];
+            m_iTransS[i] = state["m_iTransS"][i];
+
+            m_transX[i] = state["m_transX"][i];
+            m_transY[i] = state["m_transY"][i];
+            m_spacecraftVelocity[i] = state["m_spacecraftVelocity"][i];
+            m_sunPosition[i] = state["m_sunPosition"][i];
+        }
+
+        // Having types as vectors, instead of arrays makes interoperability with
+        // the JSON library very easy.
+        m_currentParameterValue = state["m_currentParameterValue"].get<std::vector<double>>();
+        m_odtX = state["m_odtX"].get<std::vector<double>>();
+        m_odtY = state["m_odtY"].get<std::vector<double>>();
+
+        m_currentParameterCovariance = state["m_currentParameterCovariance"].get<std::vector<double>>();
+    }
 }
 
 

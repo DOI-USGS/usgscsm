@@ -9,14 +9,6 @@ import usgscam as cam
 data_path = os.path.dirname(__file__)
 
 class TestCassiniNAC:
-    @pytest.fixture
-    def cassini_model(self):
-        path = os.path.join(data_path,'cassini_nac.json')
-        with open(path, 'r') as f:
-            csm_isd = isd.Isd.load(f)
-        plugin = cam.genericframe.Plugin()
-        return plugin.from_isd(csm_isd, plugin.modelname(1))
-
     @pytest.mark.parametrize('image, ground',[
                               ((512, 512, 0), (232745.39404384792, 108032.64063985727, 1416.4229696467519)),
                               ((1024, 1024, 0), (208934.79595478065, 147272.0343555567, 21924.160632191226)),
@@ -42,25 +34,16 @@ class TestCassiniNAC:
         assert iy == pytest.approx(y, rel=11)
 
 
+
+
 class TestMdisWac:
-    @pytest.fixture
-    def model(self):
-        csm_isd = isd.Isd()
-        with open(os.path.join(data_path,'CW1071364100B_IU_5.json'), 'r') as f:
-            d = json.load(f)
-        for k, v in d.items():
-            csm_isd.addparam(k, v)
-
-        plugin = cam.genericframe.Plugin()
-        return plugin.from_isd(csm_isd, plugin.modelname(1))
-
     @pytest.mark.parametrize('image, ground',[
                               ((512, 512, 0), (-73589.5516508502, 562548.342040933, 2372508.44060771)),
                               ((100, 100, 0), (-48020.2164819883, 539322.805489926, 2378549.41724731))
     ])
-    def test_image_to_ground(self, model, image, ground):
+    def test_image_to_ground(self, mdis_wac_model, image, ground):
         gx, gy, gz = ground
-        x, y, z = model.imageToGround(*image)
+        x, y, z = mdis_wac_model.imageToGround(*image)
         assert x == pytest.approx(gx, rel=1)
         assert y == pytest.approx(gy, rel=1)
         assert z == pytest.approx(gz, rel=1)
@@ -69,8 +52,8 @@ class TestMdisWac:
                               ((512, 512, 0), (-73589.5516508502, 562548.342040933, 2372508.44060771)),
                               ((100, 100, 0), (-48020.2164819883, 539322.805489926, 2378549.41724731))
     ])
-    def test_ground_to_image(self, model, image, ground):
-        y, x = model.groundToImage(*ground)
+    def test_ground_to_image(self, mdis_wac_model, image, ground):
+        y, x = mdis_wac_model.groundToImage(*ground)
         ix, iy, _ = image
 
         assert x == pytest.approx(ix)
