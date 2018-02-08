@@ -64,6 +64,7 @@ cdef extern from "UsgsAstroLsSensorModel.h":
         string getSensorMode()
         CppEllipsoid getEllipsoid()
         void setEllipsoid(const CppEllipsoid &ellipsoid)
+        void replaceModelState(const string& argState);
 
 cdef extern from "UsgsAstroLsPlugin.h":
     cdef cppclass CppGenericLsPlugin "UsgsAstroLsPlugin":
