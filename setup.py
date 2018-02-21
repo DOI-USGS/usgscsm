@@ -9,8 +9,8 @@ from Cython.Build import cythonize
 incdir = os.path.dirname(sysconfig.get_path('include'))
 
 INCLUDE_DIRS = ['include/json', 'include/genericframe', 'include/orex',
-                'include/genericls',
-                'include/', '/scratch/csm2/include/csm','/scratch/csm2/include', incdir, os.path.join(incdir, 'csm')]
+                'include/genericls', 'include/', '/scratch/csm2/include/csm',
+                '/scratch/csm2/include', incdir, os.path.join(incdir, 'csm')]
 LIBRARY_DIRS = ['/scratch/csm2/lib/']  # This assumes that libcsmapi is installed in a standard place
 LIBRARIES = ['csmapi']
 COMPILE_ARGS = ['-g', '-std=c++11']#, '-stdlib=libc++']
