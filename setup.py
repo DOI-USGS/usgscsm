@@ -10,8 +10,8 @@ incdir = os.path.dirname(sysconfig.get_path('include'))
 
 INCLUDE_DIRS = ['include/json', 'include/genericframe', 'include/orex',
                 'include/genericls',
-                'include/', incdir, os.path.join(incdir, 'csm')]
-LIBRARY_DIRS = []  # This assumes that libcsmapi is installed in a standard place
+                'include/', '/scratch/csm2/include/csm','/scratch/csm2/include', incdir, os.path.join(incdir, 'csm')]
+LIBRARY_DIRS = ['/scratch/csm2/lib/']  # This assumes that libcsmapi is installed in a standard place
 LIBRARIES = ['csmapi']
 COMPILE_ARGS = ['-g', '-std=c++11']#, '-stdlib=libc++']
 
@@ -29,6 +29,7 @@ def generate_extension(path_name, sources):
                 extra_compile_args=COMPILE_ARGS,
                 language='c++',
                 include_dirs=INCLUDE_DIRS,
+                library_dirs=LIBRARY_DIRS,
                 runtime_library_dirs=LIBRARY_DIRS,
                 libraries=LIBRARIES)
 
