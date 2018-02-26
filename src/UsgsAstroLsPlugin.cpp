@@ -426,7 +426,7 @@ std::string UsgsAstroLsPlugin::convertISDToModelState(
    state.m_StartingEphemerisTime = atof(image_support_data.param("STARTING_EPHEMERIS_TIME").c_str());
    if (image_support_data.param("NUMBER_OF_INT_TIMES").empty()) {
      state.m_IntTimeLines = {1};
-     state.m_IntTimeStartTimes = state.m_StartingEphemerisTime;
+     state.m_IntTimeStartTimes = {state.m_StartingEphemerisTime};
      state.m_IntTimes = {atof(image_support_data.param("INT_TIME").c_str())};
    }
    else {

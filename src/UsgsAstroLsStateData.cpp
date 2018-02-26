@@ -468,7 +468,7 @@ void UsgsAstroLsStateData::reset()
    m_AtmRefFlag    = 0;                       // 11
    m_IntTimeLines  = {1};
    m_IntTimeStartTimes = {0.0};
-   m_IntTimes.     = {0.001};
+   m_IntTimes      = {0.001};
    m_StartingEphemerisTime = 0.0;             // 13
    m_CenterEphemerisTime = 0.0;               // 14
    m_DetectorSampleSumming = 1.0;             // 15

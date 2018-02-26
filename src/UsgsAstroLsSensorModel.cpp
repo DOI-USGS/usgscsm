@@ -20,6 +20,7 @@
 
 #include "genericls/UsgsAstroLsSensorModel.h"
 
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <math.h>
@@ -108,7 +109,9 @@ void UsgsAstroLsSensorModel::updateState()
    _data.m_HalfSwath = _data.m_Gsd * _data.m_TotalSamples / 2.0;
 
    // Compute half time duration
-   _data.m_HalfTime = _data.m_IntTime * _data.m_TotalLines / 2.0;
+   double fullImageTime = _data.m_IntTimeStartTimes.back() - _data.m_IntTimeStartTimes.front()
+                          + _data.m_IntTimes.back() * (_data.m_TotalLines - _data.m_IntTimeLines.back());
+   _data.m_HalfTime = fullImageTime / 2.0;
 
    // Parameter covariance, hardcoded accuracy values
    int num_params = _data.NUM_PARAMETERS;
@@ -879,9 +882,19 @@ double UsgsAstroLsSensorModel::getImageTime(
    double lineCSMFull = line1 + _data.m_OffsetLines;
    double lineUSGSFull = lineCSMFull + 0.5;
 
+   // These calculation assumes that the values in the integration time
+   // vectors are in terms of ISIS' pixels
+   auto referenceLineIt = std::upper_bound(_data.m_IntTimeLines.begin(),
+                                           _data.m_IntTimeLines.end(),
+                                           lineUSGSFull);
+   if (referenceLineIt != _data.m_IntTimeLines.begin()) {
+      --referenceLineIt;
+   }
+   size_t referenceIndex = std::distance(_data.m_IntTimeLines.begin(), referenceLineIt);
+
    // USGS timing reference leftmost-side 1st full row
-   double timeUsgs = _data.m_IntTime * (lineUSGSFull - 0.5)
-      + _data.m_StartingEphemerisTime;
+   double timeUsgs = _data.m_IntTimeStartTimes[referenceIndex]
+      + _data.m_IntTimes[referenceIndex] * (lineUSGSFull - _data.m_IntTimeLines[referenceIndex]);
 
    // Translate time origin to image geometric center
    // Same as ephemeris and attitude time origin
