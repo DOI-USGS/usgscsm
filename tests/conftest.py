@@ -42,6 +42,13 @@ def ctx_model():
     return plugin.from_isd(csm_isd, plugin.modelname(1))
 
 @pytest.fixture
+def hrsc_model():
+    path = os.path.join(data_path, 'h2254_0000_s12_keywords.lis')
+    csm_isd = isd.Isd.read_socet_file(path)
+    plugin = cam.genericls.Plugin()
+    return plugin.from_isd(csm_isd, plugin.modelname(1))
+
+@pytest.fixture
 def cassini_model():
     path = os.path.join(data_path,'cassini_nac.json')
     with open(path, 'r') as f:
