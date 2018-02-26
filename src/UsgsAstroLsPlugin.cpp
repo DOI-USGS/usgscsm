@@ -108,7 +108,9 @@ const std::string  UsgsAstroLsPlugin::mSTATE_KEYWORDS[] =
    "STA_PLATFORM_FLAG",
    "STA_ABERR_FLAG",
    "STA_ATMREF_FLAG",
-   "STA_INT_TIME",
+   "STA_INT_TIME_LINES",
+   "STA_INT_TIME_START_TIMES",
+   "STA_INT_TIMES",
    "STA_STARTING_EPHEMERIS_TIME",
    "STA_CENTER_EPHEMERIS_TIME",
    "STA_DETECTOR_SAMPLE_SUMMING",
@@ -421,8 +423,20 @@ std::string UsgsAstroLsPlugin::convertISDToModelState(
    state.m_PlatformFlag = atoi(image_support_data.param("PLATFORM").c_str());
    state.m_AberrFlag = atoi(image_support_data.param("ABERR").c_str());
    state.m_AtmRefFlag = atoi(image_support_data.param("ATMREF").c_str());
-   state.m_IntTime = atof(image_support_data.param("INT_TIME").c_str());
    state.m_StartingEphemerisTime = atof(image_support_data.param("STARTING_EPHEMERIS_TIME").c_str());
+   if (image_support_data.param("NUMBER_OF_INT_TIMES").empty()) {
+     state.m_IntTimeLines = {1};
+     state.m_IntTimeStartTimes = state.m_StartingEphemerisTime;
+     state.m_IntTimes = {atof(image_support_data.param("INT_TIME").c_str())};
+   }
+   else {
+     int numIntTimes = atoi(image_support_data.param("NUMBER_OF_INT_TIMES").c_str());
+     for (int i = 0; i < numIntTimes; i++) {
+       state.m_IntTimeLines.push_back(atoi(image_support_data.param("INT_TIME", i*3).c_str()));
+       state.m_IntTimeStartTimes.push_back(atof(image_support_data.param("INT_TIME", i*3 + 1).c_str()));
+       state.m_IntTimes.push_back(atof(image_support_data.param("INT_TIME", i*3 + 2).c_str()));
+     }
+   }
    state.m_CenterEphemerisTime = atof(image_support_data.param("CENTER_EPHEMERIS_TIME").c_str());
    state.m_DetectorSampleSumming = atoi(image_support_data.param("DETECTOR_SAMPLE_SUMMING").c_str());
    state.m_StartingSample = atoi(image_support_data.param("STARTING_SAMPLE").c_str());
