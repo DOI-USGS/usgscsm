@@ -72,7 +72,9 @@ const std::string  UsgsAstroLsStateData::STATE_KEYWORD[] =
    "STA_PLATFORM_FLAG",
    "STA_ABERR_FLAG",
    "STA_ATMREF_FLAG",
-   "STA_INT_TIME",
+   "STA_INT_TIME_LINES",
+   "STA_INT_TIME_START_TIMES",
+   "STA_INT_TIMES",
    "STA_STARTING_EPHEMERIS_TIME",
    "STA_CENTER_EPHEMERIS_TIME",
    "STA_DETECTOR_SAMPLE_SUMMING",
@@ -147,7 +149,9 @@ std::string UsgsAstroLsStateData::toJson() const {
         {STATE_KEYWORD[STA_PLATFORM_FLAG], m_PlatformFlag},
         {STATE_KEYWORD[STA_ABERR_FLAG], m_AberrFlag},
         {STATE_KEYWORD[STA_ATMREF_FLAG], m_AtmRefFlag},
-        {STATE_KEYWORD[STA_INT_TIME], m_IntTime},
+        {STATE_KEYWORD[STA_INT_TIME_LINES], m_IntTimeLines},
+        {STATE_KEYWORD[STA_INT_TIME_START_TIMES], m_IntTimeStartTimes},
+        {STATE_KEYWORD[STA_INT_TIMES], m_IntTimes},
         {STATE_KEYWORD[STA_STARTING_EPHEMERIS_TIME], m_StartingEphemerisTime},
         {STATE_KEYWORD[STA_CENTER_EPHEMERIS_TIME], m_CenterEphemerisTime},
         {STATE_KEYWORD[STA_DETECTOR_SAMPLE_SUMMING], m_DetectorSampleSumming},
@@ -214,7 +218,24 @@ std::string UsgsAstroLsStateData::toString() const
    state_stream << STATE_KEYWORD[STA_PLATFORM_FLAG]     << " " << m_PlatformFlag      << "\n";  // 9
    state_stream << STATE_KEYWORD[STA_ABERR_FLAG] << " " << m_AberrFlag         << "\n";  // 10
    state_stream << STATE_KEYWORD[STA_ATMREF_FLAG]<< " " << m_AtmRefFlag        << "\n";  // 11
-   state_stream << STATE_KEYWORD[STA_INT_TIME]   << " " << m_IntTime           << "\n";  // 12
+   state_stream << STATE_KEYWORD[STA_INT_TIME_LINES]    << " " ;
+   for (size_t i = 0; i < m_IntTimeLines.size(); i++)
+   {
+      state_stream << m_IntTimeLines[i] << " ";
+   }
+   state_stream << "\n";
+   state_stream << STATE_KEYWORD[STA_INT_TIME_START_TIMES] << " " ;
+   for (size_t i = 0; i < m_IntTimeStartTimes.size(); i++)
+   {
+      state_stream << m_IntTimeStartTimes[i] << " ";
+   }
+   state_stream << "\n";
+   state_stream << STATE_KEYWORD[STA_INT_TIMES]         << " " ;
+   for (size_t i = 0; i < m_IntTimes.size(); i++)
+   {
+      state_stream << m_IntTimes[i] << " ";
+   }
+   state_stream << "\n";
    state_stream << STATE_KEYWORD[STA_STARTING_EPHEMERIS_TIME]  << " "
                                            << m_StartingEphemerisTime << "\n";  // 13
    state_stream << STATE_KEYWORD[STA_CENTER_EPHEMERIS_TIME]    << " "
@@ -345,7 +366,9 @@ void UsgsAstroLsStateData::setState(const std::string &stateString )
    m_PlatformFlag = j["STA_PLATFORM_FLAG"];
    m_AberrFlag = j["STA_ABERR_FLAG"];
    m_AtmRefFlag = j["STA_ATMREF_FLAG"];
-   m_IntTime = j["STA_INT_TIME"];
+   m_IntTimeLines = j["STA_INT_TIME_LINES"].get<std::vector<int>>();
+   m_IntTimeStartTimes = j["STA_INT_TIME_START_TIMES"].get<std::vector<double>>();
+   m_IntTimes = j["STA_INT_TIMES"].get<std::vector<double>>();
    m_StartingEphemerisTime = j["STA_STARTING_EPHEMERIS_TIME"];
    m_CenterEphemerisTime = j["STA_CENTER_EPHEMERIS_TIME"];
    m_DetectorSampleSumming = j["STA_DETECTOR_SAMPLE_SUMMING"];
@@ -443,7 +466,9 @@ void UsgsAstroLsStateData::reset()
    m_PlatformFlag  = 1;                       // 9
    m_AberrFlag     = 0;                       // 10
    m_AtmRefFlag    = 0;                       // 11
-   m_IntTime       = 0.001;                   // 12
+   m_IntTimeLines  = {1};
+   m_IntTimeStartTimes = {0.0};
+   m_IntTimes.     = {0.001};
    m_StartingEphemerisTime = 0.0;             // 13
    m_CenterEphemerisTime = 0.0;               // 14
    m_DetectorSampleSumming = 1.0;             // 15
