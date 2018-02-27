@@ -366,7 +366,7 @@ void UsgsAstroLsStateData::setState(const std::string &stateString )
    m_PlatformFlag = j["STA_PLATFORM_FLAG"];
    m_AberrFlag = j["STA_ABERR_FLAG"];
    m_AtmRefFlag = j["STA_ATMREF_FLAG"];
-   m_IntTimeLines = j["STA_INT_TIME_LINES"].get<std::vector<int>>();
+   m_IntTimeLines = j["STA_INT_TIME_LINES"].get<std::vector<double>>();
    m_IntTimeStartTimes = j["STA_INT_TIME_START_TIMES"].get<std::vector<double>>();
    m_IntTimes = j["STA_INT_TIMES"].get<std::vector<double>>();
    m_StartingEphemerisTime = j["STA_STARTING_EPHEMERIS_TIME"];

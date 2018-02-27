@@ -425,14 +425,14 @@ std::string UsgsAstroLsPlugin::convertISDToModelState(
    state.m_AtmRefFlag = atoi(image_support_data.param("ATMREF").c_str());
    state.m_StartingEphemerisTime = atof(image_support_data.param("STARTING_EPHEMERIS_TIME").c_str());
    if (image_support_data.param("NUMBER_OF_INT_TIMES").empty()) {
-     state.m_IntTimeLines = {1};
+     state.m_IntTimeLines = {0.5};
      state.m_IntTimeStartTimes = {state.m_StartingEphemerisTime};
      state.m_IntTimes = {atof(image_support_data.param("INT_TIME").c_str())};
    }
    else {
      int numIntTimes = atoi(image_support_data.param("NUMBER_OF_INT_TIMES").c_str());
      for (int i = 0; i < numIntTimes; i++) {
-       state.m_IntTimeLines.push_back(atoi(image_support_data.param("INT_TIME", i*3).c_str()));
+       state.m_IntTimeLines.push_back(atof(image_support_data.param("INT_TIME", i*3).c_str()));
        state.m_IntTimeStartTimes.push_back(atof(image_support_data.param("INT_TIME", i*3 + 1).c_str()));
        state.m_IntTimes.push_back(atof(image_support_data.param("INT_TIME", i*3 + 2).c_str()));
      }

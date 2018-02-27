@@ -85,7 +85,7 @@ class UsgsAstroLsStateData
    int          m_PlatformFlag;                   // 7
    int          m_AberrFlag;                      // 8
    int          m_AtmRefFlag;                     // 9
-   std::vector<int> m_IntTimeLines;
+   std::vector<double> m_IntTimeLines;
    std::vector<double> m_IntTimeStartTimes;
    std::vector<double> m_IntTimes;
    double       m_StartingEphemerisTime;          // 11
