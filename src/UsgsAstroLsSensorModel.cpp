@@ -1363,7 +1363,7 @@ void UsgsAstroLsSensorModel::losToEcf(
    double p12 = -m12 / determinant;
    double p21 = -m21 / determinant;
    double p22 = m22 / determinant;
-   double isisNatFocalPlaneX = p11 * t1 + p21 * t2;
+   double isisNatFocalPlaneX = p11 * t1 + p12 * t2;
    double isisNatFocalPlaneY = p21 * t1 + p22 * t2;
 
    // Remove lens distortion
