@@ -873,8 +873,6 @@ double UsgsAstroLsSensorModel::getImageTime(
 {
    // Flip image taken backwards
    double line1 = image_pt.line;
-   if (_data.m_ImageFlipFlag == 1)
-      line1 = _data.m_TotalLines - 1 - image_pt.line;
 
    // CSM image convention: UL pixel center == (0.5, 0.5)
    // USGS image convention: UL pixel center == (1.0, 1.0)
