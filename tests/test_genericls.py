@@ -37,7 +37,7 @@ class TestCTX:
 class TestHRSC:
 
     @pytest.mark.parametrize('image, ground',[
-                              ((1291.5, 14351.5, 0), (1050372.2680538, 995148.04296401, -3054455.4812471))
+                              ((14351.5, 1291.5, 0), (1050372.2680538, 995148.04296401, -3054455.4812471))
     ])
     def test_image_to_ground(self, hrsc_model, image, ground):
         gx, gy, gz = ground
