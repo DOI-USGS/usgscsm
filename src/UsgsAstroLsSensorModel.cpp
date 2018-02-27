@@ -890,13 +890,10 @@ double UsgsAstroLsSensorModel::getImageTime(
    }
    size_t referenceIndex = std::distance(_data.m_IntTimeLines.begin(), referenceLineIt);
 
-   // USGS timing reference leftmost-side 1st full row
-   double timeUsgs = _data.m_IntTimeStartTimes[referenceIndex]
+   double time = _data.m_IntTimeStartTimes[referenceIndex]
       + _data.m_IntTimes[referenceIndex] * (lineUSGSFull - _data.m_IntTimeLines[referenceIndex]);
 
-   // Translate time origin to image geometric center
-   // Same as ephemeris and attitude time origin
-   return timeUsgs - _data.m_CenterEphemerisTime;
+   return time;
 
 }
 
