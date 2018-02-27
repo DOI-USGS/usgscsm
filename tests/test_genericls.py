@@ -45,9 +45,9 @@ class TestHRSC:
         #TODO: Get this test up and running.
         #print(x, y, z)
         #assert False
-        #assert x == pytest.approx(gx, rel=1)
-        #assert y == pytest.approx(gy, rel=1)
-        #assert z == pytest.approx(gz, rel=1)
+        assert x == pytest.approx(gx, rel=1e-3)
+        assert y == pytest.approx(gy, rel=1e-3)
+        assert z == pytest.approx(gz, rel=1e-3)
 
     #@pytest.mark.parametrize('image, ground',[
     #                          ((512, 512, 0), (-73589.5516508502, 562548.342040933, 2372508.44060771)),
