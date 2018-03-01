@@ -34,32 +34,91 @@ class TestCTX:
     #    assert x == pytest.approx(ix)
     #    assert y == pytest.approx(iy)
 
-class TestHRSC:
-    #TODO make the test tolerances tighter
+class TestHRSCNadir:
 
     @pytest.mark.parametrize('image, ground',[
-                              ((14351.5, 1291.5, 0), (1050372.2680538, 995148.04296401, -3054455.4812471)),
-                              ((0.5, 0.5, 0), (707400.76484944, 670982.96805253, -3234076.4365304)),
-                              ((0.5, 2583.5, 0), (788620.52258149, 602466.17532249, -3228838.5855823)),
-                              ((28703.5, 0.5, 0), (1263308.4518651, 1299579.9304643, -2855245.3087177)),
-                              ((28703.5, 2583.5, 0), (1317920.8068939, 1251608.9818902, -2852027.3218065))
+          ((0.5, 0.5, 0), (985377.89225802, 3243484.7261571, 206009.0045894)),
+          ((0.5, 5175.5, 0), (849592.95667544, 3281524.2988248, 208281.94748872)),
+          ((25503.5, 0.5, 0), (995812.30843397, 3161653.5178064, 734845.5368816)),
+          ((25503.5, 5175.5, 0), (817255.33536118, 3211512.2358805, 738854.37876771)),
+          ((12751.5, 2587.5, 0), (914645.41695902, 3237864.2204448, 459626.50243137))
     ])
-    def test_image_to_ground(self, hrsc_model, image, ground):
+    def test_image_to_ground(self, hrsc_nadir_model, image, ground):
         gx, gy, gz = ground
-        x, y, z = hrsc_model.imageToGround(*image)
-        assert x == pytest.approx(gx, rel=1e-3)
-        assert y == pytest.approx(gy, rel=1e-3)
-        assert z == pytest.approx(gz, rel=1e-3)
+        x, y, z = hrsc_nadir_model.imageToGround(*image)
+        assert x == pytest.approx(gx, abs=100)
+        assert y == pytest.approx(gy, abs=100)
+        assert z == pytest.approx(gz, abs=100)
 
     @pytest.mark.parametrize('image, ground',[
-                              ((14351.5, 1291.5, 0), (1050372.2680538, 995148.04296401, -3054455.4812471)),
-                              ((0.5, 0.5, 0), (707400.76484944, 670982.96805253, -3234076.4365304)),
-                              ((0.5, 2583.5, 0), (788620.52258149, 602466.17532249, -3228838.5855823)),
-                              ((28703.5, 0.5, 0), (1263308.4518651, 1299579.9304643, -2855245.3087177)),
-                              ((28703.5, 2583.5, 0), (1317920.8068939, 1251608.9818902, -2852027.3218065))
+          ((0.5, 0.5, 0), (985377.89225802, 3243484.7261571, 206009.0045894)),
+          ((0.5, 5175.5, 0), (849592.95667544, 3281524.2988248, 208281.94748872)),
+          ((25503.5, 0.5, 0), (995812.30843397, 3161653.5178064, 734845.5368816)),
+          ((25503.5, 5175.5, 0), (817255.33536118, 3211512.2358805, 738854.37876771)),
+          ((12751.5, 2587.5, 0), (914645.41695902, 3237864.2204448, 459626.50243137))
     ])
-    def test_ground_to_image(self, hrsc_model, image, ground):
-        y, x = hrsc_model.groundToImage(*ground)
+    def test_ground_to_image(self, hrsc_nadir_model, image, ground):
+        y, x = hrsc_nadir_model.groundToImage(*ground)
+        iy, ix, _ = image
+
+        assert x == pytest.approx(ix, abs=0.5)
+        assert y == pytest.approx(iy, abs=0.5)
+
+class TestHRSCStereo1:
+
+    @pytest.mark.parametrize('image, ground',[
+          ((0.5, 0.5, 0), (979590.30174957, 3242179.3919958, 249088.83886381)),
+          ((0.5, 2583.5, 0), (855179.96698611, 3277243.42159, 248427.66616907)),
+          ((12503.5, 0.5, 0), (984596.8817312, 3152386.5706555, 787256.94481508)),
+          ((12503.5, 2583.5, 0), (824462.92414568, 3197824.047306, 787981.15939371)),
+          ((6251.5, 1291.5, 0), (913762.62459356, 3231516.1914323, 503425.73182682))
+    ])
+    def test_image_to_ground(self, hrsc_stereo_1_model, image, ground):
+        gx, gy, gz = ground
+        x, y, z = hrsc_stereo_1_model.imageToGround(*image)
+        assert x == pytest.approx(gx, abs=100)
+        assert y == pytest.approx(gy, abs=100)
+        assert z == pytest.approx(gz, abs=100)
+
+    @pytest.mark.parametrize('image, ground',[
+          ((0.5, 0.5, 0), (979590.30174957, 3242179.3919958, 249088.83886381)),
+          ((0.5, 2583.5, 0), (855179.96698611, 3277243.42159, 248427.66616907)),
+          ((12503.5, 0.5, 0), (984596.8817312, 3152386.5706555, 787256.94481508)),
+          ((12503.5, 2583.5, 0), (824462.92414568, 3197824.047306, 787981.15939371)),
+          ((6251.5, 1291.5, 0), (913762.62459356, 3231516.1914323, 503425.73182682))
+    ])
+    def test_ground_to_image(self, hrsc_stereo_1_model, image, ground):
+        y, x = hrsc_stereo_1_model.groundToImage(*ground)
+        iy, ix, _ = image
+
+        assert x == pytest.approx(ix, abs=0.5)
+        assert y == pytest.approx(iy, abs=0.5)
+
+class TestHRSCStereo2:
+
+    @pytest.mark.parametrize('image, ground',[
+          ((0.5, 0.5, 0), (994968.78141471, 3243624.373581, 150910.83677465)),
+          ((0.5, 2583.5, 0), (840154.182443, 3286852.5036334, 156704.92657188)),
+          ((14263.5, 0.5, 0), (1015683.4735728, 3170802.9252193, 665761.34487006)),
+          ((14263.5, 2583.5, 0), (802816.11887483, 3229529.8393814, 674042.87178595)),
+          ((7131.5, 1291.5, 0), (915544.01372502, 3243112.89855, 419540.13516932))
+    ])
+    def test_image_to_ground(self, hrsc_stereo_2_model, image, ground):
+        gx, gy, gz = ground
+        x, y, z = hrsc_stereo_2_model.imageToGround(*image)
+        assert x == pytest.approx(gx, abs=100)
+        assert y == pytest.approx(gy, abs=100)
+        assert z == pytest.approx(gz, abs=100)
+
+    @pytest.mark.parametrize('image, ground',[
+          ((0.5, 0.5, 0), (994968.78141471, 3243624.373581, 150910.83677465)),
+          ((0.5, 2583.5, 0), (840154.182443, 3286852.5036334, 156704.92657188)),
+          ((14263.5, 0.5, 0), (1015683.4735728, 3170802.9252193, 665761.34487006)),
+          ((14263.5, 2583.5, 0), (802816.11887483, 3229529.8393814, 674042.87178595)),
+          ((7131.5, 1291.5, 0), (915544.01372502, 3243112.89855, 419540.13516932))
+    ])
+    def test_ground_to_image(self, hrsc_stereo_2_model, image, ground):
+        y, x = hrsc_stereo_2_model.groundToImage(*ground)
         iy, ix, _ = image
 
         assert x == pytest.approx(ix, abs=0.5)
