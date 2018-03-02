@@ -78,188 +78,188 @@
            "description": "The target ellipsoid's minor axis in meters",
            "type": "number"
        },
-       "OPTICAL_DISTORTION: {
+       "OPTICAL_DISTORTION": {
            "description": "Information needed to convert from undistorted to distorted image plane",
-           "type": "object"
+           "type": "object",
 	   "properties" : { 
 	      "coefficients": { 
-	         "type": "array" 
-		   { "items": 
-		     { "type": "number" } } 
-		   },
-	      "key" : { "type": "string", "description": "key into LUT to determine equation to use"}
+	         "type": "array",
+		 "items": { 
+		    "type": "number" 
+		  } 
+		},
+	        "key" : { 
+		    "type": "string", 
+		    "description": "key into LUT to determine equation to use"
+		    }
 	 },
 	"required": ["coefficients", "equation_key"]
-       }
-
+       },
        "STARTING_DETECTOR_SAMPLE": {
            "description": "The sample on the detector where the data starts",
-           "type": "number",
+           "type": "number"
        },
        "STARTING_DETECTOR_LINE": {
            "description": "The line on the detector where the data starts",
-           "type": "number",
+           "type": "number"
        },
        "TRANS_X": {
            "description": "Transformation x coefficients from image plane (mm) to pixel coordinates", 
            "type": "array",
 	    "items": {
-                 "type": "number",
-            },
+                 "type": "number"
+            }
        },
        "TRANS_Y": {
            "description": "Transformation y coefficients from image plane (mm) to pixel coordinates",
            "type": "array",
 	    "items": {
-                 "type": "number",
-            },
+                 "type": "number"
+            }
        },
        "SENSOR_LOCATION": {
            "description": "(X, Y, Z) location of sensor in body-fixed frame.",
-           "type": "array"
+           "type": "array",
 	    "items": {
-               "type": "array"
+               "type": "array",
 	       "items" : {
                   "type": "number",
                   "minItems": 3,
-                  "maxItems": 3,
-		},
+                  "maxItems": 3
+		}
 	     }
        },
        "SENSOR_VELOCITY" : {
            "description": "(v_x, v_y, v_z) velocity of sensor in body-fixed frame.",
-           "type": "array"
+           "type": "array",
 	    "items": {
-               "type": "array"
+               "type": "array",
 	       "items" : {
                   "type": "number",
                   "minItems": 3,
-                  "maxItems": 3,
-		},
+                  "maxItems": 3
+		}
 	     }
-	}
+	},
        "SUN_POSITION" : {
            "description": "(v_x, v_y, v_z) velocity of sun in body-fixed frame.",
-           "type": "array"
+           "type": "array",
 	    "items": {
-               "type": "array"
+               "type": "array",
 	       "items" : {
                   "type": "number",
                   "minItems": 3,
-                  "maxItems": 3,
-		},
+                  "maxItems": 3
+		}
 	     }
-	}
+	},
        "SUN_VELOCITY" : {
            "description": "(v_x, v_y, v_z) velocity of sun in body-fixed frame.",
-           "type": "array"
+           "type": "array",
 	    "items": {
-               "type": "array"
+               "type": "array",
 	       "items" : {
                   "type": "number",
                   "minItems": 3,
-                  "maxItems": 3,
-		},
+                  "maxItems": 3
+		}
 	     }
-	}
-	// can we get rid of euler angles....
+	},
        "ORIENTATION": {
            "description": "Orientation of the sensor provided in Euler angles or quaternions",
-           "type": "object"
+           "type": "object",
 	   "properties" : { 
 	      "euler_angles" : { 
-		 "type": "array"
+		 "type": "array",
 		    "items": {
-		       "type": "array"
+		       "type": "array",
 			"items" : {
 			  "type": "number",
 			  "minItems": 3,
-                          "maxItems": 3,
-			},
+                          "maxItems": 3
+			}
 		     }
-		}
+		},
 	      "quaternions" : { 
-		"type": "array"
+		"type": "array",
 		    "items": {
-		       "type": "array"
+		       "type": "array",
 			"items" : {
 			  "type": "number",
 			  "minItems": 4,
-                          "maxItems": 4,
-			},
+                          "maxItems": 4
+			}
 		     }
-		}, 
-	    },
-       }
+		}
+	    }
+       },
        "DETECTOR_LINE_RATE": {
            "description": "The line rates of the detector map with the associated start line and time", 
            "type": "array",
-           "items": {
-	    "type": "object",
-	    "properties": {
-	      "START_LINE": {
-		"type": "number",
-	        },	
-              "LINE_START_TIME": {	
- 	         "type": "number"
-	      },
-	      "EXPOSURE_TIME": {
-		"type": "number"
-	      }
+              "items": {
+	       "type": "object",
+	       "properties": {
+	           "START_LINE": {
+		      "type": "number"
+	            },	
+                    "LINE_START_TIME": {	
+ 	                "type": "number"
+	            },
+	            "EXPOSURE_TIME": {
+		       "type": "number"
+	            },
 	      "required": [ "EXPOSURE_TIME"]
 	    }
-       }
+	 }
+       },
        "DETECTOR_SAMPLE_SUMMING": {
            "description": "The summing in the sample-direction",
            "type": "number"
-       }
+       },
        "DETECTOR_LINE_SUMMING": {
            "description": "The summing in the line-direction",
            "type": "number"
-       }
+       },
        "APPLY_LIGHT_TIME_CORRECTION": {
            "description": "A flag to indcate whether the light-time correction should be applied",
            "type": "bool"
-       }
+       },
        "NUMBER_OF_EPHEM": {
            "description": "The number of emphemeris points", 
            "type": "number"
-       }
+       },
        "NUMBER_OF_QUATERNIONS": {
            "description": "The number of quaternions",
            "type": "number"
-       }
+       },
        "DT_EPHEM": {
            "description": "The time between each ephemeris point.",
            "type": "number"
-       }
+       },
        "T0_EPHEM": {
            "description": "First ephemeris time - center ephemeris time",
            "type": "number"
-       }
+       },
        "DT_QUAT": {
            "description": "Time spacing of quaternions.",
            "type": "number"
-       }
-       "T0_QUAT: {
-           "description": "First quaternion time - center quaternion time."
+       },
+       "T0_QUAT": {
+           "description": "First quaternion time - center quaternion time.",
            "type": "number"
-       }
+       },
        "REFERENCE_HEIGHT": {
            "description": "Used for determining the intersection of the look vector with the ellipsoid",
            "type": "number"
-       }
+       },
       "INTERPOLATION_METHOD": {
            "description": "The type of interpolation method to use.", 
            "type": "string"
-       }
-
-// can we make whatever creates the ISD deal with this? 
-
+       },
        "FOCAL_PLANE_Z_DIRECTION" : {
-           "description" : "The z-direction of the focal plane",
+           "description" : "The z-direction of the focal plane. FIXME can we make the ISD-creator deal with this?",
 	   "type": "number"
        }
    },
-   "required": ["FOCAL_LENGTH", "BORESIGHT","CCD_CENTER","IMAGE_LINES","IMAGE_SAMPLES", "FOCAL_PLANE_Z_DIRECTION"...]"
+   "required": ["FOCAL_LENGTH", "BORESIGHT","CCD_CENTER","IMAGE_LINES","IMAGE_SAMPLES", "FOCAL_PLANE_Z_DIRECTION"]
 }
