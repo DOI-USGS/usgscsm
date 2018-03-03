@@ -32,10 +32,21 @@
            "description": "The starting ephemeris time of the image", 
            "type": "number"
        },
+       "FOCAL_LENGTH_MODEL": {
+            "description":  "A key to get information about time/temp dependent focal length models",
+            "type": "object",
+            "properties": {
+                "key": {"type": "string"},
+                "focal_length": {"type": "number"},
+                "focal_epsilon":{"type": "number"}
+            }
+
+       },   
        "FOCAL_LENGTH": {
            "description": "The focal length of the camera in mm",
            "type": "number"
        },
+        
        "FOCAL_LENGTH_EPSILON": {
            "description": "The uncertainty of the focal length of the camera in mm",
            "type": "number"
@@ -92,9 +103,10 @@
 		    "type": "string", 
 		    "description": "key into LUT to determine equation to use"
 		    }
-	 },
+	 },     
 	"required": ["coefficients", "equation_key"]
        },
+
        "STARTING_DETECTOR_SAMPLE": {
            "description": "The sample on the detector where the data starts",
            "type": "number"
