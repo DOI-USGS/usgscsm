@@ -83,8 +83,8 @@ class TestHRSCNadir:
         y, x = hrsc_nadir_model.groundToImage(*ground)
         iy, ix, _ = image
 
-        assert x == pytest.approx(ix, abs=0.5)
-        assert y == pytest.approx(iy, abs=0.5)
+        assert x == pytest.approx(ix, abs=1)
+        assert y == pytest.approx(iy, abs=1)
 
 class TestHRSCStereo1:
 
@@ -113,8 +113,8 @@ class TestHRSCStereo1:
         y, x = hrsc_stereo_1_model.groundToImage(*ground)
         iy, ix, _ = image
 
-        assert x == pytest.approx(ix, abs=0.5)
-        assert y == pytest.approx(iy, abs=0.5)
+        assert x == pytest.approx(ix, abs=1)
+        assert y == pytest.approx(iy, abs=1)
 
 class TestHRSCStereo2:
 
@@ -143,5 +143,5 @@ class TestHRSCStereo2:
         y, x = hrsc_stereo_2_model.groundToImage(*ground)
         iy, ix, _ = image
 
-        assert x == pytest.approx(ix, abs=0.5)
-        assert y == pytest.approx(iy, abs=0.5)
+        assert x == pytest.approx(ix, abs=1)
+        assert y == pytest.approx(iy, abs=1)
