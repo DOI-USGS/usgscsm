@@ -42,27 +42,6 @@ def ctx_model():
     return plugin.from_isd(csm_isd, plugin.modelname(1))
 
 @pytest.fixture
-def hrsc_nadir_model():
-    path = os.path.join(data_path, 'h0232_0000_nd2_keywords.lis')
-    csm_isd = isd.Isd.read_socet_file(path)
-    plugin = cam.genericls.Plugin()
-    return plugin.from_isd(csm_isd, plugin.modelname(1))
-
-@pytest.fixture
-def hrsc_stereo_1_model():
-    path = os.path.join(data_path, 'h0232_0000_s12_keywords.lis')
-    csm_isd = isd.Isd.read_socet_file(path)
-    plugin = cam.genericls.Plugin()
-    return plugin.from_isd(csm_isd, plugin.modelname(1))
-
-@pytest.fixture
-def hrsc_stereo_2_model():
-    path = os.path.join(data_path, 'h0232_0000_s22_keywords.lis')
-    csm_isd = isd.Isd.read_socet_file(path)
-    plugin = cam.genericls.Plugin()
-    return plugin.from_isd(csm_isd, plugin.modelname(1))
-
-@pytest.fixture
 def cassini_model():
     path = os.path.join(data_path,'cassini_nac.json')
     with open(path, 'r') as f:
