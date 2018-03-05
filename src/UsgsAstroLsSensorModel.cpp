@@ -323,6 +323,14 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
             "Divide by zero.",
             "UsgsAstroLsSensorModel::groundToImage");
       }
+
+      // We have to divide by the determinant of the Jacobian here as part of
+      // the inverse calculation.
+      // The multiplication by DELTA_IMAGE is because the calculation of the
+      // ground partials with respect to sample and line does not divide by
+      // DELTA_IMAGE. This also means the determinant of the Jacobian should
+      // be divided by DELTA_IMAGE^2. So, dLine and dSamp should be multiplied
+      // by DELTA_IMAGE^2/DELTA_IMAGE, which is just DELTA_IMAGE.
       lineTemp += (dLine / det * DELTA_IMAGE);
       sampleTemp += (dSamp / det * DELTA_IMAGE);
 
