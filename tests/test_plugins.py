@@ -25,8 +25,13 @@ def mdis_isd(scope="session"):
         return isd.Isd.load(f)
 
 @pytest.fixture
-def genericls_isd(scope="session"):
+def ctx_isd(scope="session"):
     isd_file = os.path.join(data_path, 'J03_046060_1986_XN_18N282W_8bit_keywords.lis')
+    return isd.Isd.read_socet_file(isd_file)
+
+@pytest.fixture
+def hrsc_isd(scope="session"):
+    isd_file = os.path.join(data_path, 'h2254_0000_s12_keywords.lis')
     return isd.Isd.read_socet_file(isd_file)
 
 @pytest.fixture
@@ -37,6 +42,12 @@ def nac_state(scope="session"):
 @pytest.fixture
 def ctx_state(scope="session"):
     path = os.path.join(data_path, 'J03_046060_1986_XN_18N282W_8bit_state.json')
+    with open(path, 'r') as f:
+        return json.load(f)
+
+@pytest.fixture
+def hrsc_state(scope="session"):
+    path = os.path.join(data_path, 'h2254_0000_s12_state.json')
     with open(path, 'r') as f:
         return json.load(f)
 
@@ -100,7 +111,8 @@ def test_modelname_from_state_bad_name(plugin, state):
 
 @pytest.mark.parametrize('plugin, name, state',
                          [(genericframe_plugin(), "USGS_ASTRO_FRAME_SENSOR_MODEL", nac_state()),
-                          (genericls_plugin(), "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", ctx_state())])
+                          (genericls_plugin(), "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", ctx_state()),
+                          (genericls_plugin(), "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", hrsc_state())])
 def test_can_model_be_constructed_from_state(plugin, name, state):
     try:
         state = json.dumps(state)
@@ -115,7 +127,8 @@ def test_can_model_be_constructed_from_state(plugin, name, state):
 
 @pytest.mark.parametrize('plugin, name, i',
                          [(genericframe_plugin(), 'USGS_ASTRO_FRAME_SENSOR_MODEL', mdis_isd()),
-                          (genericls_plugin(), "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", genericls_isd())])
+                          (genericls_plugin(), "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", ctx_isd()),
+                          (genericls_plugin(), "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", hrsc_isd())])
 def test_can_isd_be_converted_to_model_state(plugin, name, i):
     res = plugin.can_isd_be_converted_to_model_state(i, name)
     assert res == True
@@ -123,7 +136,8 @@ def test_can_isd_be_converted_to_model_state(plugin, name, i):
 
 @pytest.mark.parametrize('plugin, name, i, state',
                          [(genericframe_plugin(), 'USGS_ASTRO_FRAME_SENSOR_MODEL', mdis_isd(), nac_state()),
-                          (genericls_plugin(), "USGS_ASTRO_LINE_SCANNER_PLUGIN", genericls_isd(), ctx_state())])
+                          (genericls_plugin(), "USGS_ASTRO_LINE_SCANNER_PLUGIN", ctx_isd(), ctx_state()),
+                          (genericls_plugin(), "USGS_ASTRO_LINE_SCANNER_PLUGIN", hrsc_isd(), hrsc_state())])
 def test_convert_isd_to_model_state(plugin, name, i, state):
     pstate = plugin.convert_isd_to_state(i, name)
     for k, v in pstate.items():
@@ -133,7 +147,7 @@ def test_convert_isd_to_model_state(plugin, name, i, state):
 @pytest.mark.parametrize('plugin, i, name, param',
                          [(genericframe_plugin(), mdis_isd(),
                            'USGS_ASTRO_FRAME_SENSOR_MODEL', "focal_length"),
-                          (genericls_plugin(), genericls_isd(),
+                          (genericls_plugin(), ctx_isd(),
                            "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", "FOCAL")])
 def test_convert_isd_to_model_state_bad(plugin, i, name, param):
     # Trash the isd and check error handling
@@ -144,13 +158,15 @@ def test_convert_isd_to_model_state_bad(plugin, i, name, param):
 
 
 @pytest.mark.parametrize('plugin, state, instance', [(genericframe_plugin(), nac_state(), cam.genericframe.SensorModel),
-                                              (genericls_plugin(), ctx_state(), cam.genericls.SensorModel)])
+                                               (genericls_plugin(), ctx_state(), cam.genericls.SensorModel),
+                                               (genericls_plugin(), hrsc_state(), cam.genericls.SensorModel)])
 def test_construct_model_from_state(plugin, state, instance):
     camera = plugin.from_state(json.dumps(state))
     assert isinstance(camera, instance)
 
 @pytest.mark.parametrize('plugin, state, instance', [(genericframe_plugin(), nac_state(), cam.genericframe.SensorModel),
-                                              (genericls_plugin(), ctx_state(), cam.genericls.SensorModel)])
+                                              (genericls_plugin(), ctx_state(), cam.genericls.SensorModel),
+                                              (genericls_plugin(), hrsc_state(), cam.genericls.SensorModel)])
 def test_construct_model_from_bad_state(plugin, state, instance):
     # Remove the an entry from the state, making it invalid
     k = list(state.keys())[0]
@@ -161,6 +177,7 @@ def test_construct_model_from_bad_state(plugin, state, instance):
 
 @pytest.mark.parametrize('plugin, isd, modelname',
                          [(genericframe_plugin(), mdis_isd(), 'USGS_ASTRO_FRAME_SENSOR_MODEL'),
-                          (genericls_plugin(), genericls_isd(), "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL")])
+                          (genericls_plugin(), ctx_isd(), "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL"),
+                          (genericls_plugin(), hrsc_isd(), "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL")])
 def test_can_mode_be_constructed_from_isd(plugin, isd, modelname):
     assert plugin.check_isd_construction(isd, modelname)
