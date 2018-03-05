@@ -59,6 +59,7 @@ class TestHRSCNadir:
 
     @pytest.mark.parametrize('image, ground',[
           ((0.5, 0.5, 0), (985377.89225802, 3243484.7261571, 206009.0045894)),
+          ((1.0, 1.0, 0), (985364.97668174, 3243488.0289798, 206018.66578845)),
           ((0.5, 5175.5, 0), (849592.95667544, 3281524.2988248, 208281.94748872)),
           ((25503.5, 0.5, 0), (995812.30843397, 3161653.5178064, 734845.5368816)),
           ((25503.5, 5175.5, 0), (817255.33536118, 3211512.2358805, 738854.37876771)),
@@ -67,9 +68,9 @@ class TestHRSCNadir:
     def test_image_to_ground(self, hrsc_nadir_model, image, ground):
         gx, gy, gz = ground
         x, y, z = hrsc_nadir_model.imageToGround(*image)
-        assert x == pytest.approx(gx, abs=100)
-        assert y == pytest.approx(gy, abs=100)
-        assert z == pytest.approx(gz, abs=100)
+        assert x == pytest.approx(gx, abs=20)
+        assert y == pytest.approx(gy, abs=20)
+        assert z == pytest.approx(gz, abs=20)
 
     @pytest.mark.parametrize('image, ground',[
           ((0.5, 0.5, 0), (985377.89225802, 3243484.7261571, 206009.0045894)),
