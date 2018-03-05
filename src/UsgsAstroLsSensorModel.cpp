@@ -1353,7 +1353,7 @@ void UsgsAstroLsSensorModel::losToEcf(
 
    double sampleCSMFull = sample + _data.m_OffsetSamples;
    double sampleUSGSFull = sampleCSMFull + 0.5;
-   double fractionalLine = line - std::floor(line) - 0.5;
+   double fractionalLine = line - floor(line) - 0.5;
 
    // Compute distorted image coordinates in mm
 
