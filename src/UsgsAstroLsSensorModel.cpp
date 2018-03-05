@@ -204,6 +204,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    //  Computes line and sample given the ground coordinates in ECF cs.
    //  The solution is iterative and repeatedly calls the routine
    //  imageToPlane. If convergence is not achieved, a warning is issued.
+   //  This method uses Newton-Raphson method on planes to iterate.
 
    // Initialize variables
    const int MKTR = 20;
@@ -251,6 +252,8 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
       mode = -1;
       ktr++;
 
+      // Compute the approximate Jacobian using finite differences on planes.
+
       // Compute partial of ground coordinates w.r.t. line
 
       xLine = xSeed;
@@ -281,6 +284,9 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
       // imageToPlane() updates only two of the three coordinates.
       // Therefore, one of dx, dy, dz must be = 0.0 exactly.
       // The following if else if should work just fine.
+
+      // Compute the adjustment step by multiplying the ground delta by the
+      // inverse of the (approximate) Jacobian.
 
       if (0.0 == dx)
       {
