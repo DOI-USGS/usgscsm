@@ -2053,9 +2053,9 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
 
    // Convert to image sample line
    double line = detectorLine + _data.m_DetectorLineOrigin - _data.m_DetectorLineOffset
-               - _data.m_OffsetLines + 0.5;
+               - _data.m_OffsetLines - 0.5;
    double sample = (detectorSample + _data.m_DetectorSampleOrigin) / _data.m_DetectorSampleSumming
-                 + _data.m_StartingSample - _data.m_OffsetSamples + 0.5;
+                 - _data.m_OffsetSamples;
    return csm::ImageCoord(line, sample);
 }
 
