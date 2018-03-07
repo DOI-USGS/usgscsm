@@ -2011,6 +2011,135 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(
 
 
 //***************************************************************************
+// UsgsAstroLineScannerSensorModel::computeViewingPixel
+//***************************************************************************
+csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
+   const double& time,
+   const csm::EcefCoord& groundPoint,
+   const std::vector<double>& adj) const
+{
+   // Get the exterior orientation
+   double xc, yc, zc, vx, vy, vz;
+   getAdjSensorPosVel(time, adj, xc, yc, zc, vx, vy, vz);
+
+   // Compute the look vector
+   double bodyLookX = groundPoint.x - xc;
+   double bodyLookY = groundPoint.y - yc;
+   double bodyLookZ = groundPoint.z - zc;
+
+   // Rotate the look vector into the camera reference frame
+   int nOrder = 8;
+   if (_data.m_PlatformFlag == 0)
+      nOrder = 4;
+   int nOrderQuat = nOrder;
+   if (_data.m_NumQuaternions < 6 && nOrder == 8)
+      nOrderQuat = 4;
+   double q[4];
+   lagrangeInterp(
+      _data.m_NumQuaternions, &_data.m_Quaternions[0], _data.m_T0Quat, _data.m_DtQuat,
+      time, 4, nOrderQuat, q);
+   double norm = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+   // Divide by the negative norm for 0 through 2 to invert the quaternion
+   q[0] /= -norm;
+   q[1] /= -norm;
+   q[2] /= -norm;
+   q[3] /= norm;
+   double bodyToCamera[9];
+   bodyToCamera[0] = q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
+   bodyToCamera[1] = 2 * (q[0] * q[1] - q[2] * q[3]);
+   bodyToCamera[2] = 2 * (q[0] * q[2] + q[1] * q[3]);
+   bodyToCamera[3] = 2 * (q[0] * q[1] + q[2] * q[3]);
+   bodyToCamera[4] = -q[0] * q[0] + q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
+   bodyToCamera[5] = 2 * (q[1] * q[2] - q[0] * q[3]);
+   bodyToCamera[6] = 2 * (q[0] * q[2] - q[1] * q[3]);
+   bodyToCamera[7] = 2 * (q[1] * q[2] + q[0] * q[3]);
+   bodyToCamera[8] = -q[0] * q[0] - q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
+   double cameraLookX = bodyToCamera[0] * bodyLookX
+                      + bodyToCamera[1] * bodyLookY
+                      + bodyToCamera[2] * bodyLookZ;
+   double cameraLookY = bodyToCamera[3] * bodyLookX
+                      + bodyToCamera[4] * bodyLookY
+                      + bodyToCamera[5] * bodyLookZ;
+   double cameraLookZ = bodyToCamera[6] * bodyLookX
+                      + bodyToCamera[7] * bodyLookY
+                      + bodyToCamera[8] * bodyLookZ;
+
+   // Invert the attitude correction
+   double aTime = time - _data.m_T0Quat;
+   double euler[3];
+   double nTime = aTime / _data.m_HalfTime;
+   double nTime2 = nTime * nTime;
+   euler[0] =
+      (getValue(6, adj) + getValue(9, adj)* nTime + getValue(12, adj)* nTime2) / _data.m_FlyingHeight;
+   euler[1] =
+      (getValue(7, adj) + getValue(10, adj)* nTime + getValue(13, adj)* nTime2) / _data.m_FlyingHeight;
+   euler[2] =
+      (getValue(8, adj) + getValue(11, adj)* nTime + getValue(14, adj)* nTime2) / _data.m_HalfSwath;
+   double cos_a = cos(euler[0]);
+   double sin_a = sin(euler[0]);
+   double cos_b = cos(euler[1]);
+   double sin_b = sin(euler[1]);
+   double cos_c = cos(euler[2]);
+   double sin_c = sin(euler[2]);
+   double attCorr[9];
+   attCorr[0] = cos_b * cos_c;
+   attCorr[1] = -cos_a * sin_c + sin_a * sin_b * cos_c;
+   attCorr[2] = sin_a * sin_c + cos_a * sin_b * cos_c;
+   attCorr[3] = cos_b * sin_c;
+   attCorr[4] = cos_a * cos_c + sin_a * sin_b * sin_c;
+   attCorr[5] = -sin_a * cos_c + cos_a * sin_b * sin_c;
+   attCorr[6] = -sin_b;
+   attCorr[7] = sin_a * cos_b;
+   attCorr[8] = cos_a * cos_b;
+   double adjustedLookX = attCorr[0] * cameraLookX
+                        + attCorr[3] * cameraLookY
+                        + attCorr[6] * cameraLookZ;
+   double adjustedLookY = attCorr[1] * cameraLookX
+                        + attCorr[4] * cameraLookY
+                        + attCorr[7] * cameraLookZ;
+   double adjustedLookZ = attCorr[2] * cameraLookX
+                        + attCorr[5] * cameraLookY
+                        + attCorr[8] * cameraLookZ;
+
+   // Invert the boresight correction
+   double correctedLookX = _data.m_MountingMatrix[0] * adjustedLookX
+                         + _data.m_MountingMatrix[3] * adjustedLookY
+                         + _data.m_MountingMatrix[6] * adjustedLookZ;
+   double correctedLookY = _data.m_MountingMatrix[1] * adjustedLookX
+                         + _data.m_MountingMatrix[4] * adjustedLookY
+                         + _data.m_MountingMatrix[7] * adjustedLookZ;
+   double correctedLookZ = _data.m_MountingMatrix[2] * adjustedLookX
+                         + _data.m_MountingMatrix[5] * adjustedLookY
+                         + _data.m_MountingMatrix[8] * adjustedLookZ;
+
+   // Convert to focal plane coordinate
+   double lookScale = _data.m_Focal / correctedLookZ;
+   double focalX = correctedLookX * lookScale;
+   double focalY = correctedLookY * lookScale;
+
+   // TODO invert distortion here
+   // We probably only want to try and invert the distortion if we are
+   // reasonably close to the actual CCD because the distortion equations are
+   // sometimes only well behaved close to the CCD.
+
+   // Convert to detector line and sample
+   double detectorLine = _data.m_ITransL[0]
+                       + _data.m_ITransL[1] * focalX
+                       + _data.m_ITransL[2] * focalY;
+   double detectorSample = _data.m_ITransS[0]
+                         + _data.m_ITransS[1] * focalX
+                         + _data.m_ITransS[2] * focalY;
+
+   // Convert to image sample line
+   double line = detectorLine + _data.m_DetectorLineOrigin - _data.m_DetectorLineOffset
+               - _data.m_OffsetLines + 0.5;
+   double sample = (detectorSample + _data.m_DetectorSampleOrigin) / _data.m_DetectorSampleSumming
+                 + _data.m_StartingSample - _data.m_OffsetSamples + 0.5;
+   return csm::ImageCoord(line, sample);
+}
+
+
+//***************************************************************************
 // UsgsAstroLineScannerSensorModel::computeLinearApproximation
 //***************************************************************************
 void UsgsAstroLsSensorModel::computeLinearApproximation(
