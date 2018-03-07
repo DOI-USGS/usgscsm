@@ -423,7 +423,7 @@ std::string UsgsAstroLsPlugin::convertISDToModelState(
    state.m_PlatformFlag = atoi(image_support_data.param("PLATFORM").c_str());
    state.m_AberrFlag = atoi(image_support_data.param("ABERR").c_str());
    state.m_AtmRefFlag = atoi(image_support_data.param("ATMREF").c_str());
-   state.m_IntTime = atof(image_support_data.param("INT_TIME").c_str());
+   //state.m_IntTime = atof(image_support_data.param("INT_TIME").c_str());
    state.m_StartingEphemerisTime = atof(image_support_data.param("STARTING_EPHEMERIS_TIME").c_str());
    state.m_CenterEphemerisTime = atof(image_support_data.param("CENTER_EPHEMERIS_TIME").c_str());
    state.m_DetectorSampleSumming = atoi(image_support_data.param("DETECTOR_SAMPLE_SUMMING").c_str());
