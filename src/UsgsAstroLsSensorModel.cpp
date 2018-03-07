@@ -200,156 +200,77 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    double*               achieved_precision,
    csm::WarningList*     warnings) const
 {
-   //# func_description
-   //  Computes line and sample given the ground coordinates in ECF cs.
-   //  The solution is iterative and repeatedly calls the routine
-   //  imageToPlane. If convergence is not achieved, a warning is issued.
+   // Start bisection search on the image lines
+   double sampCtr = _data.m_TotalSamples / 2.0;
+   double firstTime = getImageTime(csm::ImageCoord(0.0, sampCtr));
+   double lastTime = getImageTime(csm::ImageCoord(_data.m_TotalLines, sampCtr));
+   std::cout << "First Time: " << firstTime << std::endl;
+   std::cout << "Last Time: " << lastTime << std::endl;
+   double firstOffset = computeViewingPixel(firstTime, ground_pt, adj).line - 0.5;
+   double lastOffset = computeViewingPixel(lastTime, ground_pt, adj).line - 0.5;
+   std::cout << "First Offset: " << firstOffset << std::endl;
+   std::cout << "Last Offset: " << lastOffset << std::endl;
 
-   // Initialize variables
-   const int MKTR = 10;
-   const double DELTA_IMAGE = 1.0;
-   double preSquare = desired_precision * desired_precision;
-   int mode = -1;
+   for (int it = 0; it < 30; it++) {
+      double middleTime = (firstTime + lastTime) / 2;
+      double middleOffset = computeViewingPixel(middleTime, ground_pt, adj).line - 0.5;
+      // We're looking for a zero, so check that either firstLine and middleLine have
+      // opposite signs, or middleLine and lastLine have opposite signs.
+      if ((firstOffset > 0) == (middleOffset < 0)) {
+         lastTime = middleTime;
+         lastOffset = middleOffset;
+      }
+      else {
+         firstTime = middleTime;
+         firstOffset = middleOffset;
+      }
+      // TODO This should be based on the desired_precision parameter
+      if (fabs(lastOffset - firstOffset) < 0.01) {
+         std::cout << "Exited at iteration: " << it << std::endl;
+         break;
+      }
+   }
 
-   // Initialize line, sample to center, CSM convention
-   csm::ImageCoord ip;
-   computeLinearApproximation(ground_pt, ip);
-   double lineTemp = ip.line;
-   double sampleTemp = ip.samp;
+   // Check that the desired precision was met
 
-   // Compute ground elevation
-
-   double height, aPrec;
-   double x = ground_pt.x;
-   double y = ground_pt.y;
-   double z = ground_pt.z;
-   computeElevation(x, y, z, height, aPrec, desired_precision);
-
-   // Compute ground delta for the seed line and sample.
-
-   double xSeed = x;
-   double ySeed = y;
-   double zSeed = z;
-   imageToPlane(lineTemp, sampleTemp, height, adj,
-      xSeed, ySeed, zSeed, mode);
-   double dx = x - xSeed;
-   double dy = y - ySeed;
-   double dz = z - zSeed;
+   double computedTime = (firstTime + lastTime) / 2;
+   std::cout << "Computed Time: " << computedTime << std::endl;
+   csm::ImageCoord calculatedPixel = computeViewingPixel(computedTime, ground_pt, adj);
+   // The computed viewing line is the detector line, so we need to convert that to image lines
+   auto referenceTimeIt = std::upper_bound(_data.m_IntTimeStartTimes.begin(),
+                                           _data.m_IntTimeStartTimes.end(),
+                                           computedTime);
+   if (referenceTimeIt != _data.m_IntTimeStartTimes.begin()) {
+      --referenceTimeIt;
+   }
+   size_t referenceIndex = std::distance(_data.m_IntTimeStartTimes.begin(), referenceTimeIt);
+   calculatedPixel.line += _data.m_IntTimeLines[referenceIndex]
+                         + (computedTime - _data.m_IntTimeStartTimes[referenceIndex])
+                         / _data.m_IntTimes[referenceIndex];
+   csm::EcefCoord calculatedPoint = imageToGround(calculatedPixel, _data.m_RefElevation);
+   std::cout << "Computed Pixel: " << calculatedPixel.line << ", " << calculatedPixel.samp << std::endl;
+   std::cout << "Computed Point: " << calculatedPoint.x << ", " << calculatedPoint.y << ", " << calculatedPoint.z << std::endl;
+   double dx = ground_pt.x - calculatedPoint.x;
+   double dy = ground_pt.y - calculatedPoint.y;
+   double dz = ground_pt.z - calculatedPoint.z;
    double len = dx * dx + dy * dy + dz * dz;
-
-   // Iterate until ground delta is acceptable.
-
-   double xLine, yLine, zLine;
-   double xPLine, yPLine, zPLine;
-   double xSample, ySample, zSample;
-   double xPSamp, yPSamp, zPSamp;
-   double dLine, dSamp, det;
-   int ktr = 0;
-   while (preSquare < len && ktr < MKTR)
-   {
-      // Check for convergence
-      mode = -1;
-      ktr++;
-
-      // Compute partial of ground coordinates w.r.t. line
-
-      xLine = xSeed;
-      yLine = ySeed;
-      zLine = zSeed;
-      mode = -1;
-      imageToPlane(lineTemp + DELTA_IMAGE, sampleTemp, height, adj,
-         xLine, yLine, zLine, mode);
-      xPLine = xLine - xSeed;
-      yPLine = yLine - ySeed;
-      zPLine = zLine - zSeed;
-
-      // Compute partial of ground coordinates w.r.t. sample
-
-      xSample = xSeed;
-      ySample = ySeed;
-      zSample = zSeed;
-      mode = -1;
-      imageToPlane(lineTemp, sampleTemp + DELTA_IMAGE, height, adj,
-         xSample, ySample, zSample, mode);
-      xPSamp = xSample - xSeed;
-      yPSamp = ySample - ySeed;
-      zPSamp = zSample - zSeed;
-
-      // Compute delta line and sample by fixing one coordinate
-      // axis.  This axis has the largest image ray component and
-      // not updated in the imageToPlane() routine.  Since
-      // imageToPlane() updates only two of the three coordinates.
-      // Therefore, one of dx, dy, dz must be = 0.0 exactly.
-      // The following if else if should work just fine.
-
-      if (0.0 == dx)
-      {
-         det = yPLine * zPSamp - yPSamp * zPLine;
-         dLine = (zPSamp * dy - yPSamp * dz);
-         dSamp = (yPLine * dz - zPLine * dy);
-      }
-      else if (0.0 == dy)
-      {
-         det = xPLine * zPSamp - xPSamp * zPLine;
-         dLine = (zPSamp * dx - xPSamp * dz);
-         dSamp = (xPLine * dz - zPLine * dx);
-      }
-      else  if (0.0 == dz)
-      {
-         det = xPLine * yPSamp - xPSamp * yPLine;
-         dLine = (yPSamp * dx - xPSamp * dy);
-         dSamp = (xPLine * dy - yPLine * dx);
-      }
-      else
-      {
-         throw csm::Error(
-            csm::Error::ALGORITHM,
-            "Undefined case.",
-            "UsgsAstroLsSensorModel::groundToImage");
-      }
-
-      // Update line and sample estimates
-
-      if (0.0 == det)
-      {
-         throw csm::Error(
-            csm::Error::ALGORITHM,
-            "Divide by zero.",
-            "UsgsAstroLsSensorModel::groundToImage");
-      }
-      lineTemp += (dLine / det / DELTA_IMAGE);
-      sampleTemp += (dSamp / det / DELTA_IMAGE);
-
-      // Update ground delta
-
-      xSeed = x;
-      ySeed = y;
-      zSeed = z;
-      mode = -1;
-      imageToPlane(lineTemp, sampleTemp, height, adj,
-         xSeed, ySeed, zSeed, mode);
-      dx = x - xSeed;
-      dy = y - ySeed;
-      dz = z - zSeed;
-      len = dx * dx + dy * dy + dz * dz;
-
-   }  // while (preSquare < len)
+   std::cout << "Error length: " << sqrt(len) << std::endl;
 
    // If the final correction is greater than 10 meters,
    // the solution is not valid enough to report even with a warning
-   if (len > 100.0)
-   {
+   if (len > 100.0) {
       throw csm::Error(
          csm::Error::ALGORITHM,
          "Did not converge.",
          "UsgsAstroLsSensorModel::groundToImage");
    }
 
-   if (achieved_precision)
+   if (achieved_precision) {
       *achieved_precision = sqrt(len);
+   }
 
-   if (warnings && (desired_precision > 0.0) && (preSquare < len))
-   {
+   double preSquare = desired_precision * desired_precision;
+   if (warnings && (desired_precision > 0.0) && (preSquare < len)) {
       std::stringstream msg;
       msg << "Desired precision not achieved. ";
       msg << len << "  " << preSquare << "\n";
@@ -359,7 +280,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
          "UsgsAstroLsSensorModel::groundToImage()"));
    }
 
-   return csm::ImageCoord(lineTemp, sampleTemp);
+   return calculatedPixel;
 }
 
 //***************************************************************************
