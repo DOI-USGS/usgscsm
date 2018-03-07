@@ -20,6 +20,7 @@
 
 #include "genericls/UsgsAstroLsSensorModel.h"
 
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <math.h>
@@ -108,7 +109,9 @@ void UsgsAstroLsSensorModel::updateState()
    _data.m_HalfSwath = _data.m_Gsd * _data.m_TotalSamples / 2.0;
 
    // Compute half time duration
-   _data.m_HalfTime = _data.m_IntTime * _data.m_TotalLines / 2.0;
+   double fullImageTime = _data.m_IntTimeStartTimes.back() - _data.m_IntTimeStartTimes.front()
+                          + _data.m_IntTimes.back() * (_data.m_TotalLines - _data.m_IntTimeLines.back());
+   _data.m_HalfTime = fullImageTime / 2.0;
 
    // Parameter covariance, hardcoded accuracy values
    int num_params = _data.NUM_PARAMETERS;
@@ -870,8 +873,6 @@ double UsgsAstroLsSensorModel::getImageTime(
 {
    // Flip image taken backwards
    double line1 = image_pt.line;
-   if (_data.m_ImageFlipFlag == 1)
-      line1 = _data.m_TotalLines - 1 - image_pt.line;
 
    // CSM image convention: UL pixel center == (0.5, 0.5)
    // USGS image convention: UL pixel center == (1.0, 1.0)
@@ -879,13 +880,20 @@ double UsgsAstroLsSensorModel::getImageTime(
    double lineCSMFull = line1 + _data.m_OffsetLines;
    double lineUSGSFull = lineCSMFull + 0.5;
 
-   // USGS timing reference leftmost-side 1st full row
-   double timeUsgs = _data.m_IntTime * (lineUSGSFull - 0.5)
-      + _data.m_StartingEphemerisTime;
+   // These calculation assumes that the values in the integration time
+   // vectors are in terms of ISIS' pixels
+   auto referenceLineIt = std::upper_bound(_data.m_IntTimeLines.begin(),
+                                           _data.m_IntTimeLines.end(),
+                                           lineUSGSFull);
+   if (referenceLineIt != _data.m_IntTimeLines.begin()) {
+      --referenceLineIt;
+   }
+   size_t referenceIndex = std::distance(_data.m_IntTimeLines.begin(), referenceLineIt);
 
-   // Translate time origin to image geometric center
-   // Same as ephemeris and attitude time origin
-   return timeUsgs - _data.m_CenterEphemerisTime;
+   double time = _data.m_IntTimeStartTimes[referenceIndex]
+      + _data.m_IntTimes[referenceIndex] * (lineUSGSFull - _data.m_IntTimeLines[referenceIndex]);
+
+   return time;
 
 }
 
@@ -1355,7 +1363,7 @@ void UsgsAstroLsSensorModel::losToEcf(
    double p12 = -m12 / determinant;
    double p21 = -m21 / determinant;
    double p22 = m22 / determinant;
-   double isisNatFocalPlaneX = p11 * t1 + p21 * t2;
+   double isisNatFocalPlaneX = p11 * t1 + p12 * t2;
    double isisNatFocalPlaneY = p21 * t1 + p22 * t2;
 
    // Remove lens distortion
