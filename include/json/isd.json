@@ -101,112 +101,98 @@
        "FOCAL2PIXEL_X": {
            "description": "Transformation x coefficients from focal plane (mm) to pixel coordinates",
            "type": "array",
-	    "items": {
+	          "items": {
                  "type": "number"
             }
        },
        "FOCAL2PIXEL_Y": {
            "description": "Transformation y coefficients from focal plane (mm) to pixel coordinates",
            "type": "array",
-	    "items": {
+	          "items": {
                  "type": "number"
             }
        },
        "SENSOR_LOCATION": {
            "description": "(X, Y, Z) location of sensor in body-fixed frame.",
            "type": "array",
-	    "items": {
+	          "items": {
                "type": "array",
-	       "items" : {
+	              "items" : {
                   "type": "number",
                   "minItems": 3,
                   "maxItems": 3
-		}
-	     }
-       },
+		              }
+	               }
+      },
        "SENSOR_VELOCITY" : {
            "description": "(v_x, v_y, v_z) velocity of sensor in body-fixed frame.",
            "type": "array",
-	    "items": {
+	          "items": {
                "type": "array",
-	       "items" : {
-                  "type": "number",
-                  "minItems": 3,
-                  "maxItems": 3
-		}
-	     }
-	},
+	              "items" : {
+                    "type": "number",
+                    "minItems": 3,
+                    "maxItems": 3
+		                }
+	                 }
+	     },
        "SUN_POSITION" : {
            "description": "(v_x, v_y, v_z) velocity of sun in body-fixed frame.",
            "type": "array",
-	    "items": {
+	          "items": {
                "type": "array",
-	       "items" : {
+	              "items" : {
                   "type": "number",
                   "minItems": 3,
                   "maxItems": 3
-		}
-	     }
-	},
+		              }
+	               }
+	     },
        "SUN_VELOCITY" : {
            "description": "(v_x, v_y, v_z) velocity of sun in body-fixed frame.",
            "type": "array",
-	    "items": {
+	          "items": {
                "type": "array",
-	       "items" : {
+	              "items" : {
                   "type": "number",
                   "minItems": 3,
                   "maxItems": 3
-		}
-	     }
-	},
-       "ORIENTATION": {
-           "description": "Orientation of the sensor provided in Euler angles or quaternions",
-           "type": "object",
-	   "properties" : {
-	      "euler_angles" : {
-		 "type": "array",
-		    "items": {
-		       "type": "array",
-			"items" : {
-			  "type": "number",
-			  "minItems": 3,
-                          "maxItems": 3
-			}
-		     }
-		},
-	      "quaternions" : {
-		"type": "array",
-		    "items": {
-		       "type": "array",
-			"items" : {
-			  "type": "number",
-			  "minItems": 4,
-                          "maxItems": 4
-			}
-		     }
-		}
-	    }
-       },
+		        }
+	         }
+	     },
+
+       "ORIENTATION" : {
+           "description": "Orientation of the sensor provided in quaternions",
+           "type": "array",
+           "items": {
+               "type": "array",
+               "items" : {
+                  "type": "number",
+                  "minItems": 4 ,
+                  "maxItems": 4
+           }
+          }
+      },
+
        "DETECTOR_LINE_RATE": {
            "description": "The line rates of the detector map with the associated start line and time",
            "type": "array",
               "items": {
-	       "type": "object",
-	       "properties": {
-	           "START_LINE": {
-		      "type": "number"
-	            },
-                    "LINE_START_TIME": {
- 	                "type": "number"
-	            },
-	            "EXPOSURE_TIME": {
-		       "type": "number"
-	            },
-	      "required": [ "EXPOSURE_TIME"]
-	    }
-	 }
-       },
+	               "type": "object",
+	                "properties": {
+	                   "START_LINE": {
+		                     "type": "number"
+	                    },
+                      "LINE_START_TIME": {
+ 	                        "type": "number"
+	                     },
+	                     "EXPOSURE_TIME": {
+		                       "type": "number"
+	                     },
+	          "required": [ "EXPOSURE_TIME"]
+	                 }
+	              }
+      },
        "DETECTOR_SAMPLE_SUMMING": {
            "description": "The summing in the sample-direction",
            "type": "number"
@@ -252,6 +238,8 @@
            "type": "string"
        },
 
-   },
-   "required": ["FOCAL_LENGTH", "BORESIGHT","CCD_CENTER","IMAGE_LINES","IMAGE_SAMPLES", "FOCAL_PLANE_Z_DIRECTION"]
+
+   "required": ["FOCAL_LENGTH", "BORESIGHT","CCD_CENTER","IMAGE_LINES","IMAGE_SAMPLES" ]
+
+ }
 }
