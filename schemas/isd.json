@@ -39,17 +39,8 @@
                 "key": {"type": "string"},
                 "focal_length": {"type": "number"},
                 "focal_epsilon":{"type": "number"}
-            }
-
-       },
-       "FOCAL_LENGTH": {
-           "description": "The focal length of the camera in mm",
-           "type": "number"
-       },
-
-       "FOCAL_LENGTH_EPSILON": {
-           "description": "The uncertainty of the focal length of the camera in mm",
-           "type": "number"
+            },
+   	"required": ["focal_length"]
        },
        "IFOV": {
            "description": "Instantaneous field of view in degrees",
@@ -65,12 +56,13 @@
        },
 
        "RADII": {
-           "description": "The radius object FIXME this needs to be expanded to support up to 3 elts. either std carto a,b,c or equi, polar, etc",
-           "type": "number"
-       },
-       "SEMI_MINOR_AXIS": {
-           "description": "The target ellipsoid's minor axis in meters",
-           "type": "number"
+           "description": "The radii of the target.",
+           "type": "array",
+	    "items": {
+                 "type": "number",
+		 "minItems": 1,
+                 "maxItems": 3
+            }
        },
        "OPTICAL_DISTORTION": {
            "description": "Information needed to convert from undistorted to distorted image plane",
