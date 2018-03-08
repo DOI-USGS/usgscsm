@@ -200,6 +200,27 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    double*               achieved_precision,
    csm::WarningList*     warnings) const
 {
+   // Search for the line, sample coordinate that viewed a given ground point.
+   // This method uses an iterative bisection method to search for the image
+   // line.
+   //
+   // For a given search window, this routine involves projecting the
+   // ground point onto the focal plane based on the instrument orientation
+   // at the start and end of the search window. Then, it computes the focal
+   // plane intersection at a mid-point of the search window. Then, it reduces
+   // the search window based on the signs of the intersected line offsets from
+   // the center of the ccd. For example, if the line offset is -145 at the
+   // start of the window, 10 at the mid point, and 35 at the end of the search
+   // window, the window will be reduced to the start of the old window to the
+   // middle of the old window.
+   //
+   // In order to achieve faster convergence, the mid point is calculated
+   // using the False Position Method instead of simple bisection. This method
+   // uses the zero of the line between the two ends of the search window for
+   // the mid point instead of a simple bisection. In most cases, this will
+   // converge significantly faster, but it can be slower than simple bisection
+   // in some situations.
+
    // Start bisection search on the image lines
    double sampCtr = _data.m_TotalSamples / 2.0;
    double firstTime = getImageTime(csm::ImageCoord(0.0, sampCtr));
