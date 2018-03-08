@@ -204,14 +204,40 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    double sampCtr = _data.m_TotalSamples / 2.0;
    double firstTime = getImageTime(csm::ImageCoord(0.0, sampCtr));
    double lastTime = getImageTime(csm::ImageCoord(_data.m_TotalLines, sampCtr));
-   std::cout << "First Time: " << firstTime << std::endl;
-   std::cout << "Last Time: " << lastTime << std::endl;
    double firstOffset = computeViewingPixel(firstTime, ground_pt, adj).line - 0.5;
    double lastOffset = computeViewingPixel(lastTime, ground_pt, adj).line - 0.5;
-   std::cout << "First Offset: " << firstOffset << std::endl;
-   std::cout << "Last Offset: " << lastOffset << std::endl;
 
-   for (int it = 0; it < 30; it++) {
+   // Check if both offsets have the same sign.
+   // This means there is not guaranteed to be a zero.
+   if ((firstOffset > 0) != (lastOffset < 0)) {
+        throw csm::Error(
+           csm::Error::ALGORITHM,
+           "Ground point is not viewed by the image.",
+           "UsgsAstroLsSensorModel::groundToImage");
+   }
+
+   // Convert the ground precision to pixel precision so we can
+   // check for convergence without re-intersecting
+   csm::ImageCoord approxPoint;
+   computeLinearApproximation(ground_pt, approxPoint);
+   csm::ImageCoord approxNextPoint = approxPoint;
+   if (approxNextPoint.line + 1 < _data.m_TotalLines) {
+      ++approxNextPoint.line;
+   }
+   else {
+      --approxNextPoint.line;
+   }
+   csm::EcefCoord approxIntersect = imageToGround(approxPoint, _data.m_RefElevation);
+   csm::EcefCoord approxNextIntersect = imageToGround(approxNextPoint, _data.m_RefElevation);
+   double lineDX = approxNextIntersect.x - approxIntersect.x;
+   double lineDY = approxNextIntersect.y - approxIntersect.y;
+   double lineDZ = approxNextIntersect.z - approxIntersect.z;
+   double approxLineRes = sqrt(lineDX * lineDX + lineDY * lineDY + lineDZ * lineDZ);
+   // Increase the precision by a small amount to ensure the desired precision is met
+   double pixelPrec = desired_precision / approxLineRes * 0.9;
+
+   // Start bisection search for zero
+   for (int it = 0; it < 40; it++) {
       double middleTime = (firstTime + lastTime) / 2;
       double middleOffset = computeViewingPixel(middleTime, ground_pt, adj).line - 0.5;
       // We're looking for a zero, so check that either firstLine and middleLine have
@@ -224,9 +250,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
          firstTime = middleTime;
          firstOffset = middleOffset;
       }
-      // TODO This should be based on the desired_precision parameter
-      if (fabs(lastOffset - firstOffset) < 0.01) {
-         std::cout << "Exited at iteration: " << it << std::endl;
+      if (fabs(lastOffset - firstOffset) < pixelPrec) {
          break;
       }
    }
@@ -234,7 +258,6 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    // Check that the desired precision was met
 
    double computedTime = (firstTime + lastTime) / 2;
-   std::cout << "Computed Time: " << computedTime << std::endl;
    csm::ImageCoord calculatedPixel = computeViewingPixel(computedTime, ground_pt, adj);
    // The computed viewing line is the detector line, so we need to convert that to image lines
    auto referenceTimeIt = std::upper_bound(_data.m_IntTimeStartTimes.begin(),
@@ -248,13 +271,10 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
                          + (computedTime - _data.m_IntTimeStartTimes[referenceIndex])
                          / _data.m_IntTimes[referenceIndex];
    csm::EcefCoord calculatedPoint = imageToGround(calculatedPixel, _data.m_RefElevation);
-   std::cout << "Computed Pixel: " << calculatedPixel.line << ", " << calculatedPixel.samp << std::endl;
-   std::cout << "Computed Point: " << calculatedPoint.x << ", " << calculatedPoint.y << ", " << calculatedPoint.z << std::endl;
    double dx = ground_pt.x - calculatedPoint.x;
    double dy = ground_pt.y - calculatedPoint.y;
    double dz = ground_pt.z - calculatedPoint.z;
    double len = dx * dx + dy * dy + dz * dz;
-   std::cout << "Error length: " << sqrt(len) << std::endl;
 
    // If the final correction is greater than 10 meters,
    // the solution is not valid enough to report even with a warning
