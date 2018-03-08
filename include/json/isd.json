@@ -231,7 +231,12 @@
        },
        "REFERENCE_HEIGHT": {
            "description": "Used for determining the intersection of the look vector with the ellipsoid",
-           "type": "number"
+           "type": "array",
+           "items":  {
+              "type": "number",
+              "minItems": 2,
+              "maxItems": 2
+           }
        },
       "INTERPOLATION_METHOD": {
            "description": "The type of interpolation method to use.",
