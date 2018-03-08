@@ -204,10 +204,11 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    //  Computes line and sample given the ground coordinates in ECF cs.
    //  The solution is iterative and repeatedly calls the routine
    //  imageToPlane. If convergence is not achieved, a warning is issued.
+   //  This method uses Newton-Raphson method on planes to iterate.
 
    // Initialize variables
-   const int MKTR = 10;
-   const double DELTA_IMAGE = 1.0;
+   const int MKTR = 20;
+   const double DELTA_IMAGE = 0.1;
    double preSquare = desired_precision * desired_precision;
    int mode = -1;
 
@@ -251,6 +252,8 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
       mode = -1;
       ktr++;
 
+      // Compute the approximate Jacobian using finite differences on planes.
+
       // Compute partial of ground coordinates w.r.t. line
 
       xLine = xSeed;
@@ -281,6 +284,9 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
       // imageToPlane() updates only two of the three coordinates.
       // Therefore, one of dx, dy, dz must be = 0.0 exactly.
       // The following if else if should work just fine.
+
+      // Compute the adjustment step by multiplying the ground delta by the
+      // inverse of the (approximate) Jacobian.
 
       if (0.0 == dx)
       {
@@ -317,8 +323,16 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
             "Divide by zero.",
             "UsgsAstroLsSensorModel::groundToImage");
       }
-      lineTemp += (dLine / det / DELTA_IMAGE);
-      sampleTemp += (dSamp / det / DELTA_IMAGE);
+
+      // We have to divide by the determinant of the Jacobian here as part of
+      // the inverse calculation.
+      // The multiplication by DELTA_IMAGE is because the calculation of the
+      // ground partials with respect to sample and line does not divide by
+      // DELTA_IMAGE. This also means the determinant of the Jacobian should
+      // be divided by DELTA_IMAGE^2. So, dLine and dSamp should be multiplied
+      // by DELTA_IMAGE^2/DELTA_IMAGE, which is just DELTA_IMAGE.
+      lineTemp += (dLine / det * DELTA_IMAGE);
+      sampleTemp += (dSamp / det * DELTA_IMAGE);
 
       // Update ground delta
 
@@ -1347,6 +1361,7 @@ void UsgsAstroLsSensorModel::losToEcf(
 
    double sampleCSMFull = sample + _data.m_OffsetSamples;
    double sampleUSGSFull = sampleCSMFull + 0.5;
+   double fractionalLine = line - floor(line) - 0.5;
 
    // Compute distorted image coordinates in mm
 
@@ -1356,7 +1371,8 @@ void UsgsAstroLsSensorModel::losToEcf(
    double m12 = _data.m_ITransL[2];
    double m21 = _data.m_ITransS[1];
    double m22 = _data.m_ITransS[2];
-   double t1 = _data.m_DetectorLineOffset - _data.m_DetectorLineOrigin - _data.m_ITransL[0];
+   double t1 = fractionalLine + _data.m_DetectorLineOffset
+               - _data.m_DetectorLineOrigin - _data.m_ITransL[0];
    double t2 = isisDetSample - _data.m_DetectorSampleOrigin - _data.m_ITransS[0];
    double determinant = m11 * m22 - m12 * m21;
    double p11 = m11 / determinant;
