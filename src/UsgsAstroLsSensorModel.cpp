@@ -1311,6 +1311,7 @@ void UsgsAstroLsSensorModel::losToEcf(
 
    double sampleCSMFull = sample + _data.m_OffsetSamples;
    double sampleUSGSFull = sampleCSMFull + 0.5;
+   double fractionalLine = line - floor(line) - 0.5;
 
    // Compute distorted image coordinates in mm
 
@@ -1320,7 +1321,8 @@ void UsgsAstroLsSensorModel::losToEcf(
    double m12 = _data.m_ITransL[2];
    double m21 = _data.m_ITransS[1];
    double m22 = _data.m_ITransS[2];
-   double t1 = _data.m_DetectorLineOffset - _data.m_DetectorLineOrigin - _data.m_ITransL[0];
+   double t1 = fractionalLine + _data.m_DetectorLineOffset
+               - _data.m_DetectorLineOrigin - _data.m_ITransL[0];
    double t2 = isisDetSample - _data.m_DetectorSampleOrigin - _data.m_ITransS[0];
    double determinant = m11 * m22 - m12 * m21;
    double p11 = m11 / determinant;
