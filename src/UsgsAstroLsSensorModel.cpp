@@ -244,7 +244,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
       --referenceTimeIt;
    }
    size_t referenceIndex = std::distance(_data.m_IntTimeStartTimes.begin(), referenceTimeIt);
-   calculatedPixel.line += _data.m_IntTimeLines[referenceIndex]
+   calculatedPixel.line += _data.m_IntTimeLines[referenceIndex] - 1
                          + (computedTime - _data.m_IntTimeStartTimes[referenceIndex])
                          / _data.m_IntTimes[referenceIndex];
    csm::EcefCoord calculatedPoint = imageToGround(calculatedPixel, _data.m_RefElevation);
@@ -2053,9 +2053,9 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
 
    // Convert to image sample line
    double line = detectorLine + _data.m_DetectorLineOrigin - _data.m_DetectorLineOffset
-               - _data.m_OffsetLines - 0.5;
-   double sample = (detectorSample + _data.m_DetectorSampleOrigin) / _data.m_DetectorSampleSumming
-                 - _data.m_OffsetSamples;
+               - _data.m_OffsetLines + 0.5;
+   double sample = (detectorSample + _data.m_DetectorSampleOrigin - _data.m_StartingSample)
+                 / _data.m_DetectorSampleSumming - _data.m_OffsetSamples + 0.5;
    return csm::ImageCoord(line, sample);
 }
 
