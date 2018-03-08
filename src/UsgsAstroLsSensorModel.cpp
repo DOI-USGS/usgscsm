@@ -237,18 +237,19 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    double pixelPrec = desired_precision / approxLineRes * 0.9;
 
    // Start bisection search for zero
-   for (int it = 0; it < 40; it++) {
-      double middleTime = (firstTime + lastTime) / 2;
-      double middleOffset = computeViewingPixel(middleTime, ground_pt, adj).line - 0.5;
+   for (int it = 0; it < 30; it++) {
+      double nextTime = ((firstTime * lastOffset) - (lastTime * firstOffset))
+                      / (lastOffset - firstOffset);
+      double nextOffset = computeViewingPixel(nextTime, ground_pt, adj).line - 0.5;
       // We're looking for a zero, so check that either firstLine and middleLine have
       // opposite signs, or middleLine and lastLine have opposite signs.
-      if ((firstOffset > 0) == (middleOffset < 0)) {
-         lastTime = middleTime;
-         lastOffset = middleOffset;
+      if ((firstOffset > 0) == (nextOffset < 0)) {
+         lastTime = nextTime;
+         lastOffset = nextOffset;
       }
       else {
-         firstTime = middleTime;
-         firstOffset = middleOffset;
+         firstTime = nextTime;
+         firstOffset = nextOffset;
       }
       if (fabs(lastOffset - firstOffset) < pixelPrec) {
          break;
@@ -257,7 +258,8 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
 
    // Check that the desired precision was met
 
-   double computedTime = (firstTime + lastTime) / 2;
+   double computedTime = ((firstTime * lastOffset) - (lastTime * firstOffset))
+                       / (lastOffset - firstOffset);
    csm::ImageCoord calculatedPixel = computeViewingPixel(computedTime, ground_pt, adj);
    // The computed viewing line is the detector line, so we need to convert that to image lines
    auto referenceTimeIt = std::upper_bound(_data.m_IntTimeStartTimes.begin(),
