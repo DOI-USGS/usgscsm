@@ -24,12 +24,21 @@
            "type": "number"
        },
        "focal_length_model": {
-           "description":  "A key to get information about time/temp dependent focal length models",
+           "description":  "The static focal length or the information needed to model a variable focal length",
            "type": "object",
            "properties": {
-               "key": {"type": "string"},
-               "focal_length": {"type": "number"},
-               "focal_epsilon":{"type": "number"}
+              "key": { 
+                 "type": "string", 
+                 "description":"A key to get information about time/temp dependent focal length models"
+              },
+              "focal_length":  { 
+                 "type": "number", 
+                 "description":"The focal length in mm"
+               },
+              "focal_epsilon": { 
+                 "type": "number", 
+                 "description":"The uncertainty of the focal length in mm"
+              }
           },
           "required": ["focal_length"]
        },
@@ -220,6 +229,8 @@
          "description": "The type of interpolation method to use.",
          "type": "string"
       },
-   "required": ["focal_length", "boresight","ccd_center","image_lines","image_samples" ]
+   "required": ["focal_length_model", "ephemeris_start_time, "ccd_center","reference_height","sensor_orientation", 
+                "focal2pixel_lines","focal2pixel_samples","radii","image_samples", "image_lines", "starting_detector_sample"
+                "starting_detector_line" ]
    }
 }
