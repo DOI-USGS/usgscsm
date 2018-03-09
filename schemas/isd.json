@@ -5,7 +5,7 @@
    "type": "object",
 
    "properties": {
-       "DETECTOR_CENTER": {
+       "detector_center": {
           "description": "Center of the detector in pixel coordinates (line, sample)",
           "type": "array",
           "items": {
@@ -15,15 +15,15 @@
              "maxItems": 2
           }
        },
-       "CENTER_EPHEMERIS_TIME": {
+       "center_ephemeris_time": {
           "description": "The center ephemeris time of the image",
           "type": "number"
        },
-       "STARTING_EPHEMERIS_TIME": {
+       "starting_ephemeris_time": {
            "description": "The starting ephemeris time of the image",
            "type": "number"
        },
-       "FOCAL_LENGTH_MODEL": {
+       "focal_length_model": {
            "description":  "A key to get information about time/temp dependent focal length models",
            "type": "object",
            "properties": {
@@ -33,15 +33,15 @@
           },
           "required": ["focal_length"]
        },
-       "IMAGE_LINES": {
+       "image_lines": {
            "description": "The number of lines in the image",
            "type": "number"
        },
-       "IMAGE_SAMPLES": {
+       "image_samples": {
            "description": "The the number of samples in the image",
            "type": "number"
        },
-       "RADII": {
+       "radii": {
            "description": "The radii of the target.",
            "type": "array",
            "items": {
@@ -51,7 +51,7 @@
               "maxItems": 2
           }
        },
-       "OPTICAL_DISTORTION": {
+       "optical_distortion": {
            "description": "Information needed to convert from undistorted to distorted image plane",
            "type": "object",
            "properties" : {
@@ -70,22 +70,22 @@
             },
             "required": ["coefficients", "equation_key"]
        },
-       "STARTING_DETECTOR_SAMPLE": {
+       "starting_detector_sample": {
           "description": "The sample on the detector where the data starts",
           "type": "number"
        },
-       "STARTING_DETECTOR_LINE": {
+       "starting_detector_line": {
           "description": "The line on the detector where the data starts",
           "type": "number"
        },
-       "FOCAL2PIXEL_SAMPLES": {
+       "focal2pixel_samples": {
           "description": "Transformation x coefficients from focal plane (mm) to detector pixel coordinates",
           "type": "array",
           "items": {
              "type": "number"
            }
        },
-       "FOCAL2PIXEL_LINES": {
+       "focal2pixel_lines": {
           "description": "Transformation y coefficients from focal plane (mm) to detector pixel coordinates",
           "type": "array",
           "items": {
@@ -94,7 +94,7 @@
              "maxItems": 3
            }
        },
-       "SENSOR_LOCATION": {
+       "sensor_location": {
           "description": "(X, Y, Z) location of sensor in body-fixed frame.",
           "type": "array",
           "items": {
@@ -106,7 +106,7 @@
             }
          }
       },
-      "SENSOR_VELOCITY" : {
+      "sensor_velocity" : {
          "description": "(v_x, v_y, v_z) velocity of sensor in body-fixed frame.",
          "type": "array",
          "items": {
@@ -118,7 +118,7 @@
             }
          }
       },
-      "SUN_POSITION" : {
+      "sun_position" : {
          "description": "(x, y,z) of the sun in body-fixed frame.",
          "type": "array",
          "items": {
@@ -130,7 +130,7 @@
             }
          }
       },
-      "SUN_VELOCITY" : {
+      "sun_velocity" : {
          "description": "(v_x, v_y, v_z) velocity of sun in body-fixed frame.",
          "type": "array",
          "items": {
@@ -142,7 +142,7 @@
             }
          }
       },
-      "SENSOR_ORIENTATION" : {
+      "sensor_orientation" : {
          "description": "Orientation of the sensor provided in quaternions",
          "type": "array",
          "items": {
@@ -155,7 +155,7 @@
             }
          }
       },
-      "LINE_SCAN_RATE": {
+      "line_scan_rate": {
          "description": "The line rates of the detector map with the associated start line and time",
          "type": "array",
          "items": {
@@ -170,44 +170,44 @@
             }
          }
       }, 
-      "DETECTOR_SAMPLE_SUMMING": {
+      "detector_sample_summing": {
          "description": "The summing in the sample-direction. A summing of 1 indicates no summing, 
                          summing of 2 indicates 2 pixel summing, 4 indicates 4 pixel summing, etc",
          "type": "number"
       },
-      "DETECTOR_LINE_SUMMING": {
+      "detector_line_summing": {
          "description": "The summing in the line-direction",
          "type": "number"
       },
-      "APPLY_LIGHT_TIME_CORRECTION": {
+      "apply_light_time_correction": {
          "description": "A flag to indcate whether the light-time correction should be applied",
          "type": "bool"
       },
-      "NUMBER_OF_EPHEM": {
+      "number_of_ephem": {
          "description": "The number of emphemeris points",
          "type": "number"
       },
-      "NUMBER_OF_QUATERNIONS": {
+      "number_of_quaternions": {
          "description": "The number of quaternions",
          "type": "number"
       },
-      "DT_EPHEM": {
+      "dt_ephem": {
          "description": "The time between each ephemeris point.",
          "type": "number"
       },
-      "T0_EPHEM": {
+      "t0_ephem": {
          "description": "First ephemeris time - center image time",
          "type": "number"
       },
-      "DT_QUAT": {
+      "dt_quat": {
          "description": "Time spacing of quaternions.",
          "type": "number"
       },
-      "T0_QUAT": {
+      "t0_quat": {
          "description": "First quaternion time - center image time.",
          "type": "number"
       },
-      "REFERENCE_HEIGHT": {
+      "reference_height": {
          "description": "Used for determining the intersection of the look vector with the ellipsoid",
          "type": "array",
          "items":  {
@@ -216,10 +216,10 @@
             "maxItems": 2
          }
       },
-      "INTERPOLATION_METHOD": {
+      "interpolation_method": {
          "description": "The type of interpolation method to use.",
          "type": "string"
       },
-   "required": ["FOCAL_LENGTH", "BORESIGHT","CCD_CENTER","IMAGE_LINES","IMAGE_SAMPLES" ]
+   "required": ["focal_length", "boresight","ccd_center","image_lines","image_samples" ]
    }
 }
