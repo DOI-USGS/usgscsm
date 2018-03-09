@@ -142,11 +142,12 @@
             }
          }
       },
-      "ORIENTATION" : {
+      "SENSOR_ORIENTATION" : {
          "description": "Orientation of the sensor provided in quaternions",
          "type": "array",
          "items": {
             "type": "array",
+            "description": "Each quaternion is of the form: (scalar, vector, vector, vector)" 
             "items" : {
                "type": "number",
                "minItems": 4 ,
@@ -158,19 +159,14 @@
          "description": "The line rates of the detector map with the associated start line and time",
          "type": "array",
          "items": {
-            "type": "object",
-            "properties": {
-               "START_LINE": {
-                  "type": "number"
-               },
-               "LINE_START_TIME": {
-                  "type": "number"
-               },
-               "EXPOSURE_TIME": {
-                  "type": "number"
-                  "description": "The exposure time in seconds." 
-               },
-               "required": [ "EXPOSURE_TIME"]
+            "type": "array",
+             "items" : {
+               "type": "number",
+               "default: "-1",
+               "description": "The (start_line, line_start_time, exposure_time). The exposure time is
+                               in seconds and any non-provided values will be set to -1."
+               "minItems": 3,
+               "maxItems": 3
             }
          }
       }, 
