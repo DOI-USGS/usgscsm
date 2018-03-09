@@ -5,42 +5,32 @@
    "type": "object",
 
    "properties": {
-       "BORESIGHT": {
-	   "description": "Boresight (x,y,z) vector",
-           "type": "array",
-	    "items": {
-                 "type": "number",
-		 "description": "Component of the boresight vector",
-		 "minItems": 3,
-                 "maxItems": 3
-            }
-       },
        "DETECTOR_CENTER": {
-           "description": "Center of the detector in pixel coordinates",
-           "type": "array",
-	    "items": {
-                 "type": "number",
-		 "minItems": 2,
-                 "maxItems": 2
-            }
+          "description": "Center of the detector in pixel coordinates",
+          "type": "array",
+          "items": {
+             "type": "number",
+             "minItems": 2,
+             "maxItems": 2
+          }
        },
        "CENTER_EPHEMERIS_TIME": {
-           "description": "The center ephemeris time of the image",
-           "type": "number"
+          "description": "The center ephemeris time of the image",
+          "type": "number"
        },
        "STARTING_EPHEMERIS_TIME": {
            "description": "The starting ephemeris time of the image",
            "type": "number"
        },
        "FOCAL_LENGTH_MODEL": {
-            "description":  "A key to get information about time/temp dependent focal length models",
-            "type": "object",
-            "properties": {
-                "key": {"type": "string"},
-                "focal_length": {"type": "number"},
-                "focal_epsilon":{"type": "number"}
-            },
-   	"required": ["focal_length"]
+           "description":  "A key to get information about time/temp dependent focal length models",
+           "type": "object",
+           "properties": {
+               "key": {"type": "string"},
+               "focal_length": {"type": "number"},
+               "focal_epsilon":{"type": "number"}
+          },
+          "required": ["focal_length"]
        },
        "IFOV": {
            "description": "Instantaneous field of view in degrees",
@@ -54,189 +44,190 @@
            "description": "The the number of samples in the image",
            "type": "number"
        },
-
        "RADII": {
            "description": "The radii of the target.",
            "type": "array",
-	    "items": {
-                 "type": "number",
-		 "minItems": 1,
-                 "maxItems": 3
-            }
+           "items": {
+              "type": "number",
+              "description": "The first element is the semi-major axis. The second element is the
+                                 semi-minor axis.",
+              "minItems": 1,
+              "maxItems": 2
+          }
        },
        "OPTICAL_DISTORTION": {
            "description": "Information needed to convert from undistorted to distorted image plane",
            "type": "object",
-	   "properties" : {
-	      "coefficients": {
-	         "type": "array",
-		 "items": {
-		    "type": "number"
-		  }
-		},
-	        "key" : {
-		    "type": "string",
-		    "description": "key into LUT to determine equation to use"
-		    }
-	 },
-	"required": ["coefficients", "equation_key"]
+           "properties" : {
+              "coefficients": {
+                 "type": "array",
+                 "items": {
+                    "type": "number"
+                    "description": "Each coefficient used for the distortion equation in order of
+                                    increasing degrees." 
+                   }
+                },
+                "key" : {
+                   "type": "string",
+                   "description": "Key into LUT to determine equation to use."
+               }
+            },
+            "required": ["coefficients", "equation_key"]
        },
-
        "STARTING_DETECTOR_SAMPLE": {
-           "description": "The sample on the detector where the data starts",
-           "type": "number"
+          "description": "The sample on the detector where the data starts",
+          "type": "number"
        },
        "STARTING_DETECTOR_LINE": {
-           "description": "The line on the detector where the data starts",
-           "type": "number"
+          "description": "The line on the detector where the data starts",
+          "type": "number"
        },
        "FOCAL2PIXEL_X": {
-           "description": "Transformation x coefficients from focal plane (mm) to pixel coordinates",
-           "type": "array",
-	          "items": {
-                 "type": "number"
-            }
+          "description": "Transformation x coefficients from focal plane (mm) to pixel coordinates",
+          "type": "array",
+          "items": {
+             "type": "number"
+           }
        },
        "FOCAL2PIXEL_Y": {
-           "description": "Transformation y coefficients from focal plane (mm) to pixel coordinates",
-           "type": "array",
-	          "items": {
-                 "type": "number"
-            }
+          "description": "Transformation y coefficients from focal plane (mm) to pixel coordinates",
+          "type": "array",
+          "items": {
+             "type": "number",
+             "minItems": 3,
+             "maxItems": 3
+           }
        },
        "SENSOR_LOCATION": {
-           "description": "(X, Y, Z) location of sensor in body-fixed frame.",
-           "type": "array",
-	          "items": {
-               "type": "array",
-	              "items" : {
-                  "type": "number",
-                  "minItems": 3,
-                  "maxItems": 3
-		              }
-	               }
+          "description": "(X, Y, Z) location of sensor in body-fixed frame.",
+          "type": "array",
+          "items": {
+             "type": "array",
+             "items" : {
+                "type": "number",
+                "minItems": 3,
+                "maxItems": 3
+            }
+         }
       },
-       "SENSOR_VELOCITY" : {
-           "description": "(v_x, v_y, v_z) velocity of sensor in body-fixed frame.",
-           "type": "array",
-	          "items": {
-               "type": "array",
-	              "items" : {
-                    "type": "number",
-                    "minItems": 3,
-                    "maxItems": 3
-		                }
-	                 }
-	     },
-       "SUN_POSITION" : {
-           "description": "(v_x, v_y, v_z) velocity of sun in body-fixed frame.",
-           "type": "array",
-	          "items": {
-               "type": "array",
-	              "items" : {
-                  "type": "number",
-                  "minItems": 3,
-                  "maxItems": 3
-		              }
-	               }
-	     },
-       "SUN_VELOCITY" : {
-           "description": "(v_x, v_y, v_z) velocity of sun in body-fixed frame.",
-           "type": "array",
-	          "items": {
-               "type": "array",
-	              "items" : {
-                  "type": "number",
-                  "minItems": 3,
-                  "maxItems": 3
-		        }
-	         }
-	     },
-
-       "ORIENTATION" : {
-           "description": "Orientation of the sensor provided in quaternions",
-           "type": "array",
-           "items": {
-               "type": "array",
-               "items" : {
-                  "type": "number",
-                  "minItems": 4 ,
-                  "maxItems": 4
-           }
-          }
+      "SENSOR_VELOCITY" : {
+         "description": "(v_x, v_y, v_z) velocity of sensor in body-fixed frame.",
+         "type": "array",
+         "items": {
+            "type": "array",
+            "items" : {
+               "type": "number",
+               "minItems": 3,
+               "maxItems": 3
+            }
+         }
       },
-
-       "DETECTOR_LINE_RATE": {
-           "description": "The line rates of the detector map with the associated start line and time",
-           "type": "array",
-              "items": {
-	               "type": "object",
-	                "properties": {
-	                   "START_LINE": {
-		                     "type": "number"
-	                    },
-                      "LINE_START_TIME": {
- 	                        "type": "number"
-	                     },
-	                     "EXPOSURE_TIME": {
-		                       "type": "number"
-	                     },
-	          "required": [ "EXPOSURE_TIME"]
-	                 }
-	              }
+      "SUN_POSITION" : {
+         "description": "(v_x, v_y, v_z) velocity of sun in body-fixed frame.",
+         "type": "array",
+         "items": {
+            "type": "array",
+            "items" : {
+               "type": "number",
+               "minItems": 3,
+               "maxItems": 3
+            }
+         }
       },
-       "DETECTOR_SAMPLE_SUMMING": {
-           "description": "The summing in the sample-direction",
-           "type": "number"
-       },
-       "DETECTOR_LINE_SUMMING": {
-           "description": "The summing in the line-direction",
-           "type": "number"
-       },
-       "APPLY_LIGHT_TIME_CORRECTION": {
-           "description": "A flag to indcate whether the light-time correction should be applied",
-           "type": "bool"
-       },
-       "NUMBER_OF_EPHEM": {
-           "description": "The number of emphemeris points",
-           "type": "number"
-       },
-       "NUMBER_OF_QUATERNIONS": {
-           "description": "The number of quaternions",
-           "type": "number"
-       },
-       "DT_EPHEM": {
-           "description": "The time between each ephemeris point.",
-           "type": "number"
-       },
-       "T0_EPHEM": {
-           "description": "First ephemeris time - center ephemeris time",
-           "type": "number"
-       },
-       "DT_QUAT": {
-           "description": "Time spacing of quaternions.",
-           "type": "number"
-       },
-       "T0_QUAT": {
-           "description": "First quaternion time - center quaternion time.",
-           "type": "number"
-       },
-       "REFERENCE_HEIGHT": {
-           "description": "Used for determining the intersection of the look vector with the ellipsoid",
-           "type": "array",
-           "items":  {
-              "type": "number",
-              "minItems": 2,
-              "maxItems": 2
-           }
-       },
+      "SUN_VELOCITY" : {
+         "description": "(v_x, v_y, v_z) velocity of sun in body-fixed frame.",
+         "type": "array",
+         "items": {
+            "type": "array",
+            "items" : {
+               "type": "number",
+               "minItems": 3,
+               "maxItems": 3
+            }
+         }
+      },
+      "ORIENTATION" : {
+         "description": "Orientation of the sensor provided in quaternions",
+         "type": "array",
+         "items": {
+            "type": "array",
+            "items" : {
+               "type": "number",
+               "minItems": 4 ,
+               "maxItems": 4
+            }
+         }
+      },
+      "LINE_SCAN_RATE": {
+         "description": "The line rates of the detector map with the associated start line and time",
+         "type": "array",
+         "items": {
+            "type": "object",
+            "properties": {
+               "START_LINE": {
+                  "type": "number"
+               },
+               "LINE_START_TIME": {
+                  "type": "number"
+               },
+               "EXPOSURE_TIME": {
+                  "type": "number"
+                  "description": "The exposure time in seconds." 
+               },
+               "required": [ "EXPOSURE_TIME"]
+            }
+         }
+      }, 
+      "DETECTOR_SAMPLE_SUMMING": {
+         "description": "The summing in the sample-direction. A summing of 1 indicates no summing, 
+                         summing of 2 indicates 2 pixel summing, 4 indicates 4 pixel summing, etc",
+         "type": "number"
+      },
+      "DETECTOR_LINE_SUMMING": {
+         "description": "The summing in the line-direction",
+         "type": "number"
+      },
+      "APPLY_LIGHT_TIME_CORRECTION": {
+         "description": "A flag to indcate whether the light-time correction should be applied",
+         "type": "bool"
+      },
+      "NUMBER_OF_EPHEM": {
+         "description": "The number of emphemeris points",
+         "type": "number"
+      },
+      "NUMBER_OF_QUATERNIONS": {
+         "description": "The number of quaternions",
+         "type": "number"
+      },
+      "DT_EPHEM": {
+         "description": "The time between each ephemeris point.",
+         "type": "number"
+      },
+      "T0_EPHEM": {
+         "description": "First ephemeris time - center ephemeris time",
+         "type": "number"
+      },
+      "DT_QUAT": {
+         "description": "Time spacing of quaternions.",
+         "type": "number"
+      },
+      "T0_QUAT": {
+         "description": "First quaternion time - center quaternion time.",
+         "type": "number"
+      },
+      "REFERENCE_HEIGHT": {
+         "description": "Used for determining the intersection of the look vector with the ellipsoid",
+         "type": "array",
+         "items":  {
+            "type": "number",
+            "minItems": 2,
+            "maxItems": 2
+         }
+      },
       "INTERPOLATION_METHOD": {
-           "description": "The type of interpolation method to use.",
-           "type": "string"
-       },
-
-
+         "description": "The type of interpolation method to use.",
+         "type": "string"
+      },
    "required": ["FOCAL_LENGTH", "BORESIGHT","CCD_CENTER","IMAGE_LINES","IMAGE_SAMPLES" ]
-
- }
+   }
 }
