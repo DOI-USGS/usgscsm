@@ -6,10 +6,11 @@
 
    "properties": {
        "DETECTOR_CENTER": {
-          "description": "Center of the detector in pixel coordinates",
+          "description": "Center of the detector in pixel coordinates (line, sample)",
           "type": "array",
           "items": {
              "type": "number",
+             "description": "The (line, sample) of the center of the detector.", 
              "minItems": 2,
              "maxItems": 2
           }
@@ -32,10 +33,6 @@
           },
           "required": ["focal_length"]
        },
-       "IFOV": {
-           "description": "Instantaneous field of view in degrees",
-           "type": "number"
-       },
        "IMAGE_LINES": {
            "description": "The number of lines in the image",
            "type": "number"
@@ -49,8 +46,7 @@
            "type": "array",
            "items": {
               "type": "number",
-              "description": "The first element is the semi-major axis. The second element is the
-                                 semi-minor axis.",
+              "description": "The (semi-major axis, semi-minor axis) for the target.",
               "minItems": 1,
               "maxItems": 2
           }
@@ -82,15 +78,15 @@
           "description": "The line on the detector where the data starts",
           "type": "number"
        },
-       "FOCAL2PIXEL_X": {
-          "description": "Transformation x coefficients from focal plane (mm) to pixel coordinates",
+       "FOCAL2PIXEL_SAMPLES": {
+          "description": "Transformation x coefficients from focal plane (mm) to detector pixel coordinates",
           "type": "array",
           "items": {
              "type": "number"
            }
        },
-       "FOCAL2PIXEL_Y": {
-          "description": "Transformation y coefficients from focal plane (mm) to pixel coordinates",
+       "FOCAL2PIXEL_LINES": {
+          "description": "Transformation y coefficients from focal plane (mm) to detector pixel coordinates",
           "type": "array",
           "items": {
              "type": "number",
@@ -123,7 +119,7 @@
          }
       },
       "SUN_POSITION" : {
-         "description": "(v_x, v_y, v_z) velocity of sun in body-fixed frame.",
+         "description": "(x, y,z) of the sun in body-fixed frame.",
          "type": "array",
          "items": {
             "type": "array",
@@ -204,7 +200,7 @@
          "type": "number"
       },
       "T0_EPHEM": {
-         "description": "First ephemeris time - center ephemeris time",
+         "description": "First ephemeris time - center image time",
          "type": "number"
       },
       "DT_QUAT": {
@@ -212,7 +208,7 @@
          "type": "number"
       },
       "T0_QUAT": {
-         "description": "First quaternion time - center quaternion time.",
+         "description": "First quaternion time - center image time.",
          "type": "number"
       },
       "REFERENCE_HEIGHT": {
