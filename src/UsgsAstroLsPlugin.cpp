@@ -51,51 +51,49 @@ static const std::string  RELEASE_DATE      = "20171230";
 static const int          N_SENSOR_MODELS   = 1;
 const std::string  UsgsAstroLsPlugin::mISD_KEYWORDS[] =
 {
-
-
-// "SENSOR_TYPE",
-// "TOTAL_LINES",
-// "TOTAL_SAMPLES",
-// "PLATFORM",
-// "ABERR",
-// "ATMREF",
-// "INT_TIME",
-// "STARTING_EPHEMERIS_TIME",
-// "CENTER_EPHEMERIS_TIME",
-// "DETECTOR_SAMPLE_SUMMING",
-// "STARTING_SAMPLE",
-// "IKCODE",
-// "FOCAL",
-// "ISIS_Z_DIRECTION",
-// "OPTICAL_DIST_COEF",
-// "ITRANSS",
-// "ITRANSL",
-// "DETECTOR_SAMPLE_ORIGIN",
-// "DETECTOR_LINE_ORIGIN",
-// "DETECTOR_LINE_OFFSET",
-// "MOUNTING_ANGLES",
-// "DT_EPHEM",
-// "T0_EPHEM",
-// "DT_QUAT",
-// "T0_QUAT",
-// "NUMBER_OF_EPHEM",
-// "NUMBER_OF_QUATERNIONS",
-// "EPHEM_PTS",
-// "EPHEM_RATES",
-// "QUATERNIONS",
-// "TRI_PARAMETERS",
-// "SEMI_MAJOR_AXIS",
-// "ECCENTRICITY",
-// // Everything below here is optional
-// "REFERENCE_HEIGHT",
-// "MIN_VALID_HT",
-// "MAX_VALID_HT",
-// "IMAGE_ID",
-// "SENSOR_ID",
-// "PLATFORM_ID",
-// "TRAJ_ID",
-// "COLL_ID",
-// "REF_DATE_TIME"
+   "SENSOR_TYPE",
+   "TOTAL_LINES",
+   "TOTAL_SAMPLES",
+   "PLATFORM",
+   "ABERR",
+   "ATMREF",
+   "INT_TIME",
+   "STARTING_EPHEMERIS_TIME",
+   "CENTER_EPHEMERIS_TIME",
+   "DETECTOR_SAMPLE_SUMMING",
+   "STARTING_SAMPLE",
+   "IKCODE",
+   "FOCAL",
+   "ISIS_Z_DIRECTION",
+   "OPTICAL_DIST_COEF",
+   "ITRANSS",
+   "ITRANSL",
+   "DETECTOR_SAMPLE_ORIGIN",
+   "DETECTOR_LINE_ORIGIN",
+   "DETECTOR_LINE_OFFSET",
+   "MOUNTING_ANGLES",
+   "DT_EPHEM",
+   "T0_EPHEM",
+   "DT_QUAT",
+   "T0_QUAT",
+   "NUMBER_OF_EPHEM",
+   "NUMBER_OF_QUATERNIONS",
+   "EPHEM_PTS",
+   "EPHEM_RATES",
+   "QUATERNIONS",
+   "TRI_PARAMETERS",
+   "SEMI_MAJOR_AXIS",
+   "ECCENTRICITY",
+   // Everything below here is optional
+   "REFERENCE_HEIGHT",
+   "MIN_VALID_HT",
+   "MAX_VALID_HT",
+   "IMAGE_ID",
+   "SENSOR_ID",
+   "PLATFORM_ID",
+   "TRAJ_ID",
+   "COLL_ID",
+   "REF_DATE_TIME"
 };
 
 const std::string  UsgsAstroLsPlugin::mSTATE_KEYWORDS[] =
@@ -423,7 +421,7 @@ std::string UsgsAstroLsPlugin::convertISDToModelState(
    state.m_PlatformFlag = atoi(image_support_data.param("PLATFORM").c_str());
    state.m_AberrFlag = atoi(image_support_data.param("ABERR").c_str());
    state.m_AtmRefFlag = atoi(image_support_data.param("ATMREF").c_str());
-   //state.m_IntTime = atof(image_support_data.param("INT_TIME").c_str());
+   state.m_IntTime = atof(image_support_data.param("INT_TIME").c_str());
    state.m_StartingEphemerisTime = atof(image_support_data.param("STARTING_EPHEMERIS_TIME").c_str());
    state.m_CenterEphemerisTime = atof(image_support_data.param("CENTER_EPHEMERIS_TIME").c_str());
    state.m_DetectorSampleSumming = atoi(image_support_data.param("DETECTOR_SAMPLE_SUMMING").c_str());
