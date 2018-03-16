@@ -200,156 +200,120 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    double*               achieved_precision,
    csm::WarningList*     warnings) const
 {
-   //# func_description
-   //  Computes line and sample given the ground coordinates in ECF cs.
-   //  The solution is iterative and repeatedly calls the routine
-   //  imageToPlane. If convergence is not achieved, a warning is issued.
+   // Search for the line, sample coordinate that viewed a given ground point.
+   // This method uses an iterative bisection method to search for the image
+   // line.
+   //
+   // For a given search window, this routine involves projecting the
+   // ground point onto the focal plane based on the instrument orientation
+   // at the start and end of the search window. Then, it computes the focal
+   // plane intersection at a mid-point of the search window. Then, it reduces
+   // the search window based on the signs of the intersected line offsets from
+   // the center of the ccd. For example, if the line offset is -145 at the
+   // start of the window, 10 at the mid point, and 35 at the end of the search
+   // window, the window will be reduced to the start of the old window to the
+   // middle of the old window.
+   //
+   // In order to achieve faster convergence, the mid point is calculated
+   // using the False Position Method instead of simple bisection. This method
+   // uses the zero of the line between the two ends of the search window for
+   // the mid point instead of a simple bisection. In most cases, this will
+   // converge significantly faster, but it can be slower than simple bisection
+   // in some situations.
 
-   // Initialize variables
-   const int MKTR = 10;
-   const double DELTA_IMAGE = 1.0;
-   double preSquare = desired_precision * desired_precision;
-   int mode = -1;
+   // Start bisection search on the image lines
+   double sampCtr = _data.m_TotalSamples / 2.0;
+   double firstTime = getImageTime(csm::ImageCoord(0.0, sampCtr));
+   double lastTime = getImageTime(csm::ImageCoord(_data.m_TotalLines, sampCtr));
+   double firstOffset = computeViewingPixel(firstTime, ground_pt, adj).line - 0.5;
+   double lastOffset = computeViewingPixel(lastTime, ground_pt, adj).line - 0.5;
 
-   // Initialize line, sample to center, CSM convention
-   csm::ImageCoord ip;
-   computeLinearApproximation(ground_pt, ip);
-   double lineTemp = ip.line;
-   double sampleTemp = ip.samp;
+   // Check if both offsets have the same sign.
+   // This means there is not guaranteed to be a zero.
+   if ((firstOffset > 0) != (lastOffset < 0)) {
+        throw csm::Error(
+           csm::Error::ALGORITHM,
+           "Ground point is not viewed by the image.",
+           "UsgsAstroLsSensorModel::groundToImage");
+   }
 
-   // Compute ground elevation
+   // Convert the ground precision to pixel precision so we can
+   // check for convergence without re-intersecting
+   csm::ImageCoord approxPoint;
+   computeLinearApproximation(ground_pt, approxPoint);
+   csm::ImageCoord approxNextPoint = approxPoint;
+   if (approxNextPoint.line + 1 < _data.m_TotalLines) {
+      ++approxNextPoint.line;
+   }
+   else {
+      --approxNextPoint.line;
+   }
+   csm::EcefCoord approxIntersect = imageToGround(approxPoint, _data.m_RefElevation);
+   csm::EcefCoord approxNextIntersect = imageToGround(approxNextPoint, _data.m_RefElevation);
+   double lineDX = approxNextIntersect.x - approxIntersect.x;
+   double lineDY = approxNextIntersect.y - approxIntersect.y;
+   double lineDZ = approxNextIntersect.z - approxIntersect.z;
+   double approxLineRes = sqrt(lineDX * lineDX + lineDY * lineDY + lineDZ * lineDZ);
+   // Increase the precision by a small amount to ensure the desired precision is met
+   double pixelPrec = desired_precision / approxLineRes * 0.9;
 
-   double height, aPrec;
-   double x = ground_pt.x;
-   double y = ground_pt.y;
-   double z = ground_pt.z;
-   computeElevation(x, y, z, height, aPrec, desired_precision);
+   // Start bisection search for zero
+   for (int it = 0; it < 30; it++) {
+      double nextTime = ((firstTime * lastOffset) - (lastTime * firstOffset))
+                      / (lastOffset - firstOffset);
+      double nextOffset = computeViewingPixel(nextTime, ground_pt, adj).line - 0.5;
+      // We're looking for a zero, so check that either firstLine and middleLine have
+      // opposite signs, or middleLine and lastLine have opposite signs.
+      if ((firstOffset > 0) == (nextOffset < 0)) {
+         lastTime = nextTime;
+         lastOffset = nextOffset;
+      }
+      else {
+         firstTime = nextTime;
+         firstOffset = nextOffset;
+      }
+      if (fabs(lastOffset - firstOffset) < pixelPrec) {
+         break;
+      }
+   }
 
-   // Compute ground delta for the seed line and sample.
+   // Check that the desired precision was met
 
-   double xSeed = x;
-   double ySeed = y;
-   double zSeed = z;
-   imageToPlane(lineTemp, sampleTemp, height, adj,
-      xSeed, ySeed, zSeed, mode);
-   double dx = x - xSeed;
-   double dy = y - ySeed;
-   double dz = z - zSeed;
+   double computedTime = ((firstTime * lastOffset) - (lastTime * firstOffset))
+                       / (lastOffset - firstOffset);
+   csm::ImageCoord calculatedPixel = computeViewingPixel(computedTime, ground_pt, adj);
+   // The computed viewing line is the detector line, so we need to convert that to image lines
+   auto referenceTimeIt = std::upper_bound(_data.m_IntTimeStartTimes.begin(),
+                                           _data.m_IntTimeStartTimes.end(),
+                                           computedTime);
+   if (referenceTimeIt != _data.m_IntTimeStartTimes.begin()) {
+      --referenceTimeIt;
+   }
+   size_t referenceIndex = std::distance(_data.m_IntTimeStartTimes.begin(), referenceTimeIt);
+   calculatedPixel.line += _data.m_IntTimeLines[referenceIndex] - 1
+                         + (computedTime - _data.m_IntTimeStartTimes[referenceIndex])
+                         / _data.m_IntTimes[referenceIndex];
+   csm::EcefCoord calculatedPoint = imageToGround(calculatedPixel, _data.m_RefElevation);
+   double dx = ground_pt.x - calculatedPoint.x;
+   double dy = ground_pt.y - calculatedPoint.y;
+   double dz = ground_pt.z - calculatedPoint.z;
    double len = dx * dx + dy * dy + dz * dz;
-
-   // Iterate until ground delta is acceptable.
-
-   double xLine, yLine, zLine;
-   double xPLine, yPLine, zPLine;
-   double xSample, ySample, zSample;
-   double xPSamp, yPSamp, zPSamp;
-   double dLine, dSamp, det;
-   int ktr = 0;
-   while (preSquare < len && ktr < MKTR)
-   {
-      // Check for convergence
-      mode = -1;
-      ktr++;
-
-      // Compute partial of ground coordinates w.r.t. line
-
-      xLine = xSeed;
-      yLine = ySeed;
-      zLine = zSeed;
-      mode = -1;
-      imageToPlane(lineTemp + DELTA_IMAGE, sampleTemp, height, adj,
-         xLine, yLine, zLine, mode);
-      xPLine = xLine - xSeed;
-      yPLine = yLine - ySeed;
-      zPLine = zLine - zSeed;
-
-      // Compute partial of ground coordinates w.r.t. sample
-
-      xSample = xSeed;
-      ySample = ySeed;
-      zSample = zSeed;
-      mode = -1;
-      imageToPlane(lineTemp, sampleTemp + DELTA_IMAGE, height, adj,
-         xSample, ySample, zSample, mode);
-      xPSamp = xSample - xSeed;
-      yPSamp = ySample - ySeed;
-      zPSamp = zSample - zSeed;
-
-      // Compute delta line and sample by fixing one coordinate
-      // axis.  This axis has the largest image ray component and
-      // not updated in the imageToPlane() routine.  Since
-      // imageToPlane() updates only two of the three coordinates.
-      // Therefore, one of dx, dy, dz must be = 0.0 exactly.
-      // The following if else if should work just fine.
-
-      if (0.0 == dx)
-      {
-         det = yPLine * zPSamp - yPSamp * zPLine;
-         dLine = (zPSamp * dy - yPSamp * dz);
-         dSamp = (yPLine * dz - zPLine * dy);
-      }
-      else if (0.0 == dy)
-      {
-         det = xPLine * zPSamp - xPSamp * zPLine;
-         dLine = (zPSamp * dx - xPSamp * dz);
-         dSamp = (xPLine * dz - zPLine * dx);
-      }
-      else  if (0.0 == dz)
-      {
-         det = xPLine * yPSamp - xPSamp * yPLine;
-         dLine = (yPSamp * dx - xPSamp * dy);
-         dSamp = (xPLine * dy - yPLine * dx);
-      }
-      else
-      {
-         throw csm::Error(
-            csm::Error::ALGORITHM,
-            "Undefined case.",
-            "UsgsAstroLsSensorModel::groundToImage");
-      }
-
-      // Update line and sample estimates
-
-      if (0.0 == det)
-      {
-         throw csm::Error(
-            csm::Error::ALGORITHM,
-            "Divide by zero.",
-            "UsgsAstroLsSensorModel::groundToImage");
-      }
-      lineTemp += (dLine / det / DELTA_IMAGE);
-      sampleTemp += (dSamp / det / DELTA_IMAGE);
-
-      // Update ground delta
-
-      xSeed = x;
-      ySeed = y;
-      zSeed = z;
-      mode = -1;
-      imageToPlane(lineTemp, sampleTemp, height, adj,
-         xSeed, ySeed, zSeed, mode);
-      dx = x - xSeed;
-      dy = y - ySeed;
-      dz = z - zSeed;
-      len = dx * dx + dy * dy + dz * dz;
-
-   }  // while (preSquare < len)
 
    // If the final correction is greater than 10 meters,
    // the solution is not valid enough to report even with a warning
-   if (len > 100.0)
-   {
+   if (len > 100.0) {
       throw csm::Error(
          csm::Error::ALGORITHM,
          "Did not converge.",
          "UsgsAstroLsSensorModel::groundToImage");
    }
 
-   if (achieved_precision)
+   if (achieved_precision) {
       *achieved_precision = sqrt(len);
+   }
 
-   if (warnings && (desired_precision > 0.0) && (preSquare < len))
-   {
+   double preSquare = desired_precision * desired_precision;
+   if (warnings && (desired_precision > 0.0) && (preSquare < len)) {
       std::stringstream msg;
       msg << "Desired precision not achieved. ";
       msg << len << "  " << preSquare << "\n";
@@ -359,7 +323,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
          "UsgsAstroLsSensorModel::groundToImage()"));
    }
 
-   return csm::ImageCoord(lineTemp, sampleTemp);
+   return calculatedPixel;
 }
 
 //***************************************************************************
@@ -1347,6 +1311,7 @@ void UsgsAstroLsSensorModel::losToEcf(
 
    double sampleCSMFull = sample + _data.m_OffsetSamples;
    double sampleUSGSFull = sampleCSMFull + 0.5;
+   double fractionalLine = line - floor(line) - 0.5;
 
    // Compute distorted image coordinates in mm
 
@@ -1356,7 +1321,8 @@ void UsgsAstroLsSensorModel::losToEcf(
    double m12 = _data.m_ITransL[2];
    double m21 = _data.m_ITransS[1];
    double m22 = _data.m_ITransS[2];
-   double t1 = _data.m_DetectorLineOffset - _data.m_DetectorLineOrigin - _data.m_ITransL[0];
+   double t1 = fractionalLine + _data.m_DetectorLineOffset
+               - _data.m_DetectorLineOrigin - _data.m_ITransL[0];
    double t2 = isisDetSample - _data.m_DetectorSampleOrigin - _data.m_ITransS[0];
    double determinant = m11 * m22 - m12 * m21;
    double p11 = m11 / determinant;
@@ -2007,6 +1973,135 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(
       + ecfFromIcr[3] * di + ecfFromIcr[4] * dc + ecfFromIcr[5] * dr;
    zc = sensPosNom[2]
       + ecfFromIcr[6] * di + ecfFromIcr[7] * dc + ecfFromIcr[8] * dr;
+}
+
+
+//***************************************************************************
+// UsgsAstroLineScannerSensorModel::computeViewingPixel
+//***************************************************************************
+csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
+   const double& time,
+   const csm::EcefCoord& groundPoint,
+   const std::vector<double>& adj) const
+{
+   // Get the exterior orientation
+   double xc, yc, zc, vx, vy, vz;
+   getAdjSensorPosVel(time, adj, xc, yc, zc, vx, vy, vz);
+
+   // Compute the look vector
+   double bodyLookX = groundPoint.x - xc;
+   double bodyLookY = groundPoint.y - yc;
+   double bodyLookZ = groundPoint.z - zc;
+
+   // Rotate the look vector into the camera reference frame
+   int nOrder = 8;
+   if (_data.m_PlatformFlag == 0)
+      nOrder = 4;
+   int nOrderQuat = nOrder;
+   if (_data.m_NumQuaternions < 6 && nOrder == 8)
+      nOrderQuat = 4;
+   double q[4];
+   lagrangeInterp(
+      _data.m_NumQuaternions, &_data.m_Quaternions[0], _data.m_T0Quat, _data.m_DtQuat,
+      time, 4, nOrderQuat, q);
+   double norm = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+   // Divide by the negative norm for 0 through 2 to invert the quaternion
+   q[0] /= -norm;
+   q[1] /= -norm;
+   q[2] /= -norm;
+   q[3] /= norm;
+   double bodyToCamera[9];
+   bodyToCamera[0] = q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
+   bodyToCamera[1] = 2 * (q[0] * q[1] - q[2] * q[3]);
+   bodyToCamera[2] = 2 * (q[0] * q[2] + q[1] * q[3]);
+   bodyToCamera[3] = 2 * (q[0] * q[1] + q[2] * q[3]);
+   bodyToCamera[4] = -q[0] * q[0] + q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
+   bodyToCamera[5] = 2 * (q[1] * q[2] - q[0] * q[3]);
+   bodyToCamera[6] = 2 * (q[0] * q[2] - q[1] * q[3]);
+   bodyToCamera[7] = 2 * (q[1] * q[2] + q[0] * q[3]);
+   bodyToCamera[8] = -q[0] * q[0] - q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
+   double cameraLookX = bodyToCamera[0] * bodyLookX
+                      + bodyToCamera[1] * bodyLookY
+                      + bodyToCamera[2] * bodyLookZ;
+   double cameraLookY = bodyToCamera[3] * bodyLookX
+                      + bodyToCamera[4] * bodyLookY
+                      + bodyToCamera[5] * bodyLookZ;
+   double cameraLookZ = bodyToCamera[6] * bodyLookX
+                      + bodyToCamera[7] * bodyLookY
+                      + bodyToCamera[8] * bodyLookZ;
+
+   // Invert the attitude correction
+   double aTime = time - _data.m_T0Quat;
+   double euler[3];
+   double nTime = aTime / _data.m_HalfTime;
+   double nTime2 = nTime * nTime;
+   euler[0] =
+      (getValue(6, adj) + getValue(9, adj)* nTime + getValue(12, adj)* nTime2) / _data.m_FlyingHeight;
+   euler[1] =
+      (getValue(7, adj) + getValue(10, adj)* nTime + getValue(13, adj)* nTime2) / _data.m_FlyingHeight;
+   euler[2] =
+      (getValue(8, adj) + getValue(11, adj)* nTime + getValue(14, adj)* nTime2) / _data.m_HalfSwath;
+   double cos_a = cos(euler[0]);
+   double sin_a = sin(euler[0]);
+   double cos_b = cos(euler[1]);
+   double sin_b = sin(euler[1]);
+   double cos_c = cos(euler[2]);
+   double sin_c = sin(euler[2]);
+   double attCorr[9];
+   attCorr[0] = cos_b * cos_c;
+   attCorr[1] = -cos_a * sin_c + sin_a * sin_b * cos_c;
+   attCorr[2] = sin_a * sin_c + cos_a * sin_b * cos_c;
+   attCorr[3] = cos_b * sin_c;
+   attCorr[4] = cos_a * cos_c + sin_a * sin_b * sin_c;
+   attCorr[5] = -sin_a * cos_c + cos_a * sin_b * sin_c;
+   attCorr[6] = -sin_b;
+   attCorr[7] = sin_a * cos_b;
+   attCorr[8] = cos_a * cos_b;
+   double adjustedLookX = attCorr[0] * cameraLookX
+                        + attCorr[3] * cameraLookY
+                        + attCorr[6] * cameraLookZ;
+   double adjustedLookY = attCorr[1] * cameraLookX
+                        + attCorr[4] * cameraLookY
+                        + attCorr[7] * cameraLookZ;
+   double adjustedLookZ = attCorr[2] * cameraLookX
+                        + attCorr[5] * cameraLookY
+                        + attCorr[8] * cameraLookZ;
+
+   // Invert the boresight correction
+   double correctedLookX = _data.m_MountingMatrix[0] * adjustedLookX
+                         + _data.m_MountingMatrix[3] * adjustedLookY
+                         + _data.m_MountingMatrix[6] * adjustedLookZ;
+   double correctedLookY = _data.m_MountingMatrix[1] * adjustedLookX
+                         + _data.m_MountingMatrix[4] * adjustedLookY
+                         + _data.m_MountingMatrix[7] * adjustedLookZ;
+   double correctedLookZ = _data.m_MountingMatrix[2] * adjustedLookX
+                         + _data.m_MountingMatrix[5] * adjustedLookY
+                         + _data.m_MountingMatrix[8] * adjustedLookZ;
+
+   // Convert to focal plane coordinate
+   double lookScale = _data.m_Focal / correctedLookZ;
+   double focalX = correctedLookX * lookScale;
+   double focalY = correctedLookY * lookScale;
+
+   // TODO invert distortion here
+   // We probably only want to try and invert the distortion if we are
+   // reasonably close to the actual CCD because the distortion equations are
+   // sometimes only well behaved close to the CCD.
+
+   // Convert to detector line and sample
+   double detectorLine = _data.m_ITransL[0]
+                       + _data.m_ITransL[1] * focalX
+                       + _data.m_ITransL[2] * focalY;
+   double detectorSample = _data.m_ITransS[0]
+                         + _data.m_ITransS[1] * focalX
+                         + _data.m_ITransS[2] * focalY;
+
+   // Convert to image sample line
+   double line = detectorLine + _data.m_DetectorLineOrigin - _data.m_DetectorLineOffset
+               - _data.m_OffsetLines + 0.5;
+   double sample = (detectorSample + _data.m_DetectorSampleOrigin - _data.m_StartingSample)
+                 / _data.m_DetectorSampleSumming - _data.m_OffsetSamples + 0.5;
+   return csm::ImageCoord(line, sample);
 }
 
 
