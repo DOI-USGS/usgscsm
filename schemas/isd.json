@@ -192,7 +192,7 @@
          "description": "A flag to indcate whether the light-time correction should be applied",
          "type": "bool"
       },
-      "number_of_ephem": {
+      "number_of_ephemerides": {
          "description": "The number of emphemeris points",
          "type": "number"
       },
@@ -200,19 +200,19 @@
          "description": "The number of quaternions",
          "type": "number"
       },
-      "dt_ephem": {
+      "dt_ephemeris": {
          "description": "The time between each ephemeris point.",
          "type": "number"
       },
-      "t0_ephem": {
+      "t0_ephemeris": {
          "description": "First ephemeris time - center image time",
          "type": "number"
       },
-      "dt_quat": {
+      "dt_quaternion": {
          "description": "Time spacing of quaternions.",
          "type": "number"
       },
-      "t0_quat": {
+      "t0_quaternion": {
          "description": "First quaternion time - center image time.",
          "type": "number"
       },
