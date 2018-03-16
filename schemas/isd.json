@@ -156,7 +156,11 @@
          "type": "array",
          "items": {
             "type": "array",
-            "description": "Each quaternion is of the form: (scalar, vector, vector, vector)" 
+            "description": "Each quaternion is of the general form: (scalar, vector component, 
+	                    vector component, vector component). The specific form used is that 
+			    described in the NAIF Quaternions whitepaper under 'SPICE Quaternions' 
+			    available at: 
+			    ftp://naif.jpl.nasa.gov/pub/naif/misc/Quaternion_White_Paper/Quaternions_White_Paper.pdf" 
             "items" : {
                "type": "number",
                "minItems": 4 ,
