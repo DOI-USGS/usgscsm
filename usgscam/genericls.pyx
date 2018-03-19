@@ -23,6 +23,12 @@ cdef class SensorModel:
     def __dealloc__(self):
         del self.thisptr
 
+    def __getstate__(self):
+        return self.state.encode()
+
+    def __setstate__(self, state):
+        self.state = state
+
     @staticmethod
     cdef factory(CppGenericLsSensorModel *obj):
         py_obj = result = SensorModel.__new__(SensorModel, _raw=True)
@@ -207,6 +213,10 @@ cdef class SensorModel:
         reinstantiate the model using the replace_model_state method.
         """
         return self.thisptr.getModelState().decode()
+
+    @state.setter
+    def state(self, state):
+        self.thisptr.replaceModelState(state)
 
     @property
     def name(self):
