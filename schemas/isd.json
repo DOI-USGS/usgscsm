@@ -175,7 +175,7 @@
             "type": "array",
              "items" : {
                "type": "number",
-               "default: "-1",
+               "default": "-1",
                "description": "The (start_line, line_start_time, exposure_time). The exposure time is
                                in seconds and any non-provided values will be set to -1."
                "minItems": 3,
