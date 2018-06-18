@@ -21,6 +21,7 @@ requirements:
     - libcsm
     - cycsm
     - vc 14  # [win and py>=35]
+    - {{ compiler('cxx') }}
   run:
     - python
     - numpy >=1.10
