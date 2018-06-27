@@ -5,11 +5,10 @@ package:
   version: {{ version }}
 
 source:
-    #git_url: https://github.com/USGS-Astrogeology/CSM-CameraModel
-    #git_rev: master
-    path: /data/usgs_csm/CSM-CameraModel
+    git_url: https://github.com/USGS-Astrogeology/CSM-CameraModel
+    git_rev: master
 build:
-  number: 2
+  number: 3
 
 detect_binary_files_with_prefix: true
 

@@ -11,3 +11,15 @@ provided by the NASA Navigation and Ancillary Information (NAIF) SPICE system.
 We provide a seperate
 [CSM-SpiceISD](https://github.com/USGS-Astrogeology/CSM-SpiceISD) library to interface with the NAIF Spice
 functionality and provide a standard ISD file.  
+
+## Installation
+
+For Linux and MacOS we have prebuilt packages.  To install:
+
+- `conda install -c usgs-astrogeology usgscam`
+
+If you would like to use the conda environment feature:
+
+- `conda create -n usgscam python=3`
+- `source activate usgscam`
+- `conda install -c usgs-astrogeology usgscam`

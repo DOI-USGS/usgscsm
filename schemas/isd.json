@@ -1,0 +1,241 @@
+{
+   "$schema": "http://json-schema.org/draft-07/schema#",
+   "title": "Instrument Specification Definition",
+   "description": "The Instrument Specification Definition for Astro CSM",
+   "type": "object",
+
+   "properties": {
+       "detector_center": {
+          "description": "Center of the detector in pixel coordinates (line, sample)",
+          "type": "array",
+          "items": {
+             "type": "number",
+             "description": "The (line, sample) of the center of the detector.", 
+             "minItems": 2,
+             "maxItems": 2
+          }
+       },
+       "center_ephemeris_time": {
+          "description": "The center ephemeris time of the image",
+          "type": "number"
+       },
+       "starting_ephemeris_time": {
+           "description": "The starting ephemeris time of the image",
+           "type": "number"
+       },
+       "focal_length_model": {
+           "description":  "The static focal length or the information needed to model a variable focal length",
+           "type": "object",
+           "properties": {
+              "key": { 
+                 "type": "string", 
+                 "description":"A key to get information about time/temp dependent focal length models"
+              },
+              "focal_length":  { 
+                 "type": "number", 
+                 "description":"The focal length in mm"
+               },
+              "focal_epsilon": { 
+                 "type": "number", 
+                 "description":"The uncertainty of the focal length in mm"
+              }
+          },
+          "required": ["focal_length"]
+       },
+       "image_lines": {
+           "description": "The number of lines in the image",
+           "type": "number"
+       },
+       "image_samples": {
+           "description": "The the number of samples in the image",
+           "type": "number"
+       },
+       "radii": {
+           "description": "The radii of the target.",
+           "type": "array",
+           "items": {
+              "type": "number",
+              "description": "The (semi-major axis, semi-minor axis) for the target.",
+              "minItems": 1,
+              "maxItems": 2
+          }
+       },
+       "optical_distortion": {
+           "description": "Information needed to convert from undistorted to distorted image plane",
+           "type": "object",
+           "properties" : {
+              "coefficients": {
+                 "type": "array",
+                 "items": {
+                    "type": "number"
+                    "description": "Each coefficient used for the distortion equation in order of
+                                    increasing degrees." 
+                   }
+                },
+                "key" : {
+                   "type": "string",
+                   "description": "Key into LUT to determine equation to use."
+               }
+            },
+            "required": ["coefficients", "equation_key"]
+       },
+       "starting_detector_sample": {
+          "description": "The sample on the detector where the data starts",
+          "type": "number"
+       },
+       "starting_detector_line": {
+          "description": "The line on the detector where the data starts",
+          "type": "number"
+       },
+       "focal2pixel_samples": {
+          "description": "Transformation x coefficients from focal plane (mm) to detector pixel coordinates",
+          "type": "array",
+          "items": {
+             "type": "number"
+           }
+       },
+       "focal2pixel_lines": {
+          "description": "Transformation y coefficients from focal plane (mm) to detector pixel coordinates",
+          "type": "array",
+          "items": {
+             "type": "number",
+             "minItems": 3,
+             "maxItems": 3
+           }
+       },
+       "sensor_location": {
+          "description": "(X, Y, Z) location of sensor in body-fixed frame.",
+          "type": "array",
+          "items": {
+             "type": "array",
+             "items" : {
+                "type": "number",
+                "minItems": 3,
+                "maxItems": 3
+            }
+         }
+      },
+      "sensor_velocity" : {
+         "description": "(v_x, v_y, v_z) velocity of sensor in body-fixed frame.",
+         "type": "array",
+         "items": {
+            "type": "array",
+            "items" : {
+               "type": "number",
+               "minItems": 3,
+               "maxItems": 3
+            }
+         }
+      },
+      "sun_position" : {
+         "description": "(x, y,z) of the sun in body-fixed frame.",
+         "type": "array",
+         "items": {
+            "type": "array",
+            "items" : {
+               "type": "number",
+               "minItems": 3,
+               "maxItems": 3
+            }
+         }
+      },
+      "sun_velocity" : {
+         "description": "(v_x, v_y, v_z) velocity of sun in body-fixed frame.",
+         "type": "array",
+         "items": {
+            "type": "array",
+            "items" : {
+               "type": "number",
+               "minItems": 3,
+               "maxItems": 3
+            }
+         }
+      },
+      "sensor_orientation" : {
+         "description": "Orientation of the sensor provided in quaternions",
+         "type": "array",
+         "items": {
+            "type": "array",
+            "description": "Each quaternion is of the general form: (scalar, vector component, 
+	                    vector component, vector component). The specific form used is that 
+			    described in the NAIF Quaternions whitepaper under 'SPICE Quaternions' 
+			    available at: 
+			    ftp://naif.jpl.nasa.gov/pub/naif/misc/Quaternion_White_Paper/Quaternions_White_Paper.pdf" 
+            "items" : {
+               "type": "number",
+               "minItems": 4 ,
+               "maxItems": 4
+            }
+         }
+      },
+      "line_scan_rate": {
+         "description": "The line rates of the detector map with the associated start line and time",
+         "type": "array",
+         "items": {
+            "type": "array",
+             "items" : {
+               "type": "number",
+               "default": "-1",
+               "description": "The (start_line, line_start_time, exposure_time). The exposure time is
+                               in seconds and any non-provided values will be set to -1."
+               "minItems": 3,
+               "maxItems": 3
+            }
+         }
+      }, 
+      "detector_sample_summing": {
+         "description": "The summing in the sample-direction. A summing of 1 indicates no summing, 
+                         summing of 2 indicates 2 pixel summing, 4 indicates 4 pixel summing, etc",
+         "type": "number"
+      },
+      "detector_line_summing": {
+         "description": "The summing in the line-direction",
+         "type": "number"
+      },
+      "apply_light_time_correction": {
+         "description": "A flag to indcate whether the light-time correction should be applied",
+         "type": "bool"
+      },
+      "number_of_ephemerides": {
+         "description": "The number of emphemeris points",
+         "type": "number"
+      },
+      "number_of_quaternions": {
+         "description": "The number of quaternions",
+         "type": "number"
+      },
+      "dt_ephemeris": {
+         "description": "The time between each ephemeris point.",
+         "type": "number"
+      },
+      "t0_ephemeris": {
+         "description": "First ephemeris time - center image time",
+         "type": "number"
+      },
+      "dt_quaternion": {
+         "description": "Time spacing of quaternions.",
+         "type": "number"
+      },
+      "t0_quaternion": {
+         "description": "First quaternion time - center image time.",
+         "type": "number"
+      },
+      "reference_height": {
+         "description": "Used for determining the intersection of the look vector with the ellipsoid",
+         "type": "array",
+         "items":  {
+            "type": "number",
+            "minItems": 2,
+            "maxItems": 2
+         }
+      },
+      "interpolation_method": {
+         "description": "The type of interpolation method to use.",
+         "type": "string",
+	 "enum" : ["lagrange"]
+      },
+   "required": ["focal_length_model", "ephemeris_start_time, "ccd_center","reference_height","sensor_orientation", 
+                "focal2pixel_lines","focal2pixel_samples","radii","image_samples", "image_lines", "starting_detector_sample"
+                "starting_detector_line" ]
+   }
+}
