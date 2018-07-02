@@ -46,7 +46,7 @@ extensions = [generate_extension('usgscam.genericframe', ['usgscam/genericframe.
 
 setup(
     name='usgscam',
-    version='0.1.0',
+    version='0.1.1',
     ext_modules=cythonize(extensions),
     description='Cython wrapper to the USGS MDIS Camera Model',
     author='Jay Laura',
