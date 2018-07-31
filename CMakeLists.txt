@@ -14,10 +14,6 @@ add_library(usgscsm SHARED
 set_target_properties(usgscsm PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
-    PUBLIC_HEADER include/usgscsm/UsgsAstroFramePlugin.h
-    PUBLIC_HEADER include/usgscsm/UsgsAstroFrameSensorModel.h
-    PUBLIC_HEADER include/usgscsm/UsgsAstroLsPlugin.h
-    PUBLIC_HEADER include/usgscsm/UsgsAstroLsSensorModel.h
 )
 
 find_library(CSM_LIBRARY csmapi REQUIRED)
