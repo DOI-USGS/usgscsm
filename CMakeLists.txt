@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(usgscsm VERSION 0.0.1 DESCRIPTION "usgscsm library")
 
+set(CMAKE_CXX_STANDARD 11)
+
 include(GNUInstallDirs)
 add_library(usgscsm SHARED 
             src/UsgsAstroFramePlugin.cpp
