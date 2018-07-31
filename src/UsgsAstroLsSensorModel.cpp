@@ -18,7 +18,7 @@
 //-----------------------------------------------------------------------------
 #define USGSASTROLINESCANNER_LIBRARY
 
-#include "genericls/UsgsAstroLsSensorModel.h"
+#include "UsgsAstroLsSensorModel.h"
 
 #include <algorithm>
 #include <iostream>
@@ -301,6 +301,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
 
    // If the final correction is greater than 10 meters,
    // the solution is not valid enough to report even with a warning
+   printf("%f\n", len);
    if (len > 100.0) {
       throw csm::Error(
          csm::Error::ALGORITHM,

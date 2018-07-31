@@ -19,10 +19,10 @@
 
 #define USGSASTROLINESCANNER_LIBRARY
 
-#include "genericls/UsgsAstroLsPlugin.h"
-#include "genericls/UsgsAstroLsISD.h"
-#include "genericls/UsgsAstroLsSensorModel.h"
-#include "genericls/UsgsAstroLsStateData.h"
+#include "UsgsAstroLsPlugin.h"
+#include "UsgsAstroLsISD.h"
+#include "UsgsAstroLsSensorModel.h"
+#include "UsgsAstroLsStateData.h"
 
 #ifdef _WIN32
 # define DIR_DELIMITER_STR "\\"
