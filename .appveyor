@@ -8,12 +8,12 @@ platform:
 configuration:
   - Release
   - Debug
-  
+
 install:
   # For GTest integration
   - git submodule update --init --recursive
 
-before_build:
+build_script:
   - cmake -G "Visual Studio 15 2017 Win64"  
 
 build:
