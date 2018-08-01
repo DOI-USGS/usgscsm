@@ -10,8 +10,11 @@ configuration:
   - Debug
 
 install:
-    - git submodule update --init --recursive
-
+  - git submodule update --init --recursive
+  # This pulls csm from conda
+  - cmd: call C:\\Miniconda36-x64\Scripts\activate.bat
+  - cmd: conda install -c usgs-astrogeology libcsm
+  
 before_build:
   - cmake -G "Visual Studio 15 2017 Win64" .
 
