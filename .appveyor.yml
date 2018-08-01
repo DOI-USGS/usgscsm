@@ -18,6 +18,6 @@ install:
   # This pulls csm from conda
   - cmd: call C:\\Miniconda36-x64\Scripts\activate.bat
   - cmd: conda install -y -c usgs-astrogeology libcsm
-
+  - cmake .
 build_script:
   - cmake --build . -- %MSBUILD_ARGS%
