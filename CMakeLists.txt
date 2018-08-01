@@ -16,8 +16,8 @@ set_target_properties(usgscsm PROPERTIES
     SOVERSION 1
 )
 
-find_library(CSM_LIBRARY csmapi REQUIRED)
-find_path(CSM_INCLUDE_DIR NAMES csm)
+find_library(CSM_LIBRARY csmapi REQUIRED HINTS $ENV{CSM_LIBRARY_PATH})
+find_path(CSM_INCLUDE_DIR NAMES csm HINTS $ENV{CSM_INCLUDE_PATH})
 
 target_include_directories(usgscsm PRIVATE
                            include/

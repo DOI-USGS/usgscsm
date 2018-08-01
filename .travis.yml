@@ -1,7 +1,10 @@
 language: cpp
 
- os: linux
+os: linux
 
+env:
+  - CSM_LIBRARY_PATH="$HOME/miniconda/lib"
+  - CSM_INCLUDE_PATH="$HOME/miniconda/include"
  addons:
    apt:
      sources:
@@ -9,6 +12,14 @@ language: cpp
      packages:
        - g++-6
 
- script:
-   - CXX=/usr/bin/g++-6 CC=/usr/bin/gcc-6 cmake .
-   - cmake --build . 
+install:
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+       wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      curl -o miniconda.sh  https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh;
+    fi
+  - conda install -c usgs-astrogeology libcsm
+
+script:
+  - CXX=/usr/bin/g++-6 CC=/usr/bin/gcc-6 cmake .
+  - cmake --build . 
