@@ -9,7 +9,7 @@ configuration:
   - Release
   - Debug
 
-install:
+before_build:
   - git submodule update --init --recursive
 
 build_script:
