@@ -14,12 +14,12 @@ add_library(usgscsm SHARED
 set_target_properties(usgscsm PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
-    PUBLIC_HEADER UsgsAstroFramePlugin.h
-    PUBLIC_HEADER UsgsAstroFrameSensorModel.h
-    PUBLIC_HEADER UsgsAstroLsISD.h
-    PUBLIC_HEADER UsgsAstroLsPlugin.h
-    PUBLIC_HEADER UsgsAstroLsSensorModel.h
-    PUBLIC_HEADER UsgsAstroLsStateData.h
+    UsgsAstroFramePlugin.h
+    UsgsAstroFrameSensorModel.h
+    UsgsAstroLsISD.h
+    UsgsAstroLsPlugin.h
+    UsgsAstroLsSensorModel.h
+    UsgsAstroLsStateData.h
 )
 
 find_library(CSM_LIBRARY csmapi REQUIRED)
