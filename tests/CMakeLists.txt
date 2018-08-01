@@ -8,4 +8,4 @@ include_directories(${GTEST_INCLUDE_DIRS})
 add_executable(runTests TestyMcTestFace.cpp)
 target_link_libraries(runTests usgscsm ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} pthread)
 
-gtest_discover_tests(runTests WORKING_DIRECTORY tests TEST_PREFIX new:)
+gtest_discover_tests(runTests WORKING_DIRECTORY tests)
