@@ -20,4 +20,4 @@ install:
   - cmd: conda install -y -c usgs-astrogeology libcsm
 
 build_script:
-  - cmake --build . --config $(CONFIGURATION) -- %MSBUILD_ARGS%
+  - cmake --build . -- %MSBUILD_ARGS%
