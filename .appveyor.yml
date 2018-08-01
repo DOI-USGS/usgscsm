@@ -9,6 +9,10 @@ configuration:
   - Release
   - Debug
 
+environment:
+  CSM_LIBRARY_PATH: C:\\Miniconda36-x64\lib
+  CSM_INCLUDE_PATH: C:\\Miniconda36-x64\include
+
 install:
   - git submodule update --init --recursive
   # This pulls csm from conda
