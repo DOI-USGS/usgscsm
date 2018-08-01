@@ -9,8 +9,11 @@ configuration:
   - Release
   - Debug
 
-before_build:
-  - git submodule update --init --recursive
+install:
+    - git submodule update --init --recursive
 
-build_script:
-  - cmake --build . -- %MSBUILD_ARGS%
+before_build:
+  - cmake -G "Visual Studio 15 2017 Win64" .
+
+build:
+  project: $(APPVEYOR_BUILD_FOLDER)\$(APPVEYOR_PROJECT_NAME).sln
