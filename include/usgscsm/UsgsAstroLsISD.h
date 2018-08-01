@@ -1,7 +1,7 @@
 //----------------------------------------------------------------------------
-// 
+//
 //                                UNCLASSIFIED
-// 
+//
 // Copyright © 1989-2017 BAE Systems Information and Electronic Systems Integration Inc.
 //                            ALL RIGHTS RESERVED
 // Use of this software product is governed by the terms of a license
@@ -17,18 +17,18 @@
 //     The ISD format is defined by the imagery provider. A few common formats
 //     include name/value pairs, XML, NITF TREs, and GeoTiff tags.
 //
-//     This ISD is formatted as a list of name/value pairs. The order of the 
+//     This ISD is formatted as a list of name/value pairs. The order of the
 //     list generally does not matter, except that the length of a vector needs
-//     to be read in before the vector itself. Extra data in the support data 
+//     to be read in before the vector itself. Extra data in the support data
 //     file will be ignored.
 //
-//     There is data describing the ellipsoid that can optionally be in a 
+//     There is data describing the ellipsoid that can optionally be in a
 //     seperate file.  This is to support legacy data, but is not encouraged.
 //
 //     For the Astro LS sensor model there is a close relationship between the
-//     ISD and the State data. This is not always the case. So, it is best to 
-//     seperate the ISD parsing (done here), the translation of ISD to state 
-//     data (done in the plugin), and the instantiation of the sensor model 
+//     ISD and the State data. This is not always the case. So, it is best to
+//     seperate the ISD parsing (done here), the translation of ISD to state
+//     data (done in the plugin), and the instantiation of the sensor model
 //     from state data (done in the sensor model).
 //
 //    SOFTWARE HISTORY:
@@ -44,9 +44,9 @@
 #include <vector>
 #include <string>
 
-#include <csm/csm.h>
-#include <csm/Isd.h>
-#include <csm/SettableEllipsoid.h>
+#include <csm.h>
+#include <Isd.h>
+#include <SettableEllipsoid.h>
 
 class UsgsAstroLsISD
 {
@@ -65,12 +65,12 @@ class UsgsAstroLsISD
       reset();
       setISD(lis_file_name, ell_file_name);
    }
-   
+
    virtual ~UsgsAstroLsISD() {}
 
    // Formats the support data as a string
-   // This is mainly used to check that the 
-   // support data is read in correctly.   
+   // This is mainly used to check that the
+   // support data is read in correctly.
    std::string toString() const;
 
    // Initializes the class from ISD as formatted by the image provider.
@@ -92,11 +92,11 @@ class UsgsAstroLsISD
       std::string&        ell_file_name,
       std::string&        img_rel_name);
 
-   
+
    // ISD elements;
    // The support data is defined by USGS. See the documentation at
    // http://htmlpreview.github.io/?https://github.com/USGS-Astrogeology/socet_set/blob/master/SS4HiRISE/Tutorials/ISD_keyword_examples/AstroLineScanner_ISD_Keywords.ls.htm
-   // Even for fields that do not change, it is best to include them in 
+   // Even for fields that do not change, it is best to include them in
    // the support data rather than hard code values in the sensor model.
    // Since this is not always done, some fields are optional.
    std::string         m_sensor_type;
@@ -147,7 +147,7 @@ class UsgsAstroLsISD
    static const std::string mISD_KEYWORDS[];
 
    protected:
-   // Set to default values  
+   // Set to default values
    void reset();
 };
 

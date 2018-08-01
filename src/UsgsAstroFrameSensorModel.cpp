@@ -6,8 +6,8 @@
 
 #include <json/json.hpp>
 
-#include <csm/Error.h>
-#include <csm/Version.h>
+#include <Error.h>
+#include <Version.h>
 
 using json = nlohmann::json;
 using namespace std;
