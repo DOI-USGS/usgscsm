@@ -27,6 +27,12 @@ target_include_directories(usgscsm PRIVATE
 
 target_link_libraries(usgscsm ${CSM_LIBRARY})
 
-install(TARGETS usgscsm
+if(WIN32)
+  install(TARGETS usgscsm
+    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+else()
+  install(TARGETS usgscsm
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+endif()
