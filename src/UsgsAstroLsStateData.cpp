@@ -29,8 +29,8 @@
 #define USGSASTROLINESCANNER_LIBRARY
 
 
-#include <genericls/UsgsAstroLsStateData.h>
-#include <genericls/UsgsAstroLsPlugin.h>
+#include <UsgsAstroLsStateData.h>
+#include <UsgsAstroLsPlugin.h>
 #include <sstream>
 #include <csm/Error.h>
 #include <json/json.hpp>
