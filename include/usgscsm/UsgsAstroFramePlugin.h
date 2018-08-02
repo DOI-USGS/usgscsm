@@ -1,15 +1,6 @@
 #ifndef UsgsAstroFramePlugin_h
 #define UsgsAstroFramePlugin_h
 
-#ifdef _WIN32
-#  ifdef FRAME_LIBRARY
-#    define  USGSASTROFRAME_EXPORT_API __declspec(dllexport)
-#  else
-#    define  USGSASTROFRAME_EXPORT_API __declspec(dllimport)
-# endif
-#else
-#  define  USGSASTROFRAME_EXPORT_API
-#endif
 
 #include <string>
 
@@ -17,7 +8,7 @@
 #include <Version.h>
 
 
-class USGSASTROFRAME_EXPORT_API UsgsAstroFramePlugin : public csm::Plugin {
+class UsgsAstroFramePlugin : public csm::Plugin {
 
   public:
     UsgsAstroFramePlugin();

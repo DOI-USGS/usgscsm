@@ -5,6 +5,8 @@ include(cmake/gtest.cmake)
 include(GNUInstallDirs)
 include(GoogleTest)
 
+add_subdirectory(csm)
+
 set(CMAKE_CXX_STANDARD 11)
 
 add_library(usgscsm SHARED
@@ -25,14 +27,11 @@ set_target_properties(usgscsm PROPERTIES
     UsgsAstroLsStateData.h
 )
 
-find_library(CSM_LIBRARY csmapi REQUIRED HINTS $ENV{CSM_LIBRARY_PATH})
-find_path(CSM_INCLUDE_DIR PATH_SUFFIXES csm NAMES csm.h HINTS $ENV{CSM_INCLUDE_PATH})
-
 target_include_directories(usgscsm
                            PUBLIC
                            include/usgscsm
                            include/
-                           ${CSM_INCLUDE_DIR}
+                           csm/}
 )
 
 # Setup for GoogleTest
@@ -40,12 +39,18 @@ target_include_directories(usgscsm
 find_package (Threads)
 
 target_link_libraries(usgscsm
-                      ${CSM_LIBRARY} 
+                      csmapi
                       gtest ${CMAKE_THREAD_LIBS_INIT})
 
-install(TARGETS usgscsm
+if(WIN32)
+  install(TARGETS usgscsm
+    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+else()
+  install(TARGETS usgscsm
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+endif()
 
 
 

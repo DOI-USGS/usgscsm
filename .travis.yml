@@ -5,6 +5,7 @@ os: linux
 env:
   - CSM_LIBRARY_PATH="$HOME/miniconda/lib"
   - CSM_INCLUDE_PATH="$HOME/miniconda/include"
+
  addons:
    apt:
      sources:
@@ -13,13 +14,14 @@ env:
        - g++-6
 
 install:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-       wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-    else
-      curl -o miniconda.sh  https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh;
-    fi
-  - conda install -c usgs-astrogeology libcsm
+  # Install a supported cmake version (>= 3.10)
+  - mkdir $HOME/cmake
+  - wget -O cmake.sh https://cmake.org/files/v3.10/cmake-3.10.0-rc1-Linux-x86_64.sh
+  - sudo sh cmake.sh --skip-license --exclude-subdir --prefix=$HOME/cmake
+  - $HOME/cmake/bin/cmake --version
+  - export PATH="$HOME/cmake/bin:$PATH"
 
 script:
   - CXX=/usr/bin/g++-6 CC=/usr/bin/gcc-6 cmake .
   - cmake --build . 
+  - ./tests/runTests
