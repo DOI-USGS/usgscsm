@@ -23,7 +23,7 @@ set_target_properties(usgscsm PROPERTIES
 )
 
 find_library(CSM_LIBRARY csmapi REQUIRED)
-find_path(CSM_INCLUDE_DIR NAMES csm)
+find_path(CSM_INCLUDE_DIR PATH_SUFFIXES csm NAMES csm.h)
 
 target_include_directories(usgscsm
                            PUBLIC
