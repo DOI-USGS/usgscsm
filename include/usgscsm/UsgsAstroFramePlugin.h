@@ -8,7 +8,7 @@
 #include <Version.h>
 
 
-class USGSASTROFRAME_EXPORT_API UsgsAstroFramePlugin : public csm::Plugin {
+class UsgsAstroFramePlugin : public csm::Plugin {
 
   public:
     UsgsAstroFramePlugin();
