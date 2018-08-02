@@ -37,3 +37,4 @@ script:
   - cmake --version
   - cmake .
   - cmake --build .
+  - ./tests/runTests
