@@ -6,12 +6,12 @@ env:
   - CSM_LIBRARY_PATH="$HOME/miniconda/lib"
   - CSM_INCLUDE_PATH="$HOME/miniconda/include"
 
- addons:
-   apt:
-     sources:
-       - ubuntu-toolchain-r-test
-     packages:
-       - g++-6
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-6
 
 install:
   # Install a supported cmake version (>= 3.10)
