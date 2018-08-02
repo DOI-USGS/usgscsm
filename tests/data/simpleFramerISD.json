@@ -58,7 +58,7 @@
         0.0,
         0.1
     ],
-    "x_sensor_origin": 100,
+    "x_sensor_origin": 1000,
     "y_sensor_origin": 0,
     "z_sensor_origin": 0,
     "x_sensor_velocity": 1,
