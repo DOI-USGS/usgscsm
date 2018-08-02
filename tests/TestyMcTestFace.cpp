@@ -1,6 +1,27 @@
 #include "UsgsAstroFramePlugin.h"
 
+#include <json/json.hpp>
+
+#include <fstream>
+
 #include <gtest/gtest.h>
+
+using json = nlohmann::json;
+
+class FrameIsdTest : public ::testing::Test {
+   protected:
+
+      csm::Isd isd;
+
+   virtual void SetUp() {
+      std::ifstream isdFile("data/simpleFramerISD.json");
+      json jsonIsd = json::parse(isdFile);
+      isd.clearAllParams();
+      for (json::iterator it = jsonIsd.begin(); it != jsonIsd.end(); ++it) {
+         isd.addParam(it.key(), it.value().dump());
+      }
+   }
+};
 
 TEST(FramePluginTests, PluginName) {
    UsgsAstroFramePlugin testPlugin;
@@ -22,10 +43,17 @@ TEST(FramePluginTests, NumModels) {
    EXPECT_EQ(1, testPlugin.getNumModels());;
 }
 
+TEST(FramePluginTests, NoStateName) {
+   UsgsAstroFramePlugin testPlugin;
+   std::string badState = "{\"not_a_name\":\"bad_name\"}";
+   EXPECT_FALSE(testPlugin.canModelBeConstructedFromState(
+         "USGS_ASTRO_FRAME_SENSOR_MODEL",
+         badState));;
+}
+
 TEST(FramePluginTests, BadStateName) {
    UsgsAstroFramePlugin testPlugin;
-   std::string badState = "{"
-         "\"model_name\":\"bad_name\"}";
+   std::string badState = "{\"model_name\":\"bad_name\"}";
    EXPECT_FALSE(testPlugin.canModelBeConstructedFromState(
          "USGS_ASTRO_FRAME_SENSOR_MODEL",
          badState));;
@@ -48,6 +76,13 @@ TEST(FramePluginTests, MissingStateValue) {
    EXPECT_FALSE(testPlugin.canModelBeConstructedFromState(
          "USGS_ASTRO_FRAME_SENSOR_MODEL",
          badState));;
+}
+
+TEST_F(FrameIsdTest, ConstructFromISD) {
+   UsgsAstroFramePlugin testPlugin;
+   EXPECT_TRUE(testPlugin.canModelBeConstructedFromISD(
+               isd,
+               "USGS_ASTRO_FRAME_SENSOR_MODEL"));
 }
 
 int main(int argc, char **argv) {
