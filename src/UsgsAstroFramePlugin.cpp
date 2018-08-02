@@ -4,11 +4,11 @@
 #include <cstdlib>
 #include <string>
 
-#include <csm/csm.h>
-#include <csm/Error.h>
-#include <csm/Plugin.h>
-#include <csm/Warning.h>
-#include <csm/Version.h>
+#include <csm.h>
+#include <Error.h>
+#include <Plugin.h>
+#include <Warning.h>
+#include <Version.h>
 
 #include <json/json.hpp>
 
@@ -162,7 +162,12 @@ bool UsgsAstroFramePlugin::canModelBeConstructedFromState(const std::string &mod
 
   // Get the model name from the model state
   std::string model_name_from_state;
-  model_name_from_state = getModelNameFromModelState(modelState, warnings);
+  try {
+    model_name_from_state = getModelNameFromModelState(modelState, warnings);
+  }
+  catch(...) {
+    return false;
+  }
 
   // Check that the plugin supports the model
   if (modelName != model_name_from_state ||

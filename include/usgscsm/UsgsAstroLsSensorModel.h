@@ -28,9 +28,9 @@
 #define __USGS_ASTRO_LINE_SCANNER_SENSORMODEL_H
 
 #include "UsgsAstroLsStateData.h"
-#include <csm/RasterGM.h>
-#include <csm/SettableEllipsoid.h>
-#include <csm/CorrelationModel.h>
+#include <RasterGM.h>
+#include <SettableEllipsoid.h>
+#include <CorrelationModel.h>
 
 
 class UsgsAstroLsSensorModel : public csm::RasterGM, virtual public csm::SettableEllipsoid
