@@ -1,3 +1,6 @@
 [submodule "gtest"]
 	path = gtest
 	url = https://github.com/google/googletest
+[submodule "csm"]
+	path = csm
+	url = https://github.com/USGS-Astrogeology/csm
