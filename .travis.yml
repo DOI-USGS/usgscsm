@@ -14,12 +14,22 @@ env:
        - g++-6
 
 install:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+  - |
+    if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
     else
       curl -o miniconda.sh  https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh;
     fi
   - conda install -c usgs-astrogeology libcsm
+
+    - |
+    if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
+      CMAKE_URL="https://cmake.org/files/v3.10/cmake-3.10.0-Linux-x86_64.tar.gz"
+      mkdir cmake && travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C cmake
+      export PATH=${DEPS_DIR}/cmake/bin:${PATH}
+    else
+      brew install cmake || brew upgrade cmake
+    fi
 
 script:
   - CXX=/usr/bin/g++-6 CC=/usr/bin/gcc-6 cmake .
