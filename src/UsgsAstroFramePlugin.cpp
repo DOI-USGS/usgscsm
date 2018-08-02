@@ -15,6 +15,13 @@
 
 using json = nlohmann::json;
 
+#ifdef _WIN32
+# define DIR_DELIMITER_STR "\\"
+#else
+# define DIR_DELIMITER_STR  "/"
+#endif
+
+
 // Declaration of static variables
 const std::string UsgsAstroFramePlugin::_PLUGIN_NAME = "UsgsAstroFramePluginCSM";
 const std::string UsgsAstroFramePlugin::_MANUFACTURER_NAME = "UsgsAstrogeology";
