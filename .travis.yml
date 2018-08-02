@@ -22,8 +22,8 @@ install:
     fi
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
-  - conda install -c usgs-astrogeology libcsm
-  - conda install -c conda-forge cmake
+  - conda install -y -c usgs-astrogeology libcsm
+  - conda install -y -c conda-forge cmake
 
 script:
   - CXX=/usr/bin/g++-6 CC=/usr/bin/gcc-6 cmake .
