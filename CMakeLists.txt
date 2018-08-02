@@ -23,7 +23,7 @@ set_target_properties(usgscsm PROPERTIES
 )
 
 find_library(CSM_LIBRARY csmapi REQUIRED HINTS $ENV{CSM_LIBRARY_PATH})
-find_path(CSM_INCLUDE_DIR NAMES csm HINTS $ENV{CSM_INCLUDE_PATH})
+find_path(CSM_INCLUDE_DIR NAMES csm.h HINTS $ENV{CSM_INCLUDE_PATH})
 
 target_include_directories(usgscsm
                            PUBLIC
