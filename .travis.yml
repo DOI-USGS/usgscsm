@@ -1,27 +1,39 @@
 language: cpp
 
-os: linux
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6
+      env:
+        - MATRIX_EVAL="CXX=g++-6 && CC=gcc-6"
+    - os: osx
+      osx_image: xcode9.4
+      env: 
+        - MATRIX_EVAL="CXX=clang++ && CC=clang"
 
-env:
-  - CSM_LIBRARY_PATH="$HOME/miniconda/lib"
-  - CSM_INCLUDE_PATH="$HOME/miniconda/include"
-
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-6
+before_install:
+  - eval "${MATRIX_EVAL}"
 
 install:
+  - echo $TRAVIS_OS_NAME
   # Install a supported cmake version (>= 3.10)
   - mkdir $HOME/cmake
-  - wget -O cmake.sh https://cmake.org/files/v3.10/cmake-3.10.0-rc1-Linux-x86_64.sh
-  - sudo sh cmake.sh --skip-license --exclude-subdir --prefix=$HOME/cmake
-  - $HOME/cmake/bin/cmake --version
-  - export PATH="$HOME/cmake/bin:$PATH"
+  - |
+    if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      curl -o miniconda.sh  https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - conda install -y -c conda-forge cmake
 
 script:
-  - CXX=/usr/bin/g++-6 CC=/usr/bin/gcc-6 cmake .
-  - cmake --build . 
-  - ./tests/runTests
+  - cmake --version
+  - cmake .
+  - cmake --build .
