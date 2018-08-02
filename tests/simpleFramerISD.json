@@ -20,7 +20,7 @@
     "nsamples": 5,
     "omega": 0,
     "phi": 0,
-    "semi_major_axis": 100
+    "semi_major_axis": 100,
     "transx": [
         0.0,
         0.1,
