@@ -1,0 +1,37 @@
+{
+ 
+    "ephemeris_time": 418855170.49264956,
+    "focal_length": 500,
+    "instrument_id": "MDIS-NAC",
+    "itrans_line": [
+        0.0,
+        0.0,
+        10
+    ],
+    "itrans_sample": [
+        0.0,
+        10,
+        0.0
+    ],
+    "kappa": 0,
+    "min_elevation": -1,
+    "max_elevation": 1,
+    "nlines": 5,
+    "nsamples": 5,
+    "omega": 0,
+    "phi": 0,
+    "semi_major_axis": 100
+    "transx": [
+        0.0,
+        0.1,
+        0.0
+    ],
+    "transy": [
+        0.0,
+        0.0,
+        0.1
+    ],
+    "x_sensor_origin": 100,
+    "y_sensor_origin": 0,
+    "z_sensor_origin": 0
+}
