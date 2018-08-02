@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 project(usgscsm VERSION 0.0.1 DESCRIPTION "usgscsm library")
 
+include(cmake/gtest.cmake)
+include(GNUInstallDirs)
+include(GoogleTest)
+
 set(CMAKE_CXX_STANDARD 11)
 
-include(GNUInstallDirs)
 add_library(usgscsm SHARED
             src/UsgsAstroFramePlugin.cpp
             src/UsgsAstroFrameSensorModel.cpp
@@ -32,7 +35,13 @@ target_include_directories(usgscsm
                            ${CSM_INCLUDE_DIR}
 )
 
-target_link_libraries(usgscsm ${CSM_LIBRARY})
+# Setup for GoogleTest
+
+find_package (Threads)
+
+target_link_libraries(usgscsm
+                      ${CSM_LIBRARY} 
+                      gtest ${CMAKE_THREAD_LIBS_INIT})
 
 if(WIN32)
   install(TARGETS usgscsm
@@ -43,6 +52,8 @@ else()
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
+
+
 
 include(CTest)
 
