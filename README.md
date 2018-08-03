@@ -60,6 +60,7 @@ git push -u origin master
 ```
 4. `mkdir build && cd build`
 5. `cmake .. && make`
+6. `ctest`
 
 ---
 
