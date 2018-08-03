@@ -1,6 +1,6 @@
 # CSM-CameraModel
 
-## Building with conda (RECOMMENDED)
+## Setting up dependencies with conda (RECOMMENDED)
 
 Install conda if you do not already have it.
 ```bash
@@ -17,7 +17,7 @@ echo -e "export PATH=$HOME/miniconda3/bin:\$PATH" >> $HOME/.bashrc && \
 source $HOME/.bashrc && \
 which conda
 ```
-> For more information: [bash installation](https://conda.io/docs/user-guide/install/linux.html "Reference to bash conda install")
+> *For more information: [bash installation](https://conda.io/docs/user-guide/install/linux.html "Reference to bash conda install")*
 
 ### Setting up conda for tcsh
 Copy and paste the following into a terminal running the `tcsh` shell:
@@ -27,20 +27,22 @@ echo  "source $HOME/miniconda3/etc/profile.d/conda.csh > /dev/null" >> $HOME/.cs
 source $HOME/.cshrc && \
 which conda
 ```
-> For more information: [tcsh installation](https://github.com/ESMValGroup/ESMValTool/issues/301 "Reference to tcsh conda install")
+> *For more information: [tcsh installation](https://github.com/ESMValGroup/ESMValTool/issues/301 "Reference to tcsh conda install")*
 
 ### Creating an isolated conda environment
 Run the following commands to create a self-contained dev environment for CSM-CameraModel (type `y` to confirm creation):
 ```bash
 conda create -n csmdev -c usgs-astrogeology cmake libcsm
 ```
-> For more information: [conda environments](https://conda.io/docs/user-guide/tasks/manage-environments.html)
+> *For more information: [conda environments](https://conda.io/docs/user-guide/tasks/manage-environments.html)*
 
-#### Activating the environment
+### Activating the environment
 After creating the `csmdev` environment and installing cmake and libcsm into it, we need to activate it. Right now, cmake, libcsm, and their dependencies are isolated to a conda environment and we need to tell conda that we want to use it. The activation command depends on your shell.
 * **bash**: `source activate csmdev`
 * **tcsh**: `conda activate csmdev`
+> *You can add these to the end of your $HOME/.bashrc or $HOME/.cshrc if you want the `csmdev` environment to be active in every new terminal.*
 
+## Building CSM-CameraModel
 After you've set up conda, you can build CSM-CameraModel:
 
 1. Fork `USGS-Astrogeology/CSM-CameraModel` if you don't already have a fork.
