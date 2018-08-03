@@ -1,6 +1,6 @@
 # CSM-CameraModel
 
-## Building with conda
+## Building with conda (RECOMMENDED)
 
 Install conda if you do not already have it.
 ```bash
@@ -17,7 +17,7 @@ echo -e "export PATH=$HOME/miniconda3/bin:\$PATH" >> $HOME/.bashrc && \
 source $HOME/.bashrc && \
 which conda
 ```
-> [bash installation reference](https://conda.io/docs/user-guide/install/linux.html "Reference to bash conda install")
+> For more information: [bash installation](https://conda.io/docs/user-guide/install/linux.html "Reference to bash conda install")
 
 ### Setting up conda for tcsh
 Copy and paste the following into a terminal running the `tcsh` shell:
@@ -27,13 +27,14 @@ echo  "source $HOME/miniconda3/etc/profile.d/conda.csh > /dev/null" >> $HOME/.cs
 source $HOME/.cshrc && \
 which conda
 ```
-> [tcsh installation reference](https://github.com/ESMValGroup/ESMValTool/issues/301 "Reference to tcsh conda install")
+> For more information: [tcsh installation](https://github.com/ESMValGroup/ESMValTool/issues/301 "Reference to tcsh conda install")
 
 ### Creating an isolated conda environment
 Run the following commands to create a self-contained dev environment for CSM-CameraModel (type `y` to confirm creation):
 ```bash
 conda create -n csmdev -c usgs-astrogeology cmake libcsm
 ```
+> For more information: [conda environments](https://conda.io/docs/user-guide/tasks/manage-environments.html)
 
 #### Activating the environment
 After creating the `csmdev` environment and installing cmake and libcsm into it, we need to activate it. Right now, cmake, libcsm, and their dependencies are isolated to a conda environment and we need to tell conda that we want to use it. The activation command depends on your shell.
@@ -41,9 +42,22 @@ After creating the `csmdev` environment and installing cmake and libcsm into it,
 * **tcsh**: `conda activate csmdev`
 
 After you've set up conda, you can build CSM-CameraModel:
-```bash
 
+1. Fork `USGS-Astrogeology/CSM-CameraModel` if you don't already have a fork.
+2. Clone your fork of `CSM-CameraModel` *with `--recursive` option to get the gtest submodule*.
+```bash
+git clone --recursive git@github.com:<your-username>/CSM-CameraModel.git
+cd CSM-CameraModel
+git remote add upstream git@github.com:USGS-Astrogeology/CSM-CameraModel.git
 ```
+3. Sync your fork with `upstream` and ensure the gtest submodule is init'd if your fork is old.
+```bash
+git pull upstream master
+git submodule update --init --recursive
+git push -u origin master
+```
+4. `mkdir build && cd build`
+5. `cmake .. && make`
 
 ---
 
