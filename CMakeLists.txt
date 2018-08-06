@@ -16,15 +16,11 @@ add_library(usgscsm SHARED
             src/UsgsAstroLsSensorModel.cpp
             src/UsgsAstroLsStateData.cpp)
 
+file(GLOB HEADER_FILES ${PROJECT_SOURCE_DIR}/include/usgscsm/*.h)
 set_target_properties(usgscsm PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
-    UsgsAstroFramePlugin.h
-    UsgsAstroFrameSensorModel.h
-    UsgsAstroLsISD.h
-    UsgsAstroLsPlugin.h
-    UsgsAstroLsSensorModel.h
-    UsgsAstroLsStateData.h
+    PUBLIC_HEADER "${HEADER_FILES}"
 )
 
 target_include_directories(usgscsm
@@ -45,11 +41,11 @@ target_link_libraries(usgscsm
 if(WIN32)
   install(TARGETS usgscsm
     RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/usgscsm)
 else()
   install(TARGETS usgscsm
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/usgscsm)
 endif()
 
 
