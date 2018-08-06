@@ -20,7 +20,7 @@ file(GLOB HEADER_FILES ${PROJECT_SOURCE_DIR}/include/usgscsm/*.h)
 set_target_properties(usgscsm PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
-    PUBLIC_HEADER ${HEADER_FILES}
+    PUBLIC_HEADER "${HEADER_FILES}"
 )
 
 target_include_directories(usgscsm
