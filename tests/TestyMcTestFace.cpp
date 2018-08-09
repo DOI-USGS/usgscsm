@@ -78,12 +78,12 @@ TEST(FramePluginTests, MissingStateValue) {
          badState));;
 }
 
-TEST_F(FrameIsdTest, ConstructFromISD) {
+/* TEST_F(FrameIsdTest, ConstructFromISD) {
    UsgsAstroFramePlugin testPlugin;
    EXPECT_TRUE(testPlugin.canModelBeConstructedFromISD(
                isd,
                "USGS_ASTRO_FRAME_SENSOR_MODEL"));
-}
+} */
 
 int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);
