@@ -1,0 +1,22 @@
+package:
+  name: sensormodels
+  version: "0.1.0"
+
+source:
+  git_url: https://github.com/USGS-Astrogeology/CSM-CameraModel.git
+
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - cmake >=3.10
+    - libcsm
+
+test:
+  commands:
+    - test -e $PREFIX/lib/libusgscsm.so  # [linux]
+    - test -e $PREFIX/lib/libusgscsm.dylib  # [osx]
+
+about:
+  home: https://github.com/USGS-Astrogeology/SensorUtils
+  license: None
+  summary: "This is a library for sensor utilities"
