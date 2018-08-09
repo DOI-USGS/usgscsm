@@ -47,4 +47,4 @@ after_success:
   # Pull the libcsm for the build from our anaconda channel
   - conda config --add channels usgs-astrogeology
   - conda config --set anaconda_upload yes
-  - conda build --token $CONDA_UPLOAD_TOKEN --python $PYTHON_VERSION recipe -q
+  - conda build --token $CONDA_UPLOAD_TOKEN recipe -q
