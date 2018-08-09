@@ -18,6 +18,9 @@ else()
 			    PATH_SUFFIXES "csm" 
 			    PATHS $ENV{CONDA_PREFIX}/include/)
   find_library(CSM_LIBRARY csmapi PATHS $ENV{CONDA_PREFIX}/lib)
+  message(${CSM_INCLUDE_DIR})
+  message(${CSM_LIBRARY})
+  message($ENV{CONDA_PREFIX})
 endif(BUILD_CSM)
 
 add_library(usgscsm SHARED
