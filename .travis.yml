@@ -1,4 +1,5 @@
-language: cpp
+nguage: cpp
+sudo: true
 
 matrix:
   include:
@@ -18,7 +19,10 @@ matrix:
 
 before_install:
   - eval "${MATRIX_EVAL}"
-
+  - |
+    if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      pip install --user cpp-coveralls;
+    fi
 install:
   # Install a supported cmake version (>= 3.10)
   - |
@@ -30,9 +34,10 @@ install:
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda install -y -c conda-forge cmake
-
+  
 script:
-  - cmake --version
-  - cmake .
+  - mkdir build
+  - cd build
+  - cmake -DCOVERAGE=ON ..
   - cmake --build .
-  - ./tests/runTests
+  - ctest
