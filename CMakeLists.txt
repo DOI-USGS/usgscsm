@@ -5,9 +5,20 @@ include(cmake/gtest.cmake)
 include(GNUInstallDirs)
 include(GoogleTest)
 
-add_subdirectory(csm)
-
 set(CMAKE_CXX_STANDARD 11)
+
+# Optional build or link against CSM
+option (BUILD_CSM "Build the CSM library" ON)
+if(BUILD_CSM)
+  add_subdirectory(csm)
+  set(CSM_INCLUDE_DIR /csm)
+  set(CSM_LIBRARY csmapi)
+else()
+  find_path(CSM_INCLUDE_DIR NAMES "csm.h"
+			    PATH_SUFFIXES "csm" 
+			    PATHS $ENV{CONDA_PREFIX}/include/)
+  find_library(CSM_LIBRARY csmapi PATHS $ENV{CONDA_PREFIX}/lib)
+endif(BUILD_CSM)
 
 add_library(usgscsm SHARED
             src/UsgsAstroFramePlugin.cpp
@@ -31,7 +42,7 @@ target_include_directories(usgscsm
                            PUBLIC
                            include/usgscsm
                            include/
-                           csm/}
+                           ${CSM_INCLUDE_DIR}
 )
 
 # Setup for GoogleTest
@@ -39,7 +50,7 @@ target_include_directories(usgscsm
 find_package (Threads)
 
 target_link_libraries(usgscsm
-                      csmapi
+                      ${CSM_LIBRARY}
                       gtest ${CMAKE_THREAD_LIBS_INIT})
 
 if(WIN32)
