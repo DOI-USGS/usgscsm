@@ -41,9 +41,9 @@ script:
   - cmake -DCOVERAGE=ON ..
   - cmake --build .
   - ctest
+  - cd ..
 
 after_success:
-  - cd .. && source activate base
   - conda install -y -q conda-build anaconda-client
   # Pull the libcsm for the build from our anaconda channel
   - conda config --add channels usgs-astrogeology
