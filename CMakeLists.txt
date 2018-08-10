@@ -66,7 +66,7 @@ endif()
 
 # Optional build or link against CSM
 option (BUILD_TESTS "Build tests" ON)
-if(BUILD_CSM)
+if(BUILD_TESTS)
   include(CTest)
   enable_testing()
   add_subdirectory(tests)
