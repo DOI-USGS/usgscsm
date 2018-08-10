@@ -3,8 +3,8 @@ package:
   version: "0.1.0"
 
 source:
-  git_url: https://github.com/USGS-Astrogeology/CSM-CameraModel.git
-
+  git_url: https://github.com/jlaura/CSM-CameraModel.git
+  # path: ../
 requirements:
   build:
     - {{ compiler('cxx') }}

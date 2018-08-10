@@ -16,8 +16,8 @@ if(BUILD_CSM)
 else()
   find_path(CSM_INCLUDE_DIR NAMES "csm.h"
 			    PATH_SUFFIXES "csm" 
-			    PATHS "$ENV{CONDA_PREFIX}/include/")
-  find_library(CSM_LIBRARY csmapi PATHS "$ENV{CONDA_PREFIX}/lib")
+			    PATHS $ENV{CONDA_PREFIX}/include/)
+  find_library(CSM_LIBRARY csmapi PATHS $ENV{CONDA_PREFIX}/lib)
   message(${CSM_INCLUDE_DIR})
   message(${CSM_LIBRARY})
   message($ENV{CONDA_PREFIX})
@@ -67,9 +67,10 @@ else()
 endif()
 
 
-
-include(CTest)
-
-enable_testing()
-
-add_subdirectory(tests)
+# Optional build or link against CSM
+option (BUILD_TESTS "Build tests" ON)
+if(BUILD_CSM)
+  include(CTest)
+  enable_testing()
+  add_subdirectory(tests)
+endif()
