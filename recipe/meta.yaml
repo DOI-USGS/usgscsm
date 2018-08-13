@@ -19,4 +19,4 @@ test:
 about:
   home: https://github.com/USGS-Astrogeology/SensorUtils
   license: None
-  summary: "This is a library for sensor utilities"
+  summary: "This is a library for CSM Camera Models"
