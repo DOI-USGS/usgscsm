@@ -118,9 +118,6 @@ TEST_F(FrameIsdTest, ConstructInValidCamera) {
    UsgsAstroFramePlugin testPlugin;
    // Remove the model_name keyword from the ISD to make it invalid
    isd.clearParams("model_name");
-   std::string badState = "{"
-         "\"model_name\":\"USGS_ASTRO_FRAME_SENSOR_MODEL\","
-         "\"bad_param\":\"bad_value\"}";
    csm::Model *cameraModel;
    EXPECT_THROW(
          testPlugin.constructModelFromISD(
