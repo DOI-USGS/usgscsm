@@ -9,7 +9,7 @@
         7.5
     ],
     "ephemeris_time": 100.0,
-    "focal_length": 500,
+    "focal_length": 50,
     "focal_length_epsilon": 1.0,
     "ifov": 6.0,
     "model_name": "UsgsAstroFramePluginCSM",
@@ -81,8 +81,8 @@
     ],
     "odt_y": [
         0.0,
-        0.0,
         1.0,
+        0.0,
         0.0,
         0.0,
         0.0,
