@@ -100,7 +100,7 @@ TEST_F(FrameIsdTest, Constructible) {
 
 TEST_F(FrameIsdTest, ConstructValidCamera) {
    UsgsAstroFramePlugin testPlugin;
-   csm::Model *cameraModel;
+   csm::Model *cameraModel = NULL;
    EXPECT_NO_THROW(
          cameraModel = testPlugin.constructModelFromISD(
                isd,
@@ -118,7 +118,7 @@ TEST_F(FrameIsdTest, ConstructInValidCamera) {
    UsgsAstroFramePlugin testPlugin;
    // Remove the model_name keyword from the ISD to make it invalid
    isd.clearParams("model_name");
-   csm::Model *cameraModel;
+   csm::Model *cameraModel = NULL;
    EXPECT_THROW(
          testPlugin.constructModelFromISD(
                isd,
