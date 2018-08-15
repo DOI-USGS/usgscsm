@@ -7,7 +7,7 @@ source:
 
 requirements:
   build:
-    - {{ compiler('cxx') }}
+    - {{ compiler('cxx') }}  # [linux]
     - cmake >=3.10
     - libcsm
 
