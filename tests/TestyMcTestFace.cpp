@@ -18,18 +18,15 @@ class FrameIsdTest : public ::testing::Test {
    virtual void SetUp() {
       std::ifstream isdFile("data/simpleFramerISD.json");
       json jsonIsd = json::parse(isdFile);
-      isd.clearAllParams();
       for (json::iterator it = jsonIsd.begin(); it != jsonIsd.end(); ++it) {
-         if (it.value().size() >1 ) {
-            std::vector<double> v = it.value();
-            for (int j=0;j < v.size(); j++) {
-               std::ostringstream val;
-               val << std::setprecision(15) << v[j];
-               isd.addParam(it.key(),val.str());
+         json jsonValue = it.value();
+         if (jsonValue.size() > 1) {
+            for (int i = 0; i < jsonValue.size(); i++) {
+               isd.addParam(it.key(), jsonValue[i].dump());
             }
          }
          else {
-            isd.addParam(it.key(), it.value().dump());
+            isd.addParam(it.key(), jsonValue.dump());
          }
       }
       isdFile.close();
@@ -108,7 +105,7 @@ TEST_F(FrameIsdTest, ConstructValidCamera) {
                NULL)
    );
    UsgsAstroFrameSensorModel *frameModel = dynamic_cast<UsgsAstroFrameSensorModel *>(cameraModel);
-   EXPECT_FALSE(frameModel == NULL);
+   EXPECT_NE(frameModel, nullptr);
    if (cameraModel) {
       delete cameraModel;
    }
@@ -119,13 +116,18 @@ TEST_F(FrameIsdTest, ConstructInValidCamera) {
    // Remove the model_name keyword from the ISD to make it invalid
    isd.clearParams("model_name");
    csm::Model *cameraModel = NULL;
-   EXPECT_THROW(
-         testPlugin.constructModelFromISD(
-               isd,
-               "USGS_ASTRO_FRAME_SENSOR_MODEL",
-               NULL),
-         csm::Error
-   );
+   try {
+      testPlugin.constructModelFromISD(
+            isd,
+            "USGS_ASTRO_FRAME_SENSOR_MODEL",
+            NULL);
+   }
+   catch(csm::Error &e) {
+      EXPECT_EQ(e.getError(), csm::Error::ISD_NOT_SUPPORTED);
+   }
+   catch(...) {
+      FAIL() << "Expected csm ISD_NOT_SUPPORTED error";
+   }
    if (cameraModel) {
       delete cameraModel;
    }
