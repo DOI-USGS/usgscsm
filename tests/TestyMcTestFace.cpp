@@ -1,7 +1,9 @@
 #include "UsgsAstroFramePlugin.h"
+#include "UsgsAstroFrameSensorModel.h"
 
 #include <json/json.hpp>
 
+#include <sstream>
 #include <fstream>
 
 #include <gtest/gtest.h>
@@ -16,10 +18,18 @@ class FrameIsdTest : public ::testing::Test {
    virtual void SetUp() {
       std::ifstream isdFile("data/simpleFramerISD.json");
       json jsonIsd = json::parse(isdFile);
-      isd.clearAllParams();
       for (json::iterator it = jsonIsd.begin(); it != jsonIsd.end(); ++it) {
-         isd.addParam(it.key(), it.value().dump());
+         json jsonValue = it.value();
+         if (jsonValue.size() > 1) {
+            for (int i = 0; i < jsonValue.size(); i++) {
+               isd.addParam(it.key(), jsonValue[i].dump());
+            }
+         }
+         else {
+            isd.addParam(it.key(), jsonValue.dump());
+         }
       }
+      isdFile.close();
    }
 };
 
@@ -78,12 +88,50 @@ TEST(FramePluginTests, MissingStateValue) {
          badState));;
 }
 
-/* TEST_F(FrameIsdTest, ConstructFromISD) {
+TEST_F(FrameIsdTest, Constructible) {
    UsgsAstroFramePlugin testPlugin;
    EXPECT_TRUE(testPlugin.canModelBeConstructedFromISD(
                isd,
                "USGS_ASTRO_FRAME_SENSOR_MODEL"));
-} */
+}
+
+TEST_F(FrameIsdTest, ConstructValidCamera) {
+   UsgsAstroFramePlugin testPlugin;
+   csm::Model *cameraModel = NULL;
+   EXPECT_NO_THROW(
+         cameraModel = testPlugin.constructModelFromISD(
+               isd,
+               "USGS_ASTRO_FRAME_SENSOR_MODEL",
+               NULL)
+   );
+   UsgsAstroFrameSensorModel *frameModel = dynamic_cast<UsgsAstroFrameSensorModel *>(cameraModel);
+   EXPECT_NE(frameModel, nullptr);
+   if (cameraModel) {
+      delete cameraModel;
+   }
+}
+
+TEST_F(FrameIsdTest, ConstructInValidCamera) {
+   UsgsAstroFramePlugin testPlugin;
+   // Remove the model_name keyword from the ISD to make it invalid
+   isd.clearParams("model_name");
+   csm::Model *cameraModel = NULL;
+   try {
+      testPlugin.constructModelFromISD(
+            isd,
+            "USGS_ASTRO_FRAME_SENSOR_MODEL",
+            NULL);
+   }
+   catch(csm::Error &e) {
+      EXPECT_EQ(e.getError(), csm::Error::ISD_NOT_SUPPORTED);
+   }
+   catch(...) {
+      FAIL() << "Expected csm ISD_NOT_SUPPORTED error";
+   }
+   if (cameraModel) {
+      delete cameraModel;
+   }
+}
 
 int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);
