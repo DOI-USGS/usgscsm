@@ -30,18 +30,14 @@ add_library(usgscsm SHARED
 set_target_properties(usgscsm PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
-    UsgsAstroFramePlugin.h
-    UsgsAstroFrameSensorModel.h
-    UsgsAstroLsISD.h
-    UsgsAstroLsPlugin.h
-    UsgsAstroLsSensorModel.h
-    UsgsAstroLsStateData.h
 )
+
+
+set(USGSCAM_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include/usgscam")
 
 target_include_directories(usgscsm
                            PUBLIC
-                           include/usgscsm
-                           include/
+                           ${USGSCAM_INCLUDE_DIRS}
                            ${CSM_INCLUDE_DIR}
 )
 
@@ -55,8 +51,8 @@ target_link_libraries(usgscsm
 
 if(WIN32)
   install(TARGETS usgscsm
-    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    install(DIRECTORY ${USGSCAM_INCLUDE_DIRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/usgscam)
 else()
   install(TARGETS usgscsm
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
