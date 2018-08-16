@@ -1,7 +1,7 @@
 #include "UsgsAstroFramePlugin.h"
 #include "UsgsAstroFrameSensorModel.h"
 
-#include <json/json.hpp>
+#include <json.hpp>
 
 #include <sstream>
 #include <fstream>

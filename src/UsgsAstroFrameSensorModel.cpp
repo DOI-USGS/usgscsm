@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 
-#include <json/json.hpp>
+#include <json.hpp>
 
 #include <Error.h>
 #include <Version.h>
