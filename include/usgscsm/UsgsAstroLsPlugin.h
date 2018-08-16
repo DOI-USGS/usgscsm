@@ -30,7 +30,7 @@
 #define __USGS_ASTRO_LINE_SCANNER_PLUGIN_H
 
 #include <string>
-#include <Plugin.h>
+#include <csm/Plugin.h>
 
 
 class UsgsAstroLsPlugin : public csm::Plugin

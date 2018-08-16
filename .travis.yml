@@ -34,6 +34,7 @@ install:
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda install -y -c conda-forge cmake
+  - conda install -y -c usgs-astrogeology libcsm
   
 script:
   - mkdir build

@@ -4,8 +4,8 @@
 
 #include <string>
 
-#include <Plugin.h>
-#include <Version.h>
+#include <csm/Plugin.h>
+#include <csm/Version.h>
 
 
 class UsgsAstroFramePlugin : public csm::Plugin {

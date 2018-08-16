@@ -39,8 +39,8 @@
 #include <vector>
 #include <string>
 
-#include <csm.h>
-#include <SettableEllipsoid.h>
+#include <csm/csm.h>
+#include <csm/SettableEllipsoid.h>
 
 class UsgsAstroLsStateData
 {

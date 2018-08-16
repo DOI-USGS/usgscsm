@@ -39,7 +39,7 @@
 #include <fstream>
 #include <stdlib.h>
 #include <math.h>
-#include <json.hpp>
+#include <usgscsm/json/json.hpp>
 
 
 using json = nlohmann::json;
