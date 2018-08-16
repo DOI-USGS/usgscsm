@@ -6,8 +6,8 @@
 #include <iostream>
 #include <vector>
 
-#include "RasterGM.h"
-#include "CorrelationModel.h"
+#include "csm/RasterGM.h"
+#include "csm/CorrelationModel.h"
 
 class UsgsAstroFrameSensorModel : public csm::RasterGM {
   // UsgsAstroFramePlugin needs to access private members

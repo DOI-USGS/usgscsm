@@ -4,13 +4,13 @@
 #include <cstdlib>
 #include <string>
 
-#include <csm.h>
-#include <Error.h>
-#include <Plugin.h>
-#include <Warning.h>
-#include <Version.h>
+#include <csm/csm.h>
+#include <csm/Error.h>
+#include <csm/Plugin.h>
+#include <csm/Warning.h>
+#include <csm/Version.h>
 
-#include <json.hpp>
+#include <usgscsm/json/json.hpp>
 
 
 using json = nlohmann::json;

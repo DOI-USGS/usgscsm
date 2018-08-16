@@ -4,10 +4,10 @@
 #include <iostream>
 #include <sstream>
 
-#include <json.hpp>
+#include <usgscsm/json/json.hpp>
 
-#include <Error.h>
-#include <Version.h>
+#include <csm/Error.h>
+#include <csm/Version.h>
 
 using json = nlohmann::json;
 using namespace std;
