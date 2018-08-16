@@ -10,7 +10,7 @@
 #include <Warning.h>
 #include <Version.h>
 
-#include <json/json.hpp>
+#include <json.hpp>
 
 
 using json = nlohmann::json;
