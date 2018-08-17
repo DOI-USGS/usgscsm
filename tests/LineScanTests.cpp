@@ -16,6 +16,7 @@ class CtxSensorModel : public ::testing::Test {
       UsgsAstroLsSensorModel *sensorModel;
 
       void SetUp() override {
+         sensorModel = NULL;
          std::ifstream isdFile("data/rectJ03_045994_1986_XN_18N282W_v6_8bit_keywords.json");
          json jsonIsd = json::parse(isdFile);
          csm::Isd isd;
