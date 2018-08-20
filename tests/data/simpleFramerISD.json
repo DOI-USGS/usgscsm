@@ -12,7 +12,7 @@
     "focal_length": 50,
     "focal_length_epsilon": 1.0,
     "ifov": 6.0,
-    "model_name": "UsgsAstroFramePluginCSM",
+    "model_name": "USGS_ASTRO_FRAME_SENSOR_MODEL",
     "spacecraft_name": "TEST_CRAFT",
     "instrument_id": "TEST_SENSOR",
     "target_name": "TEST_BALL",
