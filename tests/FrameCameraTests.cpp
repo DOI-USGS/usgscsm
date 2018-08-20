@@ -53,25 +53,25 @@ class FrameSensorModel : public ::testing::Test {
 };
 
 TEST_F(FrameSensorModel, Center) {
-   csm::ImageCoord imagePt(7.5, 7.5);
+   csm::ImageCoord imagePt(7.0, 7.0);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   EXPECT_DOUBLE_EQ(groundPt.x, 10.0);
-   EXPECT_DOUBLE_EQ(groundPt.y, 0);
-   EXPECT_DOUBLE_EQ(groundPt.z, 0);
+   EXPECT_NEAR(groundPt.x, 10.0, 1e-8);
+   EXPECT_NEAR(groundPt.y, 0, 1e-8);
+   EXPECT_NEAR(groundPt.z, 0, 1e-8);
 }
 
 TEST_F(FrameSensorModel, OffBody) {
-   csm::ImageCoord imagePt(0.0, 15.0);
+   csm::ImageCoord imagePt(14.5, -0.5);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   EXPECT_DOUBLE_EQ(groundPt.x, 0.44979759);
-   EXPECT_DOUBLE_EQ(groundPt.y, -14.99325304);
-   EXPECT_DOUBLE_EQ(groundPt.z, 14.99325304);
+   EXPECT_NEAR(groundPt.x, 0.44979759, 1e-8);
+   EXPECT_NEAR(groundPt.y, -14.99325304, 1e-8);
+   EXPECT_NEAR(groundPt.z, 14.99325304, 1e-8);
 }
 
 TEST_F(FrameSensorModel, SlightlyOffCenter) {
-   csm::ImageCoord imagePt(6.5, 7.5);
+   csm::ImageCoord imagePt(7.0, 6.0);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   EXPECT_DOUBLE_EQ(groundPt.x, 9.80194018);
-   EXPECT_DOUBLE_EQ(groundPt.y, 0);
-   EXPECT_DOUBLE_EQ(groundPt.z, 1.98039612);
+   EXPECT_NEAR(groundPt.x, 9.80194018, 1e-8);
+   EXPECT_NEAR(groundPt.y, 0, 1e-8);
+   EXPECT_NEAR(groundPt.z, 1.98039612, 1e-8);
 }
