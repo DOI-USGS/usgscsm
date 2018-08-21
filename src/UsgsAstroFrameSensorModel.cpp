@@ -21,9 +21,9 @@ const std::string UsgsAstroFrameSensorModel::m_parameterName[] = {
   "Y Sensor Position (m)",  // 1
   "Z Sensor Position (m)",  // 2
   "w",                      // 3
-  "x",                     // 4
-  "y",                     // 5
-  "z"                      // 6
+  "v1",                     // 4
+  "v2",                     // 5
+  "v3"                      // 6
 };
 
 const int         UsgsAstroFrameSensorModel::_NUM_STATE_KEYWORDS = 32;
