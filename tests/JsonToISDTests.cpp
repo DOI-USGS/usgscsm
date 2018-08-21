@@ -1,37 +1,12 @@
 #include "UsgsAstroFramePlugin.h"
 #include "UsgsAstroFrameSensorModel.h"
 
-#include <json.hpp>
-
 #include <sstream>
 #include <fstream>
 
 #include <gtest/gtest.h>
 
-using json = nlohmann::json;
-
-class FrameIsdTest : public ::testing::Test {
-   protected:
-
-      csm::Isd isd;
-
-   virtual void SetUp() {
-      std::ifstream isdFile("data/simpleFramerISD.json");
-      json jsonIsd = json::parse(isdFile);
-      for (json::iterator it = jsonIsd.begin(); it != jsonIsd.end(); ++it) {
-         json jsonValue = it.value();
-         if (jsonValue.size() > 1) {
-            for (int i = 0; i < jsonValue.size(); i++) {
-               isd.addParam(it.key(), jsonValue[i].dump());
-            }
-         }
-         else {
-            isd.addParam(it.key(), jsonValue.dump());
-         }
-      }
-      isdFile.close();
-   }
-};
+#include "Fixtures.h"
 
 TEST(FramePluginTests, PluginName) {
    UsgsAstroFramePlugin testPlugin;
