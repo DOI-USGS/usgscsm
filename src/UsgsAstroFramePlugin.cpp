@@ -344,16 +344,16 @@ csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSup
   sensorModel->m_currentParameterValue[6] = atof(imageSupportData.param("sensor_orientation", 3).c_str());
 
   if (imageSupportData.param("sensor_orientation", 0) == "") {
-    missingKeywords.push_back("omega");
+    missingKeywords.push_back("w");
   }
   if (imageSupportData.param("sensor_orientation", 1)== "") {
-    missingKeywords.push_back("phi");
+    missingKeywords.push_back("v1");
   }
   if (imageSupportData.param("sensor_orientation", 2) == "") {
-    missingKeywords.push_back("kappa");
+    missingKeywords.push_back("v2");
   }
   if (imageSupportData.param("sensor_orientation", 3) == "") {
-    missingKeywords.push_back("kappa");
+    missingKeywords.push_back("v3");
   }
 
   sensorModel->m_odtX[0] = atof(imageSupportData.param("optical_distortion_x", 0).c_str());
