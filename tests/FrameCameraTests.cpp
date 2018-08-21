@@ -1,56 +1,12 @@
 #include "UsgsAstroFramePlugin.h"
 #include "UsgsAstroFrameSensorModel.h"
 
-#include <json.hpp>
-
 #include <sstream>
 #include <fstream>
 
 #include <gtest/gtest.h>
 
-using json = nlohmann::json;
-
-class FrameSensorModel : public ::testing::Test {
-   protected:
-
-      UsgsAstroFrameSensorModel *sensorModel;
-
-      void SetUp() override {
-         sensorModel = NULL;
-         std::ifstream isdFile("data/simpleFramerISD.json");
-         json jsonIsd = json::parse(isdFile);
-         csm::Isd isd;
-         for (json::iterator it = jsonIsd.begin(); it != jsonIsd.end(); ++it) {
-            json jsonValue = it.value();
-            if (jsonValue.size() > 1) {
-               for (int i = 0; i < jsonValue.size(); i++) {
-                  isd.addParam(it.key(), jsonValue[i].dump());
-               }
-            }
-            else {
-               isd.addParam(it.key(), jsonValue.dump());
-            }
-         }
-         isdFile.close();
-
-         UsgsAstroFramePlugin frameCameraPlugin;
-         
-         csm::Model *model = frameCameraPlugin.constructModelFromISD(
-               isd,
-               "USGS_ASTRO_FRAME_SENSOR_MODEL");
-         
-         sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
-         
-         ASSERT_NE(sensorModel, nullptr);
-      }
-
-      void TearDown() override {
-         if (sensorModel) {
-            delete sensorModel;
-            sensorModel = NULL;
-         }
-      }
-};
+#include "Fixtures.h"
 
 //NOTE: The imagePt layour is (Lines,Samples)
 //      Also subtract 0.5 from the lines/samples. Hence Samples=0 and Lines=15 -> 14.5,-0.5
@@ -100,4 +56,3 @@ TEST_F(FrameSensorModel, OffBody4) {
    EXPECT_NEAR(groundPt.y, -14.99325304, 1e-8);
    EXPECT_NEAR(groundPt.z, -14.99325304, 1e-8);
 }
-
