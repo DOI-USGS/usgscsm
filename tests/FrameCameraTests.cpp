@@ -19,6 +19,7 @@ TEST_F(FrameSensorModel, Center) {
    EXPECT_NEAR(groundPt.y, 0, 1e-8);
    EXPECT_NEAR(groundPt.z, 0, 1e-8);
 }
+
 TEST_F(FrameSensorModel, SlightlyOffCenter) {
    csm::ImageCoord imagePt(7.0, 6.0);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
