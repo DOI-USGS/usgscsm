@@ -375,9 +375,9 @@ csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSup
     missingKeywords.push_back("image_samples");
   }
 
-  sensorModel->m_transY[0] = atof(imageSupportData.param("focal2pixel_lines", 0).c_str());
-  sensorModel->m_transY[1] = atof(imageSupportData.param("focal2pixel_lines", 1).c_str());
-  sensorModel->m_transY[2] = atof(imageSupportData.param("focal2pixel_lines", 2).c_str());
+  sensorModel->m_iTransL[0] = atof(imageSupportData.param("focal2pixel_lines", 0).c_str());
+  sensorModel->m_iTransL[1] = atof(imageSupportData.param("focal2pixel_lines", 1).c_str());
+  sensorModel->m_iTransL[2] = atof(imageSupportData.param("focal2pixel_lines", 2).c_str());
   if (imageSupportData.param("focal2pixel_lines", 0) == "") {
     missingKeywords.push_back("focal2pixel_lines 0");
   }
@@ -388,9 +388,9 @@ csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSup
     missingKeywords.push_back("focal2pixel_lines 2");
   }
 
-  sensorModel->m_transX[0] = atof(imageSupportData.param("focal2pixel_samples", 0).c_str());
-  sensorModel->m_transX[1] = atof(imageSupportData.param("focal2pixel_samples", 1).c_str());
-  sensorModel->m_transX[2] = atof(imageSupportData.param("focal2pixel_samples", 2).c_str());
+  sensorModel->m_iTransS[0] = atof(imageSupportData.param("focal2pixel_samples", 0).c_str());
+  sensorModel->m_iTransS[1] = atof(imageSupportData.param("focal2pixel_samples", 1).c_str());
+  sensorModel->m_iTransS[2] = atof(imageSupportData.param("focal2pixel_samples", 2).c_str());
   if (imageSupportData.param("focal2pixel_samples", 0) == "") {
     missingKeywords.push_back("focal2pixel_samples 0");
   }

@@ -66,23 +66,6 @@ const std::string UsgsAstroFrameSensorModel::_STATE_KEYWORD[] =
 };
 
 UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
-
-  m_transX[0] = 0.0;
-  m_transX[1] = 0.0;
-  m_transX[2] = 0.0;
-
-  m_transY[0] = 0.0;
-  m_transY[1] = 0.0;
-  m_transY[2] = 0.0;
-
-  m_iTransS[0] = 0.0;
-  m_iTransS[1] = 0.0;
-  m_iTransS[2] = 0.0;
-
-  m_iTransL[0] = 0.0;
-  m_iTransL[0] = 0.0;
-  m_iTransL[0] = 0.0;
-
   m_majorAxis = 0.0;
   m_minorAxis = 0.0;
   m_focalLength = 0.0;
@@ -115,13 +98,21 @@ UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
   m_spacecraftName = "";
   m_pixelPitch = 0.1;
 
+  m_transX[0] = 0.0;
+  m_transX[1] = 0.1;
+  m_transX[2] = 0.0;
+
+  m_transY[0] = 0.0;
+  m_transY[1] = 0.0;
+  m_transY[2] = 0.1;
+
   m_iTransS[0] = 0.0;
-  m_iTransS[1] = 10.0;
+  m_iTransS[1] = 0.0;
   m_iTransS[2] = 0.0;
 
   m_iTransL[0] = 0.0;
   m_iTransL[1] = 0.0;
-  m_iTransL[2] = 10.0;
+  m_iTransL[2] = 0.0;
 
   m_ephemerisTime = 0.0;
   m_originalHalfSamples = 8.0;
