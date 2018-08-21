@@ -10,7 +10,7 @@
 #include <Warning.h>
 #include <Version.h>
 
-#include <json/json.hpp>
+#include <json.hpp>
 
 
 using json = nlohmann::json;
@@ -31,45 +31,41 @@ const int         UsgsAstroFramePlugin::_N_SENSOR_MODELS = 1;
 const int         UsgsAstroFramePlugin::_NUM_ISD_KEYWORDS = 36;
 const std::string UsgsAstroFramePlugin::_ISD_KEYWORD[] =
 {
-    "boresight",
-    "ccd_center",
-    "ephemeris_time",
-    "focal_length",
-    "focal_length_epsilon",
-    "ifov",
-    "instrument_id",
-    "itrans_line",
-    "itrans_sample",
-    "kappa",
-    "min_elevation",
-    "max_elevation",
-    "model_name",
-    "nlines",
-    "nsamples",
-    "odt_x",
-    "odt_y",
-    "omega",
-    "original_half_lines",
-    "original_half_samples",
-    "phi",
-    "pixel_pitch",
-    "semi_major_axis",
-    "semi_minor_axis",
-    "spacecraft_name",
-    "starting_detector_line",
-    "starting_detector_sample",
-    "target_name",
-    "transx",
-    "transy",
-    "x_sensor_origin",
-    "y_sensor_origin",
-    "z_sensor_origin",
-    "x_sensor_velocity",
-    "y_sensor_velocity",
-    "z_sensor_velocity",
-    "x_sun_position",
-    "y_sun_position",
-    "z_sun_position"
+  "center_ephemeris_time",
+   "dt_ephemeris",
+   "focal2pixel_lines",
+   "focal2pixel_samples",
+   "focal_length_model_focal_length",
+   "focal_length_model_focal_length_epsilon",
+   "image_lines",
+   "image_samples",
+   "interpolation_method",
+   "number_of_ephemerides",
+   "optical_distortion_x",
+   "optical_distortion_y",
+   "radii_semimajor",
+   "radii_semiminor",
+   "reference_height_maxheight",
+   "reference_height_minheight",
+   "reference_height_unit",
+   "sensor_location_unit",
+   "sensor_location_x",
+   "sensor_location_y",
+   "sensor_location_z",
+   "sensor_orientation",
+   "sensor_velocity_unit",
+   "sensor_velocity_x",
+   "sensor_velocity_y",
+   "sensor_velocity_z",
+   "starting_detector_line",
+   "starting_detector_sample",
+   "starting_ephemeris_time",
+   "sun_position_x",
+   "sun_position_y",
+   "sun_position_z",
+   "sun_velocity_x",
+   "sun_velocity_y",
+   "sun_velocity_z"
 };
 
 const int         UsgsAstroFramePlugin::_NUM_STATE_KEYWORDS = 32;
@@ -277,207 +273,199 @@ csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSup
                                               const std::string &modelName,
                                               csm::WarningList *warnings) const {
 
-  // Check if the sensor model can be constructed from ISD given the model name
-  if (!canModelBeConstructedFromISD(imageSupportData, modelName)) {
-    throw csm::Error(csm::Error::ISD_NOT_SUPPORTED,
-                     "Sensor model support data provided is not supported by this plugin",
-                     "UsgsAstroFramePlugin::constructModelFromISD");
-  }
+  // // Check if the sensor model can be constructed from ISD given the model name
+  // if (!canModelBeConstructedFromISD(imageSupportData, modelName)) {
+  //   throw csm::Error(csm::Error::ISD_NOT_SUPPORTED,
+  //                    "Sensor model support data provided is not supported by this plugin",
+  //                    "UsgsAstroFramePlugin::constructModelFromISD");
+  // }
   UsgsAstroFrameSensorModel *sensorModel = new UsgsAstroFrameSensorModel();
-
-  // Keep track of necessary keywords that are missing from the ISD.
+  //
+  // // Keep track of necessary keywords that are missing from the ISD.
   std::vector<std::string> missingKeywords;
-
+  //
   sensorModel->m_startingDetectorSample =
       atof(imageSupportData.param("starting_detector_sample").c_str());
   sensorModel->m_startingDetectorLine =
       atof(imageSupportData.param("starting_detector_line").c_str());
+  //
+  // sensorModel->m_targetName = imageSupportData.param("target_name");
 
-  sensorModel->m_targetName = imageSupportData.param("target_name");
+  std::cout << imageSupportData.param("radii_semiminor") << std::endl;
 
-  sensorModel->m_ifov = atof(imageSupportData.param("ifov").c_str());
-
-  sensorModel->m_instrumentID = imageSupportData.param("instrument_id");
-  if (imageSupportData.param("instrument_id") == "") {
-    missingKeywords.push_back("instrument_id");
-  }
-  sensorModel->m_focalLength = atof(imageSupportData.param("focal_length").c_str());
-  if (imageSupportData.param("focal_length") == "") {
-    missingKeywords.push_back("focal_length");
+  // sensorModel->m_ifov = atof(imageSupportData.param("ifov").c_str());
+  //
+  // sensorModel->m_instrumentID = imageSupportData.param("instrument_id");
+  // if (imageSupportData.param("instrument_id") == "") {
+  //   missingKeywords.push_back("instrument_id");
+  // }
+  sensorModel->m_focalLength = atof(imageSupportData.param("focal_length_model_focal_length").c_str());
+  if (imageSupportData.param("focal_length_model_focal_length") == "") {
+    missingKeywords.push_back("focal_length_model_focal_length");
   }
   sensorModel->m_focalLengthEpsilon =
-      atof(imageSupportData.param("focal_length_epsilon").c_str());
+      atof(imageSupportData.param("focal_length_model_focal_epsilon").c_str());
 
   sensorModel->m_currentParameterValue[0] =
-      atof(imageSupportData.param("x_sensor_origin").c_str());
+      atof(imageSupportData.param("sensor_location_x").c_str());
   sensorModel->m_currentParameterValue[1] =
-      atof(imageSupportData.param("y_sensor_origin").c_str());
+      atof(imageSupportData.param("sensor_location_y").c_str());
   sensorModel->m_currentParameterValue[2] =
-      atof(imageSupportData.param("z_sensor_origin").c_str());
-  if (imageSupportData.param("x_sensor_origin") == "") {
-    missingKeywords.push_back("x_sensor_origin");
+      atof(imageSupportData.param("sensor_location_z").c_str());
+  if (imageSupportData.param("sensor_location_x") == "") {
+    missingKeywords.push_back("sensor_location_x");
   }
-  if (imageSupportData.param("y_sensor_origin") == "") {
-    missingKeywords.push_back("y_sensor_origin");
+  if (imageSupportData.param("sensor_location_y") == "") {
+    missingKeywords.push_back("sensor_location_y");
   }
-  if (imageSupportData.param("z_sensor_origin") == "") {
-    missingKeywords.push_back("z_sensor_origin");
+  if (imageSupportData.param("sensor_location_z") == "") {
+    missingKeywords.push_back("sensor_location_z");
   }
 
   sensorModel->m_spacecraftVelocity[0] =
-      atof(imageSupportData.param("x_sensor_velocity").c_str());
+      atof(imageSupportData.param("sensor_velocity_x").c_str());
   sensorModel->m_spacecraftVelocity[1] =
-      atof(imageSupportData.param("y_sensor_velocity").c_str());
+      atof(imageSupportData.param("sensor_velocity_y").c_str());
   sensorModel->m_spacecraftVelocity[2] =
-      atof(imageSupportData.param("z_sensor_velocity").c_str());
+      atof(imageSupportData.param("sensor_velocity_z").c_str());
   // sensor velocity not strictly necessary?
 
   sensorModel->m_sunPosition[0] =
-      atof(imageSupportData.param("x_sun_position").c_str());
+      atof(imageSupportData.param("sun_position_x").c_str());
   sensorModel->m_sunPosition[1] =
-      atof(imageSupportData.param("y_sun_position").c_str());
+      atof(imageSupportData.param("sun_position_y").c_str());
   sensorModel->m_sunPosition[2] =
-      atof(imageSupportData.param("z_sun_position").c_str());
+      atof(imageSupportData.param("sun_position_z").c_str());
   // sun position is not strictly necessary, but is required for getIlluminationDirection.
 
-  sensorModel->m_currentParameterValue[3] = atof(imageSupportData.param("omega").c_str());
-  sensorModel->m_currentParameterValue[4] = atof(imageSupportData.param("phi").c_str());
-  sensorModel->m_currentParameterValue[5] = atof(imageSupportData.param("kappa").c_str());
-  if (imageSupportData.param("omega") == "") {
-    missingKeywords.push_back("omega");
+  sensorModel->m_currentParameterValue[3] = atof(imageSupportData.param("sensor_orientation", 0).c_str());
+  sensorModel->m_currentParameterValue[4] = atof(imageSupportData.param("sensor_orientation", 1).c_str());
+  sensorModel->m_currentParameterValue[5] = atof(imageSupportData.param("sensor_orientation", 2).c_str());
+  sensorModel->m_currentParameterValue[6] = atof(imageSupportData.param("sensor_orientation", 3).c_str());
+
+  if (imageSupportData.param("sensor_orientation", 0) == "") {
+    missingKeywords.push_back("w");
   }
-  if (imageSupportData.param("phi") == "") {
-    missingKeywords.push_back("phi");
+  if (imageSupportData.param("sensor_orientation", 1)== "") {
+    missingKeywords.push_back("v1");
   }
-  if (imageSupportData.param("kappa") == "") {
-    missingKeywords.push_back("kappa");
+  if (imageSupportData.param("sensor_orientation", 2) == "") {
+    missingKeywords.push_back("v2");
+  }
+  if (imageSupportData.param("sensor_orientation", 3) == "") {
+    missingKeywords.push_back("v3");
   }
 
-  sensorModel->m_odtX[0] = atof(imageSupportData.param("odt_x", 0).c_str());
-  sensorModel->m_odtX[1] = atof(imageSupportData.param("odt_x", 1).c_str());
-  sensorModel->m_odtX[2] = atof(imageSupportData.param("odt_x", 2).c_str());
-  sensorModel->m_odtX[3] = atof(imageSupportData.param("odt_x", 3).c_str());
-  sensorModel->m_odtX[4] = atof(imageSupportData.param("odt_x", 4).c_str());
-  sensorModel->m_odtX[5] = atof(imageSupportData.param("odt_x", 5).c_str());
-  sensorModel->m_odtX[6] = atof(imageSupportData.param("odt_x", 6).c_str());
-  sensorModel->m_odtX[7] = atof(imageSupportData.param("odt_x", 7).c_str());
-  sensorModel->m_odtX[8] = atof(imageSupportData.param("odt_x", 8).c_str());
-  sensorModel->m_odtX[9] = atof(imageSupportData.param("odt_x", 9).c_str());
+  sensorModel->m_odtX[0] = atof(imageSupportData.param("optical_distortion_x", 0).c_str());
+  sensorModel->m_odtX[1] = atof(imageSupportData.param("optical_distortion_x", 1).c_str());
+  sensorModel->m_odtX[2] = atof(imageSupportData.param("optical_distortion_x", 2).c_str());
+  sensorModel->m_odtX[3] = atof(imageSupportData.param("optical_distortion_x", 3).c_str());
+  sensorModel->m_odtX[4] = atof(imageSupportData.param("optical_distortion_x", 4).c_str());
+  sensorModel->m_odtX[5] = atof(imageSupportData.param("optical_distortion_x", 5).c_str());
+  sensorModel->m_odtX[6] = atof(imageSupportData.param("optical_distortion_x", 6).c_str());
+  sensorModel->m_odtX[7] = atof(imageSupportData.param("optical_distortion_x", 7).c_str());
+  sensorModel->m_odtX[8] = atof(imageSupportData.param("optical_distortion_x", 8).c_str());
+  sensorModel->m_odtX[9] = atof(imageSupportData.param("optical_distortion_x", 9).c_str());
 
-  sensorModel->m_odtY[0] = atof(imageSupportData.param("odt_y", 0).c_str());
-  sensorModel->m_odtY[1] = atof(imageSupportData.param("odt_y", 1).c_str());
-  sensorModel->m_odtY[2] = atof(imageSupportData.param("odt_y", 2).c_str());
-  sensorModel->m_odtY[3] = atof(imageSupportData.param("odt_y", 3).c_str());
-  sensorModel->m_odtY[4] = atof(imageSupportData.param("odt_y", 4).c_str());
-  sensorModel->m_odtY[5] = atof(imageSupportData.param("odt_y", 5).c_str());
-  sensorModel->m_odtY[6] = atof(imageSupportData.param("odt_y", 6).c_str());
-  sensorModel->m_odtY[7] = atof(imageSupportData.param("odt_y", 7).c_str());
-  sensorModel->m_odtY[8] = atof(imageSupportData.param("odt_y", 8).c_str());
-  sensorModel->m_odtY[9] = atof(imageSupportData.param("odt_y", 9).c_str());
+  sensorModel->m_odtY[0] = atof(imageSupportData.param("optical_distortion_y", 0).c_str());
+  sensorModel->m_odtY[1] = atof(imageSupportData.param("optical_distortion_y", 1).c_str());
+  sensorModel->m_odtY[2] = atof(imageSupportData.param("optical_distortion_y", 2).c_str());
+  sensorModel->m_odtY[3] = atof(imageSupportData.param("optical_distortion_y", 3).c_str());
+  sensorModel->m_odtY[4] = atof(imageSupportData.param("optical_distortion_y", 4).c_str());
+  sensorModel->m_odtY[5] = atof(imageSupportData.param("optical_distortion_y", 5).c_str());
+  sensorModel->m_odtY[6] = atof(imageSupportData.param("optical_distortion_y", 6).c_str());
+  sensorModel->m_odtY[7] = atof(imageSupportData.param("optical_distortion_y", 7).c_str());
+  sensorModel->m_odtY[8] = atof(imageSupportData.param("optical_distortion_y", 8).c_str());
+  sensorModel->m_odtY[9] = atof(imageSupportData.param("optical_distortion_y", 9).c_str());
 
 
-  sensorModel->m_ccdCenter[0] = atof(imageSupportData.param("ccd_center", 0).c_str());
-  sensorModel->m_ccdCenter[1] = atof(imageSupportData.param("ccd_center", 1).c_str());
+  // sensorModel->m_ccdCenter[0] = atof(imageSupportData.param("ccd_center", 0).c_str());
+  // sensorModel->m_ccdCenter[1] = atof(imageSupportData.param("ccd_center", 1).c_str());
+  //
+  // sensorModel->m_originalHalfLines = atof(imageSupportData.param("original_half_lines").c_str());
+  // sensorModel->m_spacecraftName = imageSupportData.param("spacecraft_name");
+  //
+  // sensorModel->m_pixelPitch = atof(imageSupportData.param("pixel_pitch").c_str());
+  //
+  // sensorModel->m_iTransS[0] = atof(imageSupportData.param("itrans_sample", 0).c_str());
+  // sensorModel->m_iTransS[1] = atof(imageSupportData.param("itrans_sample", 1).c_str());
+  // sensorModel->m_iTransS[2] = atof(imageSupportData.param("itrans_sample", 2).c_str());
+  //
+  // if (imageSupportData.param("itrans_sample", 0) == "") {
+  //   missingKeywords.push_back("itrans_sample missing first element");
+  // }
+  // else if (imageSupportData.param("itrans_sample", 1) == "") {
+  //   missingKeywords.push_back("itrans_sample missing second element");
+  // }
+  // else if (imageSupportData.param("itrans_sample", 2) == "") {
+  //   missingKeywords.push_back("itrans_sample missing third element");
+  // }
 
-  sensorModel->m_originalHalfLines = atof(imageSupportData.param("original_half_lines").c_str());
-  sensorModel->m_spacecraftName = imageSupportData.param("spacecraft_name");
-
-  sensorModel->m_pixelPitch = atof(imageSupportData.param("pixel_pitch").c_str());
-
-  sensorModel->m_iTransS[0] = atof(imageSupportData.param("itrans_sample", 0).c_str());
-  sensorModel->m_iTransS[1] = atof(imageSupportData.param("itrans_sample", 1).c_str());
-  sensorModel->m_iTransS[2] = atof(imageSupportData.param("itrans_sample", 2).c_str());
-
-  if (imageSupportData.param("itrans_sample", 0) == "") {
-    missingKeywords.push_back("itrans_sample missing first element");
-  }
-  else if (imageSupportData.param("itrans_sample", 1) == "") {
-    missingKeywords.push_back("itrans_sample missing second element");
-  }
-  else if (imageSupportData.param("itrans_sample", 2) == "") {
-    missingKeywords.push_back("itrans_sample missing third element");
-  }
-
-  sensorModel->m_ephemerisTime = atof(imageSupportData.param("ephemeris_time").c_str());
-  if (imageSupportData.param("ephemeris_time") == "") {
-    missingKeywords.push_back("ephemeris_time");
-  }
-
-  sensorModel->m_originalHalfSamples =
-      atof(imageSupportData.param("original_half_samples").c_str());
-
-  sensorModel->m_boresight[0] = atof(imageSupportData.param("boresight", 0).c_str());
-  sensorModel->m_boresight[1] = atof(imageSupportData.param("boresight", 1).c_str());
-  sensorModel->m_boresight[2] = atof(imageSupportData.param("boresight", 2).c_str());
-
-  sensorModel->m_iTransL[0] = atof(imageSupportData.param("itrans_line", 0).c_str());
-  sensorModel->m_iTransL[1] = atof(imageSupportData.param("itrans_line", 1).c_str());
-  sensorModel->m_iTransL[2] = atof(imageSupportData.param("itrans_line", 2).c_str());
-  if (imageSupportData.param("itrans_line", 0) == "") {
-    missingKeywords.push_back("itrans_line needs 3 elements");
-  }
-  else if (imageSupportData.param("itrans_line", 1) == "") {
-    missingKeywords.push_back("itrans_line needs 3 elements");
-  }
-  else if (imageSupportData.param("itrans_line", 2) == "") {
-    missingKeywords.push_back("itrans_line needs 3 elements");
+  sensorModel->m_ephemerisTime = atof(imageSupportData.param("center_ephemeris_time").c_str());
+  if (imageSupportData.param("center_ephemeris_time") == "") {
+    missingKeywords.push_back("center_ephemeris_time");
   }
 
-  sensorModel->m_nLines = atoi(imageSupportData.param("nlines").c_str());
-  sensorModel->m_nSamples = atoi(imageSupportData.param("nsamples").c_str());
-  if (imageSupportData.param("nlines") == "") {
-    missingKeywords.push_back("nlines");
+  // sensorModel->m_iTransL[0] = atof(imageSupportData.param("focal2pixel_lines", 0).c_str());
+  // sensorModel->m_iTransL[1] = atof(imageSupportData.param("focal2pixel_lines", 1).c_str());
+  // sensorModel->m_iTransL[2] = atof(imageSupportData.param("focal2pixel_lines", 2).c_str());
+  // if (imageSupportData.param("focal2pixel_lines", 0) == "") {
+  //   missingKeywords.push_back("itrans_line needs 3 elements");
+  // }
+  // else if (imageSupportData.param("focal2pixel_lines", 1) == "") {
+  //   missingKeywords.push_back("itrans_line needs 3 elements");
+  // }
+  // else if (imageSupportData.param("focal2pixel_lines", 2) == "") {
+  //   missingKeywords.push_back("itrans_line needs 3 elements");
+  // }
+
+  sensorModel->m_nLines = atoi(imageSupportData.param("image_lines").c_str());
+  sensorModel->m_nSamples = atoi(imageSupportData.param("image_samples").c_str());
+  if (imageSupportData.param("image_lines") == "") {
+    missingKeywords.push_back("image_lines");
   }
-  if (imageSupportData.param("nsamples") == "") {
-    missingKeywords.push_back("nsamples");
+  if (imageSupportData.param("image_samples") == "") {
+    missingKeywords.push_back("image_samples");
   }
 
-  sensorModel->m_transY[0] = atof(imageSupportData.param("transy", 0).c_str());
-  sensorModel->m_transY[1] = atof(imageSupportData.param("transy", 1).c_str());
-  sensorModel->m_transY[2] = atof(imageSupportData.param("transy", 2).c_str());
-  if (imageSupportData.param("transy", 0) == "") {
-    missingKeywords.push_back("transy 0");
+  sensorModel->m_transY[0] = atof(imageSupportData.param("focal2pixel_lines", 0).c_str());
+  sensorModel->m_transY[1] = atof(imageSupportData.param("focal2pixel_lines", 1).c_str());
+  sensorModel->m_transY[2] = atof(imageSupportData.param("focal2pixel_lines", 2).c_str());
+  if (imageSupportData.param("focal2pixel_lines", 0) == "") {
+    missingKeywords.push_back("focal2pixel_lines 0");
   }
-  else if (imageSupportData.param("transy", 1) == "") {
-    missingKeywords.push_back("transy 1");
+  else if (imageSupportData.param("focal2pixel_lines", 1) == "") {
+    missingKeywords.push_back("focal2pixel_lines 1");
   }
-  else if (imageSupportData.param("transy", 2) == "") {
-    missingKeywords.push_back("transy 2");
-  }
-
-  sensorModel->m_transX[0] = atof(imageSupportData.param("transx", 0).c_str());
-  sensorModel->m_transX[1] = atof(imageSupportData.param("transx", 1).c_str());
-  sensorModel->m_transX[2] = atof(imageSupportData.param("transx", 2).c_str());
-  if (imageSupportData.param("transx", 0) == "") {
-    missingKeywords.push_back("transx 0");
-  }
-  else if (imageSupportData.param("transx", 1) == "") {
-    missingKeywords.push_back("transx 1");
-  }
-  else if (imageSupportData.param("transx", 2) == "") {
-    missingKeywords.push_back("transx");
+  else if (imageSupportData.param("focal2pixel_lines", 2) == "") {
+    missingKeywords.push_back("focal2pixel_lines 2");
   }
 
-  sensorModel->m_majorAxis = 1000 * atof(imageSupportData.param("semi_major_axis").c_str());
-  if (imageSupportData.param("semi_major_axis") == "") {
-    missingKeywords.push_back("semi_major_axis");
+  sensorModel->m_transX[0] = atof(imageSupportData.param("focal2pixel_samples", 0).c_str());
+  sensorModel->m_transX[1] = atof(imageSupportData.param("focal2pixel_samples", 1).c_str());
+  sensorModel->m_transX[2] = atof(imageSupportData.param("focal2pixel_samples", 2).c_str());
+  if (imageSupportData.param("focal2pixel_samples", 0) == "") {
+    missingKeywords.push_back("focal2pixel_samples 0");
+  }
+  else if (imageSupportData.param("focal2pixel_samples", 1) == "") {
+    missingKeywords.push_back("focal2pixel_samples 1");
+  }
+  else if (imageSupportData.param("focal2pixel_samples", 2) == "") {
+    missingKeywords.push_back("focal2pixel_samples 2");
+  }
+
+  sensorModel->m_majorAxis = 1000 * atof(imageSupportData.param("radii_semimajor").c_str());
+  if (imageSupportData.param("radii_semimajor") == "") {
+    missingKeywords.push_back("radii_semimajor");
   }
   // Do we assume that if we do not have a semi-minor axis, then the body is a sphere?
-  if (imageSupportData.param("semi_minor_axis") == "") {
+  if (imageSupportData.param("radii_semiminor") == "") {
     sensorModel->m_minorAxis = sensorModel->m_majorAxis;
   }
   else {
-    sensorModel->m_minorAxis = 1000 * atof(imageSupportData.param("semi_minor_axis").c_str());
+    sensorModel->m_minorAxis = 1000 * atof(imageSupportData.param("radii_semiminor").c_str());
   }
 
-  sensorModel->m_minElevation = atof(imageSupportData.param("min_elevation").c_str());
-  sensorModel->m_maxElevation = atof(imageSupportData.param("max_elevation").c_str());
-  if (imageSupportData.param("min_elevation") == ""){
-      missingKeywords.push_back("min_elevation");
-  }
-  if (imageSupportData.param("max_elevation") == ""){
-      missingKeywords.push_back("max_elevation");
-  }
   // If we are missing necessary keywords from ISD, we cannot create a valid sensor model.
   if (missingKeywords.size() != 0) {
 

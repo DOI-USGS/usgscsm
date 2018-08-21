@@ -1,96 +1,54 @@
 {
-    "boresight": [
-        0.0,
-        0.0,
-        1.0
-    ],
-    "ccd_center": [
-        7.5,
-        7.5
-    ],
-    "ephemeris_time": 100.0,
-    "focal_length": 500,
-    "focal_length_epsilon": 1.0,
-    "ifov": 6.0,
-    "model_name": "UsgsAstroFramePluginCSM",
-    "spacecraft_name": "TEST_CRAFT",
-    "instrument_id": "TEST_SENSOR",
-    "target_name": "TEST_BALL",
-    "pixel_pitch": 0.1,
-    "itrans_line": [
-        0.0,
-        0.0,
-        10
-    ],
-    "itrans_sample": [
-        0.0,
-        10,
-        0.0
-    ],
-    "transx": [
-        0.0,
-        0.1,
-        0.0
-    ],
-    "transy": [
-        0.0,
-        0.0,
-        0.1
-    ],
-    "min_elevation": -1,
-    "max_elevation": 1,
-    "nlines": 16,
-    "nsamples": 16,
-    "original_half_lines": 8.0,
-    "original_half_samples": 8.0,
-    "omega": 0,
-    "phi": 0,
-    "kappa": 0,
-    "semi_major_axis": 10,
-    "semi_minor_axis": 10,
-    "transx": [
-        0.0,
-        0.1,
-        0.0
-    ],
-    "transy": [
-        0.0,
-        0.0,
-        0.1
-    ],
-    "x_sensor_origin": 1000,
-    "y_sensor_origin": 0,
-    "z_sensor_origin": 0,
-    "x_sensor_velocity": 1,
-    "y_sensor_velocity": 0,
-    "z_sensor_velocity": 0,
-    "x_sun_position": 100,
-    "y_sun_position": 100,
-    "z_sun_position": 0,
-    "odt_x": [
-        0.0,
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0
-    ],
-    "odt_y": [
-        0.0,
-        0.0,
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0
-    ],
-    "starting_detector_line": 0.0,
-    "starting_detector_sample": 0.0
+	"center_ephemeris_time": 50,
+	"dt_ephemeris": 100,
+	"focal2pixel_lines": [0.0, 0.0, 0.1],
+	"focal2pixel_samples": [0.0, 0.1, 0.0],
+	"focal_length_model": {
+		"focal_length": 50,
+		"focal_length_epsilon": 1.0
+	},
+	"image_lines": 16,
+	"image_samples": 16,
+	"interpolation_method": "lagrange",
+	"number_of_ephemerides": 1,
+	"optical_distortion": {
+		"x": [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+		"y": [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+	},
+	"radii": {
+		"semimajor": 0.01,
+        "semiminor": 0.01,
+        "unit":"KM"
+	},
+	"reference_height": {
+		"maxheight": 1,
+		"minheight": -1,
+		"unit": "KM"
+	},
+	"sensor_location": {
+		"unit": "m",
+		"x": 1000,
+		"y": 0,
+		"z": 0
+	},
+	"sensor_orientation": [0.0, -0.707106781186547, 0.0, 0.707106781186547],
+	"sensor_velocity": {
+		"unit": "m",
+		"x": 1,
+		"y": 1,
+		"z": 1
+	},
+	"starting_detector_line": 0,
+	"starting_detector_sample": 0,
+	"starting_ephemeris_time": 0,
+	"sun_position": {
+		"x": 100,
+		"y": 100,
+		"z": 0
+	},
+	"sun_velocity": {
+		"x": 0,
+		"y": 0,
+		"z": 0
+	}
 }

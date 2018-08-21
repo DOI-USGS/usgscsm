@@ -1,5 +1,5 @@
 package:
-  name: sensormodels
+  name: usgscam
   version: "0.1.0"
 
 source:
@@ -17,6 +17,6 @@ test:
     - test -e $PREFIX/lib/libusgscsm.dylib  # [osx]
 
 about:
-  home: https://github.com/USGS-Astrogeology/SensorUtils
+  home: https://github.com/USGS-Astrogeology/CSM-CameraModels
   license: None
-  summary: "This is a library for CSM Camera Models"
+  summary: "USGS Astrogeology Community Sensor Model compliant sensor models."

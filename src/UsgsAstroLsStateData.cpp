@@ -33,7 +33,7 @@
 #include <UsgsAstroLsPlugin.h>
 #include <sstream>
 #include <Error.h>
-#include <json/json.hpp>
+#include <json.hpp>
 using json = nlohmann::json;
 
 const std::string  UsgsAstroLsStateData::SENSOR_MODEL_NAME
