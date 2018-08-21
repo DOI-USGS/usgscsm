@@ -1,90 +1,14 @@
 {
-<<<<<<< HEAD
-  "center_ephemeris_time": 418855170.5006496,
-  "dt_ephemeris": 0.016000032424926758,
-  "focal2pixel_lines": [0.0, 0.0, 0.1],
-  "focal2pixel_samples": [0.0, 0.1, 0.0],
-  "focal_length_model": {
-    "focal_length": 50,
-    "focal_length_epsilon": 1.0
-  },
-  "image_lines": 16,
-  "image_samples": 16,
-  "interpolation_method": "lagrange",
-  "number_of_ephemerides": 1,
-  "optical_distortion": {
-    "x": [
-        0.0,
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0
-    ],
-    "y":  [
-        0.0,
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0
-    ]
-  },
-  "radii": {
-    "semimajor": 0.01,
-    "semiminor": 0.01
-  },
-  "reference_height": {
-    "maxheight": 1,
-    "minheight": -1,
-    "unit": "KM"
-  },
-  "sensor_location": {
-    "unit": "m",
-    "x": 1000,
-    "y": 0,
-    "z": 0
-  },
-  "sensor_orientation": [0.0, 0.70710700000000004, -0.0, -0.70710700000000004],
-  "sensor_velocity": {
-    "unit": "m",
-    "x": 1,
-    "y": 0,
-    "z": 0
-  },
-  "starting_detector_line": 0.0,
-  "starting_detector_sample": 0.0,
-  "starting_ephemeris_time": 418855170.49264956,
-  "sun_position": {
-    "x": 100,
-    "y": 100,
-    "z": 0
-  },
-  "sun_velocity": {
-    "x": 0,
-    "y": 0,
-    "z": 0
-  }
-}
-=======
 	"center_ephemeris_time": 50,
 	"dt_ephemeris": 100,
-	"focal2pixel_lines": [0.0, 0.0, 0.1],
-	"focal2pixel_samples": [0.0, 0.1, 0.0],
+	"focal2pixel_lines": [0.0, 0.0, 10],
+	"focal2pixel_samples": [0.0, 10, 0.0],
 	"focal_length_model": {
 		"focal_length": 50,
 		"focal_length_epsilon": 1.0
 	},
-	"image_lines": 16,
-	"image_samples": 16,
+	"image_lines": 15,
+	"image_samples": 15,
 	"interpolation_method": "lagrange",
 	"number_of_ephemerides": 1,
 	"optical_distortion": {
@@ -94,12 +18,12 @@
 	"radii": {
 		"semimajor": 0.01,
         "semiminor": 0.01,
-        "unit":"KM"
+        "unit":"m"
 	},
 	"reference_height": {
 		"maxheight": 1,
 		"minheight": -1,
-		"unit": "KM"
+		"unit": "m"
 	},
 	"sensor_location": {
 		"unit": "m",
@@ -110,9 +34,9 @@
 	"sensor_orientation": [0.0, -0.707106781186547, 0.0, 0.707106781186547],
 	"sensor_velocity": {
 		"unit": "m",
-		"x": 1,
-		"y": 1,
-		"z": 1
+		"x": 0,
+		"y": 0,
+		"z": 0
 	},
 	"starting_detector_line": 0,
 	"starting_detector_sample": 0,
@@ -128,4 +52,3 @@
 		"z": 0
 	}
 }
->>>>>>> 9a963b5... Swaps from euler angles to quaternions

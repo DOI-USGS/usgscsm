@@ -926,24 +926,6 @@ std::vector<double> UsgsAstroFrameSensorModel::getCrossCovarianceMatrix(
 
 void UsgsAstroFrameSensorModel::calcRotationMatrix(
     double m[3][3]) const {
-<<<<<<< HEAD
-      // Trigonometric functions for rotation matrix
-      double w = m_currentParameterValue[3];
-      double x = m_currentParameterValue[4];
-      double y = m_currentParameterValue[5];
-      double z = m_currentParameterValue[6];
-
-      m[0][0] = w*w + x*x - y*y - z*z;
-      m[0][1] = 2 * (x*y - w*z);
-      m[0][2] = 2 * (w*y + x*z);
-      m[1][0] = 2 * (x*y + w*z);
-      m[1][1] = w*w - x*x + y*y - z*z;
-      m[1][2] = 2 * (y*z - w*x);
-      m[2][0] = 2 * (x*z - w*y);
-      m[2][1] = 2 * (w*x + y*z);
-      m[2][2] = w*w - x*x - y*y + z*z;
-=======
-
   // Trigonometric functions for rotation matrix
   double w = m_currentParameterValue[3];
   double x = m_currentParameterValue[4];
@@ -959,30 +941,11 @@ void UsgsAstroFrameSensorModel::calcRotationMatrix(
   m[2][0] = 2 * (x*z - w*y);
   m[2][1] = 2 * (w*x + y*z);
   m[2][2] = w*w - x*x - y*y + z*z;
->>>>>>> 9a963b5... Swaps from euler angles to quaternions
 }
 
 
 void UsgsAstroFrameSensorModel::calcRotationMatrix(
   double m[3][3], const std::vector<double> &adjustments) const {
-<<<<<<< HEAD
-    // Trigonometric functions for rotation matrix
-    double w = getValue(3, adjustments);
-    double x = getValue(4, adjustments);
-    double y = getValue(5, adjustments);
-    double z = getValue(6, adjustments);
-
-    m[0][0] = w*w + x*x - y*y - z*z;
-    m[0][1] = 2 * (x*y - w*z);
-    m[0][2] = 2 * (w*y + x*z);
-    m[1][0] = 2 * (x*y + w*z);
-    m[1][1] = w*w - x*x + y*y - z*z;
-    m[1][2] = 2 * (y*z - w*x);
-    m[2][0] = 2 * (x*z - w*y);
-    m[2][1] = 2 * (w*x + y*z);
-    m[2][2] = w*w - x*x - y*y + z*z;
-=======
-
   // Trigonometric functions for rotation matrix
   double w = getValue(3, adjustments);
   double x = getValue(4, adjustments);
@@ -998,7 +961,6 @@ void UsgsAstroFrameSensorModel::calcRotationMatrix(
   m[2][0] = 2 * (x*z - w*y);
   m[2][1] = 2 * (w*x + y*z);
   m[2][2] = w*w - x*x - y*y + z*z;
->>>>>>> 9a963b5... Swaps from euler angles to quaternions
 }
 
 
