@@ -20,17 +20,10 @@ const std::string UsgsAstroFrameSensorModel::m_parameterName[] = {
   "X Sensor Position (m)",  // 0
   "Y Sensor Position (m)",  // 1
   "Z Sensor Position (m)",  // 2
-<<<<<<< HEAD
-  "w",        // 3
-  "x",        // 4
-  "y"         // 5
-  "z"         // 5
-=======
   "w",                      // 3
   "x",                     // 4
   "y",                     // 5
   "z"                      // 6
->>>>>>> 9a963b5... Swaps from euler angles to quaternions
 };
 
 const int         UsgsAstroFrameSensorModel::_NUM_STATE_KEYWORDS = 32;
