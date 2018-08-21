@@ -273,32 +273,24 @@ csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSup
                                               const std::string &modelName,
                                               csm::WarningList *warnings) const {
 
-  // // Check if the sensor model can be constructed from ISD given the model name
-  // if (!canModelBeConstructedFromISD(imageSupportData, modelName)) {
-  //   throw csm::Error(csm::Error::ISD_NOT_SUPPORTED,
-  //                    "Sensor model support data provided is not supported by this plugin",
-  //                    "UsgsAstroFramePlugin::constructModelFromISD");
-  // }
+  // Check if the sensor model can be constructed from ISD given the model name
+  if (!canModelBeConstructedFromISD(imageSupportData, modelName)) {
+    throw csm::Error(csm::Error::ISD_NOT_SUPPORTED,
+                     "Sensor model support data provided is not supported by this plugin",
+                     "UsgsAstroFramePlugin::constructModelFromISD");
+  }
   UsgsAstroFrameSensorModel *sensorModel = new UsgsAstroFrameSensorModel();
-  //
-  // // Keep track of necessary keywords that are missing from the ISD.
+
+  // Keep track of necessary keywords that are missing from the ISD.
   std::vector<std::string> missingKeywords;
-  //
+
   sensorModel->m_startingDetectorSample =
       atof(imageSupportData.param("starting_detector_sample").c_str());
   sensorModel->m_startingDetectorLine =
       atof(imageSupportData.param("starting_detector_line").c_str());
-  //
-  // sensorModel->m_targetName = imageSupportData.param("target_name");
 
   std::cout << imageSupportData.param("radii_semiminor") << std::endl;
 
-  // sensorModel->m_ifov = atof(imageSupportData.param("ifov").c_str());
-  //
-  // sensorModel->m_instrumentID = imageSupportData.param("instrument_id");
-  // if (imageSupportData.param("instrument_id") == "") {
-  //   missingKeywords.push_back("instrument_id");
-  // }
   sensorModel->m_focalLength = atof(imageSupportData.param("focal_length_model_focal_length").c_str());
   if (imageSupportData.param("focal_length_model_focal_length") == "") {
     missingKeywords.push_back("focal_length_model_focal_length");
@@ -378,46 +370,10 @@ csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSup
   sensorModel->m_odtY[8] = atof(imageSupportData.param("optical_distortion_y", 8).c_str());
   sensorModel->m_odtY[9] = atof(imageSupportData.param("optical_distortion_y", 9).c_str());
 
-
-  // sensorModel->m_ccdCenter[0] = atof(imageSupportData.param("ccd_center", 0).c_str());
-  // sensorModel->m_ccdCenter[1] = atof(imageSupportData.param("ccd_center", 1).c_str());
-  //
-  // sensorModel->m_originalHalfLines = atof(imageSupportData.param("original_half_lines").c_str());
-  // sensorModel->m_spacecraftName = imageSupportData.param("spacecraft_name");
-  //
-  // sensorModel->m_pixelPitch = atof(imageSupportData.param("pixel_pitch").c_str());
-  //
-  // sensorModel->m_iTransS[0] = atof(imageSupportData.param("itrans_sample", 0).c_str());
-  // sensorModel->m_iTransS[1] = atof(imageSupportData.param("itrans_sample", 1).c_str());
-  // sensorModel->m_iTransS[2] = atof(imageSupportData.param("itrans_sample", 2).c_str());
-  //
-  // if (imageSupportData.param("itrans_sample", 0) == "") {
-  //   missingKeywords.push_back("itrans_sample missing first element");
-  // }
-  // else if (imageSupportData.param("itrans_sample", 1) == "") {
-  //   missingKeywords.push_back("itrans_sample missing second element");
-  // }
-  // else if (imageSupportData.param("itrans_sample", 2) == "") {
-  //   missingKeywords.push_back("itrans_sample missing third element");
-  // }
-
   sensorModel->m_ephemerisTime = atof(imageSupportData.param("center_ephemeris_time").c_str());
   if (imageSupportData.param("center_ephemeris_time") == "") {
     missingKeywords.push_back("center_ephemeris_time");
   }
-
-  // sensorModel->m_iTransL[0] = atof(imageSupportData.param("focal2pixel_lines", 0).c_str());
-  // sensorModel->m_iTransL[1] = atof(imageSupportData.param("focal2pixel_lines", 1).c_str());
-  // sensorModel->m_iTransL[2] = atof(imageSupportData.param("focal2pixel_lines", 2).c_str());
-  // if (imageSupportData.param("focal2pixel_lines", 0) == "") {
-  //   missingKeywords.push_back("itrans_line needs 3 elements");
-  // }
-  // else if (imageSupportData.param("focal2pixel_lines", 1) == "") {
-  //   missingKeywords.push_back("itrans_line needs 3 elements");
-  // }
-  // else if (imageSupportData.param("focal2pixel_lines", 2) == "") {
-  //   missingKeywords.push_back("itrans_line needs 3 elements");
-  // }
 
   sensorModel->m_nLines = atoi(imageSupportData.param("image_lines").c_str());
   sensorModel->m_nSamples = atoi(imageSupportData.param("image_samples").c_str());
@@ -464,6 +420,15 @@ csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSup
   }
   else {
     sensorModel->m_minorAxis = 1000 * atof(imageSupportData.param("radii_semiminor").c_str());
+  }
+
+  sensorModel->m_minElevation = atof(imageSupportData.param("reference_height_minheight").c_str());
+  sensorModel->m_maxElevation = atof(imageSupportData.param("reference_height_maxheight").c_str());
+  if (imageSupportData.param("reference_height_minheight") == ""){
+      missingKeywords.push_back("reference_height_minheight");
+  }
+  if (imageSupportData.param("reference_height_maxheight") == ""){
+      missingKeywords.push_back("reference_height_maxheight");
   }
 
   // If we are missing necessary keywords from ISD, we cannot create a valid sensor model.

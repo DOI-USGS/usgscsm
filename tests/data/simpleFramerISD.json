@@ -1,53 +1,75 @@
 {
   "center_ephemeris_time": 418855170.5006496,
   "dt_ephemeris": 0.016000032424926758,
-  "focal2pixel_lines": [0.0, 0.0, 0.014],
-  "focal2pixel_samples": [0.0, 0.014, 0.0],
+  "focal2pixel_lines": [0.0, 0.0, 0.1],
+  "focal2pixel_samples": [0.0, 0.1, 0.0],
   "focal_length_model": {
-    "focal_length": 549.1178195372703,
-    "focal_length_epsilon": 0.5
+    "focal_length": 50,
+    "focal_length_epsilon": 1.0
   },
-  "image_lines": 1024,
-  "image_samples": 1024,
+  "image_lines": 16,
+  "image_samples": 16,
   "interpolation_method": "lagrange",
   "number_of_ephemerides": 1,
   "optical_distortion": {
-    "x": [0.0, 1.001854269623802, 0.0, 0.0, -0.0005094440474941111, 0.0, 1.004010471468856e-05, 0.0, 1.004010471468856e-05, 0.0],
-    "y": [0.0, 0.0, 1.0, 0.0009060010594996751, 0.0, 0.0003574842626620758, 0.0, 1.004010471468856e-05, 0.0, 1.004010471468856e-05]
+    "x": [
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+    ],
+    "y":  [
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+    ]
   },
   "radii": {
-    "semimajor": 2439400.0,
-    "semiminor": 2439400.0
+    "semimajor": 0.01,
+    "semiminor": 0.01
   },
   "reference_height": {
-    "maxheight": 8000,
-    "minheight": -8000,
+    "maxheight": 1,
+    "minheight": -1,
     "unit": "KM"
   },
   "sensor_location": {
     "unit": "m",
-    "x": 1728197.0439980691,
-    "y": -2088216.968709019,
-    "z": 2082694.211007305
+    "x": 1000,
+    "y": 0,
+    "z": 0
   },
-  "sensor_orientation": [0.39900625946972035, -0.7905943518879116, -0.4359092364938528, 0.16042977655741425],
+  "sensor_orientation": [0, -1.5707963267948966, 3.141592653589793, 0],
   "sensor_velocity": {
     "unit": "m",
-    "x": 1997.9720559200437,
-    "y": -1800.5700851538281,
-    "z": -1674.779510619489
+    "x": 1,
+    "y": 0,
+    "z": 0
   },
-  "starting_detector_line": 1,
-  "starting_detector_sample": 9,
+  "starting_detector_line": 0.0,
+  "starting_detector_sample": 0.0,
   "starting_ephemeris_time": 418855170.49264956,
   "sun_position": {
-    "x": -31640702432.921574,
-    "y": -60638093688.31109,
-    "z": -38731104.56773266
+    "x": 100,
+    "y": 100,
+    "z": 0
   },
   "sun_velocity": {
-    "x": -38191.12392266651,
-    "y": 24381.841914284105,
-    "z": -4.860970418599342
+    "x": 0,
+    "y": 0,
+    "z": 0
   }
 }

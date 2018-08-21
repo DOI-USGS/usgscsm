@@ -11,7 +11,7 @@
 
 using json = nlohmann::json;
 
-// Should this be positioned somehwere in the public API?
+// Should this be positioned somewhere in the public API?
 inline void jsonToIsd(json &object, csm::Isd &isd, std::string prefix="") {
   for (json::iterator it = object.begin(); it != object.end(); ++it) {
      json jsonValue = it.value();

@@ -15,14 +15,15 @@ using namespace std;
 // Declaration of static variables
 const std::string UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME
                                       = "USGS_ASTRO_FRAME_SENSOR_MODEL";
-const int UsgsAstroFrameSensorModel::m_numParameters = 6;
+const int UsgsAstroFrameSensorModel::m_numParameters = 7;
 const std::string UsgsAstroFrameSensorModel::m_parameterName[] = {
   "X Sensor Position (m)",  // 0
   "Y Sensor Position (m)",  // 1
   "Z Sensor Position (m)",  // 2
-  "Omega (radians)",        // 3
-  "Phi (radians)",          // 4
-  "Kappa (radians)"         // 5
+  "Quat a",        // 3
+  "Quat b",        // 4
+  "Quat c"         // 5
+  "Quat d"         // 5
 };
 
 const int         UsgsAstroFrameSensorModel::_NUM_STATE_KEYWORDS = 32;
@@ -97,12 +98,12 @@ UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
   m_startingDetectorSample = 0.0;
   m_startingDetectorLine = 0.0;
   m_targetName = "";
-  m_ifov = 0.0;
+  m_ifov = 6;
   m_instrumentID = "";
   m_focalLengthEpsilon = 0.0;
 
-  m_ccdCenter[0] = 0.0;
-  m_ccdCenter[1] = 0.0;
+  m_ccdCenter[0] = 7.5;
+  m_ccdCenter[1] = 7.5;
 
   m_line_pp = 0.0;
   m_sample_pp = 0.0;
@@ -110,20 +111,20 @@ UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
   m_odtX.assign(10, 0.0);
   m_odtY.assign(10, 0.0);
 
-  m_originalHalfLines = 0.0;
+  m_originalHalfLines = 8.0;
   m_spacecraftName = "";
-  m_pixelPitch = 0.0;
+  m_pixelPitch = 0.1;
 
   m_iTransS[0] = 0.0;
-  m_iTransS[1] = 0.0;
+  m_iTransS[1] = 10.0;
   m_iTransS[2] = 0.0;
 
   m_iTransL[0] = 0.0;
   m_iTransL[1] = 0.0;
-  m_iTransL[2] = 0.0;
+  m_iTransL[2] = 10.0;
 
   m_ephemerisTime = 0.0;
-  m_originalHalfSamples = 0.0;
+  m_originalHalfSamples = 8.0;
   m_boresight[0] = 0.0;
   m_boresight[1] = 0.0;
   m_boresight[2] = 0.0;
