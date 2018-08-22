@@ -9,6 +9,10 @@
 	},
 	"image_lines": 15,
 	"image_samples": 15,
+  "detector_center" : {
+    "line" : 7.5,
+    "sample" : 7.5
+  },
 	"interpolation_method": "lagrange",
 	"number_of_ephemerides": 1,
 	"optical_distortion": {
