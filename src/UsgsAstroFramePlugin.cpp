@@ -48,6 +48,7 @@ const std::string UsgsAstroFramePlugin::_ISD_KEYWORD[] =
    "sensor_location",
    "sensor_orientation",
    "sensor_velocity",
+   "detector_center",
    "starting_detector_line",
    "starting_detector_sample",
    "starting_ephemeris_time",
@@ -433,6 +434,25 @@ csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSup
   }
   if (imageSupportData.param("image_samples") == "") {
     missingKeywords.push_back("image_samples");
+  }
+
+  if (imageSupportData.param("detector_center") == "") {
+    missingKeywords.push_back("detector_center");
+  }
+  else {
+    json jayson = json::parse(imageSupportData.param("detector_center"));
+    json sample = jayson.value("sample", json(""));
+    json line = jayson.value("line", json(""));
+
+    sensorModel->m_ccdCenter[0] = atof(sample.dump().c_str());
+    sensorModel->m_ccdCenter[1] = atof(line.dump().c_str());
+
+    if (sample == json("")) {
+      missingKeywords.push_back("detector_center x");
+    }
+    if (line == json("")) {
+      missingKeywords.push_back("detector_center y");
+    }
   }
 
   sensorModel->m_iTransL[0] = atof(imageSupportData.param("focal2pixel_lines", 0).c_str());

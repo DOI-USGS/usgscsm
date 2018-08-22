@@ -14,7 +14,7 @@ matrix:
         - MATRIX_EVAL="CXX=g++-6 && CC=gcc-6"
     - os: osx
       osx_image: xcode9.4
-      env: 
+      env:
         - MATRIX_EVAL="CXX=clang++ && CC=clang"
 
 before_install:
@@ -34,13 +34,13 @@ install:
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda install -y -c conda-forge cmake
-  
+
 script:
   - mkdir build
   - cd build
   - cmake -DCOVERAGE=ON ..
   - cmake --build .
-  - ctest
+  - ctest -VV
   - cd ..
 
 after_success:
