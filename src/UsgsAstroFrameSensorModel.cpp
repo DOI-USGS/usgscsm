@@ -206,8 +206,8 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
 
   //Convert distorted mm into line/sample
   double sample, line;
-  sample = m_iTransS[0] + m_iTransS[1] * distortedx + m_iTransS[2] * distortedx + m_ccdCenter[0] - 0.5;
-  line =   m_iTransL[0] + m_iTransL[1] * distortedy + m_iTransL[2] * distortedy + m_ccdCenter[0] - 0.5;
+  sample = m_iTransS[0] + m_iTransS[1] * distortedx + m_iTransS[2] * distortedx + m_ccdCenter[0];
+  line =   m_iTransL[0] + m_iTransL[1] * distortedy + m_iTransL[2] * distortedy + m_ccdCenter[0];
 
   return csm::ImageCoord(line, sample);
 }
@@ -244,8 +244,8 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
 
   //Convert from the pixel space into the metric space
   double optical_center_x, optical_center_y, x_camera, y_camera;
-  optical_center_x = m_ccdCenter[0] - 0.5;
-  optical_center_y = m_ccdCenter[1] - 0.5;
+  optical_center_x = m_ccdCenter[0];
+  optical_center_y = m_ccdCenter[1];
   y_camera = m_transY[0] + m_transY[1] * (lo - optical_center_y) + m_transY[2] * (lo - optical_center_y);
   x_camera = m_transX[0] + m_transX[1] * (so - optical_center_x) + m_transX[2] * (so - optical_center_x);
 
@@ -301,8 +301,8 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(const csm::I
                                                              csm::WarningList *warnings) const {
   // Find the line,sample on the focal plane (mm)
   // CSM center = 0.5, MDIS IK center = 1.0
-  double col = imagePt.samp - (m_ccdCenter[0] - 0.5);
-  double row = imagePt.line - (m_ccdCenter[1] - 0.5);
+  double col = imagePt.samp - (m_ccdCenter[0]);
+  double row = imagePt.line - (m_ccdCenter[1]);
   double focalPlaneX = m_transX[0] + m_transX[1] * col + m_transX[2] * col;
   double focalPlaneY = m_transY[0] + m_transY[1] * row + m_transY[2] * row;
 
