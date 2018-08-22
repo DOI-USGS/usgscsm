@@ -40,7 +40,7 @@ script:
   - cd build
   - cmake -DCOVERAGE=ON ..
   - cmake --build .
-  - ctest
+  - ctest -VV
   - cd ..
 
 after_success:
