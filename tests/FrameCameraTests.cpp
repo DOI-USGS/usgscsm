@@ -205,3 +205,48 @@ TEST_F(FrameIsdTest, FL500_SlightlyOffCenter) {
    EXPECT_NEAR(groundPt.z, 1.98000392e-01, 1e-8);
    
 }
+
+//Observer x position:
+TEST_F(FrameIsdTest, X10_SlightlyOffCenter) {
+   std::string key = "x_sensor_origin";
+   std::string newValue = "10.0";
+   isd.clearParams(key);
+   isd.addParam(key,newValue);
+   UsgsAstroFramePlugin frameCameraPlugin;
+         
+   csm::Model *model = frameCameraPlugin.constructModelFromISD(
+         isd,
+         "USGS_ASTRO_FRAME_SENSOR_MODEL");
+   
+   UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+   
+   ASSERT_NE(sensorModel, nullptr);
+   csm::ImageCoord imagePt(7.5, 6.5);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   EXPECT_NEAR(groundPt.x, 10.0, 1e-8);
+   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
+   EXPECT_NEAR(groundPt.z, 0.0, 1e-8);
+   
+}
+TEST_F(FrameIsdTest, X1e9_SlightlyOffCenter) {
+   std::string key = "x_sensor_origin";
+   std::string newValue = "1000000000.0";
+   isd.clearParams(key);
+   isd.addParam(key,newValue);
+   UsgsAstroFramePlugin frameCameraPlugin;
+         
+   csm::Model *model = frameCameraPlugin.constructModelFromISD(
+         isd,
+         "USGS_ASTRO_FRAME_SENSOR_MODEL");
+   
+   UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+   
+   ASSERT_NE(sensorModel, nullptr);
+   csm::ImageCoord imagePt(7.5, 6.5);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   //Note: In the following, the tolerance was increased due to the very large distance being tested (~6.68 AU).
+   EXPECT_NEAR(groundPt.x, 3.99998400e+03, 1e-4);
+   EXPECT_NEAR(groundPt.y, 0.0, 1e-4);
+   EXPECT_NEAR(groundPt.z, 1.99999200e+06, 1e-4);
+   
+}
