@@ -13,7 +13,6 @@ using json = nlohmann::json;
 class FrameIsdTest : public ::testing::Test {
    protected:
 
-      csm::Isd isd;
 
    virtual void SetUp() {
       std::ifstream isdFile("data/simpleFramerISD.json");
@@ -42,7 +41,7 @@ class FrameSensorModel : public ::testing::Test {
          sensorModel = NULL;
          std::ifstream isdFile("data/simpleFramerISD.json");
          json jsonIsd = json::parse(isdFile);
-         //csm::Isd isd;
+         csm::Isd isd;
          for (json::iterator it = jsonIsd.begin(); it != jsonIsd.end(); ++it) {
             json jsonValue = it.value();
             if (jsonValue.size() > 1) {
