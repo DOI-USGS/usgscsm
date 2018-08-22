@@ -81,7 +81,7 @@ UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
   m_startingDetectorSample = 0.0;
   m_startingDetectorLine = 0.0;
   m_targetName = "";
-  m_ifov = 6;
+  m_ifov = 0;
   m_instrumentID = "";
   m_focalLengthEpsilon = 0.0;
 
