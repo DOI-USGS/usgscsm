@@ -15,14 +15,7 @@ using json = nlohmann::json;
 inline void jsonToIsd(json &object, csm::Isd &isd, std::string prefix="") {
   for (json::iterator it = object.begin(); it != object.end(); ++it) {
      json jsonValue = it.value();
-
-     // Is this type of type sensative de-serialization not available
-     // out of the box?
-     if (jsonValue.is_object()) {
-       // Is flattening the best approach? not sure...
-       jsonToIsd(jsonValue, isd, prefix+it.key()+'_');
-     }
-     else if (jsonValue.is_array()) {
+     if (jsonValue.is_array()) {
         for (int i = 0; i < jsonValue.size(); i++) {
            isd.addParam(prefix+it.key(), jsonValue[i].dump());
         }

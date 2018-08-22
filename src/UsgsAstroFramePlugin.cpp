@@ -1,9 +1,11 @@
 #include "UsgsAstroFramePlugin.h"
 #include "UsgsAstroFrameSensorModel.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <string>
 
+#include <math.h>
 #include <csm.h>
 #include <Error.h>
 #include <Plugin.h>
@@ -35,37 +37,21 @@ const std::string UsgsAstroFramePlugin::_ISD_KEYWORD[] =
    "dt_ephemeris",
    "focal2pixel_lines",
    "focal2pixel_samples",
-   "focal_length_model_focal_length",
-   "focal_length_model_focal_length_epsilon",
+   "focal_length_model",
    "image_lines",
    "image_samples",
    "interpolation_method",
    "number_of_ephemerides",
-   "optical_distortion_x",
-   "optical_distortion_y",
-   "radii_semimajor",
-   "radii_semiminor",
-   "reference_height_maxheight",
-   "reference_height_minheight",
-   "reference_height_unit",
-   "sensor_location_unit",
-   "sensor_location_x",
-   "sensor_location_y",
-   "sensor_location_z",
+   "optical_distortion",
+   "radii",
+   "reference_height",
+   "sensor_location",
    "sensor_orientation",
-   "sensor_velocity_unit",
-   "sensor_velocity_x",
-   "sensor_velocity_y",
-   "sensor_velocity_z",
+   "sensor_velocity",
    "starting_detector_line",
    "starting_detector_sample",
    "starting_ephemeris_time",
-   "sun_position_x",
-   "sun_position_y",
-   "sun_position_z",
-   "sun_velocity_x",
-   "sun_velocity_y",
-   "sun_velocity_z"
+   "sun_position"
 };
 
 const int         UsgsAstroFramePlugin::_NUM_STATE_KEYWORDS = 32;
@@ -273,61 +259,149 @@ csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSup
                                               const std::string &modelName,
                                               csm::WarningList *warnings) const {
 
-  // Check if the sensor model can be constructed from ISD given the model name
-  if (!canModelBeConstructedFromISD(imageSupportData, modelName)) {
-    throw csm::Error(csm::Error::ISD_NOT_SUPPORTED,
-                     "Sensor model support data provided is not supported by this plugin",
-                     "UsgsAstroFramePlugin::constructModelFromISD");
-  }
+
+
+  //
+  // // Check if the sensor model can be constructed from ISD given the model name
+  // if (!canModelBeConstructedFromISD(imageSupportData, modelName)) {
+  //   throw csm::Error(csm::Error::ISD_NOT_SUPPORTED,
+  //                    "Sensor model support data provided is not supported by this plugin",
+  //                    "UsgsAstroFramePlugin::constructModelFromISD");
+  // }
   UsgsAstroFrameSensorModel *sensorModel = new UsgsAstroFrameSensorModel();
 
   // Keep track of necessary keywords that are missing from the ISD.
   std::vector<std::string> missingKeywords;
+
+  auto get = [&](json &object, std::string key) {
+      try {
+        return object.at(key);
+      }
+      catch(...) {
+        missingKeywords.push_back(key);
+        json jstring = "";
+        return jstring;
+      }
+  };
+
+  auto metric_conversion = [](double val, std::string from, std::string to="m") {
+     json typemap = {
+        {"m", 0},
+        {"km", 3}
+     };
+
+     // everything to lowercase
+     std::transform(from.begin(), from.end(), from.begin(), ::tolower);
+     std::transform(to.begin(), to.end(), to.begin(), ::tolower);
+     return val*pow(10, typemap[from].get<int>() - typemap[to].get<int>());
+  };
 
   sensorModel->m_startingDetectorSample =
       atof(imageSupportData.param("starting_detector_sample").c_str());
   sensorModel->m_startingDetectorLine =
       atof(imageSupportData.param("starting_detector_line").c_str());
 
-  std::cout << imageSupportData.param("radii_semiminor") << std::endl;
+  if (imageSupportData.param("focal_length_model") == "") {
+    missingKeywords.push_back("focal_length_model");
+  }
+  else {
+    json jayson = json::parse(imageSupportData.param("focal_length_model"));
+    json focal_length = jayson.value("focal_length", json(""));
+    json epsilon = jayson.value("epsilon", json(""));
 
-  sensorModel->m_focalLength = atof(imageSupportData.param("focal_length_model_focal_length").c_str());
-  if (imageSupportData.param("focal_length_model_focal_length") == "") {
-    missingKeywords.push_back("focal_length_model_focal_length");
-  }
-  sensorModel->m_focalLengthEpsilon =
-      atof(imageSupportData.param("focal_length_model_focal_epsilon").c_str());
+    sensorModel->m_focalLength = atof(focal_length.dump().c_str());
+    sensorModel->m_focalLengthEpsilon = atof(epsilon.dump().c_str());
 
-  sensorModel->m_currentParameterValue[0] =
-      atof(imageSupportData.param("sensor_location_x").c_str());
-  sensorModel->m_currentParameterValue[1] =
-      atof(imageSupportData.param("sensor_location_y").c_str());
-  sensorModel->m_currentParameterValue[2] =
-      atof(imageSupportData.param("sensor_location_z").c_str());
-  if (imageSupportData.param("sensor_location_x") == "") {
-    missingKeywords.push_back("sensor_location_x");
-  }
-  if (imageSupportData.param("sensor_location_y") == "") {
-    missingKeywords.push_back("sensor_location_y");
-  }
-  if (imageSupportData.param("sensor_location_z") == "") {
-    missingKeywords.push_back("sensor_location_z");
+    if (focal_length == json("")) {
+      missingKeywords.push_back("focal_length_model focal_length");
+    }
+    if (epsilon == json("")) {
+      missingKeywords.push_back("focal_length_model epsilon");
+    }
   }
 
-  sensorModel->m_spacecraftVelocity[0] =
-      atof(imageSupportData.param("sensor_velocity_x").c_str());
-  sensorModel->m_spacecraftVelocity[1] =
-      atof(imageSupportData.param("sensor_velocity_y").c_str());
-  sensorModel->m_spacecraftVelocity[2] =
-      atof(imageSupportData.param("sensor_velocity_z").c_str());
-  // sensor velocity not strictly necessary?
+  if (imageSupportData.param("sensor_location") == "") {
+    missingKeywords.push_back("sensor_location");
+  }
+  else {
+    json jayson = json::parse(imageSupportData.param("sensor_location"));
+    json x = jayson.value("x", json(""));
+    json y = jayson.value("y", json(""));
+    json z = jayson.value("z", json(""));
+    json unit = jayson.value("unit", json(""));
 
-  sensorModel->m_sunPosition[0] =
-      atof(imageSupportData.param("sun_position_x").c_str());
-  sensorModel->m_sunPosition[1] =
-      atof(imageSupportData.param("sun_position_y").c_str());
-  sensorModel->m_sunPosition[2] =
-      atof(imageSupportData.param("sun_position_z").c_str());
+    sensorModel->m_currentParameterValue[0] = atof(x.dump().c_str());
+    sensorModel->m_currentParameterValue[1] = atof(y.dump().c_str());
+    sensorModel->m_currentParameterValue[2] = atof(z.dump().c_str());
+
+    if (x == json("")) {
+      missingKeywords.push_back("sensor_location x");
+    }
+    if (y == json("")) {
+      missingKeywords.push_back("sensor_location y");
+    }
+    if (z == json("")) {
+      missingKeywords.push_back("sensor_location z");
+    }
+    if (unit == json("")) {
+      missingKeywords.push_back("sensor_location unit");
+    }
+    else {
+      unit = unit.get<std::string>();
+      sensorModel->m_currentParameterValue[0] = metric_conversion(sensorModel->m_currentParameterValue[0], unit);
+      sensorModel->m_currentParameterValue[1] = metric_conversion(sensorModel->m_currentParameterValue[1], unit);
+      sensorModel->m_currentParameterValue[2] = metric_conversion(sensorModel->m_currentParameterValue[2], unit);
+    }
+  }
+
+  if (imageSupportData.param("sensor_velocity") == "") {
+    missingKeywords.push_back("sensor_velocity");
+  }
+  else {
+    json jayson = json::parse(imageSupportData.param("sensor_velocity"));
+    json x = jayson.value("x", json(""));
+    json y = jayson.value("y", json(""));
+    json z = jayson.value("z", json(""));
+
+    sensorModel->m_spacecraftVelocity[0] = atof(x.dump().c_str());
+    sensorModel->m_spacecraftVelocity[1] = atof(y.dump().c_str());
+    sensorModel->m_spacecraftVelocity[2] = atof(z.dump().c_str());
+
+    if (x == json("")) {
+      missingKeywords.push_back("sensor_velocity x");
+    }
+    if (y == json("")) {
+      missingKeywords.push_back("sensor_velocity y");
+    }
+    if (z == json("")) {
+      missingKeywords.push_back("sensor_velocity z");
+    }
+  }
+
+  if (imageSupportData.param("sun_position") == "") {
+    missingKeywords.push_back("sun_position");
+  }
+  else {
+    json jayson = json::parse(imageSupportData.param("sun_position"));
+    json x = jayson.value("x", json(""));
+    json y = jayson.value("y", json(""));
+    json z = jayson.value("z", json(""));
+
+    sensorModel->m_sunPosition[0] = atof(x.dump().c_str());
+    sensorModel->m_sunPosition[1] = atof(y.dump().c_str());
+    sensorModel->m_sunPosition[2] = atof(z.dump().c_str());
+
+    if (x == json("")) {
+      missingKeywords.push_back("sun_position x");
+    }
+    if (y == json("")) {
+      missingKeywords.push_back("sun_position y");
+    }
+    if (z == json("")) {
+      missingKeywords.push_back("sun_position z");
+    }
+  }
+
   // sun position is not strictly necessary, but is required for getIlluminationDirection.
 
   sensorModel->m_currentParameterValue[3] = atof(imageSupportData.param("sensor_orientation", 0).c_str());
@@ -378,6 +452,8 @@ csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSup
   sensorModel->m_iTransL[0] = atof(imageSupportData.param("focal2pixel_lines", 0).c_str());
   sensorModel->m_iTransL[1] = atof(imageSupportData.param("focal2pixel_lines", 1).c_str());
   sensorModel->m_iTransL[2] = atof(imageSupportData.param("focal2pixel_lines", 2).c_str());
+
+
   if (imageSupportData.param("focal2pixel_lines", 0) == "") {
     missingKeywords.push_back("focal2pixel_lines 0");
   }
@@ -401,25 +477,60 @@ csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSup
     missingKeywords.push_back("focal2pixel_samples 2");
   }
 
-  sensorModel->m_majorAxis = 1000 * atof(imageSupportData.param("radii_semimajor").c_str());
-  if (imageSupportData.param("radii_semimajor") == "") {
-    missingKeywords.push_back("radii_semimajor");
-  }
-  // Do we assume that if we do not have a semi-minor axis, then the body is a sphere?
-  if (imageSupportData.param("radii_semiminor") == "") {
-    sensorModel->m_minorAxis = sensorModel->m_majorAxis;
+  if (imageSupportData.param("radii") == "") {
+    missingKeywords.push_back("radii");
   }
   else {
-    sensorModel->m_minorAxis = 1000 * atof(imageSupportData.param("radii_semiminor").c_str());
+    json jayson = json::parse(imageSupportData.param("radii"));
+    json semiminor = jayson.value("semiminor", json(""));
+    json semimajor = jayson.value("semimajor", json(""));
+    json unit = jayson.value("unit", json(""));
+
+    sensorModel->m_minorAxis = atof(semiminor.dump().c_str());
+    sensorModel->m_majorAxis = atof(semimajor.dump().c_str());
+
+    if (semiminor == json("")) {
+      missingKeywords.push_back("radii semiminor");
+    }
+    if (semimajor == json("")) {
+      missingKeywords.push_back("radii semimajor");
+    }
+    if (unit == json("")) {
+      missingKeywords.push_back("radii unit");
+    }
+    else {
+      unit = unit.get<std::string>();
+      sensorModel->m_minorAxis = metric_conversion(sensorModel->m_minorAxis, unit);
+      sensorModel->m_majorAxis = metric_conversion(sensorModel->m_majorAxis, unit);
+    }
   }
 
-  sensorModel->m_minElevation = atof(imageSupportData.param("reference_height_minheight").c_str());
-  sensorModel->m_maxElevation = atof(imageSupportData.param("reference_height_maxheight").c_str());
-  if (imageSupportData.param("reference_height_minheight") == ""){
-      missingKeywords.push_back("reference_height_minheight");
+  if (imageSupportData.param("reference_height") == "") {
+    missingKeywords.push_back("reference_height");
   }
-  if (imageSupportData.param("reference_height_maxheight") == ""){
-      missingKeywords.push_back("reference_height_maxheight");
+  else {
+    json reference_height = json::parse(imageSupportData.param("reference_height"));
+    json maxheight = reference_height.value("maxheight", json(""));
+    json minheight = reference_height.value("minheight", json(""));
+    json unit = reference_height.value("unit", json(""));
+
+    sensorModel->m_minElevation = atof(minheight.dump().c_str());
+    sensorModel->m_maxElevation = atof(maxheight.dump().c_str());
+
+    if (maxheight == json("")) {
+      missingKeywords.push_back("reference_height maxheight");
+    }
+    if (minheight == json("")) {
+      missingKeywords.push_back("reference_height minheight");
+    }
+    if (unit == json("")) {
+      missingKeywords.push_back("reference_height unit");
+    }
+    else {
+      unit = unit.get<std::string>();
+      sensorModel->m_minElevation = metric_conversion(sensorModel->m_minElevation, unit);
+      sensorModel->m_maxElevation = metric_conversion(sensorModel->m_maxElevation, unit);
+    }
   }
 
   // If we are missing necessary keywords from ISD, we cannot create a valid sensor model.

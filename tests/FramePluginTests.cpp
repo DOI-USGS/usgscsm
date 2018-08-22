@@ -96,6 +96,7 @@ TEST_F(FrameIsdTest, ConstructInValidCamera) {
             isd,
             "USGS_ASTRO_FRAME_SENSOR_MODEL",
             NULL);
+
    }
    catch(csm::Error &e) {
       EXPECT_EQ(e.getError(), csm::Error::ISD_NOT_SUPPORTED);

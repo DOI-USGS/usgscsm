@@ -5,7 +5,7 @@
 	"focal2pixel_samples": [0.0, 10.0, 0.0],
 	"focal_length_model": {
 		"focal_length": 50,
-		"focal_length_epsilon": 1.0
+		"epsilon": 1.0
 	},
 	"image_lines": 15,
 	"image_samples": 15,
@@ -17,8 +17,8 @@
 	},
 	"radii": {
 		"semimajor": 0.01,
-        "semiminor": 0.01,
-        "unit":"m"
+    "semiminor": 0.01,
+    "unit":"km"
 	},
 	"reference_height": {
 		"maxheight": 1,
