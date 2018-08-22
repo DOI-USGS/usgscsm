@@ -47,17 +47,7 @@
     "phi": -1.5707963267948966,
     "kappa": 3.141592653589793,
     "semi_major_axis":0.01,
-    "semi_minor_axis":0.01,
-    "transx": [
-        0.0,
-        0.1,
-        0.0
-    ],
-    "transy": [
-        0.0,
-        0.0,
-        0.1
-    ],
+    "semi_minor_axis":0.01, 
     "x_sensor_origin": 1000,
     "y_sensor_origin": 0,
     "z_sensor_origin": 0,
