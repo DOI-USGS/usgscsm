@@ -1,4 +1,6 @@
-#pragma once
+#ifndef Fixtures_h
+#define Fixtures_h
+
 #include "UsgsAstroFramePlugin.h"
 #include "UsgsAstroFrameSensorModel.h"
 
@@ -67,3 +69,4 @@ class FrameIsdTest : public ::testing::Test {
       isdFile.close();
    }
 };
+#endif
