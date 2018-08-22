@@ -15,14 +15,15 @@ using namespace std;
 // Declaration of static variables
 const std::string UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME
                                       = "USGS_ASTRO_FRAME_SENSOR_MODEL";
-const int UsgsAstroFrameSensorModel::m_numParameters = 6;
+const int UsgsAstroFrameSensorModel::m_numParameters = 7;
 const std::string UsgsAstroFrameSensorModel::m_parameterName[] = {
   "X Sensor Position (m)",  // 0
   "Y Sensor Position (m)",  // 1
   "Z Sensor Position (m)",  // 2
-  "Omega (radians)",        // 3
-  "Phi (radians)",          // 4
-  "Kappa (radians)"         // 5
+  "w",                      // 3
+  "v1",                     // 4
+  "v2",                     // 5
+  "v3"                      // 6
 };
 
 const int         UsgsAstroFrameSensorModel::_NUM_STATE_KEYWORDS = 32;
@@ -65,23 +66,6 @@ const std::string UsgsAstroFrameSensorModel::_STATE_KEYWORD[] =
 };
 
 UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
-
-  m_transX[0] = 0.0;
-  m_transX[1] = 0.0;
-  m_transX[2] = 0.0;
-
-  m_transY[0] = 0.0;
-  m_transY[1] = 0.0;
-  m_transY[2] = 0.0;
-
-  m_iTransS[0] = 0.0;
-  m_iTransS[1] = 0.0;
-  m_iTransS[2] = 0.0;
-
-  m_iTransL[0] = 0.0;
-  m_iTransL[0] = 0.0;
-  m_iTransL[0] = 0.0;
-
   m_majorAxis = 0.0;
   m_minorAxis = 0.0;
   m_focalLength = 0.0;
@@ -97,22 +81,30 @@ UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
   m_startingDetectorSample = 0.0;
   m_startingDetectorLine = 0.0;
   m_targetName = "";
-  m_ifov = 0.0;
+  m_ifov = 0;
   m_instrumentID = "";
   m_focalLengthEpsilon = 0.0;
 
-  m_ccdCenter[0] = 0.0;
-  m_ccdCenter[1] = 0.0;
+  m_ccdCenter[0] = 0;
+  m_ccdCenter[1] = 0;
 
   m_line_pp = 0.0;
   m_sample_pp = 0.0;
 
-  m_odtX.assign(10, 0.0);
-  m_odtY.assign(10, 0.0);
+  m_odtX.assign(0.0, 0.0);
+  m_odtY.assign(0.0, 0.0);
 
   m_originalHalfLines = 0.0;
   m_spacecraftName = "";
   m_pixelPitch = 0.0;
+
+  m_transX[0] = 0.0;
+  m_transX[1] = 0.0;
+  m_transX[2] = 0.0;
+
+  m_transY[0] = 0.0;
+  m_transY[1] = 0.0;
+  m_transY[2] = 0.0;
 
   m_iTransS[0] = 0.0;
   m_iTransS[1] = 0.0;
@@ -925,49 +917,41 @@ std::vector<double> UsgsAstroFrameSensorModel::getCrossCovarianceMatrix(
 
 void UsgsAstroFrameSensorModel::calcRotationMatrix(
     double m[3][3]) const {
-
   // Trigonometric functions for rotation matrix
-  double sinw = std::sin(m_currentParameterValue[3]);
-  double cosw = std::cos(m_currentParameterValue[3]);
-  double sinp = std::sin(m_currentParameterValue[4]);
-  double cosp = std::cos(m_currentParameterValue[4]);
-  double sink = std::sin(m_currentParameterValue[5]);
-  double cosk = std::cos(m_currentParameterValue[5]);
+  double w = m_currentParameterValue[3];
+  double x = m_currentParameterValue[4];
+  double y = m_currentParameterValue[5];
+  double z = m_currentParameterValue[6];
 
-  // Rotation matrix taken from Introduction to Mordern Photogrammetry by
-  // Edward M. Mikhail, et al., p. 373
-  m[0][0] = cosp * cosk;
-  m[0][1] = cosw * sink + sinw * sinp * cosk;
-  m[0][2] = sinw * sink - cosw * sinp * cosk;
-  m[1][0] = -1 * cosp * sink;
-  m[1][1] = cosw * cosk - sinw * sinp * sink;
-  m[1][2] = sinw * cosk + cosw * sinp * sink;
-  m[2][0] = sinp;
-  m[2][1] = -1 * sinw * cosp;
-  m[2][2] = cosw * cosp;
+  m[0][0] = w*w + x*x - y*y - z*z;
+  m[0][1] = 2 * (x*y - w*z);
+  m[0][2] = 2 * (w*y + x*z);
+  m[1][0] = 2 * (x*y + w*z);
+  m[1][1] = w*w - x*x + y*y - z*z;
+  m[1][2] = 2 * (y*z - w*x);
+  m[2][0] = 2 * (x*z - w*y);
+  m[2][1] = 2 * (w*x + y*z);
+  m[2][2] = w*w - x*x - y*y + z*z;
 }
 
 
 void UsgsAstroFrameSensorModel::calcRotationMatrix(
   double m[3][3], const std::vector<double> &adjustments) const {
-
   // Trigonometric functions for rotation matrix
-  double sinw = std::sin(getValue(3,adjustments));
-  double cosw = std::cos(getValue(3,adjustments));
-  double sinp = std::sin(getValue(4,adjustments));
-  double cosp = std::cos(getValue(4,adjustments));
-  double sink = std::sin(getValue(5,adjustments));
-  double cosk = std::cos(getValue(5,adjustments));
+  double w = getValue(3, adjustments);
+  double x = getValue(4, adjustments);
+  double y = getValue(5, adjustments);
+  double z = getValue(6, adjustments);
 
-  m[0][0] = cosp * cosk;
-  m[0][1] = cosw * sink + sinw * sinp * cosk;
-  m[0][2] = sinw * sink - cosw * sinp * cosk;
-  m[1][0] = -1 * cosp * sink;
-  m[1][1] = cosw * cosk - sinw * sinp * sink;
-  m[1][2] = sinw * cosk + cosw * sinp * sink;
-  m[2][0] = sinp;
-  m[2][1] = -1 * sinw * cosp;
-  m[2][2] = cosw * cosp;
+  m[0][0] = w*w + x*x - y*y - z*z;
+  m[0][1] = 2 * (x*y - w*z);
+  m[0][2] = 2 * (w*y + x*z);
+  m[1][0] = 2 * (x*y + w*z);
+  m[1][1] = w*w - x*x + y*y - z*z;
+  m[1][2] = 2 * (y*z - w*x);
+  m[2][0] = 2 * (x*z - w*y);
+  m[2][1] = 2 * (w*x + y*z);
+  m[2][2] = w*w - x*x - y*y + z*z;
 }
 
 
