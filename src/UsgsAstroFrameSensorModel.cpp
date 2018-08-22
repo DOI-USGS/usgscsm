@@ -91,8 +91,8 @@ UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
   m_line_pp = 0.0;
   m_sample_pp = 0.0;
 
-  m_odtX.assign(10, 0.0);
-  m_odtY.assign(10, 0.0);
+  m_odtX.assign(0.0, 0.0);
+  m_odtY.assign(0.0, 0.0);
 
   m_originalHalfLines = 0.0;
   m_spacecraftName = "";
@@ -104,7 +104,7 @@ UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
 
   m_transY[0] = 0.0;
   m_transY[1] = 0.0;
-  m_transY[2] = 0.1;
+  m_transY[2] = 0.0;
 
   m_iTransS[0] = 0.0;
   m_iTransS[1] = 0.0;
