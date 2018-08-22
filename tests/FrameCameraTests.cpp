@@ -269,7 +269,6 @@ TEST_F(FrameIsdTest, Rotation_omegaPi_Center) {
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 7.5);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   //Note: In the following, the tolerance was increased due to the very large distance being tested (~6.68 AU).
    EXPECT_NEAR(groundPt.x, -10.0, 1e-8);
    EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
    EXPECT_NEAR(groundPt.z, 0.0, 1e-8);
@@ -303,7 +302,6 @@ TEST_F(FrameIsdTest, Rotation_NPole_Center) {
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 7.5);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   //Note: In the following, the tolerance was increased due to the very large distance being tested (~6.68 AU).
    EXPECT_NEAR(groundPt.x, 0.0, 1e-8);
    EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
    EXPECT_NEAR(groundPt.z, 10.0, 1e-8);
@@ -337,9 +335,8 @@ TEST_F(FrameIsdTest, Rotation_SPole_Center) {
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 7.5);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   //Note: In the following, the tolerance was increased due to the very large distance being tested (~6.68 AU).
    EXPECT_NEAR(groundPt.x, 0.0, 1e-8);
    EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
    EXPECT_NEAR(groundPt.z, -10.0, 1e-8);
-   
+
 }
