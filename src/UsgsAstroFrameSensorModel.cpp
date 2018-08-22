@@ -85,8 +85,8 @@ UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
   m_instrumentID = "";
   m_focalLengthEpsilon = 0.0;
 
-  m_ccdCenter[0] = 7.5;
-  m_ccdCenter[1] = 7.5;
+  m_ccdCenter[0] = 0;
+  m_ccdCenter[1] = 0;
 
   m_line_pp = 0.0;
   m_sample_pp = 0.0;
@@ -94,12 +94,12 @@ UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
   m_odtX.assign(10, 0.0);
   m_odtY.assign(10, 0.0);
 
-  m_originalHalfLines = 8.0;
+  m_originalHalfLines = 0.0;
   m_spacecraftName = "";
-  m_pixelPitch = 0.1;
+  m_pixelPitch = 0.0;
 
   m_transX[0] = 0.0;
-  m_transX[1] = 0.1;
+  m_transX[1] = 0.0;
   m_transX[2] = 0.0;
 
   m_transY[0] = 0.0;
@@ -115,7 +115,7 @@ UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
   m_iTransL[2] = 0.0;
 
   m_ephemerisTime = 0.0;
-  m_originalHalfSamples = 8.0;
+  m_originalHalfSamples = 0.0;
   m_boresight[0] = 0.0;
   m_boresight[1] = 0.0;
   m_boresight[2] = 0.0;
