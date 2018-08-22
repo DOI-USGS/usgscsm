@@ -340,3 +340,4 @@ TEST_F(FrameIsdTest, Rotation_SPole_Center) {
    EXPECT_NEAR(groundPt.z, -10.0, 1e-8);
 
 }
+
