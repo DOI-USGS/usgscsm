@@ -255,9 +255,10 @@ TEST_F(FrameIsdTest, X1e9_SlightlyOffCenter) {
 //Angle rotations:
 TEST_F(FrameIsdTest, Rotation_omegaPi_Center) {
    std::string key = "omega";
-   std::string newValue = "3.14159265358979323846264338327950288";
+   std::ostringstream strval;
+   strval << std::setprecision(20) << M_PI;
    isd.clearParams(key);
-   isd.addParam(key,newValue);
+   isd.addParam(key,strval.str());
    UsgsAstroFramePlugin frameCameraPlugin;
          
    csm::Model *model = frameCameraPlugin.constructModelFromISD(
@@ -276,11 +277,12 @@ TEST_F(FrameIsdTest, Rotation_omegaPi_Center) {
 }
 TEST_F(FrameIsdTest, Rotation_NPole_Center) {
    std::string key = "phi";
-   std::string newValue = "-3.14159265358979323846264338327950288";
+   std::ostringstream strval;
+   strval << std::setprecision(20) << -M_PI;
    isd.clearParams(key);
-   isd.addParam(key,newValue);
+   isd.addParam(key,strval.str());
    key = "x_sensor_origin";
-   newValue = "0.0";
+   std::string newValue = "0.0";
    isd.clearParams(key);
    isd.addParam(key,newValue);
    key = "y_sensor_origin";
