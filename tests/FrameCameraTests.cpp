@@ -73,8 +73,7 @@ class FrameSensorModel : public ::testing::Test {
       }
 };
 
-//NOTE: The imagePt layour is (Lines,Samples)
-//      Also subtract 0.5 from the lines/samples. Hence Samples=0 and Lines=15 -> 14.5,-0.5
+//NOTE: The imagePt format is (Lines,Samples)
 
 //centered and slightly off-center:
 TEST_F(FrameSensorModel, Center) {
@@ -126,8 +125,10 @@ TEST_F(FrameSensorModel, OffBody4) {
 
 // Focal Length Tests:
 TEST_F(FrameIsdTest, FL500_OffBody4) {
-   isd.clearParams("focal_length");
-   isd.addParam("focal_length","500.0");
+   std::string key = "focal_length";
+   std::string newValue = "500.0";
+   isd.clearParams(key);
+   isd.addParam(key,newValue);
    UsgsAstroFramePlugin frameCameraPlugin;
          
    csm::Model *model = frameCameraPlugin.constructModelFromISD(
@@ -144,8 +145,10 @@ TEST_F(FrameIsdTest, FL500_OffBody4) {
    EXPECT_NEAR(groundPt.z, -1.48533467, 1e-8);
 }
 TEST_F(FrameIsdTest, FL500_OffBody3) {
-   isd.clearParams("focal_length");
-   isd.addParam("focal_length","500.0");
+   std::string key = "focal_length";
+   std::string newValue = "500.0";
+   isd.clearParams(key);
+   isd.addParam(key,newValue);
    UsgsAstroFramePlugin frameCameraPlugin;
          
    csm::Model *model = frameCameraPlugin.constructModelFromISD(
@@ -162,8 +165,10 @@ TEST_F(FrameIsdTest, FL500_OffBody3) {
    EXPECT_NEAR(groundPt.z, 1.48533467, 1e-8);
 }
 TEST_F(FrameIsdTest, FL500_Center) {
-   isd.clearParams("focal_length");
-   isd.addParam("focal_length","500.0");
+   std::string key = "focal_length";
+   std::string newValue = "500.0";
+   isd.clearParams(key);
+   isd.addParam(key,newValue);
    UsgsAstroFramePlugin frameCameraPlugin;
          
    csm::Model *model = frameCameraPlugin.constructModelFromISD(
@@ -180,8 +185,10 @@ TEST_F(FrameIsdTest, FL500_Center) {
    EXPECT_NEAR(groundPt.z, 0.0, 1e-8);
 }
 TEST_F(FrameIsdTest, FL500_SlightlyOffCenter) {
-   isd.clearParams("focal_length");
-   isd.addParam("focal_length","500.0");
+   std::string key = "focal_length";
+   std::string newValue = "500.0";
+   isd.clearParams(key);
+   isd.addParam(key,newValue);
    UsgsAstroFramePlugin frameCameraPlugin;
          
    csm::Model *model = frameCameraPlugin.constructModelFromISD(
