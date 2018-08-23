@@ -301,6 +301,8 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
 protected:
     FRIEND_TEST(FrameIsdTest, setFocalPlane1);
     FRIEND_TEST(FrameIsdTest, Jacobian1);
+    FRIEND_TEST(FrameIsdTest, setFocalPlane_AllCoefficientsOne);
+    FRIEND_TEST(FrameIsdTest, distortMe_AllCoefficientsOne);
 
     virtual bool setFocalPlane(double dx,double dy,double &undistortedX,double &undistortedY) const;
     virtual void distortionFunction(double ux, double uy, double &dx, double &dy) const;
