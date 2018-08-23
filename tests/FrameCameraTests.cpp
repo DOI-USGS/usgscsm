@@ -266,7 +266,7 @@ TEST_F(FrameIsdTest, distortMe_AllCoefficientsOne) {
    UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
 
 
-
+   printIsd(isd);
    double dx,dy;
    sensorModel->distortionFunction(imagePt.samp, imagePt.line,dx,dy );
 
@@ -274,7 +274,7 @@ TEST_F(FrameIsdTest, distortMe_AllCoefficientsOne) {
    cout << "dy:  " << dy << endl;
 
    EXPECT_NEAR(dx,1872.25,1e-8 );
-   EXPECT_NEAR(dy,843.75,1e-8);
+   EXPECT_NEAR(dy,1872.25,1e-8);
 
 }
 
@@ -288,7 +288,7 @@ TEST_F(FrameIsdTest, setFocalPlane_AllCoefficientsOne) {
   isd.clearParams(odty_key);
   isd.clearParams(odtx_key);
 
-   csm::ImageCoord imagePt(1872.25, 843.75);
+   csm::ImageCoord imagePt(1872.25, 1872.25);
 
    vector<double> odtx{1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
    vector<double> odty{1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
@@ -309,15 +309,16 @@ TEST_F(FrameIsdTest, setFocalPlane_AllCoefficientsOne) {
          "USGS_ASTRO_FRAME_SENSOR_MODEL");
 
    UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
-   printIsd(isd);
+
 
    double ux,uy;
    sensorModel->setFocalPlane(imagePt.samp, imagePt.line,ux,uy );
 
-   cout << "ux:  " << ux << endl;
-   cout << "uy:  " << uy << endl;
-   EXPECT_NEAR(ux,7.5,1e-8 );
-   EXPECT_NEAR(uy,7.5,1e-8);
+
+   //The Jacobian is singular, so the setFocalPlane should break out of it's iteration and
+   //returns the same distorted coordinates that were passed in.
+   EXPECT_NEAR(ux,imagePt.samp,1e-8 );
+   EXPECT_NEAR(uy,imagePt.line,1e-8);
 
 }
 
