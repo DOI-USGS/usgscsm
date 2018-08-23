@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <sstream>
 #include <fstream>
+#include <map>
 #include <vector>
 #include <gtest/gtest.h>
 
@@ -41,22 +42,7 @@ class FrameSensorModel : public ::testing::Test {
 
       protected :
       UsgsAstroFrameSensorModel *sensorModel;
-      void loadIsd(const std::string pathtoIsd,csm::Isd &isd){
-        std::ifstream isdFile("data/simpleFramerISD.json");
-        json jsonIsd = json::parse(isdFile);
 
-        for (json::iterator it = jsonIsd.begin(); it != jsonIsd.end(); ++it) {
-           json jsonValue = it.value();
-           if (jsonValue.size() > 1) {
-             for (int i = 0; i < jsonValue.size(); i++) {
-                   isd.addParam(it.key(), jsonValue[i].dump());
-             }
-           }
-           else {
-              isd.addParam(it.key(), jsonValue.dump());
-           }
-        }
-      }
 
 
       void SetUp() override {
@@ -147,32 +133,90 @@ TEST_F(FrameSensorModel, OffBody4) {
 }
 
 
-TEST_F(FrameSensorModel, setFocalPlane1) {
+
+TEST_F(FrameIsdTest, setFocalPlane1) {
   int precision  = 20;
+  UsgsAstroFramePlugin frameCameraPlugin;
+  std:string odtx_key= "odt_x";
+  std::string odty_key="odt_y";
 
-   csm::Isd localIsd;
-   loadIsd("data/simpleFramerISD.json",localIsd);
-   csm::ImageCoord imagePt(7.0, 7.0);
-   double ux,uy;
-   vector<double> odtx{0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
-   vector<double> odty{0.0,1.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+  isd.clearParams(odty_key);
+  isd.clearParams(odtx_key);
 
-   localIsd.clearParams("odt_x");
-   localIsd.clearParams("odt_y");
+  csm::ImageCoord imagePt(7.5, 7.5);
+  double ux,uy;
+
+  vector<double> odtx{0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+  vector<double> odty{0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+
+
    for (auto & val: odtx){
       ostringstream strval;
       strval << setprecision(precision) << val;
-      localIsd.addParam("odt_x", strval.str());
+      isd.addParam("odt_x", strval.str());
    }
    for (auto & val: odty){
       ostringstream strval;
       strval << setprecision(precision) << val;
-      localIsd.addParam("odt_y", strval.str());
+      isd.addParam("odt_y", strval.str());
    }
 
+   csm::Model *model = frameCameraPlugin.constructModelFromISD(
+         isd,
+         "USGS_ASTRO_FRAME_SENSOR_MODEL");
+
+   UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+
    sensorModel->setFocalPlane(imagePt.samp, imagePt.line, ux, uy);
-   EXPECT_NEAR(ux,7.0,1e-8 );
-   EXPECT_NEAR(uy,7.0,1e-8);
+   EXPECT_NEAR(imagePt.samp,7.5,1e-8 );
+   EXPECT_NEAR(imagePt.line,7.5,1e-8);
+
+}
+
+
+
+TEST_F(FrameIsdTest, Jacobian1) {
+
+  int precision  = 20;
+  UsgsAstroFramePlugin frameCameraPlugin;
+  std:string odtx_key= "odt_x";
+  std::string odty_key="odt_y";
+
+  isd.clearParams(odty_key);
+  isd.clearParams(odtx_key);
+
+   csm::ImageCoord imagePt(7.5, 7.5);
+
+   vector<double> odtx{0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0};
+   vector<double> odty{0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,1.0};
+
+   for (auto & val: odtx){
+      ostringstream strval;
+      strval << setprecision(precision) << val;
+      isd.addParam("odt_x", strval.str());
+   }
+   for (auto & val: odty){
+      ostringstream strval;
+      strval << setprecision(precision) << val;
+      isd.addParam("odt_y", strval.str());
+   }
+
+   csm::Model *model = frameCameraPlugin.constructModelFromISD(
+         isd,
+         "USGS_ASTRO_FRAME_SENSOR_MODEL");
+
+   UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+
+
+   double Jxx,Jxy,Jyx,Jyy;
+   sensorModel->distortionJacobian(imagePt.samp, imagePt.line, Jxx, Jxy,Jyx,Jyy);
+
+
+
+   EXPECT_NEAR(Jxx,56.25,1e-8 );
+   EXPECT_NEAR(Jxy,112.5,1e-8);
+   EXPECT_NEAR(Jyx,56.25,1e-8);
+   EXPECT_NEAR(Jyy,281.25,1e-8);
 
 }
 
