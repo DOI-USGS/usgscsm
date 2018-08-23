@@ -407,8 +407,6 @@ TEST_F(FrameIsdTest, SemiMinorAxis10x_SlightlyOffCenter) {
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 6.5);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   //Note: In the following, the tolerance was increased due to the combination of an offset image point and 
-   //      a very large deviation from sphericity.
    EXPECT_NEAR(groundPt.x, 9.99803960, 1e-8);
    EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
    EXPECT_NEAR(groundPt.z, 1.98000392, 1e-8);
