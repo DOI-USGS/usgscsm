@@ -448,5 +448,97 @@ TEST_F(FrameIsdTest, X1e9_SlightlyOffCenter) {
    EXPECT_NEAR(groundPt.x, 3.99998400e+03, 1e-4);
    EXPECT_NEAR(groundPt.y, 0.0, 1e-4);
    EXPECT_NEAR(groundPt.z, 1.99999200e+06, 1e-4);
+   
+}
+
+//Angle rotations:
+TEST_F(FrameIsdTest, Rotation_omegaPi_Center) {
+   std::string key = "omega";
+   std::ostringstream strval;
+   strval << std::setprecision(20) << M_PI;
+   isd.clearParams(key);
+   isd.addParam(key,strval.str());
+   UsgsAstroFramePlugin frameCameraPlugin;
+         
+   csm::Model *model = frameCameraPlugin.constructModelFromISD(
+         isd,
+         "USGS_ASTRO_FRAME_SENSOR_MODEL");
+   
+   UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+   
+   ASSERT_NE(sensorModel, nullptr);
+   csm::ImageCoord imagePt(7.5, 7.5);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   EXPECT_NEAR(groundPt.x, -10.0, 1e-8);
+   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
+   EXPECT_NEAR(groundPt.z, 0.0, 1e-8);
+   
+}
+TEST_F(FrameIsdTest, Rotation_NPole_Center) {
+   std::string key = "phi";
+   std::ostringstream strval;
+   strval << std::setprecision(20) << -M_PI;
+   isd.clearParams(key);
+   isd.addParam(key,strval.str());
+   key = "x_sensor_origin";
+   std::string newValue = "0.0";
+   isd.clearParams(key);
+   isd.addParam(key,newValue);
+   key = "y_sensor_origin";
+   newValue = "0.0";
+   isd.clearParams(key);
+   isd.addParam(key,newValue);
+   key = "z_sensor_origin";
+   newValue = "1000.0";
+   isd.clearParams(key);
+   isd.addParam(key,newValue);
+   UsgsAstroFramePlugin frameCameraPlugin;
+         
+   csm::Model *model = frameCameraPlugin.constructModelFromISD(
+         isd,
+         "USGS_ASTRO_FRAME_SENSOR_MODEL");
+   
+   UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+   
+   ASSERT_NE(sensorModel, nullptr);
+   csm::ImageCoord imagePt(7.5, 7.5);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   EXPECT_NEAR(groundPt.x, 0.0, 1e-8);
+   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
+   EXPECT_NEAR(groundPt.z, 10.0, 1e-8);
+   
+}
+TEST_F(FrameIsdTest, Rotation_SPole_Center) {
+   std::string key = "phi";
+   std::string newValue = "0.0";
+   isd.clearParams(key);
+   isd.addParam(key,newValue);
+   key = "x_sensor_origin";
+   newValue = "0.0";
+   isd.clearParams(key);
+   isd.addParam(key,newValue);
+   key = "y_sensor_origin";
+   newValue = "0.0";
+   isd.clearParams(key);
+   isd.addParam(key,newValue);
+   key = "z_sensor_origin";
+   newValue = "-1000.0";
+   isd.clearParams(key);
+   isd.addParam(key,newValue);
+   UsgsAstroFramePlugin frameCameraPlugin;
+         
+   csm::Model *model = frameCameraPlugin.constructModelFromISD(
+         isd,
+         "USGS_ASTRO_FRAME_SENSOR_MODEL");
+   
+   UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+   
+   ASSERT_NE(sensorModel, nullptr);
+   csm::ImageCoord imagePt(7.5, 7.5);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   EXPECT_NEAR(groundPt.x, 0.0, 1e-8);
+   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
+   EXPECT_NEAR(groundPt.z, -10.0, 1e-8);
 
 }
+
