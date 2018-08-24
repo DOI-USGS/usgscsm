@@ -1060,7 +1060,7 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
     distortionJacobian(x, y, Jxx, Jxy, Jyx, Jyy);
 
     double determinant = Jxx * Jyy - Jxy * Jyx;
-    if (determinant < 1E-6) {
+    if (fabs(determinant) < 1E-6) {
       //
       // Near-zero determinant. Add error handling here.
       //

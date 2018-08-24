@@ -1,17 +1,32 @@
 #include "UsgsAstroFramePlugin.h"
 #include "UsgsAstroFrameSensorModel.h"
 
+#include <json.hpp>
+#include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <fstream>
-
+#include <map>
+#include <vector>
 #include <gtest/gtest.h>
 
+using namespace std;
 using json = nlohmann::json;
 
 class FrameIsdTest : public ::testing::Test {
    protected:
 
       csm::Isd isd;
+
+      void printIsd(csm::Isd &localIsd) {
+           multimap<string,string> isdmap= localIsd.parameters();
+           for (auto it = isdmap.begin(); it != isdmap.end();++it){
+
+                      cout << it->first << " : " << it->second << endl;
+           }
+
+
+    }
 
    virtual void SetUp() {
       std::ifstream isdFile("data/simpleFramerISD.json");
@@ -34,8 +49,12 @@ class FrameIsdTest : public ::testing::Test {
 class FrameSensorModel : public ::testing::Test {
    protected:
 
+
+      protected :
       UsgsAstroFrameSensorModel *sensorModel;
-      
+
+
+
       void SetUp() override {
          sensorModel = NULL;
          std::ifstream isdFile("data/simpleFramerISD.json");
@@ -44,24 +63,25 @@ class FrameSensorModel : public ::testing::Test {
          for (json::iterator it = jsonIsd.begin(); it != jsonIsd.end(); ++it) {
             json jsonValue = it.value();
             if (jsonValue.size() > 1) {
-               for (int i = 0; i < jsonValue.size(); i++) {
-                  isd.addParam(it.key(), jsonValue[i].dump());
+              for (int i = 0; i < jsonValue.size(); i++){
+                    isd.addParam(it.key(), jsonValue[i].dump());
                }
             }
             else {
                isd.addParam(it.key(), jsonValue.dump());
             }
          }
+
          isdFile.close();
 
          UsgsAstroFramePlugin frameCameraPlugin;
-         
+
          csm::Model *model = frameCameraPlugin.constructModelFromISD(
                isd,
                "USGS_ASTRO_FRAME_SENSOR_MODEL");
-         
+
          sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
-         
+
          ASSERT_NE(sensorModel, nullptr);
       }
 
@@ -70,6 +90,7 @@ class FrameSensorModel : public ::testing::Test {
             delete sensorModel;
             sensorModel = NULL;
          }
+
       }
 };
 
@@ -123,6 +144,187 @@ TEST_F(FrameSensorModel, OffBody4) {
 }
 
 
+
+TEST_F(FrameIsdTest, setFocalPlane1) {
+  int precision  = 20;
+  UsgsAstroFramePlugin frameCameraPlugin;
+  std:string odtx_key= "odt_x";
+  std::string odty_key="odt_y";
+
+  isd.clearParams(odty_key);
+  isd.clearParams(odtx_key);
+
+  csm::ImageCoord imagePt(7.5, 7.5);
+  double ux,uy;
+
+  vector<double> odtx{0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+  vector<double> odty{0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+
+
+   for (auto & val: odtx){
+      ostringstream strval;
+      strval << setprecision(precision) << val;
+      isd.addParam("odt_x", strval.str());
+   }
+   for (auto & val: odty){
+      ostringstream strval;
+      strval << setprecision(precision) << val;
+      isd.addParam("odt_y", strval.str());
+   }
+
+   csm::Model *model = frameCameraPlugin.constructModelFromISD(
+         isd,
+         "USGS_ASTRO_FRAME_SENSOR_MODEL");
+
+
+
+   UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+
+   sensorModel->setFocalPlane(imagePt.samp, imagePt.line, ux, uy);
+   EXPECT_NEAR(imagePt.samp,7.5,1e-8 );
+   EXPECT_NEAR(imagePt.line,7.5,1e-8);
+
+}
+
+
+
+TEST_F(FrameIsdTest, Jacobian1) {
+
+  int precision  = 20;
+  UsgsAstroFramePlugin frameCameraPlugin;
+  std:string odtx_key= "odt_x";
+  std::string odty_key="odt_y";
+
+  isd.clearParams(odty_key);
+  isd.clearParams(odtx_key);
+
+   csm::ImageCoord imagePt(7.5, 7.5);
+
+   vector<double> odtx{0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0};
+   vector<double> odty{0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,1.0};
+
+   for (auto & val: odtx){
+      ostringstream strval;
+      strval << setprecision(precision) << val;
+      isd.addParam("odt_x", strval.str());
+   }
+   for (auto & val: odty){
+      ostringstream strval;
+      strval << setprecision(precision) << val;
+      isd.addParam("odt_y", strval.str());
+   }
+
+   csm::Model *model = frameCameraPlugin.constructModelFromISD(
+         isd,
+         "USGS_ASTRO_FRAME_SENSOR_MODEL");
+
+   UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+
+
+   double Jxx,Jxy,Jyx,Jyy;
+   sensorModel->distortionJacobian(imagePt.samp, imagePt.line, Jxx, Jxy,Jyx,Jyy);
+
+
+
+   EXPECT_NEAR(Jxx,56.25,1e-8 );
+   EXPECT_NEAR(Jxy,112.5,1e-8);
+   EXPECT_NEAR(Jyx,56.25,1e-8);
+   EXPECT_NEAR(Jyy,281.25,1e-8);
+
+}
+
+
+TEST_F(FrameIsdTest, distortMe_AllCoefficientsOne) {
+
+  int precision  = 20;
+  UsgsAstroFramePlugin frameCameraPlugin;
+  std:string odtx_key= "odt_x";
+  std::string odty_key="odt_y";
+
+  isd.clearParams(odty_key);
+  isd.clearParams(odtx_key);
+
+   csm::ImageCoord imagePt(7.5, 7.5);
+
+   vector<double> odtx{1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
+   vector<double> odty{1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
+
+   for (auto & val: odtx){
+      ostringstream strval;
+      strval << setprecision(precision) << val;
+      isd.addParam("odt_x", strval.str());
+   }
+   for (auto & val: odty){
+      ostringstream strval;
+      strval << setprecision(precision) << val;
+      isd.addParam("odt_y", strval.str());
+   }
+
+   csm::Model *model = frameCameraPlugin.constructModelFromISD(
+         isd,
+         "USGS_ASTRO_FRAME_SENSOR_MODEL");
+
+   UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+
+
+   printIsd(isd);
+   double dx,dy;
+   sensorModel->distortionFunction(imagePt.samp, imagePt.line,dx,dy );
+
+   cout << "dx:  " << dx << endl;
+   cout << "dy:  " << dy << endl;
+
+   EXPECT_NEAR(dx,1872.25,1e-8 );
+   EXPECT_NEAR(dy,1872.25,1e-8);
+
+}
+
+TEST_F(FrameIsdTest, setFocalPlane_AllCoefficientsOne) {
+
+  int precision  = 20;
+  UsgsAstroFramePlugin frameCameraPlugin;
+  std:string odtx_key= "odt_x";
+  std::string odty_key="odt_y";
+
+  isd.clearParams(odty_key);
+  isd.clearParams(odtx_key);
+
+   csm::ImageCoord imagePt(1872.25, 1872.25);
+
+   vector<double> odtx{1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
+   vector<double> odty{1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
+
+   for (auto & val: odtx){
+      ostringstream strval;
+      strval << setprecision(precision) << val;
+      isd.addParam("odt_x", strval.str());
+   }
+   for (auto & val: odty){
+      ostringstream strval;
+      strval << setprecision(precision) << val;
+      isd.addParam("odt_y", strval.str());
+   }
+
+   csm::Model *model = frameCameraPlugin.constructModelFromISD(
+         isd,
+         "USGS_ASTRO_FRAME_SENSOR_MODEL");
+
+   UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+
+
+   double ux,uy;
+   sensorModel->setFocalPlane(imagePt.samp, imagePt.line,ux,uy );
+
+
+   //The Jacobian is singular, so the setFocalPlane should break out of it's iteration and
+   //returns the same distorted coordinates that were passed in.
+   EXPECT_NEAR(ux,imagePt.samp,1e-8 );
+   EXPECT_NEAR(uy,imagePt.line,1e-8);
+
+}
+
+
+
 // Focal Length Tests:
 TEST_F(FrameIsdTest, FL500_OffBody4) {
    std::string key = "focal_length";
@@ -130,13 +332,13 @@ TEST_F(FrameIsdTest, FL500_OffBody4) {
    isd.clearParams(key);
    isd.addParam(key,newValue);
    UsgsAstroFramePlugin frameCameraPlugin;
-         
+
    csm::Model *model = frameCameraPlugin.constructModelFromISD(
          isd,
          "USGS_ASTRO_FRAME_SENSOR_MODEL");
-   
+
    UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
-   
+
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(15.0, 15.0);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
@@ -150,13 +352,13 @@ TEST_F(FrameIsdTest, FL500_OffBody3) {
    isd.clearParams(key);
    isd.addParam(key,newValue);
    UsgsAstroFramePlugin frameCameraPlugin;
-         
+
    csm::Model *model = frameCameraPlugin.constructModelFromISD(
          isd,
          "USGS_ASTRO_FRAME_SENSOR_MODEL");
-   
+
    UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
-   
+
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(0.0, 0.0);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
@@ -170,13 +372,13 @@ TEST_F(FrameIsdTest, FL500_Center) {
    isd.clearParams(key);
    isd.addParam(key,newValue);
    UsgsAstroFramePlugin frameCameraPlugin;
-         
+
    csm::Model *model = frameCameraPlugin.constructModelFromISD(
          isd,
          "USGS_ASTRO_FRAME_SENSOR_MODEL");
-   
+
    UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
-   
+
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 7.5);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
@@ -190,20 +392,20 @@ TEST_F(FrameIsdTest, FL500_SlightlyOffCenter) {
    isd.clearParams(key);
    isd.addParam(key,newValue);
    UsgsAstroFramePlugin frameCameraPlugin;
-         
+
    csm::Model *model = frameCameraPlugin.constructModelFromISD(
          isd,
          "USGS_ASTRO_FRAME_SENSOR_MODEL");
-   
+
    UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
-   
+
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 6.5);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
    EXPECT_NEAR(groundPt.x, 9.99803960, 1e-8);
    EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
    EXPECT_NEAR(groundPt.z, 1.98000392e-01, 1e-8);
-   
+
 }
 
 //Observer x position:
@@ -213,20 +415,20 @@ TEST_F(FrameIsdTest, X10_SlightlyOffCenter) {
    isd.clearParams(key);
    isd.addParam(key,newValue);
    UsgsAstroFramePlugin frameCameraPlugin;
-         
+
    csm::Model *model = frameCameraPlugin.constructModelFromISD(
          isd,
          "USGS_ASTRO_FRAME_SENSOR_MODEL");
-   
+
    UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
-   
+
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 6.5);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
    EXPECT_NEAR(groundPt.x, 10.0, 1e-8);
    EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
    EXPECT_NEAR(groundPt.z, 0.0, 1e-8);
-   
+
 }
 TEST_F(FrameIsdTest, X1e9_SlightlyOffCenter) {
    std::string key = "x_sensor_origin";
@@ -234,13 +436,13 @@ TEST_F(FrameIsdTest, X1e9_SlightlyOffCenter) {
    isd.clearParams(key);
    isd.addParam(key,newValue);
    UsgsAstroFramePlugin frameCameraPlugin;
-         
+
    csm::Model *model = frameCameraPlugin.constructModelFromISD(
          isd,
          "USGS_ASTRO_FRAME_SENSOR_MODEL");
-   
+
    UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
-   
+
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 6.5);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
