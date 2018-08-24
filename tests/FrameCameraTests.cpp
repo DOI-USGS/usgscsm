@@ -23,7 +23,7 @@ class FrameIsdTest : public ::testing::Test {
            for (auto it = isdmap.begin(); it != isdmap.end();++it){
 
                       cout << it->first << " : " << it->second << endl;
-           }                    
+           }
        }
       UsgsAstroFrameSensorModel* createModel(csm::Isd &modifiedIsd) {
 
@@ -160,7 +160,7 @@ TEST_F(FrameSensorModel, OffBody4) {
 
 
 TEST_F(FrameIsdTest, setFocalPlane1) {
-  int precision  = 20; 
+  int precision  = 20;
   std:string odtx_key= "odt_x";
   std::string odty_key="odt_y";
 
@@ -197,7 +197,7 @@ TEST_F(FrameIsdTest, setFocalPlane1) {
 
 TEST_F(FrameIsdTest, Jacobian1) {
 
-  int precision  = 20; 
+  int precision  = 20;
   std:string odtx_key= "odt_x";
   std::string odty_key="odt_y";
 
@@ -278,7 +278,7 @@ TEST_F(FrameIsdTest, distortMe_AllCoefficientsOne) {
 
 TEST_F(FrameIsdTest, setFocalPlane_AllCoefficientsOne) {
 
-  int precision  = 20;  
+  int precision  = 20;
   std:string odtx_key= "odt_x";
   std::string odty_key="odt_y";
 
@@ -402,7 +402,7 @@ TEST_F(FrameIsdTest, FL500_OffBody4) {
    std::string key = "focal_length";
    std::string newValue = "500.0";
    isd.clearParams(key);
-   isd.addParam(key,newValue);  
+   isd.addParam(key,newValue);
 
 
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
@@ -493,7 +493,7 @@ TEST_F(FrameIsdTest, X1e9_SlightlyOffCenter) {
    EXPECT_NEAR(groundPt.x, 3.99998400e+03, 1e-4);
    EXPECT_NEAR(groundPt.y, 0.0, 1e-4);
    EXPECT_NEAR(groundPt.z, 1.99999200e+06, 1e-4);
-   
+
 }
 
 //Angle rotations:
@@ -505,14 +505,14 @@ TEST_F(FrameIsdTest, Rotation_omegaPi_Center) {
    isd.addParam(key,strval.str());
 
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
-   
+
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 7.5);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
    EXPECT_NEAR(groundPt.x, -10.0, 1e-8);
    EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
    EXPECT_NEAR(groundPt.z, 0.0, 1e-8);
-   
+
 }
 TEST_F(FrameIsdTest, Rotation_NPole_Center) {
    std::string key = "phi";
@@ -534,14 +534,14 @@ TEST_F(FrameIsdTest, Rotation_NPole_Center) {
    isd.addParam(key,newValue);
 
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
-   
+
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 7.5);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
    EXPECT_NEAR(groundPt.x, 0.0, 1e-8);
    EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
    EXPECT_NEAR(groundPt.z, 10.0, 1e-8);
-   
+
 }
 TEST_F(FrameIsdTest, Rotation_SPole_Center) {
    std::string key = "phi";
@@ -560,9 +560,9 @@ TEST_F(FrameIsdTest, Rotation_SPole_Center) {
    newValue = "-1000.0";
    isd.clearParams(key);
    isd.addParam(key,newValue);
-            
+
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
-   
+
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 7.5);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
@@ -572,3 +572,72 @@ TEST_F(FrameIsdTest, Rotation_SPole_Center) {
 
 }
 
+
+// Ellipsoid axis tests:
+TEST_F(FrameIsdTest, SemiMajorAxis100x_Center) {
+   std::string key = "semi_major_axis";
+   std::string newValue = "1.0";
+   isd.clearParams(key);
+   isd.addParam(key,newValue);
+   UsgsAstroFramePlugin frameCameraPlugin;
+
+   csm::Model *model = frameCameraPlugin.constructModelFromISD(
+         isd,
+         "USGS_ASTRO_FRAME_SENSOR_MODEL");
+
+   UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+
+   ASSERT_NE(sensorModel, nullptr);
+   csm::ImageCoord imagePt(7.5, 7.5);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   EXPECT_NEAR(groundPt.x, 1000.0, 1e-8);
+   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
+   EXPECT_NEAR(groundPt.z, 0.0, 1e-8);
+
+}
+TEST_F(FrameIsdTest, SemiMajorAxis10x_SlightlyOffCenter) {
+   std::string key = "semi_major_axis";
+   std::string newValue = "0.10";
+   isd.clearParams(key);
+   isd.addParam(key,newValue);
+   UsgsAstroFramePlugin frameCameraPlugin;
+
+   csm::Model *model = frameCameraPlugin.constructModelFromISD(
+         isd,
+         "USGS_ASTRO_FRAME_SENSOR_MODEL");
+
+   UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+
+   ASSERT_NE(sensorModel, nullptr);
+   csm::ImageCoord imagePt(7.5, 6.5);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   //Note: In the following, the tolerance was increased due to the combination of an offset image point and
+   //      a very large deviation from sphericity.
+   EXPECT_NEAR(groundPt.x, 9.83606557e+01, 1e-7);
+   EXPECT_NEAR(groundPt.y, 0.0, 1e-7);
+   EXPECT_NEAR(groundPt.z, 1.80327869, 1e-7);
+
+}
+// The following test is for the scenario where the semi_minor_axis is actually larger
+// than the semi_major_axis:
+TEST_F(FrameIsdTest, SemiMinorAxis10x_SlightlyOffCenter) {
+   std::string key = "semi_minor_axis";
+   std::string newValue = "0.10";
+   isd.clearParams(key);
+   isd.addParam(key,newValue);
+   UsgsAstroFramePlugin frameCameraPlugin;
+
+   csm::Model *model = frameCameraPlugin.constructModelFromISD(
+         isd,
+         "USGS_ASTRO_FRAME_SENSOR_MODEL");
+
+   UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+
+   ASSERT_NE(sensorModel, nullptr);
+   csm::ImageCoord imagePt(7.5, 6.5);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   EXPECT_NEAR(groundPt.x, 9.99803960, 1e-8);
+   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
+   EXPECT_NEAR(groundPt.z, 1.98000392, 1e-8);
+
+}
