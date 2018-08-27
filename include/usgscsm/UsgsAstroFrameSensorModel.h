@@ -299,6 +299,8 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
     static const std::string _SENSOR_MODEL_NAME;
 
 protected:
+
+    FRIEND_TEST(FramerParameterizedTest,JacobianTest);
     FRIEND_TEST(FrameIsdTest, setFocalPlane1);
     FRIEND_TEST(FrameIsdTest, Jacobian1);
     FRIEND_TEST(FrameIsdTest, setFocalPlane_AllCoefficientsOne);

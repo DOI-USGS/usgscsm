@@ -1066,7 +1066,7 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
   distortionFunction(x, y, fx, fy);
 
 
-  for (int count = 1; count < maxTries; count++) {
+  for (int count = 1; ((fabs(fx) +fabs(fy)) > tol) && (count < maxTries); count++) {
 
     this->distortionFunction(x, y, fx, fy);
 
