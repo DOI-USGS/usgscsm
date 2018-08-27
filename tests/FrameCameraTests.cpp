@@ -204,8 +204,6 @@ TEST_P(FramerParameterizedTest,JacobianTest) {
    sensorModel->distortionJacobian(imagePt1.samp, imagePt1.line, Jxx, Jxy,Jyx,Jyy);
 
 
-   cout << "["<<Jxx << "," << Jxy << "," << Jyx << "," << Jyy << "]" << endl;
-
    double determinant = fabs(Jxx*Jyy - Jxy*Jyx);
 
    EXPECT_GT(determinant,1e-3);
