@@ -299,6 +299,15 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    double dz = ground_pt.z - calculatedPoint.z;
    double len = dx * dx + dy * dy + dz * dz;
 
+   // Check that the pixel is actually in the image
+   if ((calculatedPixel.samp < 0) ||
+       (calculatedPixel.samp > _data.m_TotalSamples)) {
+      throw csm::Error(
+         csm::Error::ALGORITHM,
+         "Ground point is not viewed by the image.",
+         "UsgsAstroLsSensorModel::groundToImage");
+   }
+
    // If the final correction is greater than 10 meters,
    // the solution is not valid enough to report even with a warning
    printf("%f\n", len);
