@@ -310,11 +310,10 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
 
    // If the final correction is greater than 10 meters,
    // the solution is not valid enough to report even with a warning
-   printf("%f\n", len);
    if (len > 100.0) {
-      throw csm::Error(
-         csm::Error::ALGORITHM,
-         "Did not converge.",
+      throw csm::Warning(
+         csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS,
+         "The image coordinate is out of bounds of the image.",
          "UsgsAstroLsSensorModel::groundToImage");
    }
 
