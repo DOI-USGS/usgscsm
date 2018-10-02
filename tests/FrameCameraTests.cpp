@@ -406,12 +406,9 @@ TEST_F(FrameIsdTest, FL500_SlightlyOffCenter) {
 
 // Observer x position:
 TEST_F(FrameIsdTest, X10_SlightlyOffCenter) {
-   std::string key = "x_sensor_origin";
-   std::string newValue = "10.0";
-   isd.clearParams(key);
-   isd.addParam(key,newValue);
-
+   double newValue = 10.0;
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
+   sensorModel->setParameterValue(0, newValue);
 
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 6.5);
@@ -426,35 +423,28 @@ TEST_F(FrameIsdTest, X10_SlightlyOffCenter) {
 
 
 TEST_F(FrameIsdTest, X1e9_SlightlyOffCenter) {
-   std::string key = "x_sensor_origin";
-   std::string newValue = "1000000000.0";
-   isd.clearParams(key);
-   isd.addParam(key,newValue);
+   double newValue = 1000000000.0;
 
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
+   sensorModel->setParameterValue(0, newValue);
 
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 6.5);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   //Note: In the following, the tolerance was increased due to the very large distance being tested (~6.68 AU).
+   // Note: In the following, the tolerance was increased due to the very large distance being tested (~6.68 AU).
    EXPECT_NEAR(groundPt.x, 3.99998400e+03, 1e-4);
    EXPECT_NEAR(groundPt.y, 0.0, 1e-4);
    EXPECT_NEAR(groundPt.z, 1.99999200e+06, 1e-4);
 
    delete sensorModel;
    sensorModel = NULL;
-
 }
+
 
 // Angle rotations:
 TEST_F(FrameIsdTest, Rotation_omegaPi_Center) {
-   std::string key = "omega";
-   std::ostringstream strval;
-   strval << std::setprecision(20) << M_PI;
-   isd.clearParams(key);
-   isd.addParam(key,strval.str());
-
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
+   sensorModel->setParameterValue(3, M_PI);
 
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 7.5);
