@@ -400,27 +400,18 @@ csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSup
     missingKeywords.push_back("sensor_orientation");
   }
 
-  sensorModel->m_odtX[0] = atof(imageSupportData.param("optical_distortion_x", 0).c_str());
-  sensorModel->m_odtX[1] = atof(imageSupportData.param("optical_distortion_x", 1).c_str());
-  sensorModel->m_odtX[2] = atof(imageSupportData.param("optical_distortion_x", 2).c_str());
-  sensorModel->m_odtX[3] = atof(imageSupportData.param("optical_distortion_x", 3).c_str());
-  sensorModel->m_odtX[4] = atof(imageSupportData.param("optical_distortion_x", 4).c_str());
-  sensorModel->m_odtX[5] = atof(imageSupportData.param("optical_distortion_x", 5).c_str());
-  sensorModel->m_odtX[6] = atof(imageSupportData.param("optical_distortion_x", 6).c_str());
-  sensorModel->m_odtX[7] = atof(imageSupportData.param("optical_distortion_x", 7).c_str());
-  sensorModel->m_odtX[8] = atof(imageSupportData.param("optical_distortion_x", 8).c_str());
-  sensorModel->m_odtX[9] = atof(imageSupportData.param("optical_distortion_x", 9).c_str());
-
-  sensorModel->m_odtY[0] = atof(imageSupportData.param("optical_distortion_y", 0).c_str());
-  sensorModel->m_odtY[1] = atof(imageSupportData.param("optical_distortion_y", 1).c_str());
-  sensorModel->m_odtY[2] = atof(imageSupportData.param("optical_distortion_y", 2).c_str());
-  sensorModel->m_odtY[3] = atof(imageSupportData.param("optical_distortion_y", 3).c_str());
-  sensorModel->m_odtY[4] = atof(imageSupportData.param("optical_distortion_y", 4).c_str());
-  sensorModel->m_odtY[5] = atof(imageSupportData.param("optical_distortion_y", 5).c_str());
-  sensorModel->m_odtY[6] = atof(imageSupportData.param("optical_distortion_y", 6).c_str());
-  sensorModel->m_odtY[7] = atof(imageSupportData.param("optical_distortion_y", 7).c_str());
-  sensorModel->m_odtY[8] = atof(imageSupportData.param("optical_distortion_y", 8).c_str());
-  sensorModel->m_odtY[9] = atof(imageSupportData.param("optical_distortion_y", 9).c_str());
+  if (imageSupportData.param("optical_distortion") == "") {
+    missingKeywords.push_back("optical_distortion");
+  }
+  else {
+    json jayson = json::parse(imageSupportData.param("optical_distortion"));
+    std::vector<double> xDistortion = jayson["x"];
+    std::vector<double> yDistortion = jayson["y"];
+    xDistortion.resize(10, 0.0);
+    yDistortion.resize(10, 0.0);
+    sensorModel->m_odtX = xDistortion;
+    sensorModel->m_odtY = yDistortion;
+  }
 
   sensorModel->m_ephemerisTime = atof(imageSupportData.param("center_ephemeris_time").c_str());
   if (imageSupportData.param("center_ephemeris_time") == "") {
@@ -444,8 +435,8 @@ csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSup
     json sample = jayson.value("sample", json(""));
     json line = jayson.value("line", json(""));
 
-    sensorModel->m_ccdCenter[0] = atof(sample.dump().c_str());
-    sensorModel->m_ccdCenter[1] = atof(line.dump().c_str());
+    sensorModel->m_ccdCenter[0] = atof(line.dump().c_str());
+    sensorModel->m_ccdCenter[1] = atof(sample.dump().c_str());
 
     if (sample == json("")) {
       missingKeywords.push_back("detector_center x");
@@ -482,6 +473,21 @@ csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSup
   else if (imageSupportData.param("focal2pixel_samples", 2) == "") {
     missingKeywords.push_back("focal2pixel_samples 2");
   }
+
+  // We don't pass the pixel to focal plane transformation so invert the
+  // focal plane to pixel transformation
+  double determinant = sensorModel->m_iTransL[1] * sensorModel->m_iTransS[2] -
+                       sensorModel->m_iTransL[2] * sensorModel->m_iTransS[1];
+
+  sensorModel->m_transX[1] = sensorModel->m_iTransL[1] / determinant;
+  sensorModel->m_transX[2] = - sensorModel->m_iTransS[1] / determinant;
+  sensorModel->m_transX[0] = - (sensorModel->m_transX[1] * sensorModel->m_iTransL[0] +
+                             sensorModel->m_transX[2] * sensorModel->m_iTransS[0]);
+
+  sensorModel->m_transY[1] = - sensorModel->m_iTransL[2] / determinant;
+  sensorModel->m_transY[2] = sensorModel->m_iTransS[2] / determinant;
+  sensorModel->m_transY[0] = - (sensorModel->m_transY[1] * sensorModel->m_iTransL[0] +
+                             sensorModel->m_transY[2] * sensorModel->m_iTransS[0]);
 
   if (imageSupportData.param("radii") == "") {
     missingKeywords.push_back("radii");
