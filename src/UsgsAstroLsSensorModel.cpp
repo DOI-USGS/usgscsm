@@ -302,18 +302,18 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    // Check that the pixel is actually in the image
    if ((calculatedPixel.samp < 0) ||
        (calculatedPixel.samp > _data.m_TotalSamples)) {
-      throw csm::Error(
-         csm::Error::ALGORITHM,
-         "Ground point is not viewed by the image.",
+      throw csm::Warning(
+         csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS,
+         "The image coordinate is out of bounds of the image size.",
          "UsgsAstroLsSensorModel::groundToImage");
    }
 
    // If the final correction is greater than 10 meters,
    // the solution is not valid enough to report even with a warning
    if (len > 100.0) {
-      throw csm::Warning(
-         csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS,
-         "The image coordinate is out of bounds of the image.",
+      throw csm::Error(
+         csm::Error::ALGORITHM,
+         "Did not converge.",
          "UsgsAstroLsSensorModel::groundToImage");
    }
 
