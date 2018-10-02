@@ -231,9 +231,9 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    // Check if both offsets have the same sign.
    // This means there is not guaranteed to be a zero.
    if ((firstOffset > 0) != (lastOffset < 0)) {
-        throw csm::Error(
-           csm::Error::ALGORITHM,
-           "Ground point is not viewed by the image.",
+        throw csm::Warning(
+           csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS,
+           "The image coordinate is out of bounds of the image size.",
            "UsgsAstroLsSensorModel::groundToImage");
    }
 
