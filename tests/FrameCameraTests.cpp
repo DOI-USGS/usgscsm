@@ -209,82 +209,50 @@ TEST_F(FrameSensorModel, OffBody4) {
 
 
 TEST_F(FrameIsdTest, setFocalPlane1) {
-  int precision  = 20;
-  std:string odtx_key= "odt_x";
-  std::string odty_key="odt_y";
-
-  isd.clearParams(odty_key);
-  isd.clearParams(odtx_key);
-
   csm::ImageCoord imagePt(7.5, 7.5);
   double ux,uy;
 
-  vector<double> odtx{0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
-  vector<double> odty{0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+  UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
 
+  std::string modelState = sensorModel->getModelState(); 
+  auto state = json::parse(modelState);
 
-   for (auto & val: odtx){
-      ostringstream strval;
-      strval << setprecision(precision) << val;
-      isd.addParam("odt_x", strval.str());
-   }
-   for (auto & val: odty){
-      ostringstream strval;
-      strval << setprecision(precision) << val;
-      isd.addParam("odt_y", strval.str());
-   }
+  state["odt_x"] = {0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+  state["odt_y"] = {0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+  sensorModel->replaceModelState(state.dump()); 
 
-   UsgsAstroFrameSensorModel* sensorModel =createModel(isd);
-   ASSERT_NE(sensorModel, nullptr);
-   sensorModel->setFocalPlane(imagePt.samp, imagePt.line, ux, uy);
-   EXPECT_NEAR(imagePt.samp,7.5,1e-8 );
-   EXPECT_NEAR(imagePt.line,7.5,1e-8);   
-   delete sensorModel;
-   sensorModel = NULL;
-
-
+  ASSERT_NE(sensorModel, nullptr);
+  sensorModel->setFocalPlane(imagePt.samp, imagePt.line, ux, uy);
+  EXPECT_NEAR(imagePt.samp,7.5,1e-8 );
+  EXPECT_NEAR(imagePt.line,7.5,1e-8);   
+  delete sensorModel;
+  sensorModel = NULL;
 }
 
 
 TEST_F(FrameIsdTest, Jacobian1) {
+  csm::ImageCoord imagePt(7.5, 7.5);
 
-  int precision  = 20;
-  std:string odtx_key= "odt_x";
-  std::string odty_key="odt_y";
+  UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
+  std::string modelState = sensorModel->getModelState(); 
+  auto state = json::parse(modelState);
 
-  isd.clearParams(odty_key);
-  isd.clearParams(odtx_key);
+  state["odt_x"] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0};
+  state["odt_y"] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,1.0};
+  sensorModel->replaceModelState(state.dump()); 
 
-   csm::ImageCoord imagePt(7.5, 7.5);
+  double Jxx,Jxy,Jyx,Jyy;
 
-   vector<double> odtx{0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0};
-   vector<double> odty{0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,1.0};
+  ASSERT_NE(sensorModel, nullptr);
+  sensorModel->distortionJacobian(imagePt.samp, imagePt.line, Jxx, Jxy,Jyx,Jyy);
 
-   for (auto & val: odtx){
-      ostringstream strval;
-      strval << setprecision(precision) << val;
-      isd.addParam("odt_x", strval.str());
-   }
-   for (auto & val: odty){
-      ostringstream strval;
-      strval << setprecision(precision) << val;
-      isd.addParam("odt_y", strval.str());
-   }
-
-   UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
-
-   double Jxx,Jxy,Jyx,Jyy;
-
-   ASSERT_NE(sensorModel, nullptr);
-   sensorModel->distortionJacobian(imagePt.samp, imagePt.line, Jxx, Jxy,Jyx,Jyy);
-
-   EXPECT_NEAR(Jxx,56.25,1e-8 );
-   EXPECT_NEAR(Jxy,112.5,1e-8);
-   EXPECT_NEAR(Jyx,56.25,1e-8);
-   EXPECT_NEAR(Jyy,281.25,1e-8);
-
-   delete sensorModel;
-   sensorModel = NULL;
+  EXPECT_NEAR(Jxx,56.25,1e-8 );
+  EXPECT_NEAR(Jxy,112.5,1e-8);
+  EXPECT_NEAR(Jyx,56.25,1e-8);
+  EXPECT_NEAR(Jyy,281.25,1e-8);
+  
+  delete sensorModel;
+  sensorModel = NULL;
 }
 
 
