@@ -19,14 +19,13 @@ class FramerParameterizedTest : public ::testing::TestWithParam<csm::ImageCoord>
 protected:
   csm::Isd isd;
 
-
       void printIsd(csm::Isd &localIsd) {
            multimap<string,string> isdmap= localIsd.parameters();
            for (auto it = isdmap.begin(); it != isdmap.end();++it){
 
                       cout << it->first << " : " << it->second << endl;
            }
-       }
+      }
       UsgsAstroFrameSensorModel* createModel(csm::Isd &modifiedIsd) {
 
         UsgsAstroFramePlugin frameCameraPlugin;
@@ -39,16 +38,13 @@ protected:
           return sensorModel;
         else
           return nullptr;
-
-
       }
 
 
-
    virtual void SetUp() {
+     isd.setFilename("/home/kberry/csm/CSM-CameraModel/tests/data/simpleFramerISD.json");
 
-
-      std::ifstream isdFile("data/simpleFramerISD.json");
+/*      std::ifstream isdFile("data/simpleFramerISD.json");
       json jsonIsd = json::parse(isdFile);
       for (json::iterator it = jsonIsd.begin(); it != jsonIsd.end(); ++it) {
          json jsonValue = it.value();
@@ -61,44 +57,36 @@ protected:
             isd.addParam(it.key(), jsonValue.dump());
          }
       }
-      isdFile.close();
-   }
+      isdFile.close();*/
+   };
 };
 
 
-
-
 class FrameIsdTest : public ::testing::Test {
-   protected:
-
-      csm::Isd isd;
-
-      void printIsd(csm::Isd &localIsd) {
-           multimap<string,string> isdmap= localIsd.parameters();
-           for (auto it = isdmap.begin(); it != isdmap.end();++it){
-
-                      cout << it->first << " : " << it->second << endl;
-           }
-       }
-      UsgsAstroFrameSensorModel* createModel(csm::Isd &modifiedIsd) {
-
-        UsgsAstroFramePlugin frameCameraPlugin;
-        csm::Model *model = frameCameraPlugin.constructModelFromISD(
+  protected:
+    csm::Isd isd;
+    void printIsd(csm::Isd &localIsd) {
+      multimap<string,string> isdmap= localIsd.parameters();
+      for (auto it = isdmap.begin(); it != isdmap.end();++it){
+        cout << it->first << " : " << it->second << endl;
+      }
+    }
+    UsgsAstroFrameSensorModel* createModel(csm::Isd &modifiedIsd) {
+      UsgsAstroFramePlugin frameCameraPlugin;
+      csm::Model *model = frameCameraPlugin.constructModelFromISD(
               modifiedIsd,"USGS_ASTRO_FRAME_SENSOR_MODEL");
-
-        UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
-
-        if (sensorModel)
-          return sensorModel;
-        else
-          return nullptr;
-
+      UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+      if (sensorModel)
+        return sensorModel;
+      else
+        return nullptr;
       }
 
 
+    virtual void SetUp() {
+      isd.setFilename("/home/kberry/csm/CSM-CameraModel/tests/data/simpleFramerISD.json");
 
-   virtual void SetUp() {
-      std::ifstream isdFile("data/simpleFramerISD.json");
+/*      std::ifstream isdFile("data/simpleFramerISD.json");
       json jsonIsd = json::parse(isdFile);
       for (json::iterator it = jsonIsd.begin(); it != jsonIsd.end(); ++it) {
          json jsonValue = it.value();
@@ -111,46 +99,25 @@ class FrameIsdTest : public ::testing::Test {
             isd.addParam(it.key(), jsonValue.dump());
          }
       }
-      isdFile.close();
+      isdFile.close();*/
    }
 };
 
 class FrameSensorModel : public ::testing::Test {
    protected:
-
-
       protected :
+      csm::Isd isd;
       UsgsAstroFrameSensorModel *sensorModel;
-
-
 
       void SetUp() override {
          sensorModel = NULL;
-         std::ifstream isdFile("data/simpleFramerISD.json");
-         json jsonIsd = json::parse(isdFile);
-         csm::Isd isd;
-         for (json::iterator it = jsonIsd.begin(); it != jsonIsd.end(); ++it) {
-            json jsonValue = it.value();
-            if (jsonValue.size() > 1) {
-              for (int i = 0; i < jsonValue.size(); i++){
-                    isd.addParam(it.key(), jsonValue[i].dump());
-               }
-            }
-            else {
-               isd.addParam(it.key(), jsonValue.dump());
-            }
-         }
 
-         isdFile.close();
-
+         isd.setFilename("/home/kberry/csm/CSM-CameraModel/tests/data/simpleFramerISD.json");
          UsgsAstroFramePlugin frameCameraPlugin;
-
          csm::Model *model = frameCameraPlugin.constructModelFromISD(
                isd,
                "USGS_ASTRO_FRAME_SENSOR_MODEL");
-
          sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
-
          ASSERT_NE(sensorModel, nullptr);
       }
 
@@ -159,7 +126,6 @@ class FrameSensorModel : public ::testing::Test {
             delete sensorModel;
             sensorModel = NULL;
          }
-
       }
 };
 
@@ -170,53 +136,31 @@ INSTANTIATE_TEST_CASE_P(JacobianTest,FramerParameterizedTest,
 
 TEST_P(FramerParameterizedTest,JacobianTest) {
 
-  int precision  = 20;
-  std:string odtx_key= "odt_x";
-  std::string odty_key="odt_y";
-
-  isd.clearParams(odty_key);
-  isd.clearParams(odtx_key);
-
-
-  vector<double> odtx{1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0};
-  vector<double> odty{0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0};
-
-
-   for (auto & val: odtx){
-      ostringstream strval;
-      strval << setprecision(precision) << val;
-      isd.addParam("odt_x", strval.str());
-   }
-   for (auto & val: odty){
-      ostringstream strval;
-      strval << setprecision(precision) << val;
-      isd.addParam("odt_y", strval.str());
-   }
-
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
+   std::string modelState = sensorModel->getModelState(); 
+   auto state = json::parse(modelState);
 
+   state["odt_x"] = {1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0};
+   state["odt_y"] = {0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0};
+   sensorModel->replaceModelState(state.dump()); 
+   
    double Jxx,Jxy,Jyx,Jyy;
-
    ASSERT_NE(sensorModel, nullptr);
 
    csm::ImageCoord imagePt1 = GetParam();
    cout << "[" << imagePt1.samp << "," << imagePt1.line << "]"<< endl;
    sensorModel->distortionJacobian(imagePt1.samp, imagePt1.line, Jxx, Jxy,Jyx,Jyy);
 
-
    double determinant = fabs(Jxx*Jyy - Jxy*Jyx);
-
    EXPECT_GT(determinant,1e-3);
 
    delete sensorModel;
    sensorModel=NULL;
-
-
 }
 
-//NOTE: The imagePt format is (Lines,Samples)
+// NOTE: The imagePt format is (Lines,Samples)
 
-//centered and slightly off-center:
+// centered and slightly off-center:
 TEST_F(FrameSensorModel, Center) {
    csm::ImageCoord imagePt(7.5, 7.5);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
@@ -232,7 +176,7 @@ TEST_F(FrameSensorModel, SlightlyOffCenter) {
    EXPECT_NEAR(groundPt.z, 1.98039612, 1e-8);
 }
 
-//Test all four corners:
+// Test all four corners:
 TEST_F(FrameSensorModel, OffBody1) {
    csm::ImageCoord imagePt(15.0, 0.0);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
@@ -302,7 +246,6 @@ TEST_F(FrameIsdTest, setFocalPlane1) {
 }
 
 
-
 TEST_F(FrameIsdTest, Jacobian1) {
 
   int precision  = 20;
@@ -330,7 +273,6 @@ TEST_F(FrameIsdTest, Jacobian1) {
 
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
 
-
    double Jxx,Jxy,Jyx,Jyy;
 
    ASSERT_NE(sensorModel, nullptr);
@@ -343,7 +285,6 @@ TEST_F(FrameIsdTest, Jacobian1) {
 
    delete sensorModel;
    sensorModel = NULL;
-
 }
 
 
@@ -722,12 +663,11 @@ TEST_F(FrameIsdTest, Rotation_SPole_Center) {
 
 
 // Ellipsoid axis tests:
-TEST_F(FrameIsdTest, SemiMajorAxis100x_Center) {
+TEST_F(FrameIsdTest, SemiMajorAxis100x_Center) { //FIXME
    std::string key = "semi_major_axis";
    std::string newValue = "1.0";
    isd.clearParams(key);
    isd.addParam(key,newValue);
-
 
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
 
@@ -766,11 +706,13 @@ TEST_F(FrameIsdTest, SemiMajorAxis10x_SlightlyOffCenter) {
 // than the semi_major_axis:
 TEST_F(FrameIsdTest, SemiMinorAxis10x_SlightlyOffCenter) {
    std::string key = "semi_minor_axis";
-   std::string newValue = "0.10";
-   isd.clearParams(key);
-   isd.addParam(key,newValue);
+   double newValue = 0.10;
 
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
+   std::string modelState = sensorModel->getModelState(); 
+   auto state = json::parse(modelState);
+   state[key] = newValue;
+   sensorModel->replaceModelState(state.dump()); 
 
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 6.5);
@@ -781,5 +723,4 @@ TEST_F(FrameIsdTest, SemiMinorAxis10x_SlightlyOffCenter) {
 
    delete sensorModel;
    sensorModel = NULL;
-
 }

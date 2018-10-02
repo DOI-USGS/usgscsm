@@ -781,8 +781,8 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& modelState)
         // Having types as vectors, instead of arrays makes interoperability with
         // the JSON library very easy.
         m_currentParameterValue = state["m_currentParameterValue"].get<std::vector<double>>();
-        m_odtX = state["m_odtX"].get<std::vector<double>>();
-        m_odtY = state["m_odtY"].get<std::vector<double>>();
+        m_odtX = state["odt_x"].get<std::vector<double>>();
+        m_odtY = state["odt_y"].get<std::vector<double>>();
 
         m_currentParameterCovariance = state["m_currentParameterCovariance"].get<std::vector<double>>();
     }
