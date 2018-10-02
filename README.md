@@ -1,5 +1,7 @@
 # CSM-CameraModel
 
+ISD Specification: https://github.com/USGS-Astrogeology/pfeffernusse/blob/master/swagger.yaml
+
 ## Setting up dependencies with conda (RECOMMENDED)
 
 Install conda if you do not already have it.
