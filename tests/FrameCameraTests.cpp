@@ -236,7 +236,6 @@ TEST_F(FrameIsdTest, Jacobian1) {
   UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
   std::string modelState = sensorModel->getModelState(); 
   auto state = json::parse(modelState);
-
   state["odt_x"] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0};
   state["odt_y"] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,1.0};
   sensorModel->replaceModelState(state.dump()); 
@@ -257,44 +256,24 @@ TEST_F(FrameIsdTest, Jacobian1) {
 
 
 TEST_F(FrameIsdTest, distortMe_AllCoefficientsOne) {
+  csm::ImageCoord imagePt(7.5, 7.5);
 
-  int precision  = 20;
+  UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
+  std::string modelState = sensorModel->getModelState(); 
+  auto state = json::parse(modelState);
+  state["odt_x"] = {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
+  state["odt_y"] = {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
+  sensorModel->replaceModelState(state.dump()); 
 
-  std:string odtx_key= "odt_x";
-  std::string odty_key="odt_y";
-
-  isd.clearParams(odty_key);
-  isd.clearParams(odtx_key);
-
-   csm::ImageCoord imagePt(7.5, 7.5);
-
-   vector<double> odtx{1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
-   vector<double> odty{1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
-
-   for (auto & val: odtx){
-      ostringstream strval;
-      strval << setprecision(precision) << val;
-      isd.addParam("odt_x", strval.str());
-   }
-   for (auto & val: odty){
-      ostringstream strval;
-      strval << setprecision(precision) << val;
-      isd.addParam("odt_y", strval.str());
-   }
-
-
-   UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
-
-   double dx,dy;
-   ASSERT_NE(sensorModel, nullptr);
-   sensorModel->distortionFunction(imagePt.samp, imagePt.line,dx,dy );
-
-   EXPECT_NEAR(dx,1872.25,1e-8 );
-   EXPECT_NEAR(dy,1872.25,1e-8);
-
-   delete sensorModel;
-   sensorModel = NULL;
-
+  double dx,dy;
+  ASSERT_NE(sensorModel, nullptr);
+  sensorModel->distortionFunction(imagePt.samp, imagePt.line,dx,dy );
+  
+  EXPECT_NEAR(dx,1872.25,1e-8 );
+  EXPECT_NEAR(dy,1872.25,1e-8);
+  
+  delete sensorModel;
+  sensorModel = NULL;
 }
 
 TEST_F(FrameIsdTest, setFocalPlane_AllCoefficientsOne) {
