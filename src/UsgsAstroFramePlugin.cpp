@@ -278,6 +278,9 @@ return sensor_model;
 }
 
 
+// This function takes a csm::Isd which only has the image filename set. It uses this filename to
+// find a metadata json file loacated alongside the image file. It creates and returns new csm::Isd
+// with its parameters populated by the metadata file. 
 csm::Isd UsgsAstroFramePlugin::loadImageSupportData(const csm::Isd &imageSupportDataOriginal) const{
   // Get image location from the input csm::Isd: 
   std::string imageFilename = imageSupportDataOriginal.filename(); 
@@ -290,22 +293,29 @@ csm::Isd UsgsAstroFramePlugin::loadImageSupportData(const csm::Isd &imageSupport
   csm::Isd imageSupportData(isdFilename);
   imageSupportData.clearAllParams();
 
-  std::ifstream isdFile(isdFilename); 
-  json jsonIsd = json::parse(isdFile);
-   for (json::iterator it = jsonIsd.begin(); it != jsonIsd.end(); ++it) {
-    if (it.value().size() >1 ) {
-      std::vector<double> v = it.value();
-      for (int j=0;j < v.size(); j++) {
-        std::ostringstream val;
-        val << std::setprecision(15) << v[j];
-        imageSupportData.addParam(it.key(),val.str());
+  try {
+    std::ifstream isdFile(isdFilename); 
+    json jsonIsd = json::parse(isdFile);
+     for (json::iterator it = jsonIsd.begin(); it != jsonIsd.end(); ++it) {
+      if (it.value().size() >1 ) {
+        std::vector<double> v = it.value();
+        for (int j=0;j < v.size(); j++) {
+          std::ostringstream val;
+          val << std::setprecision(15) << v[j];
+          imageSupportData.addParam(it.key(),val.str());
+        }
+      }
+      else {
+        imageSupportData.addParam(it.key(), it.value().dump());
       }
     }
-    else {
-      imageSupportData.addParam(it.key(), it.value().dump());
-    }
+    isdFile.close(); 
+  } catch (...) {
+    std::string errorMessage = "Could not read metadata file associated with image: ";
+    errorMessage.append(isdFilename);
+    throw csm::Error(csm::Error::FILE_READ, errorMessage, 
+                     "UsgsAstroFramePlugin::loadImageSupportData"); 
   }
-  isdFile.close(); 
 
   return imageSupportData; 
 }
@@ -579,7 +589,7 @@ bool UsgsAstroFramePlugin::canISDBeConvertedToModelState(const csm::Isd &imageSu
   }
 
   csm::Isd localImageSupportData = imageSupportData; 
-  if (imageSupportData.parameters().size() <= 0) {
+  if (imageSupportData.parameters().empty()) {
     localImageSupportData = loadImageSupportData(imageSupportData); 
   }
 

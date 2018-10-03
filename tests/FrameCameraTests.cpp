@@ -42,7 +42,7 @@ protected:
 
 
    virtual void SetUp() {
-     isd.setFilename("data/simpleFramerISD.json");
+     isd.setFilename("data/simpleFramerISD.img");
    };
 };
 
@@ -69,7 +69,7 @@ class FrameIsdTest : public ::testing::Test {
 
 
     virtual void SetUp() {
-      isd.setFilename("data/simpleFramerISD.json");
+      isd.setFilename("data/simpleFramerISD.img");
    }
 };
 
@@ -82,7 +82,7 @@ class FrameSensorModel : public ::testing::Test {
       void SetUp() override {
          sensorModel = NULL;
 
-         isd.setFilename("data/simpleFramerISD.json");
+         isd.setFilename("data/simpleFramerISD.img");
          UsgsAstroFramePlugin frameCameraPlugin;
          csm::Model *model = frameCameraPlugin.constructModelFromISD(
                isd,

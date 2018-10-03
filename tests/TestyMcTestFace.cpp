@@ -14,7 +14,7 @@ class FrameIsdTest : public ::testing::Test {
    protected:
      csm::Isd isd;
      virtual void SetUp() {
-       isd.setFilename("data/simpleFramerISD.json");
+       isd.setFilename("data/simpleFramerISD.img");
      };
 };
 
