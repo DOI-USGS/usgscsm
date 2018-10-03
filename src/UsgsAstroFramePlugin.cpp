@@ -185,7 +185,8 @@ bool UsgsAstroFramePlugin::canModelBeConstructedFromState(const std::string &mod
       modelName != UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME){
           constructible = false;
       }
-  // Check that the necessary keys are there (this does not chek values at all.)
+
+  // Check that the necessary keys are there (this does not check values at all.)
   auto state = json::parse(modelState);
   for(auto &key : _STATE_KEYWORD){
       if (state.find(key) == state.end()){
@@ -277,13 +278,10 @@ return sensor_model;
 }
 
 
-csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSupportDataOriginal,
-                                              const std::string &modelName,
-                                              csm::WarningList *warnings) const {
-
+csm::Isd UsgsAstroFramePlugin::loadImageSupportData(const csm::Isd &imageSupportDataOriginal) const{
   // Get image location from the input csm::Isd: 
   std::string imageFilename = imageSupportDataOriginal.filename(); 
-
+  
   // Load 'sidecar' ISD file
   size_t lastIndex = imageFilename.find_last_of("."); 
   std::string baseName = imageFilename.substr(0, lastIndex); 
@@ -308,6 +306,15 @@ csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSup
     }
   }
   isdFile.close(); 
+
+  return imageSupportData; 
+}
+
+csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSupportDataOriginal,
+                                              const std::string &modelName,
+                                              csm::WarningList *warnings) const {
+
+  csm::Isd imageSupportData = loadImageSupportData(imageSupportDataOriginal); 
 
   // FIXME: Check needs to be updated to use new JSON isd spec
   // Check if the sensor model can be constructed from ISD given the model name
@@ -571,9 +578,14 @@ bool UsgsAstroFramePlugin::canISDBeConvertedToModelState(const csm::Isd &imageSu
       convertible = false;
   }
 
+  csm::Isd localImageSupportData = imageSupportData; 
+  if (imageSupportData.parameters().size() <= 0) {
+    localImageSupportData = loadImageSupportData(imageSupportData); 
+  }
+
   std::string value;
   for(auto &key : _ISD_KEYWORD){
-      value = imageSupportData.param(key);
+      value = localImageSupportData.param(key);
       if (value.empty()){
           convertible = false;
       }
