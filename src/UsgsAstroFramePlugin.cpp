@@ -4,6 +4,10 @@
 #include <algorithm>
 #include <cstdlib>
 #include <string>
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <map> 
 
 #include <math.h>
 #include <csm.h>
@@ -164,7 +168,8 @@ bool UsgsAstroFramePlugin::canModelBeConstructedFromState(const std::string &mod
       modelName != UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME){
           constructible = false;
       }
-  // Check that the necessary keys are there (this does not chek values at all.)
+
+  // Check that the necessary keys are there (this does not check values at all.)
   auto state = json::parse(modelState);
   for(auto &key : _STATE_KEYWORD){
       if (state.find(key) == state.end()){
@@ -256,30 +261,65 @@ return sensor_model;
 }
 
 
-csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSupportData,
+// This function takes a csm::Isd which only has the image filename set. It uses this filename to
+// find a metadata json file loacated alongside the image file. It creates and returns new csm::Isd
+// with its parameters populated by the metadata file. 
+csm::Isd UsgsAstroFramePlugin::loadImageSupportData(const csm::Isd &imageSupportDataOriginal) const{
+  // Get image location from the input csm::Isd: 
+  std::string imageFilename = imageSupportDataOriginal.filename(); 
+  
+  // Load 'sidecar' ISD file
+  size_t lastIndex = imageFilename.find_last_of("."); 
+  std::string baseName = imageFilename.substr(0, lastIndex); 
+  std::string isdFilename = baseName.append(".json");
+
+  csm::Isd imageSupportData(isdFilename);
+  imageSupportData.clearAllParams();
+
+  try {
+    std::ifstream isdFile(isdFilename); 
+    json jsonIsd = json::parse(isdFile);
+     for (json::iterator it = jsonIsd.begin(); it != jsonIsd.end(); ++it) {
+      if (it.value().size() >1 ) {
+        std::vector<double> v = it.value();
+        for (int j=0;j < v.size(); j++) {
+          std::ostringstream val;
+          val << std::setprecision(15) << v[j];
+          imageSupportData.addParam(it.key(),val.str());
+        }
+      }
+      else {
+        imageSupportData.addParam(it.key(), it.value().dump());
+      }
+    }
+    isdFile.close(); 
+  } catch (...) {
+    std::string errorMessage = "Could not read metadata file associated with image: ";
+    errorMessage.append(isdFilename);
+    throw csm::Error(csm::Error::FILE_READ, errorMessage, 
+                     "UsgsAstroFramePlugin::loadImageSupportData"); 
+  }
+
+  return imageSupportData; 
+}
+
+csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSupportDataOriginal,
                                               const std::string &modelName,
                                               csm::WarningList *warnings) const {
 
-  auto metric_conversion = [](double val, std::string from, std::string to="m") {
-     json typemap = {
-        {"m", 0},
-        {"km", 3}
-     };
+  csm::Isd imageSupportData = loadImageSupportData(imageSupportDataOriginal); 
 
-     // everything to lowercase
-     std::transform(from.begin(), from.end(), from.begin(), ::tolower);
-     std::transform(to.begin(), to.end(), to.begin(), ::tolower);
-     return val*pow(10, typemap[from].get<int>() - typemap[to].get<int>());
-  };
-
+  // FIXME: Check needs to be updated to use new JSON isd spec
   // Check if the sensor model can be constructed from ISD given the model name
   if (!canModelBeConstructedFromISD(imageSupportData, modelName)) {
-    throw csm::Error(csm::Error::ISD_NOT_SUPPORTED,
+      throw csm::Error(csm::Error::ISD_NOT_SUPPORTED,
                      "Sensor model support data provided is not supported by this plugin",
-                     "UsgsAstroFramePlugin::constructModelFromISD");
+                       "UsgsAstroFramePlugin::constructModelFromISD");
   }
-  UsgsAstroFrameSensorModel *sensorModel = new UsgsAstroFrameSensorModel();
 
+  // Create the empty sensorModel
+  UsgsAstroFrameSensorModel *sensorModel = new UsgsAstroFrameSensorModel();
+  
   // Keep track of necessary keywords that are missing from the ISD.
   std::vector<std::string> missingKeywords;
 
@@ -365,18 +405,8 @@ csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSup
     }
   }
 
-  if (imageSupportData.param("sun_position") == "") {
-    missingKeywords.push_back("sun_position");
-  }
-  else {
-    json jayson = json::parse(imageSupportData.param("sun_position"));
-    json x = jayson.value("x", json(""));
-    json y = jayson.value("y", json(""));
-    json z = jayson.value("z", json(""));
-
-    sensorModel->m_sunPosition[0] = atof(x.dump().c_str());
-    sensorModel->m_sunPosition[1] = atof(y.dump().c_str());
-    sensorModel->m_sunPosition[2] = atof(z.dump().c_str());
+  sensorModel->m_ccdCenter[0] = atof(imageSupportData.param("ccd_center", 0).c_str());
+  sensorModel->m_ccdCenter[1] = atof(imageSupportData.param("ccd_center", 1).c_str());
 
     if (x == json("")) {
       missingKeywords.push_back("sun_position x");
@@ -604,9 +634,14 @@ bool UsgsAstroFramePlugin::canISDBeConvertedToModelState(const csm::Isd &imageSu
       convertible = false;
   }
 
+  csm::Isd localImageSupportData = imageSupportData; 
+  if (imageSupportData.parameters().empty()) {
+    localImageSupportData = loadImageSupportData(imageSupportData); 
+  }
+
   std::string value;
   for(auto &key : _ISD_KEYWORD){
-      value = imageSupportData.param(key);
+      value = localImageSupportData.param(key);
       if (value.empty()){
           convertible = false;
       }
