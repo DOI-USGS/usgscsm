@@ -42,7 +42,7 @@ protected:
 
 
    virtual void SetUp() {
-     isd.setFilename("/home/kberry/csm/CSM-CameraModel/tests/data/simpleFramerISD.json");
+     isd.setFilename("data/simpleFramerISD.json");
    };
 };
 
@@ -69,7 +69,7 @@ class FrameIsdTest : public ::testing::Test {
 
 
     virtual void SetUp() {
-      isd.setFilename("/home/kberry/csm/CSM-CameraModel/tests/data/simpleFramerISD.json");
+      isd.setFilename("data/simpleFramerISD.json");
    }
 };
 
@@ -82,7 +82,7 @@ class FrameSensorModel : public ::testing::Test {
       void SetUp() override {
          sensorModel = NULL;
 
-         isd.setFilename("/home/kberry/csm/CSM-CameraModel/tests/data/simpleFramerISD.json");
+         isd.setFilename("data/simpleFramerISD.json");
          UsgsAstroFramePlugin frameCameraPlugin;
          csm::Model *model = frameCameraPlugin.constructModelFromISD(
                isd,
@@ -98,8 +98,6 @@ class FrameSensorModel : public ::testing::Test {
          }
       }
 };
-
-
 
 INSTANTIATE_TEST_CASE_P(JacobianTest,FramerParameterizedTest,
                         ::testing::Values(csm::ImageCoord(2.5,2.5),csm::ImageCoord(7.5,7.5)));
@@ -408,7 +406,7 @@ TEST_F(FrameIsdTest, FL500_SlightlyOffCenter) {
 TEST_F(FrameIsdTest, X10_SlightlyOffCenter) {
    double newValue = 10.0;
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
-   sensorModel->setParameterValue(0, newValue);
+   sensorModel->setParameterValue(0, newValue); // X
 
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 6.5);
@@ -426,7 +424,7 @@ TEST_F(FrameIsdTest, X1e9_SlightlyOffCenter) {
    double newValue = 1000000000.0;
 
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
-   sensorModel->setParameterValue(0, newValue);
+   sensorModel->setParameterValue(0, newValue); // X
 
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 6.5);
@@ -444,7 +442,7 @@ TEST_F(FrameIsdTest, X1e9_SlightlyOffCenter) {
 // Angle rotations:
 TEST_F(FrameIsdTest, Rotation_omegaPi_Center) {
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
-   sensorModel->setParameterValue(3, M_PI);
+   sensorModel->setParameterValue(3, M_PI); // omega
 
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 7.5);
@@ -459,25 +457,11 @@ TEST_F(FrameIsdTest, Rotation_omegaPi_Center) {
 
 
 TEST_F(FrameIsdTest, Rotation_NPole_Center) {
-   std::string key = "phi";
-   std::ostringstream strval;
-   strval << std::setprecision(20) << -M_PI;
-   isd.clearParams(key);
-   isd.addParam(key,strval.str());
-   key = "x_sensor_origin";
-   std::string newValue = "0.0";
-   isd.clearParams(key);
-   isd.addParam(key,newValue);
-   key = "y_sensor_origin";
-   newValue = "0.0";
-   isd.clearParams(key);
-   isd.addParam(key,newValue);
-   key = "z_sensor_origin";
-   newValue = "1000.0";
-   isd.clearParams(key);
-   isd.addParam(key,newValue);
-
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
+   sensorModel->setParameterValue(4, -M_PI); // phi
+   sensorModel->setParameterValue(0, 0.0); // X
+   sensorModel->setParameterValue(1, 0.0); // Y 
+   sensorModel->setParameterValue(2, 1000.0); // Z
 
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 7.5);
@@ -492,24 +476,11 @@ TEST_F(FrameIsdTest, Rotation_NPole_Center) {
 
 
 TEST_F(FrameIsdTest, Rotation_SPole_Center) {
-   std::string key = "phi";
-   std::string newValue = "0.0";
-   isd.clearParams(key);
-   isd.addParam(key,newValue);
-   key = "x_sensor_origin";
-   newValue = "0.0";
-   isd.clearParams(key);
-   isd.addParam(key,newValue);
-   key = "y_sensor_origin";
-   newValue = "0.0";
-   isd.clearParams(key);
-   isd.addParam(key,newValue);
-   key = "z_sensor_origin";
-   newValue = "-1000.0";
-   isd.clearParams(key);
-   isd.addParam(key,newValue);
-
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
+   sensorModel->setParameterValue(4, 0.0); // phi
+   sensorModel->setParameterValue(0, 0.0); // X
+   sensorModel->setParameterValue(1, 0.0); // Y 
+   sensorModel->setParameterValue(2, -1000.0); // Z
 
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 7.5);
