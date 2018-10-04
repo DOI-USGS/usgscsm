@@ -234,7 +234,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   lo = line - m_line_pp;
   so = sample - m_sample_pp;
 
-  //Convert from the pixel space into the metric space
+  // Convert from the pixel space into the metric space
   double line_center, sample_center, x_camera, y_camera;
   line_center = m_ccdCenter[0];
   sample_center = m_ccdCenter[1];
@@ -1027,10 +1027,9 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
                                        double &undistortedX,
                                        double &undistortedY ) const {
 
-
   // Solve the distortion equation using the Newton-Raphson method.
   // Set the error tolerance to about one millionth of a NAC pixel.
-  const double tol = 1.4E-5;
+  const double tol = 1.4E-7;
 
   // The maximum number of iterations of the Newton-Raphson method.
   const int maxTries = 60;
@@ -1050,7 +1049,8 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
 
   distortionFunction(x, y, fx, fy);
 
-  for (int count = 1; ((fabs(fx) + fabs(fy)) > tol) && (count < maxTries); count++) {
+
+  for (int count = 1; ((fabs(fx) +fabs(fy)) > tol) && (count < maxTries); count++) {
 
     this->distortionFunction(x, y, fx, fy);
 
@@ -1060,12 +1060,16 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
     distortionJacobian(x, y, Jxx, Jxy, Jyx, Jyy);
 
     double determinant = Jxx * Jyy - Jxy * Jyx;
-    if (determinant < 1E-6) {
+    if (fabs(determinant) < 1E-7) {
+
+      cout << "Singular determinant." << endl;
+      undistortedX = x;
+      undistortedY = y;
       //
       // Near-zero determinant. Add error handling here.
       //
       //-- Just break out and return with no convergence
-      break;
+      return false;
     }
 
     x = x + (Jyy * fx - Jxy * fy) / determinant;
@@ -1076,6 +1080,7 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
     // The method converged to a root.
     undistortedX = x;
     undistortedY = y;
+    return true;
 
   }
   else {
@@ -1083,6 +1088,7 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
     // number of iterations. Return with no distortion.
     undistortedX = dx;
     undistortedY = dy;
+    return false;
   }
 
   return true;
