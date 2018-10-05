@@ -36,7 +36,7 @@ class FrameSensorModel : public ::testing::Test {
 
       void SetUp() override {
          sensorModel = NULL;
-         isd.setFilename("/home/kberry/csm/CSM-CameraModel/tests/data/simpleFramerISD.img");
+         isd.setFilename("data/simpleFramerISD.img");
          UsgsAstroFramePlugin frameCameraPlugin;
          csm::Model *model = frameCameraPlugin.constructModelFromISD(
                isd,
@@ -59,7 +59,7 @@ class SimpleFrameIsdTest : public ::testing::Test {
       csm::Isd isd;
 
    virtual void SetUp() {
-      isd.setFilename("/home/kberry/csm/CSM-CameraModel/tests/data/simpleFramerISD.img");
+      isd.setFilename("data/simpleFramerISD.img");
    }
 };
 
@@ -91,7 +91,7 @@ protected:
 
 
   virtual void SetUp() {
-    isd.setFilename("/home/kberry/csm/CSM-CameraModel/tests/data/simpleFramerISD.img");
+    isd.setFilename("data/simpleFramerISD.img");
   };
 };
 
@@ -116,7 +116,7 @@ class FrameIsdTest : public ::testing::Test {
       }
 
     virtual void SetUp() {
-      isd.setFilename("/home/kberry/csm/CSM-CameraModel/tests/data/simpleFramerISD.img");
+      isd.setFilename("data/simpleFramerISD.img");
    }
 };
 
