@@ -35,11 +35,7 @@ class FrameSensorModel : public ::testing::Test {
 
       void SetUp() override {
          sensorModel = NULL;
-         csm::Isd isd;
-         std::ifstream isdFile("data/simpleFramerISD.json");
-         json jsonIsd = json::parse(isdFile);
-         jsonToIsd(jsonIsd, isd);
-         isdFile.close();
+         isd.setFilename("data/simpleFramerISD.img");
          UsgsAstroFramePlugin frameCameraPlugin;
          csm::Model *model = frameCameraPlugin.constructModelFromISD(
                isd,
@@ -63,10 +59,64 @@ class FrameIsdTest : public ::testing::Test {
       csm::Isd isd;
 
    virtual void SetUp() {
-      std::ifstream isdFile("data/simpleFramerISD.json");
-      json jsonIsd = json::parse(isdFile);
-      jsonToIsd(jsonIsd, isd);
-      isdFile.close();
+      isd.setFilename("data/simpleFramerISD.img");
+   }
+};
+
+class FramerParameterizedTest : public ::testing::TestWithParam<csm::ImageCoord> {
+
+protected:
+  csm::Isd isd;
+  
+  void printIsd(csm::Isd &localIsd) {
+    std::multimap<std::string,std::string> isdmap= localIsd.parameters();
+    for (auto it = isdmap.begin(); it != isdmap.end();++it){
+      
+      std::cout << it->first << " : " << it->second << std::endl;
+    }
+  }
+  UsgsAstroFrameSensorModel* createModel(csm::Isd &modifiedIsd) {
+    
+    UsgsAstroFramePlugin frameCameraPlugin;
+    csm::Model *model = frameCameraPlugin.constructModelFromISD(
+        modifiedIsd,"USGS_ASTRO_FRAME_SENSOR_MODEL");
+    
+    UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+
+    if (sensorModel)
+      return sensorModel;
+    else
+      return nullptr;
+  }
+
+
+  virtual void SetUp() {
+    isd.setFilename("data/simpleFramerISD.img");
+  };
+};
+
+class FrameIsdTest : public ::testing::Test {
+  protected:
+    csm::Isd isd;
+    void printIsd(csm::Isd &localIsd) {
+      std::multimap<std::string,std::string> isdmap= localIsd.parameters();
+      for (auto it = isdmap.begin(); it != isdmap.end();++it){
+        std::cout << it->first << " : " << it->second << std::endl;
+      }
+    }
+    UsgsAstroFrameSensorModel* createModel(csm::Isd &modifiedIsd) {
+      UsgsAstroFramePlugin frameCameraPlugin;
+      csm::Model *model = frameCameraPlugin.constructModelFromISD(
+              modifiedIsd,"USGS_ASTRO_FRAME_SENSOR_MODEL");
+      UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+      if (sensorModel)
+        return sensorModel;
+      else
+        return nullptr;
+      }
+
+    virtual void SetUp() {
+      isd.setFilename("data/simpleFramerISD.img");
    }
 };
 #endif

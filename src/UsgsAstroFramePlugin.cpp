@@ -33,7 +33,6 @@ const std::string UsgsAstroFramePlugin::_PLUGIN_NAME = "UsgsAstroFramePluginCSM"
 const std::string UsgsAstroFramePlugin::_MANUFACTURER_NAME = "UsgsAstrogeology";
 const std::string UsgsAstroFramePlugin::_RELEASE_DATE = "20170425";
 const int         UsgsAstroFramePlugin::_N_SENSOR_MODELS = 1;
-
 const int         UsgsAstroFramePlugin::_NUM_ISD_KEYWORDS = 36;
 const std::string UsgsAstroFramePlugin::_ISD_KEYWORD[] =
 {
@@ -279,19 +278,18 @@ csm::Isd UsgsAstroFramePlugin::loadImageSupportData(const csm::Isd &imageSupport
   try {
     std::ifstream isdFile(isdFilename); 
     json jsonIsd = json::parse(isdFile);
-     for (json::iterator it = jsonIsd.begin(); it != jsonIsd.end(); ++it) {
-      if (it.value().size() >1 ) {
-        std::vector<double> v = it.value();
-        for (int j=0;j < v.size(); j++) {
-          std::ostringstream val;
-          val << std::setprecision(15) << v[j];
-          imageSupportData.addParam(it.key(),val.str());
+
+    for (json::iterator it = jsonIsd.begin(); it != jsonIsd.end(); ++it) {
+     json jsonValue = it.value();
+     if (jsonValue.is_array()) {
+        for (int i = 0; i < jsonValue.size(); i++) {
+           imageSupportData.addParam(it.key(), jsonValue[i].dump());
         }
-      }
-      else {
-        imageSupportData.addParam(it.key(), it.value().dump());
-      }
-    }
+     }
+     else {
+        imageSupportData.addParam(it.key(), jsonValue.dump());
+     }
+  }
     isdFile.close(); 
   } catch (...) {
     std::string errorMessage = "Could not read metadata file associated with image: ";
