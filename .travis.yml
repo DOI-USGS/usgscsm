@@ -63,3 +63,4 @@ after_success:
     elif [ "$TRAVIS_BRANCH" == "dev" ] && [ "$TRAVIS_PULL_REQUEST" != "false"]; then
       anaconda -t="$CONDA_UPLOAD_TOKEN" upload $builddir --label dev --force;
     fi
+    
