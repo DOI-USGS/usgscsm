@@ -7,8 +7,8 @@
 		"focal_length": 50,
 		"epsilon": 1.0
 	},
-	"image_lines": 15,
-	"image_samples": 15,
+	"image_lines": 16,
+	"image_samples": 16,
   "detector_center" : {
     "line" : 7.5,
     "sample" : 7.5
@@ -31,14 +31,14 @@
 	},
 	"sensor_location": {
 		"unit": "m",
-		"x": 1000,
+		"x": 10,
 		"y": 0,
 		"z": 0
 	},
 	"sensor_orientation": [0.0, -0.707106781186547, 0.0, 0.707106781186547],
 	"sensor_velocity": {
 		"unit": "m",
-		"x": 0,
+		"x": 1,
 		"y": 0,
 		"z": 0
 	},
