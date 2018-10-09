@@ -360,10 +360,14 @@ TEST_F(FrameIsdTest, X1e9_SlightlyOffCenter) {
 TEST_F(FrameIsdTest, Rotation_omegaPi_Center) {
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
 
-   sensorModel->setParameterValue(3, 0); 
-   sensorModel->setParameterValue(4, 0); 
-   sensorModel->setParameterValue(5, 1); 
-   sensorModel->setParameterValue(6, 0);
+   sensorModel->setParameterValue(3, 1.0); 
+   sensorModel->setParameterValue(4, 1.0); 
+   sensorModel->setParameterValue(5, 1.0); 
+   sensorModel->setParameterValue(6, 1.0);
+
+   sensorModel->setParameterValue(0, 1000.0); // X
+   sensorModel->setParameterValue(1, 0.0); // Y 
+   sensorModel->setParameterValue(2, 0.0); // Z
 
    ASSERT_NE(sensorModel, nullptr);
    csm::ImageCoord imagePt(7.5, 7.5);
@@ -379,10 +383,10 @@ TEST_F(FrameIsdTest, Rotation_omegaPi_Center) {
 
 TEST_F(FrameIsdTest, Rotation_NPole_Center) {
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
-   sensorModel->setParameterValue(3, 0); 
-   sensorModel->setParameterValue(4, -1); 
-   sensorModel->setParameterValue(5, 0); 
-   sensorModel->setParameterValue(6, 0);
+   sensorModel->setParameterValue(3, 0.0); 
+   sensorModel->setParameterValue(4, -1.0); 
+   sensorModel->setParameterValue(5, 0.0); 
+   sensorModel->setParameterValue(6, 0.0);
 
    sensorModel->setParameterValue(0, 0.0); // X
    sensorModel->setParameterValue(1, 0.0); // Y 
