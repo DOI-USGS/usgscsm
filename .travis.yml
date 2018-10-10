@@ -59,7 +59,7 @@ after_success:
   # Label based on the branch and upload to anaconda.org
   - |
     if [ "$TRAVIS_BRANCH" == "master" ]; then
-      anaconda -t="$CONDA_UPLOAD_TOKEN" upload $builddir --label main --force;
+      anaconda -t="$CONDA_UPLOAD_TOKEN" upload $builddir;
     elif [ "$TRAVIS_BRANCH" == "dev" ]; then
-      anaconda -t="$CONDA_UPLOAD_TOKEN" upload $builddir --label dev --force;
+      anaconda -t="$CONDA_UPLOAD_TOKEN" upload $builddir --label dev;
     fi
