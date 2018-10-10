@@ -61,5 +61,5 @@ after_success:
     if [ "$TRAVIS_BRANCH" == "master" ]; then
       anaconda -t="$CONDA_UPLOAD_TOKEN" upload $builddir;
     elif [ "$TRAVIS_BRANCH" == "dev" ]; then
-      anaconda -t="$CONDA_UPLOAD_TOKEN" upload $builddir --label dev;
+      anaconda -t="$CONDA_UPLOAD_TOKEN" upload $builddir --label dev --force;
     fi
