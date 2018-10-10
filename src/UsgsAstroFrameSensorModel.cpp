@@ -1029,7 +1029,7 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
 
   // Solve the distortion equation using the Newton-Raphson method.
   // Set the error tolerance to about one millionth of a NAC pixel.
-  const double tol = 1.4E-7;
+  const double tol = 1.4E-5;
 
   // The maximum number of iterations of the Newton-Raphson method.
   const int maxTries = 60;
@@ -1060,7 +1060,7 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
     distortionJacobian(x, y, Jxx, Jxy, Jyx, Jyy);
 
     double determinant = Jxx * Jyy - Jxy * Jyx;
-    if (fabs(determinant) < 1E-7) {
+    if (fabs(determinant) < 1E-6) {
 
       cout << "Singular determinant." << endl;
       undistortedX = x;
