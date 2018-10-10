@@ -307,6 +307,9 @@ protected:
     FRIEND_TEST(FrameIsdTest, distortMe_AllCoefficientsOne);
     FRIEND_TEST(FrameIsdTest, setFocalPlane_AlternatingOnes);
     FRIEND_TEST(FrameIsdTest, distortMe_AlternatingOnes);
+    FRIEND_TEST(FrameIsdTest, FL500_OffBody4); 
+    FRIEND_TEST(FrameIsdTest, FL500_OffBody3); 
+    FRIEND_TEST(FrameIsdTest, FL500_Center); 
 
     virtual bool setFocalPlane(double dx,double dy,double &undistortedX,double &undistortedY) const;
     virtual void distortionFunction(double ux, double uy, double &dx, double &dy) const;
