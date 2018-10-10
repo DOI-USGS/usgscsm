@@ -27,7 +27,6 @@
 #ifndef __USGS_ASTRO_LINE_SCANNER_SENSORMODEL_H
 #define __USGS_ASTRO_LINE_SCANNER_SENSORMODEL_H
 
-#include "UsgsAstroLsStateData.h"
 #include <RasterGM.h>
 #include <SettableEllipsoid.h>
 #include <CorrelationModel.h>
@@ -37,16 +36,86 @@ class UsgsAstroLsSensorModel : public csm::RasterGM, virtual public csm::Settabl
 {
 public:
 
+   // This method checks to see if the model name is recognized
+   // in the input state string.
+   static std::string getModelNameFromModelState(
+      const std::string& model_state);
+
+   // State data elements;
+   std::string  m_imageIdentifier;                // 1
+   std::string  m_sensorType;                     // 2
+   int          m_totalLines;                     // 3
+   int          m_totalSamples;                   // 4
+   double       m_offsetLines;                    // 5
+   double       m_offsetSamples;                  // 6
+   int          m_platformFlag;                   // 7
+   int          m_aberrFlag;                      // 8
+   int          m_atmRefFlag;                     // 9
+   std::vector<double> m_intTimeLines;
+   std::vector<double> m_intTimeStartTimes;
+   std::vector<double> m_intTimes;
+   double       m_startingEphemerisTime;          // 11
+   double       m_centerEphemerisTime;            // 12
+   double       m_detectorSampleSumming;          // 13
+   double       m_startingSample;                 // 14
+   int          m_ikCode;                         // 15
+   double       m_focal;                          // 16
+   double       m_isisZDirection;                 // 17
+   double       m_opticalDistCoef[3];             // 18
+   double       m_iTransS[3];                     // 19
+   double       m_iTransL[3];                     // 20
+   double       m_detectorSampleOrigin;           // 21
+   double       m_detectorLineOrigin;             // 22
+   double       m_detectorLineOffset;             // 23
+   double       m_mountingMatrix[9];              // 24
+   double       m_semiMajorAxis;                  // 25
+   double       m_semiMinorAxis;                  // 26
+   std::string  m_referenceDateAndTime;           // 27
+   std::string  m_platformIdentifier;             // 28
+   std::string  m_sensorIdentifier;               // 29
+   std::string  m_trajectoryIdentifier;           // 30
+   std::string  m_collectionIdentifier;           // 31
+   double       m_refElevation;                   // 32
+   double       m_minElevation;                   // 33
+   double       m_maxElevation;                   // 34
+   double       m_dtEphem;                        // 35
+   double       m_t0Ephem;                        // 36
+   double       m_dtQuat;                         // 37
+   double       m_t0Quat;                         // 38
+   int          m_numEphem;                       // 39
+   int          m_numQuaternions;                 // 40
+   std::vector<double> m_ephemPts;                // 41
+   std::vector<double> m_ephemRates;              // 42
+   std::vector<double> m_quaternions;             // 43
+   std::vector<double> m_parameterVals;           // 44
+   std::vector<csm::param::Type> m_parameterType; // 45
+   csm::EcefCoord m_referencePointXyz;            // 46
+   double       m_gsd;                            // 47
+   double       m_flyingHeight;                   // 48
+   double       m_halfSwath;                      // 49
+   double       m_halfTime;                       // 50
+   std::vector<double> m_covariance;              // 51
+   int          m_imageFlipFlag;                  // 52
+
+   // Hardcoded
+   static const std::string      SENSOR_MODEL_NAME; // state date element 0
+
+   static const std::string      STATE_KEYWORD[];
+   static const int              NUM_PARAM_TYPES;
+   static const std::string      PARAM_STRING_ALL[];
+   static const csm::param::Type PARAM_CHAR_ALL[];
+   static const int              NUM_PARAMETERS;
+   static const std::string      PARAMETER_NAME[];
+
+   // Set to default values
+   void reset();
+
    //--------------------------------------------------------------
    // Constructors/Destructor
    //--------------------------------------------------------------
 
    UsgsAstroLsSensorModel();
    ~UsgsAstroLsSensorModel();
-
-   // Set the sensor model based on the input state data
-   void set( const UsgsAstroLsStateData &state_data );
-
 
    //----------------------------------------------------------------
    // The following public methods are implementations of
@@ -951,7 +1020,6 @@ private:
    double determinant3x3(double mat[9]) const;
 
 
-   UsgsAstroLsStateData _data;  // Holds the state data
 
    csm::NoCorrelationModel     _no_corr_model; // A way to report no correlation between images is supported
    std::vector<double>         _no_adjustment; // A vector of zeros indicating no internal adjustment
