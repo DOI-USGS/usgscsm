@@ -2,18 +2,10 @@
 #include "UsgsAstroFrameSensorModel.h"
 
 #include <json.hpp>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <fstream>
-#include <map>
-#include <vector>
 #include <gtest/gtest.h>
-
 
 #include "Fixtures.h"
 
-using namespace std;
 using json = nlohmann::json;
 
 INSTANTIATE_TEST_CASE_P(JacobianTest,FramerParameterizedTest,
@@ -33,7 +25,7 @@ TEST_P(FramerParameterizedTest, JacobianTest) {
    ASSERT_NE(sensorModel, nullptr);
 
    csm::ImageCoord imagePt1 = GetParam();
-   cout << "[" << imagePt1.samp << "," << imagePt1.line << "]"<< endl;
+//   cout << "[" << imagePt1.samp << "," << imagePt1.line << "]"<< endl;
    sensorModel->distortionJacobian(imagePt1.samp, imagePt1.line, Jxx, Jxy,Jyx,Jyy);
 
    double determinant = fabs(Jxx*Jyy - Jxy*Jyx);
@@ -247,7 +239,11 @@ TEST_F(FrameIsdTest, FL500_OffBody4) {
   sensorModel->setParameterValue(0, 1000.0); // X
   sensorModel->setParameterValue(1, 0.0); // Y 
   sensorModel->setParameterValue(2, 0.0); // Z
-  
+
+  modelState = sensorModel->getModelState(); 
+  EXPECT_STREQ("", modelState.c_str()); 
+
+
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(15.0, 15.0);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
