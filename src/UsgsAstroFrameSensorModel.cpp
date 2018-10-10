@@ -931,6 +931,8 @@ void UsgsAstroFrameSensorModel::calcRotationMatrix(
   double y = m_currentParameterValue[5];
   double z = m_currentParameterValue[6];
 
+  std::cout << "w, x, y, z: " << w << ", " << x << ", " << y << ", " << z << std::endl; 
+  
   m[0][0] = w*w + x*x - y*y - z*z;
   m[0][1] = 2 * (x*y - w*z);
   m[0][2] = 2 * (w*y + x*z);
