@@ -318,7 +318,6 @@ TEST_F(FrameIsdTest, FL500_OffBody4) {
   UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
   std::string modelState = sensorModel->getModelState(); 
   auto state = json::parse(modelState);
-  EXPECT_NEAR(state[key], 50.0, 1e-8); 
   state[key] = newValue; 
   sensorModel->replaceModelState(state.dump()); 
 
@@ -329,9 +328,8 @@ TEST_F(FrameIsdTest, FL500_OffBody4) {
   modelState = sensorModel->getModelState(); 
   EXPECT_STREQ("", modelState.c_str()); 
 
-
   ASSERT_NE(sensorModel, nullptr);
-  csm::ImageCoord imagePt(15.0, 15.0);
+  csm::ImageCoord imagePt(15.5, 15.5);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
   EXPECT_NEAR(groundPt.x, 9.77688917, 1e-8);
   EXPECT_NEAR(groundPt.y, -1.48533467, 1e-8);
@@ -353,7 +351,7 @@ TEST_F(FrameIsdTest, FL500_OffBody3) {
   sensorModel->replaceModelState(state.dump()); 
   
   ASSERT_NE(sensorModel, nullptr);
-  csm::ImageCoord imagePt(0.0, 0.0);
+  csm::ImageCoord imagePt(0.5, 0.5);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
   EXPECT_NEAR(groundPt.x, 9.77688917, 1e-8);
   EXPECT_NEAR(groundPt.y, 1.48533467, 1e-8);
