@@ -6,7 +6,6 @@ source:
   git_url: https://github.com/USGS-Astrogeology/CSM-CameraModel.git
 
 build:
-  number: {{ GIT_DESCRIBE_NUMBER }}
   string: dev
 
 requirements:
