@@ -240,7 +240,7 @@ TEST_F(FrameIsdTest, FL500_OffBody4) {
   UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
   std::string modelState = sensorModel->getModelState(); 
   auto state = json::parse(modelState);
-  EXPECT_NEAR(state[key], 50.0); 
+  EXPECT_NEAR(state[key], 50.0, 1e-8); 
   state[key] = newValue; 
   sensorModel->replaceModelState(state.dump()); 
 
