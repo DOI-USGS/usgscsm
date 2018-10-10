@@ -102,7 +102,7 @@ class FrameSensorModel : public ::testing::Test {
 INSTANTIATE_TEST_CASE_P(JacobianTest,FramerParameterizedTest,
                         ::testing::Values(csm::ImageCoord(2.5,2.5),csm::ImageCoord(7.5,7.5)));
 
-TEST_P(FramerParameterizedTest,JacobianTest) {
+TEST_P(FramerParameterizedTest, JacobianTest) {
 
    UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
    std::string modelState = sensorModel->getModelState(); 
@@ -325,6 +325,10 @@ TEST_F(FrameIsdTest, FL500_OffBody4) {
   auto state = json::parse(modelState);
   state[key] = newValue; 
   sensorModel->replaceModelState(state.dump()); 
+
+  sensorModel->setParameterValue(0, 1000.0); // X
+  sensorModel->setParameterValue(1, 0.0); // Y 
+  sensorModel->setParameterValue(2, 0.0); // Z
   
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(15.0, 15.0);
