@@ -225,7 +225,6 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   double sample = imagePt.samp;
   double line = imagePt.line;
 
-  std::cout << "in i->g (s, l): " << sample << ", " << line << std::endl; 
   //Here is where we should be able to apply an adjustment to opk
   double m[3][3];
   calcRotationMatrix(m);
@@ -245,16 +244,12 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   // Apply the distortion model (remove distortion)
   double undistorted_cameraX, undistorted_cameraY = 0.0;
 
-  std::cout << "x_camera, y_camera: " << x_camera << ", " << y_camera << std::endl; 
   setFocalPlane(x_camera, y_camera, undistorted_cameraX, undistorted_cameraY);
 
   //Now back from distorted mm to pixels
   double udx, udy; //distorted line and sample
   udx = undistorted_cameraX;
   udy = undistorted_cameraY;
-
-  std::cout << "udx, udy: " << udx << ", " << udy << std::endl; 
-  std::cout << "focal length: " << m_focalLength << std::endl; 
 
   xl = m[0][0] * udx + m[0][1] * udy - m[0][2] * -m_focalLength;
   yl = m[1][0] * udx + m[1][1] * udy - m[1][2] * -m_focalLength;
@@ -268,7 +263,6 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
 
   // Intersect with some height about the ellipsoid.
 
-  std::cout << "height, xc, yc, zc, x1, y1, z1 " << height << ", "<< xc << ", " << yc << ", " << zc << ", " << xl << ", " << yl << ", " << zl << std::endl; 
   losEllipsoidIntersect(height, xc, yc, zc, xl, yl, zl, x, y, z);
 
   return csm::EcefCoord(x, y, z);
@@ -932,8 +926,6 @@ void UsgsAstroFrameSensorModel::calcRotationMatrix(
   double y = m_currentParameterValue[5];
   double z = m_currentParameterValue[6];
 
-  std::cout << "w, x, y, z: " << w << ", " << x << ", " << y << ", " << z << std::endl; 
-  
   m[0][0] = w*w + x*x - y*y - z*z;
   m[0][1] = 2 * (x*y - w*z);
   m[0][2] = 2 * (w*y + x*z);
@@ -943,10 +935,6 @@ void UsgsAstroFrameSensorModel::calcRotationMatrix(
   m[2][0] = 2 * (x*z - w*y);
   m[2][1] = 2 * (w*x + y*z);
   m[2][2] = w*w - x*x - y*y + z*z;
-
-  std::cout << "[ " << m[0][0] << " " << m[0][1] << " " << m[0][2] << "]" << std::endl; 
-  std::cout << "[ " << m[1][0] << " " << m[1][1] << " " << m[1][2] << "]" << std::endl; 
-  std::cout << "[ " << m[2][0] << " " << m[2][1] << " " << m[2][2] << "]" << std::endl; 
 }
 
 
