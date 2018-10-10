@@ -253,7 +253,8 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   udx = undistorted_cameraX;
   udy = undistorted_cameraY;
 
-  std::cout << "x_camera, y_camera: " << x_camera << ", " << y_camera << std::endl; 
+  std::cout << "udx, udy: " << udx << ", " << udy << std::endl; 
+  std::cout << "focal length: " << m_focalLength << std::endl; 
 
   xl = m[0][0] * udx + m[0][1] * udy - m[0][2] * -m_focalLength;
   yl = m[1][0] * udx + m[1][1] * udy - m[1][2] * -m_focalLength;
@@ -939,6 +940,10 @@ void UsgsAstroFrameSensorModel::calcRotationMatrix(
   m[2][0] = 2 * (x*z - w*y);
   m[2][1] = 2 * (w*x + y*z);
   m[2][2] = w*w - x*x - y*y + z*z;
+
+  std::cout << "[ " << m[0][0] << " " << m[0][1] << " " << m[0][2] << "]" << std::endl; 
+  std::cout << "[ " << m[1][0] << " " << m[1][1] << " " << m[1][2] << "]" << std::endl; 
+  std::cout << "[ " << m[2][0] << " " << m[2][1] << " " << m[2][2] << "]" << std::endl; 
 }
 
 
