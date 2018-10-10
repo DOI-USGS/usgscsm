@@ -318,18 +318,21 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
     std::vector<double> m_noAdjustments;
     std::vector<double> m_odtX;
     std::vector<double> m_odtY;
+    std::vector<double> m_transX;
+    std::vector<double> m_transY;
+    std::vector<double> m_spacecraftVelocity;
+    std::vector<double> m_sunPosition;
+    std::vector<double> m_ccdCenter;
+    std::vector<double> m_iTransS;
+    std::vector<double> m_iTransL;
+    std::vector<double> m_boresight;
 
     static const int         _NUM_STATE_KEYWORDS;
     static const std::string _STATE_KEYWORD[];
 
-    double m_transX[3];
-    double m_transY[3];
     double m_majorAxis;
     double m_minorAxis;
     double m_focalLength;
-    double m_spacecraftVelocity[3];
-    double m_sunPosition[3];
-    double m_ccdCenter[2];
     double m_minElevation;
     double m_maxElevation;
     double m_line_pp;
@@ -343,11 +346,9 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
     double m_originalHalfLines;
     std::string m_spacecraftName;
     double m_pixelPitch;
-    double m_iTransS[3];
-    double m_iTransL[3];
+
     double m_ephemerisTime;
     double m_originalHalfSamples;
-    double m_boresight[3];
     int m_nLines;
     int m_nSamples;
     int m_nParameters;
@@ -363,6 +364,7 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
                                 double xl, double yl,
                                 double zl,
                                 double& x,double& y, double&  z) const;
+
 };
 
 #endif

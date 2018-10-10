@@ -22,6 +22,9 @@ inline void jsonToIsd(json &object, csm::Isd &isd, std::string prefix="") {
            isd.addParam(prefix+it.key(), jsonValue[i].dump());
         }
      }
+     else if (jsonValue.is_string()) {
+        isd.addParam(prefix+it.key(), jsonValue.get<std::string>());
+     }
      else {
         isd.addParam(prefix+it.key(), jsonValue.dump());
      }

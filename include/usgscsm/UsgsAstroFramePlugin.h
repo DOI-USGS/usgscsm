@@ -7,13 +7,13 @@
 #include <Plugin.h>
 #include <Version.h>
 
-
 class UsgsAstroFramePlugin : public csm::Plugin {
 
   public:
     UsgsAstroFramePlugin();
     ~UsgsAstroFramePlugin();
 
+    virtual std::string getStateFromISD(csm::Isd imageSupportData) const;
     virtual std::string getPluginName() const;
     virtual std::string getManufacturer() const;
     virtual std::string getReleaseDate() const;

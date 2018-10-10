@@ -25,18 +25,35 @@
 #include <sstream>
 #include <math.h>
 
+<<<<<<< Updated upstream
 #define USGSASTROLINESCANNER_LIBRARY
 
 // #include <UsgsAstroLsPlugin.h>
+=======
+
+
+#define USGSASTROLINESCANNER_LIBRARY
+
+
+#include <UsgsAstroLsStateData.h>
+#include <UsgsAstroLsPlugin.h>
+>>>>>>> Stashed changes
 #include <sstream>
 #include <Error.h>
 #include <json.hpp>
 using json = nlohmann::json;
 
+<<<<<<< Updated upstream
 const std::string  UsgsAstroLsSensorModel::SENSOR_MODEL_NAME
          = "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL";
 const int     UsgsAstroLsSensorModel::NUM_PARAMETERS = 16;
 const std::string  UsgsAstroLsSensorModel::PARAMETER_NAME[] =
+=======
+const std::string  UsgsAstroLsStateData::SENSOR_MODEL_NAME
+         = "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL";
+const int     UsgsAstroLsStateData::NUM_PARAMETERS = 16;
+const std::string  UsgsAstroLsStateData::PARAMETER_NAME[] =
+>>>>>>> Stashed changes
 {
    "IT Pos. Bias   ",   // 0
    "CT Pos. Bias   ",   // 1
@@ -1424,7 +1441,7 @@ std::string UsgsAstroLsSensorModel::getModelState() const
     }
    }
   }
-  
+
 }
 
 //---------------------------------------------------------------------------

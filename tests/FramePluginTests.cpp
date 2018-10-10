@@ -38,7 +38,7 @@ TEST(FramePluginTests, NoStateName) {
 
 TEST(FramePluginTests, BadStateName) {
    UsgsAstroFramePlugin testPlugin;
-   std::string badState = "{\"model_name\":\"bad_name\"}";
+   std::string badState = "{\"m_model_name\":\"bad_name\"}";
    EXPECT_FALSE(testPlugin.canModelBeConstructedFromState(
          "USGS_ASTRO_FRAME_SENSOR_MODEL",
          badState));;
@@ -47,7 +47,7 @@ TEST(FramePluginTests, BadStateName) {
 TEST(FramePluginTests, BadStateValue) {
    UsgsAstroFramePlugin testPlugin;
    std::string badState = "{"
-         "\"model_name\":\"USGS_ASTRO_FRAME_SENSOR_MODEL\","
+         "\"m_model_name\":\"USGS_ASTRO_FRAME_SENSOR_MODEL\","
          "\"bad_param\":\"bad_value\"}";
    EXPECT_FALSE(testPlugin.canModelBeConstructedFromState(
          "USGS_ASTRO_FRAME_SENSOR_MODEL",
@@ -57,7 +57,7 @@ TEST(FramePluginTests, BadStateValue) {
 TEST(FramePluginTests, MissingStateValue) {
    UsgsAstroFramePlugin testPlugin;
    std::string badState = "{"
-         "\"model_name\":\"USGS_ASTRO_FRAME_SENSOR_MODEL\"}";
+         "\"m_model_name\":\"USGS_ASTRO_FRAME_SENSOR_MODEL\"}";
    EXPECT_FALSE(testPlugin.canModelBeConstructedFromState(
          "USGS_ASTRO_FRAME_SENSOR_MODEL",
          badState));;
@@ -84,6 +84,21 @@ TEST_F(FrameIsdTest, ConstructValidCamera) {
    if (cameraModel) {
       delete cameraModel;
    }
+}
+
+
+TEST_F(FrameIsdTest, StateFromISD) {
+   UsgsAstroFramePlugin testPlugin;
+
+   std::string state = testPlugin.getStateFromISD(isd);
+   std::string model_name = isd.param("model_name").c_str();
+   // EXPECT_EQ(model_name, "USGS_ASTRO_FRAME_SENSOR_MODEL");
+   EXPECT_EQ(state, "");
+
+   csm::Model* model = testPlugin.constructModelFromState(state);
+   bool is_contructable = testPlugin.canModelBeConstructedFromState(model_name, state);
+
+   EXPECT_TRUE(is_contructable);
 }
 
 TEST_F(FrameIsdTest, ConstructInValidCamera) {

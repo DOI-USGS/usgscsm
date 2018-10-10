@@ -69,64 +69,35 @@ UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
   m_majorAxis = 0.0;
   m_minorAxis = 0.0;
   m_focalLength = 0.0;
-
-  m_spacecraftVelocity[0] = 0.0;
-  m_spacecraftVelocity[1] = 0.0;
-  m_spacecraftVelocity[2] = 0.0;
-
-  m_sunPosition[0] = 0.0;
-  m_sunPosition[1] = 0.0;
-  m_sunPosition[2] = 0.0;
-
   m_startingDetectorSample = 0.0;
   m_startingDetectorLine = 0.0;
   m_targetName = "";
   m_ifov = 0;
   m_instrumentID = "";
   m_focalLengthEpsilon = 0.0;
-
-  m_ccdCenter[0] = 0;
-  m_ccdCenter[1] = 0;
-
   m_line_pp = 0.0;
   m_sample_pp = 0.0;
-
-  m_odtX.assign(10, 0.0);
-  m_odtY.assign(10, 0.0);
-
   m_originalHalfLines = 0.0;
   m_spacecraftName = "";
   m_pixelPitch = 0.0;
-
-  m_transX[0] = 0.0;
-  m_transX[1] = 0.0;
-  m_transX[2] = 0.0;
-
-  m_transY[0] = 0.0;
-  m_transY[1] = 0.0;
-  m_transY[2] = 0.0;
-
-  m_iTransS[0] = 0.0;
-  m_iTransS[1] = 0.0;
-  m_iTransS[2] = 0.0;
-
-  m_iTransL[0] = 0.0;
-  m_iTransL[1] = 0.0;
-  m_iTransL[2] = 0.0;
-
   m_ephemerisTime = 0.0;
   m_originalHalfSamples = 0.0;
-  m_boresight[0] = 0.0;
-  m_boresight[1] = 0.0;
-  m_boresight[2] = 0.0;
-
   m_nLines = 0;
   m_nSamples = 0;
 
   m_currentParameterValue.assign(m_numParameters, 0.0);
   m_currentParameterCovariance.assign(m_numParameters*m_numParameters,0.0);
   m_noAdjustments.assign(m_numParameters,0.0);
-
+  m_ccdCenter.assign(2, 0.0);
+  m_spacecraftVelocity.assign(3, 0.0);
+  m_sunPosition.assign(3, 0.0);
+  m_odtX.assign(10, 0.0);
+  m_odtY.assign(10, 0.0);
+  m_transX.assign(3, 0.0);
+  m_transY.assign(3, 0.0);
+  m_iTransS.assign(3, 0.0);
+  m_iTransL.assign(3, 0.0);
+  m_boresight.assign(3, 0.0);
   m_parameterType.assign(m_numParameters, csm::param::REAL);
 
 }
