@@ -225,6 +225,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   double sample = imagePt.samp;
   double line = imagePt.line;
 
+  std::cout << "in i->g (s, l): " << sample << ", " << line << std::endl; 
   //Here is where we should be able to apply an adjustment to opk
   double m[3][3];
   calcRotationMatrix(m);
@@ -243,12 +244,16 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
 
   // Apply the distortion model (remove distortion)
   double undistorted_cameraX, undistorted_cameraY = 0.0;
+
+  std::cout << "x_camera, y_camera: " << x_camera << ", " << y_camera << std::endl; 
   setFocalPlane(x_camera, y_camera, undistorted_cameraX, undistorted_cameraY);
 
   //Now back from distorted mm to pixels
   double udx, udy; //distorted line and sample
   udx = undistorted_cameraX;
   udy = undistorted_cameraY;
+
+  std::cout << "x_camera, y_camera: " << x_camera << ", " << y_camera << std::endl; 
 
   xl = m[0][0] * udx + m[0][1] * udy - m[0][2] * -m_focalLength;
   yl = m[1][0] * udx + m[1][1] * udy - m[1][2] * -m_focalLength;
@@ -261,6 +266,8 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   zc = m_currentParameterValue[2];
 
   // Intersect with some height about the ellipsoid.
+
+  std::cout << "height, xc, yc, zc, x1, y1, z1 " << height << ", "<< xc << ", " << yc << ", " << zc << ", " << xl << ", " << yl << ", " << zl << std::endl; 
   losEllipsoidIntersect(height, xc, yc, zc, xl, yl, zl, x, y, z);
 
   return csm::EcefCoord(x, y, z);
