@@ -321,9 +321,9 @@ csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSup
 
   // Check if the sensor model can be constructed from ISD given the model name
   if (!canModelBeConstructedFromISD(imageSupportData, modelName)) {
-      throw csm::Error(csm::Error::ISD_NOT_SUPPORTED,
+    throw csm::Error(csm::Error::ISD_NOT_SUPPORTED,
                      "Sensor model support data provided is not supported by this plugin",
-                       "UsgsAstroFramePlugin::constructModelFromISD");
+                     "UsgsAstroFramePlugin::constructModelFromISD");
   }
 
   // Create the empty sensorModel
