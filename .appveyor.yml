@@ -7,18 +7,17 @@ platform:
 
 configuration:
   - Release
-  - Debug
-
-environment:
-  CSM_LIBRARY_PATH: C:\\Miniconda36-x64\lib
-  CSM_INCLUDE_PATH: C:\\Miniconda36-x64\include
 
 install:
-  # - git submodule update --init --recursive
-  # This pulls csm from conda
-  # - cmd: call C:\\Miniconda36-x64\Scripts\activate.bat
-  # - cmd: conda install -y -c usgs-astrogeology libcsm
-  # - cmake .
+  - git submodule update --remote --merge
+
+before_build:
+  - mkdir build
+  - cd build
+  
 build_script:
-  # - cmake --build . -- %MSBUILD_ARGS%
-  - echo pass
+  - cmake -G "Visual Studio 15 2017 Win64" -DBUILD_TESTS=OFF ..
+  - cmake --build . --target ALL_BUILD --config Release
+
+
+

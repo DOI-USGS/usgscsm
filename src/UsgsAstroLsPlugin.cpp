@@ -17,10 +17,10 @@
 //
 //-----------------------------------------------------------------------------
 
-#define USGSASTROLINESCANNER_LIBRARY
+#define USGS_SENSOR_LIBRARY
 
 #include "UsgsAstroLsPlugin.h"
-#include "UsgsAstroLsISD.h"
+//#include "UsgsAstroLsISD.h"
 #include "UsgsAstroLsSensorModel.h"
 #include "UsgsAstroLsStateData.h"
 

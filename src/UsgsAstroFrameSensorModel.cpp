@@ -1,3 +1,4 @@
+#define USGS_SENSOR_LIBRARY
 #include "UsgsAstroFrameSensorModel.h"
 
 #include <iomanip>
