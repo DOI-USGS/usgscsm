@@ -1,6 +1,11 @@
 language: cpp
 sudo: false
 
+branches:
+  only:
+    - master
+    - dev
+
 matrix:
   include:
     - os: linux
@@ -14,7 +19,7 @@ matrix:
         - MATRIX_EVAL="CXX=g++-6 && CC=gcc-6"
     - os: osx
       osx_image: xcode9.4
-      env: 
+      env:
         - MATRIX_EVAL="CXX=clang++ && CC=clang"
 
 before_install:
@@ -34,7 +39,7 @@ install:
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda install -y -c conda-forge cmake
-  
+
 script:
   - mkdir build
   - cd build
@@ -44,8 +49,17 @@ script:
   - cd ..
 
 after_success:
-  - conda install -y -q conda-build anaconda-client
+  - conda install -y -q conda-build anaconda-client 
   # Pull the libcsm for the build from our anaconda channel
   - conda config --add channels usgs-astrogeology
-  - conda config --set anaconda_upload yes
-  - conda build --token $CONDA_UPLOAD_TOKEN recipe -q
+  - conda config --set anaconda_upload no
+  - conda build recipe -q
+  # Get the conda build output dir
+  - builddir=(`conda build recipe --output`)
+  # Label based on the branch and upload to anaconda.org
+  - |
+    if [ "$TRAVIS_BRANCH" == "master" ]; then
+      anaconda -t="$CONDA_UPLOAD_TOKEN" upload $builddir --label main --force;
+    elif [ "$TRAVIS_BRANCH" == "dev" ]; then
+      anaconda -t="$CONDA_UPLOAD_TOKEN" upload $builddir --label dev --force;
+    fi
