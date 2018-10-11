@@ -33,7 +33,7 @@
 #include <CorrelationModel.h>
 
 
-class USGS_SENSOR_EXPORT_API UsgsAstroLsSensorModel : public csm::RasterGM, virtual public csm::SettableEllipsoid
+class UsgsAstroLsSensorModel : public csm::RasterGM, virtual public csm::SettableEllipsoid
 {
 public:
 
