@@ -1,8 +1,8 @@
 {
 	"center_ephemeris_time": 50,
 	"dt_ephemeris": 100,
-  "focal2pixel_lines": [-7.5, 0.0, 0.1],
-  "focal2pixel_samples": [-7.5, 0.1, 0.0],
+  "focal2pixel_lines": [0.0, 0.0, 10.0],
+  "focal2pixel_samples": [0.0, 10.0, 0.0],
 	"focal_length_model": {
 		"focal_length": 50,
 		"epsilon": 1.0
@@ -16,8 +16,8 @@
 	"interpolation_method": "lagrange",
 	"number_of_ephemerides": 1,
 	"optical_distortion": {
-		"x": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-		"y": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+		"x": [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+		"y": [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 	},
 	"radii": {
 		"semimajor": 0.01,
@@ -56,3 +56,4 @@
 		"z": 0
 	}
 }
+

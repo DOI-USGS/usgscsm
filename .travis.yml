@@ -1,6 +1,11 @@
 language: cpp
 sudo: false
 
+branches:
+  only:
+    - master
+    - dev
+
 matrix:
   include:
     - os: linux
@@ -18,6 +23,7 @@ matrix:
         - MATRIX_EVAL="CXX=clang++ && CC=clang"
 
 before_install:
+  - echo "$TRAVIS_PULL_REQUEST"
   - eval "${MATRIX_EVAL}"
   - |
     if [ "$TRAVIS_OS_NAME" == "linux" ]; then
@@ -44,8 +50,17 @@ script:
   - cd ..
 
 after_success:
-  - conda install -y -q conda-build anaconda-client
+  - conda install -y -q conda-build anaconda-client 
   # Pull the libcsm for the build from our anaconda channel
   - conda config --add channels usgs-astrogeology
-  - conda config --set anaconda_upload yes
-  - conda build --token $CONDA_UPLOAD_TOKEN recipe -q
+  - conda config --set anaconda_upload no
+  - conda build recipe -q
+  # Get the conda build output dir
+  - builddir=(`conda build recipe --output`)
+  # Label based on the branch and upload to anaconda.org
+  - |
+    if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+      anaconda -t="$CONDA_UPLOAD_TOKEN" upload $builddir;
+    elif [ "$TRAVIS_BRANCH" == "dev" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+      anaconda -t="$CONDA_UPLOAD_TOKEN" upload $builddir --label dev --force;
+    fi
