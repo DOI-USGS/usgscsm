@@ -231,9 +231,9 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    // Check if both offsets have the same sign.
    // This means there is not guaranteed to be a zero.
    if ((firstOffset > 0) != (lastOffset < 0)) {
-        throw csm::Error(
-           csm::Error::ALGORITHM,
-           "Ground point is not viewed by the image.",
+        throw csm::Warning(
+           csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS,
+           "The image coordinate is out of bounds of the image size.",
            "UsgsAstroLsSensorModel::groundToImage");
    }
 
@@ -299,9 +299,17 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    double dz = ground_pt.z - calculatedPoint.z;
    double len = dx * dx + dy * dy + dz * dz;
 
+   // Check that the pixel is actually in the image
+   if ((calculatedPixel.samp < 0) ||
+       (calculatedPixel.samp > _data.m_TotalSamples)) {
+      throw csm::Warning(
+         csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS,
+         "The image coordinate is out of bounds of the image size.",
+         "UsgsAstroLsSensorModel::groundToImage");
+   }
+
    // If the final correction is greater than 10 meters,
    // the solution is not valid enough to report even with a warning
-   printf("%f\n", len);
    if (len > 100.0) {
       throw csm::Error(
          csm::Error::ALGORITHM,
