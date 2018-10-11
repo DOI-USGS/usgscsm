@@ -48,7 +48,19 @@
 #include <Isd.h>
 #include <SettableEllipsoid.h>
 
-class UsgsAstroLsISD
+#ifdef _WIN32
+# ifdef USGS_SENSOR_LIBRARY
+#  define USGS_SENSOR_EXPORT_API __declspec(dllexport)
+# else
+#  define USGS_SENSOR_EXPORT_API __declspec(dllimport)
+# endif
+#elif LINUX_BUILD
+# define USGS_SENSOR_EXPORT_API __attribute__ ((visibility("default")))
+#else
+#  define USGS_SENSOR_EXPORT_API
+#endif
+
+class USGS_SENSOR_EXPORT_API UsgsAstroLsISD
 {
    public:
 

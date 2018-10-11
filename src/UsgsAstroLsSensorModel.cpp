@@ -16,7 +16,7 @@
 //  24-Apr-2017 BAE Systems  Update for CSM 3.0.2
 //  24-OCT-2017 BAE Systems  Update for CSM 3.0.3
 //-----------------------------------------------------------------------------
-#define USGSASTROLINESCANNER_LIBRARY
+#define USGS_SENSOR_LIBRARY
 
 #include "UsgsAstroLsSensorModel.h"
 

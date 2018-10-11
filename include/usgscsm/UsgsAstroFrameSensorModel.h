@@ -9,7 +9,19 @@
 #include "RasterGM.h"
 #include "CorrelationModel.h"
 
-class UsgsAstroFrameSensorModel : public csm::RasterGM {
+#ifdef _WIN32
+# ifdef USGS_SENSOR_LIBRARY
+#  define USGS_SENSOR_EXPORT_API __declspec(dllexport)
+# else
+#  define USGS_SENSOR_EXPORT_API __declspec(dllimport)
+# endif
+#elif LINUX_BUILD
+# define USGS_SENSOR_EXPORT_API __attribute__ ((visibility("default")))
+#else
+#  define USGS_SENSOR_EXPORT_API
+#endif
+
+class USGS_SENSOR_EXPORT_API UsgsAstroFrameSensorModel : public csm::RasterGM {
   // UsgsAstroFramePlugin needs to access private members
   friend class UsgsAstroFramePlugin;
 
