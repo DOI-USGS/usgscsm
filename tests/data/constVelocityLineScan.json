@@ -1,0 +1,117 @@
+{
+   "DT_EPHEM": 0.2,
+   "NUMBER_OF_EPHEM": 9,
+   "T0_QUAT": -8.0,
+   "MIN_VALID_HT": -10,
+   "SEMI_MAJOR_AXIS": 10,
+   "QUATERNIONS": [
+     0.0, -0.707106781186547, 0.0, 0.707106781186547,
+     0.0, -0.707106781186547, 0.0, 0.707106781186547,
+     0.0, -0.707106781186547, 0.0, 0.707106781186547,
+     0.0, -0.707106781186547, 0.0, 0.707106781186547,
+     0.0, -0.707106781186547, 0.0, 0.707106781186547,
+     0.0, -0.707106781186547, 0.0, 0.707106781186547,
+     0.0, -0.707106781186547, 0.0, 0.707106781186547,
+     0.0, -0.707106781186547, 0.0, 0.707106781186547,
+     0.0, -0.707106781186547, 0.0, 0.707106781186547
+   ],
+   "SENSOR_ID": "USGS_LINE_SCANNER",
+   "SCAN_DURATION": 16.0,
+   "ECCENTRICITY": 0.0,
+   "STARTING_EPHEMERIS_TIME": 992.0,
+   "STARTING_LINE": 1,
+   "STARTING_SAMPLE": 0,
+   "DETECTOR_SAMPLE_ORIGIN": [
+     8.5
+   ],
+   "IMAGE_ID": "UNKNOWN",
+   "PLATFORM": 1,
+   "TOTAL_LINES": 16,
+   "EPHEM_RATES": [
+     0.0, 0.0, -20.0,
+     0.0, 0.0, -20.0,
+     0.0, 0.0, -20.0,
+     0.0, 0.0, -20.0,
+     0.0, 0.0, -20.0,
+     0.0, 0.0, -20.0,
+     0.0, 0.0, -20.0,
+     0.0, 0.0, -20.0,
+     0.0, 0.0, -20.0
+   ],
+   "DT_QUAT": 0.2,
+   "FOCAL": [
+     50.0
+   ],
+   "DETECTOR_LINE_ORIGIN": [
+     0.5
+   ],
+   "MOUNTING_ANGLES": [
+     0,
+     0,
+     0
+   ],
+   "T0_EPHEM": -8.0,
+   "DETECTOR_SAMPLE_SUMMING": 1,
+   "REFERENCE_HEIGHT": 0,
+   "ATMREF": 0,
+   "SENSOR_TYPE": "USGSAstroLineScanner",
+   "TOTAL_SAMPLES": 16,
+   "ABERR": 0,
+   "OPTICAL_DIST_COEF": [
+     0.0,
+     0.0,
+     0.0
+   ],
+   "COLL_ID": "UNKNOWN",
+   "DETECTOR_LINE_OFFSET": 0,
+   "EPHEM_PTS": [
+     1000.0, 0.0, 16.0,
+     1000.0, 0.0, 12.0,
+     1000.0, 0.0, 8.0,
+     1000.0, 0.0, 4.0,
+     1000.0, 0.0, 0.0,
+     1000.0, 0.0, -4.0,
+     1000.0, 0.0, -8.0,
+     1000.0, 0.0, -12.0,
+     1000.0, 0.0, -16.0
+   ],
+   "CENTER_EPHEMERIS_TIME": 1000.0,
+   "INT_TIME": 0.1,
+   "NUMBER_OF_QUATERNIONS": 9,
+   "ITRANSS": [
+     0,
+     0,
+     10.0
+   ],
+   "IKCODE": -99999,
+   "PLATFORM_ID": "UNKNOWN",
+   "ISIS_Z_DIRECTION": 1,
+   "MAX_VALID_HT": 20,
+   "TRI_PARAMETERS": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     50.0,
+     0,
+     0
+   ],
+   "TRAJ_ID": "UNKNOWN",
+   "ITRANSL": [
+     0,
+     10.0,
+     0
+   ],
+   "REF_DATE_TIME": "UNKNOWN"
+}
