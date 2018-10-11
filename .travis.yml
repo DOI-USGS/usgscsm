@@ -58,8 +58,8 @@ after_success:
   - builddir=(`conda build recipe --output`)
   # Label based on the branch and upload to anaconda.org
   - |
-    if [ "$TRAVIS_BRANCH" == "master" ]; then
+    if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
       anaconda -t="$CONDA_UPLOAD_TOKEN" upload $builddir;
-    elif [ "$TRAVIS_BRANCH" == "dev" ]; then
+    elif [ "$TRAVIS_BRANCH" == "dev" ] && [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
       anaconda -t="$CONDA_UPLOAD_TOKEN" upload $builddir --label dev --force;
     fi
