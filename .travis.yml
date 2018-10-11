@@ -23,6 +23,7 @@ matrix:
         - MATRIX_EVAL="CXX=clang++ && CC=clang"
 
 before_install:
+  - echo "$TRAVIS_PULL_REQUEST"
   - eval "${MATRIX_EVAL}"
   - |
     if [ "$TRAVIS_OS_NAME" == "linux" ]; then
