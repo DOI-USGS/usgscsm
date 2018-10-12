@@ -663,9 +663,6 @@ std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
 
 
 std::string UsgsAstroFrameSensorModel::getModelState() const {
-<<<<<<< HEAD
-    return _state.dump();
-=======
     json state = {
       {"model_name", _SENSOR_MODEL_NAME},
       {"m_focalLength" , m_focalLength},
@@ -687,8 +684,8 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_instrumentID", m_instrumentID},
       {"m_focalLengthEpsilon", m_focalLengthEpsilon},
       {"m_ccdCenter", {m_ccdCenter[0], m_ccdCenter[1]}},
-      {"m_line_pp", m_line_pp},
-      {"m_sample_pp", m_sample_pp},
+      {"m_linePp", m_linePp},
+      {"m_samplePp", m_samplePp},
       {"m_minElevation", m_minElevation},
       {"m_maxElevation", m_maxElevation},
       {"m_odtX", {m_odtX[0], m_odtX[1], m_odtX[2], m_odtX[3], m_odtX[4],
@@ -709,7 +706,6 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_currentParameterCovariance", m_currentParameterCovariance}
     };
     return state.dump();
->>>>>>> 399c1f28137f2b386fe2b2e454cc72ef104ec835
 }
 
 void UsgsAstroFrameSensorModel::replaceModelState(const std::string& modelState) {
@@ -842,7 +838,6 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
         state["m_currentParameterValue"][2] = metric_conversion(state["m_currentParameterValue"][2].get<double>(), unit);
       }
     }
-    std::cout << "sensor velocity" << std::endl;
     if (isd.value("sensor_velocity", json("")) == json("")) {
       missingKeywords.push_back("sensor_velocity");
     }
@@ -868,7 +863,6 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
       }
     }
 
-    std::cout << "sun_position" << std::endl;
     if (isd.value("sun_position", json("")) == json("")) {
       missingKeywords.push_back("sun_position");
     }
@@ -893,7 +887,6 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
       }
     }
 
-    std::cout << "sensor_orientation" << std::endl;
     // sun position is not strictly necessary, but is required for getIlluminationDirection.
     if (isd.value("sensor_orientation", json("")) == json("")) {
       missingKeywords.push_back("sensor_orientation");
@@ -980,8 +973,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
     else if (isd["focal2pixel_samples"][2] == ""){
       missingKeywords.push_back("focal2pixel_samples 2");
     }
-    std::cout << "trans" << std::endl;
-    std::cout << state.dump() << std::endl;
+
     // We don't pass the pixel to focal plane transformation so invert the
     // focal plane to pixel transformation
     double determinant = state["m_iTransL"][1].get<double>() * state["m_iTransS"][2].get<double>() -
@@ -997,7 +989,6 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
     state["m_transY"][0] = -(state["m_transY"][1].get<double>() * state["m_iTransL"][0].get<double>() +
                              state["m_transY"][2].get<double>() * state["m_iTransS"][0].get<double>());
 
-    std::cout << "getting radii" << std::endl;
 
     if (isd.value("radii", json("")) == json("")) {
       missingKeywords.push_back("radii");
@@ -1054,7 +1045,6 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
         state["m_maxElevation"] = metric_conversion(state["m_minElevation"].get<double>(), unit);
       }
     }
-    std::cout << "finished" << std::endl;
 
     // If we are missing necessary keywords from ISD, we cannot create a valid sensor model.
     if (missingKeywords.size() != 0) {
@@ -1360,7 +1350,6 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
     double determinant = Jxx * Jyy - Jxy * Jyx;
     if (fabs(determinant) < 1E-6) {
 
-      cout << "Singular determinant." << endl;
       undistortedX = x;
       undistortedY = y;
       //

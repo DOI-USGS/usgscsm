@@ -660,7 +660,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
 
    // Check that the pixel is actually in the image
    if ((calculatedPixel.samp < 0) ||
-       (calculatedPixel.samp > _data.m_TotalSamples)) {
+       (calculatedPixel.samp > m_totalSamples)) {
       throw csm::Warning(
          csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS,
          "The image coordinate is out of bounds of the image size.",
@@ -2715,50 +2715,50 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
 
    int num_params = NUM_PARAMETERS;
 
-   state["m_ImageIdentifier"] = isd.at("IMAGE_ID");
-   state["m_SensorType"] = isd.at("SENSOR_TYPE");
-   state["m_TotalLines"] = isd.at("TOTAL_LINES");
-   state["m_TotalSamples"] = isd.at("TOTAL_SAMPLES");
-   state["m_OffsetLines"] = 0.0;
-   state["m_OffsetSamples"] = 0.0;
-   state["m_PlatformFlag"] = isd.at("PLATFORM");
-   state["m_AberrFlag"] = isd.at("ABERR");
-   state["m_AtmRefFlag"] = isd.at("ATMREF");
+   state["m_imageIdentifier"] = isd.at("IMAGE_ID");
+   state["m_sensorType"] = isd.at("SENSOR_TYPE");
+   state["m_totalLines"] = isd.at("TOTAL_LINES");
+   state["m_totalSamples"] = isd.at("TOTAL_SAMPLES");
+   state["m_offsetLines"] = 0.0;
+   state["m_offsetSamples"] = 0.0;
+   state["m_platformFlag"] = isd.at("PLATFORM");
+   state["m_aberrFlag"] = isd.at("ABERR");
+   state["m_atmRefFlag"] = isd.at("ATMREF");
 
-   state["m_StartingEphemerisTime"] = isd.at("STARTING_EPHEMERIS_TIME");
-   state["m_CenterEphemerisTime"] = isd.at("CENTER_EPHEMERIS_TIME");
+   state["m_startingEphemerisTime"] = isd.at("STARTING_EPHEMERIS_TIME");
+   state["m_centerEphemerisTime"] = isd.at("CENTER_EPHEMERIS_TIME");
 
    if (isd.at("NUMBER_OF_INT_TIMES").empty()) {
-     state["m_IntTimeLines"] = {0.5};
-     state["m_IntTimeStartTimes"] = {state["m_StartingEphemerisTime"].get<double>() - state["m_CenterEphemerisTime"].get<double>()};
-     state["m_IntTimes"] = {isd.at("INT_TIME")};
+     state["m_intTimeLines"] = {0.5};
+     state["m_intTimeStartTimes"] = {state["m_startingEphemerisTime"].get<double>() - state["m_centerEphemerisTime"].get<double>()};
+     state["m_intTimes"] = {isd.at("INT_TIME")};
    }
    else {
      int numIntTimes = isd.at("NUMBER_OF_INT_TIMES");
      for (int i = 0; i < numIntTimes; i++) {
-       state["m_IntTimeLines"].push_back(isd.at("INT_TIME").at(i*3));
-       state["m_IntTimeStartTimes"].push_back(isd.at("INT_TIME").at(i*3+1));
-       state["m_IntTimes"].push_back(isd.at("INT_TIME").at(i*3+2));
+       state["m_intTimeLines"].push_back(isd.at("INT_TIME").at(i*3));
+       state["m_intTimeStartTimes"].push_back(isd.at("INT_TIME").at(i*3+1));
+       state["m_intTimes"].push_back(isd.at("INT_TIME").at(i*3+2));
      }
    }
 
-   state["m_CenterEphemerisTime"] = isd.at("CENTER_EPHEMERIS_TIME");
-   state["m_DetectorSampleSumming"] = isd.at("DETECTOR_SAMPLE_SUMMING");
-   state["m_StartingSample"] = isd.at("STARTING_SAMPLE");
-   state["m_IkCode"] = isd.at("IKCODE");
-   state["m_Focal"] = isd.at("FOCAL");
-   state["m_IsisZDirection"] = isd.at("ISIS_Z_DIRECTION");
+   state["m_centerEphemerisTime"] = isd.at("CENTER_EPHEMERIS_TIME");
+   state["m_detectorSampleSumming"] = isd.at("DETECTOR_SAMPLE_SUMMING");
+   state["m_startingSample"] = isd.at("STARTING_SAMPLE");
+   state["m_ikCode"] = isd.at("IKCODE");
+   state["m_focal"] = isd.at("FOCAL");
+   state["m_isisZDirection"] = isd.at("ISIS_Z_DIRECTION");
 
    for (int i = 0; i < 3; i++)
    {
-      state["m_OpticalDistCoef"][i] = isd.at("OPTICAL_DIST_COEF").at(i);
-      state["m_ITransS"][i] = isd.at("ITRANSS").at(i);
-      state["m_ITransL"][i] = isd.at("ITRANSL").at(i);
+      state["m_opticalDistCoef"][i] = isd.at("OPTICAL_DIST_COEF").at(i);
+      state["m_iTransS"][i] = isd.at("ITRANSS").at(i);
+      state["m_iTransL"][i] = isd.at("ITRANSL").at(i);
    }
 
-   state["m_DetectorSampleOrigin"] = isd.at("DETECTOR_SAMPLE_ORIGIN");
-   state["m_DetectorLineOrigin"] = isd.at("DETECTOR_LINE_ORIGIN");
-   state["m_DetectorLineOffset"] = isd.at("DETECTOR_LINE_OFFSET");
+   state["m_detectorSampleOrigin"] = isd.at("DETECTOR_SAMPLE_ORIGIN");
+   state["m_detectorLineOrigin"] = isd.at("DETECTOR_LINE_ORIGIN");
+   state["m_detectorLineOffset"] = isd.at("DETECTOR_LINE_OFFSET");
 
    double cos_a = cos(isd.at("MOUNTING_ANGLES").at(0).get<double>());
    double sin_a = sin(isd.at("MOUNTING_ANGLES").at(0).get<double>());
@@ -2767,71 +2767,71 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    double cos_c = cos(isd.at("MOUNTING_ANGLES").at(2).get<double>());
    double sin_c = sin(isd.at("MOUNTING_ANGLES").at(2).get<double>());
 
-   state["m_MountingMatrix"] = json::array();
-   state["m_MountingMatrix"][0] = cos_b * cos_c;
-   state["m_MountingMatrix"][1] = -cos_a * sin_c + sin_a * sin_b * cos_c;
-   state["m_MountingMatrix"][2] = sin_a * sin_c + cos_a * sin_b * cos_c;
-   state["m_MountingMatrix"][3] = cos_b * sin_c;
-   state["m_MountingMatrix"][4] = cos_a * cos_c + sin_a * sin_b * sin_c;
-   state["m_MountingMatrix"][5] = -sin_a * cos_c + cos_a * sin_b * sin_c;
-   state["m_MountingMatrix"][6] = -sin_b;
-   state["m_MountingMatrix"][7] = sin_a * cos_b;
-   state["m_MountingMatrix"][8] = cos_a * cos_b;
+   state["m_mountingMatrix"] = json::array();
+   state["m_mountingMatrix"][0] = cos_b * cos_c;
+   state["m_mountingMatrix"][1] = -cos_a * sin_c + sin_a * sin_b * cos_c;
+   state["m_mountingMatrix"][2] = sin_a * sin_c + cos_a * sin_b * cos_c;
+   state["m_mountingMatrix"][3] = cos_b * sin_c;
+   state["m_mountingMatrix"][4] = cos_a * cos_c + sin_a * sin_b * sin_c;
+   state["m_mountingMatrix"][5] = -sin_a * cos_c + cos_a * sin_b * sin_c;
+   state["m_mountingMatrix"][6] = -sin_b;
+   state["m_mountingMatrix"][7] = sin_a * cos_b;
+   state["m_mountingMatrix"][8] = cos_a * cos_b;
 
-   state["m_DtEphem"] = isd.at("DT_EPHEM");
-   state["m_T0Ephem"] = isd.at("T0_EPHEM");
-   state["m_DtQuat"] =  isd.at("DT_QUAT");
-   state["m_T0Quat"] =  isd.at("T0_QUAT");
+   state["m_dtEphem"] = isd.at("DT_EPHEM");
+   state["m_t0Ephem"] = isd.at("T0_EPHEM");
+   state["m_dtQuat"] =  isd.at("DT_QUAT");
+   state["m_t0Quat"] =  isd.at("T0_QUAT");
 
-   state["m_NumEphem"] = isd.at("NUMBER_OF_EPHEM");
-   state["m_NumQuaternions"] = isd.at("NUMBER_OF_QUATERNIONS");
+   state["m_numEphem"] = isd.at("NUMBER_OF_EPHEM");
+   state["m_numQuaternions"] = isd.at("NUMBER_OF_QUATERNIONS");
 
    int numEphem = isd.at("NUMBER_OF_EPHEM");
    for (int i=0;i < numEphem * 3; i++){
-       state["m_EphemPts"].push_back(isd.at("EPHEM_PTS").at(i));
-       state["m_EphemRates"].push_back(isd.at("EPHEM_RATES").at(i));
+       state["m_ephemPts"].push_back(isd.at("EPHEM_PTS").at(i));
+       state["m_ephemRates"].push_back(isd.at("EPHEM_RATES").at(i));
    }
 
    int numQuat = isd.at("NUMBER_OF_QUATERNIONS");
    for (int i=0; i < numQuat * 4; i++){
-       state["m_Quaternions"].push_back(isd.at("QUATERNIONS").at(i));
+       state["m_quaternions"].push_back(isd.at("QUATERNIONS").at(i));
    }
 
-   //state["m_EphemPts"] = isd.m_ephem_pts;
-   //state["m_EphemRates"] = isd.m_ephem_rates;
-   //state["m_Quaternions"] = isd.m_quaternions;
-   state["m_ParameterVals"] = json::array();
+   //state["m_ephemPts"] = isd.m_ephem_pts;
+   //state["m_ephemRates"] = isd.m_ephem_rates;
+   //state["m_quaternions"] = isd.m_quaternions;
+   state["m_parameterVals"] = json::array();
    for (int i=0; i < 18;i++){
-       state["m_ParameterVals"].push_back(isd.at("TRI_PARAMETERS").at(i));
+       state["m_parameterVals"].push_back(isd.at("TRI_PARAMETERS").at(i));
    }
-   //state["m_ParameterVals"] = isd.m_TRI_PARAMETERS;
-   double deltaF = state["m_ParameterVals"][numQuat - 1].get<double>() - state["m_Focal"].get<double>();
-   if (fabs(deltaF) < 0.4 * state["m_Focal"].get<double>())
-      state["m_ParameterVals"][numQuat - 1] = deltaF;
+   //state["m_parameterVals"] = isd.m_tRI_PARAMETERS;
+   double deltaF = state["m_parameterVals"][numQuat - 1].get<double>() - state["m_focal"].get<double>();
+   if (fabs(deltaF) < 0.4 * state["m_focal"].get<double>())
+      state["m_parameterVals"][numQuat - 1] = deltaF;
 
    // Set the ellipsoid
-   state["m_SemiMajorAxis"] = isd.at("SEMI_MAJOR_AXIS");
-   state["m_SemiMinorAxis"] =
-        state["m_SemiMajorAxis"].get<double>() * sqrt(1.0 - isd.at("ECCENTRICITY").get<double>() * isd.at("ECCENTRICITY").get<double>()) ;
+   state["m_semiMajorAxis"] = isd.at("SEMI_MAJOR_AXIS");
+   state["m_semiMinorAxis"] =
+        state["m_semiMajorAxis"].get<double>() * sqrt(1.0 - isd.at("ECCENTRICITY").get<double>() * isd.at("ECCENTRICITY").get<double>()) ;
 
    // Now finish setting the state data from the ISD read in
 
    // set identifiers
-   state["m_ReferenceDateAndTime"] = isd.at("REF_DATE_TIME");
-   state["m_PlatformIdentifier"]   = isd.at("PLATFORM_ID");
-   state["m_SensorIdentifier"]     = isd.at("SENSOR_ID");
-   state["m_TrajectoryIdentifier"] = isd.at("TRAJ_ID");
-   state["m_CollectionIdentifier"] = isd.at("COLL_ID");
+   state["m_referenceDateAndTime"] = isd.at("REF_DATE_TIME");
+   state["m_platformIdentifier"]   = isd.at("PLATFORM_ID");
+   state["m_sensorIdentifier"]     = isd.at("SENSOR_ID");
+   state["m_trajectoryIdentifier"] = isd.at("TRAJ_ID");
+   state["m_collectionIdentifier"] = isd.at("COLL_ID");
 
    // Ground elevations
-   state["m_RefElevation"] = isd.at("REFERNCE_HEIGHT");
-   state["m_MinElevation"] = isd.at("MIN_VALID_HT");
-   state["m_MaxElevation"] = isd.at("MAX_VALID_HT");
+   state["m_refElevation"] = isd.at("REFERNCE_HEIGHT");
+   state["m_minElevation"] = isd.at("MIN_VALID_HT");
+   state["m_maxElevation"] = isd.at("MAX_VALID_HT");
 
    // Zero ateter values
    for (int i = 0; i < numQuat; i++)
    {
-      state["m_ParameterVals"][i] = 0.0;
+      state["m_parameterVals"][i] = 0.0;
       state["m_ateterType"][i] = csm::param::REAL;
    }
 

@@ -41,7 +41,7 @@ class FrameSensorModel : public ::testing::Test {
          sensorModel = NULL;
 
          isd.setFilename("data/simpleFramerISD.img");
-         UsgsAstroFramePlugin frameCameraPlugin;
+         UsgsAstroPlugin frameCameraPlugin;
 
          csm::Model *model = frameCameraPlugin.constructModelFromISD(
                isd,
@@ -85,7 +85,7 @@ protected:
   }
   UsgsAstroFrameSensorModel* createModel(csm::Isd &modifiedIsd) {
 
-    UsgsAstroFramePlugin frameCameraPlugin;
+    UsgsAstroPlugin frameCameraPlugin;
     csm::Model *model = frameCameraPlugin.constructModelFromISD(
         modifiedIsd,"USGS_ASTRO_FRAME_SENSOR_MODEL");
 
@@ -113,7 +113,7 @@ class FrameIsdTest : public ::testing::Test {
       }
     }
     UsgsAstroFrameSensorModel* createModel(csm::Isd &modifiedIsd) {
-      UsgsAstroFramePlugin frameCameraPlugin;
+      UsgsAstroPlugin frameCameraPlugin;
       modifiedIsd.setFilename("data/simpleFramerISD.img");
       csm::Model *model = frameCameraPlugin.constructModelFromISD(
               modifiedIsd,"USGS_ASTRO_FRAME_SENSOR_MODEL");
