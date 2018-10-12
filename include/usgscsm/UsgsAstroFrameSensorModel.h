@@ -9,18 +9,26 @@
 #include "RasterGM.h"
 #include "CorrelationModel.h"
 
+#include <json.hpp>
+using json = nlohmann::json;
+
+
 class UsgsAstroFrameSensorModel : public csm::RasterGM {
   // UsgsAstroFramePlugin needs to access private members
   friend class UsgsAstroFramePlugin;
 
   public:
     UsgsAstroFrameSensorModel();
+    UsgsAstroFrameSensorModel(std::string stringIsd);
     ~UsgsAstroFrameSensorModel();
 
     virtual csm::ImageCoord groundToImage(const csm::EcefCoord &groundPt,
                                      double desiredPrecision=0.001,
                                      double *achievedPrecision=NULL,
                                      csm::WarningList *warnings=NULL) const;
+
+
+    std::string constructStateFromIsd(const std::string& jsonIsd);
 
     virtual csm::ImageCoordCovar groundToImage(const csm::EcefCoordCovar &groundPt,
                                           double desiredPrecision=0.001,
@@ -308,7 +316,6 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
 
 
   private:
-
     // Input parameters
     static const int m_numParameters;
     static const std::string m_parameterName[];
@@ -326,20 +333,17 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
     std::vector<double> m_iTransS;
     std::vector<double> m_iTransL;
     std::vector<double> m_boresight;
-
-    static const int         _NUM_STATE_KEYWORDS;
-    static const std::string _STATE_KEYWORD[];
-
     double m_majorAxis;
     double m_minorAxis;
     double m_focalLength;
     double m_minElevation;
     double m_maxElevation;
-    double m_line_pp;
-    double m_sample_pp;
+    double m_linePp;
+    double m_samplePp;
     double m_startingDetectorSample;
     double m_startingDetectorLine;
     std::string m_targetName;
+    std::string m_modelName;
     double m_ifov;
     std::string m_instrumentID;
     double m_focalLengthEpsilon;
@@ -352,6 +356,11 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
     int m_nLines;
     int m_nSamples;
     int m_nParameters;
+
+    json _state;
+    static const int         _NUM_STATE_KEYWORDS;
+    static const int         NUM_PARAMETERS;
+    static const std::string _STATE_KEYWORD[];
 
     csm::NoCorrelationModel _no_corr_model;
 

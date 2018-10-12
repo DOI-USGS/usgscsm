@@ -7,6 +7,9 @@
 #include <Plugin.h>
 #include <Version.h>
 
+#include <json.hpp>
+using json = nlohmann::json;
+
 class UsgsAstroFramePlugin : public csm::Plugin {
 
   public:
@@ -42,6 +45,8 @@ class UsgsAstroFramePlugin : public csm::Plugin {
                                                const std::string &modelName,
                                                csm::WarningList *warnings = NULL) const;
 
+    std::string loadImageSupportData(const csm::Isd &imageSupportDataOriginal) const;
+
     // TODO when implementing, add any other necessary members.
 
 private:
@@ -54,6 +59,10 @@ private:
     static const std::string _ISD_KEYWORD[];
     static const int         _NUM_STATE_KEYWORDS;
     static const std::string _STATE_KEYWORD[];
+    static const json MODEL_KEYWORDS;
+
+    typedef csm::Model* (*sensorConstructor)(void);
+    static std::map<std::string, sensorConstructor> MODELS;
 };
 
 #endif
