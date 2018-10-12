@@ -48,6 +48,8 @@ target_link_libraries(usgscsm
                       gtest ${CMAKE_THREAD_LIBS_INIT})
 
 if(WIN32)
+  option(CMAKE_USE_WIN32_THREADS_INIT "using WIN32 threads" ON)
+  option(gtest_disable_pthreads "Disable uses of pthreads in gtest." ON)
   install(TARGETS usgscsm
     RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
     install(DIRECTORY ${USGSCSM_INCLUDE_DIRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

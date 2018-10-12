@@ -4,12 +4,12 @@ lib/*
 include/csm/*
 
 # iPython checkpoint items
-.ipynb_checkpoints/*
+.ipynb_checkpoints
 
 # Ignore any executables
 bin/*
 
-# Ignore any Max stuff
+# Ignore any Mac stuff
 .DS_Store
 
 *.cpython*

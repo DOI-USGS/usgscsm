@@ -215,7 +215,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   lo = line - m_linePp;
   so = sample - m_samplePp;
 
-  //Convert from the pixel space into the metric space
+  // Convert from the pixel space into the metric space
   double line_center, sample_center, x_camera, y_camera;
   line_center = m_ccdCenter[0];
   sample_center = m_ccdCenter[1];
@@ -224,6 +224,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
 
   // Apply the distortion model (remove distortion)
   double undistorted_cameraX, undistorted_cameraY = 0.0;
+
   setFocalPlane(x_camera, y_camera, undistorted_cameraX, undistorted_cameraY);
 
   //Now back from distorted mm to pixels
@@ -242,6 +243,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   zc = m_currentParameterValue[2];
 
   // Intersect with some height about the ellipsoid.
+
   losEllipsoidIntersect(height, xc, yc, zc, xl, yl, zl, x, y, z);
 
   return csm::EcefCoord(x, y, z);
@@ -661,7 +663,53 @@ std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
 
 
 std::string UsgsAstroFrameSensorModel::getModelState() const {
+<<<<<<< HEAD
     return _state.dump();
+=======
+    json state = {
+      {"model_name", _SENSOR_MODEL_NAME},
+      {"m_focalLength" , m_focalLength},
+      {"m_iTransS", {m_iTransS[0], m_iTransS[1], m_iTransS[2]}},
+      {"m_iTransL", {m_iTransL[0], m_iTransL[1], m_iTransL[2]}},
+      {"m_boresight", {m_boresight[0], m_boresight[1], m_boresight[2]}},
+      {"m_transX", {m_transX[0], m_transX[1], m_transX[2]}},
+      {"m_transY", {m_transY[0], m_transY[1], m_transY[2]}},
+      {"m_iTransS", {m_iTransS[0], m_iTransS[1], m_iTransS[2]}},
+      {"m_iTransL", {m_iTransL[0], m_iTransL[1], m_iTransL[2]}},
+      {"m_majorAxis", m_majorAxis},
+      {"m_minorAxis", m_minorAxis},
+      {"m_spacecraftVelocity", {m_spacecraftVelocity[0], m_spacecraftVelocity[1], m_spacecraftVelocity[2]}},
+      {"m_sunPosition", {m_sunPosition[0], m_sunPosition[1], m_sunPosition[2]}},
+      {"m_startingDetectorSample", m_startingDetectorSample},
+      {"m_startingDetectorLine", m_startingDetectorLine},
+      {"m_targetName", m_targetName},
+      {"m_ifov", m_ifov},
+      {"m_instrumentID", m_instrumentID},
+      {"m_focalLengthEpsilon", m_focalLengthEpsilon},
+      {"m_ccdCenter", {m_ccdCenter[0], m_ccdCenter[1]}},
+      {"m_line_pp", m_line_pp},
+      {"m_sample_pp", m_sample_pp},
+      {"m_minElevation", m_minElevation},
+      {"m_maxElevation", m_maxElevation},
+      {"m_odtX", {m_odtX[0], m_odtX[1], m_odtX[2], m_odtX[3], m_odtX[4],
+                  m_odtX[5], m_odtX[6], m_odtX[7], m_odtX[8], m_odtX[9]}},
+      {"m_odtY", {m_odtY[0], m_odtY[1], m_odtY[2], m_odtY[3], m_odtY[4],
+                  m_odtY[5], m_odtY[6], m_odtY[7], m_odtY[8], m_odtY[9]}},
+      {"m_originalHalfLines", m_originalHalfLines},
+      {"m_originalHalfSamples", m_originalHalfSamples},
+      {"m_spacecraftName", m_spacecraftName},
+      {"m_pixelPitch", m_pixelPitch},
+      {"m_ephemerisTime", m_ephemerisTime},
+      {"m_nLines", m_nLines},
+      {"m_nSamples", m_nSamples},
+      {"m_currentParameterValue", {m_currentParameterValue[0], m_currentParameterValue[1],
+                                   m_currentParameterValue[2], m_currentParameterValue[3],
+                                   m_currentParameterValue[4], m_currentParameterValue[5],
+                                   m_currentParameterValue[6]}},
+      {"m_currentParameterCovariance", m_currentParameterCovariance}
+    };
+    return state.dump();
+>>>>>>> 399c1f28137f2b386fe2b2e454cc72ef104ec835
 }
 
 void UsgsAstroFrameSensorModel::replaceModelState(const std::string& modelState) {
@@ -1277,7 +1325,6 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
                                        double &undistortedX,
                                        double &undistortedY ) const {
 
-
   // Solve the distortion equation using the Newton-Raphson method.
   // Set the error tolerance to about one millionth of a NAC pixel.
   const double tol = 1.4E-5;
@@ -1300,7 +1347,8 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
 
   distortionFunction(x, y, fx, fy);
 
-  for (int count = 1; ((fabs(fx) + fabs(fy)) > tol) && (count < maxTries); count++) {
+
+  for (int count = 1; ((fabs(fx) +fabs(fy)) > tol) && (count < maxTries); count++) {
 
     this->distortionFunction(x, y, fx, fy);
 
@@ -1310,12 +1358,16 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
     distortionJacobian(x, y, Jxx, Jxy, Jyx, Jyy);
 
     double determinant = Jxx * Jyy - Jxy * Jyx;
-    if (determinant < 1E-6) {
+    if (fabs(determinant) < 1E-6) {
+
+      cout << "Singular determinant." << endl;
+      undistortedX = x;
+      undistortedY = y;
       //
       // Near-zero determinant. Add error handling here.
       //
       //-- Just break out and return with no convergence
-      break;
+      return false;
     }
 
     x = x + (Jyy * fx - Jxy * fy) / determinant;
@@ -1326,6 +1378,7 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
     // The method converged to a root.
     undistortedX = x;
     undistortedY = y;
+    return true;
 
   }
   else {
@@ -1333,6 +1386,7 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
     // number of iterations. Return with no distortion.
     undistortedX = dx;
     undistortedY = dy;
+    return false;
   }
 
   return true;

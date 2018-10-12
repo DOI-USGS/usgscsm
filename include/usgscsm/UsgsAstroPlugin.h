@@ -50,7 +50,13 @@ class USGSAstroPlugin : public csm::Plugin {
     // TODO when implementing, add any other necessary members.
 
 private:
+<<<<<<< HEAD:include/usgscsm/UsgsAstroPlugin.h
     static const USGSAstroPlugin m_registeredPlugin;
+=======
+    csm::Isd loadImageSupportData(const csm::Isd &imageSupportData) const; 
+
+    static const UsgsAstroFramePlugin m_registeredPlugin;
+>>>>>>> 399c1f28137f2b386fe2b2e454cc72ef104ec835:include/usgscsm/UsgsAstroFramePlugin.h
     static const std::string _PLUGIN_NAME;
     static const std::string _MANUFACTURER_NAME;
     static const std::string _RELEASE_DATE;
