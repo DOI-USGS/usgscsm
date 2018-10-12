@@ -18,6 +18,9 @@ else()
 			    PATH_SUFFIXES "csm" 
 			    PATHS $ENV{CONDA_PREFIX}/include/)
   find_library(CSM_LIBRARY csmapi PATHS $ENV{CONDA_PREFIX}/lib)
+  
+  message("--Found CSM Library: ${CSM_LIBRARY}")
+  message("--Found CSM Include Directory: ${CSM_INCLUDE_DIR}")
 endif(BUILD_CSM)
 
 add_library(usgscsm SHARED
@@ -42,7 +45,6 @@ target_include_directories(usgscsm
 )
 
 # Setup for GoogleTest
-
 find_package (Threads)
 
 target_link_libraries(usgscsm
@@ -50,16 +52,11 @@ target_link_libraries(usgscsm
                       gtest ${CMAKE_THREAD_LIBS_INIT})
 
 if(WIN32)
-  option(CMAKE_USE_WIN32_THREADS_INIT "using WIN32 threads" ON)
-  option(gtest_disable_pthreads "Disable uses of pthreads in gtest." ON)
-  install(TARGETS usgscsm
-    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
-    install(DIRECTORY ${USGSCSM_INCLUDE_DIRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  install(TARGETS usgscsm RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
 else()
-  install(TARGETS usgscsm
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
-    install(DIRECTORY ${USGSCSM_INCLUDE_DIRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  install(TARGETS usgscsm LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
+install(DIRECTORY ${USGSCSM_INCLUDE_DIRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 
 # Optional build or link against CSM
