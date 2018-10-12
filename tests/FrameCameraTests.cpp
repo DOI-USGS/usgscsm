@@ -1,4 +1,4 @@
-#include "UsgsAstroFramePlugin.h"
+#include "UsgsAstroPlugin.h"
 #include "UsgsAstroFrameSensorModel.h"
 
 #include <sstream>

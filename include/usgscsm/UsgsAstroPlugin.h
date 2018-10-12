@@ -1,5 +1,5 @@
-#ifndef UsgsAstroFramePlugin_h
-#define UsgsAstroFramePlugin_h
+#ifndef USGSAstroPlugin_h
+#define USGSAstroPlugin_h
 
 
 #include <string>
@@ -10,11 +10,11 @@
 #include <json.hpp>
 using json = nlohmann::json;
 
-class UsgsAstroFramePlugin : public csm::Plugin {
+class USGSAstroPlugin : public csm::Plugin {
 
   public:
-    UsgsAstroFramePlugin();
-    ~UsgsAstroFramePlugin();
+    USGSAstroPlugin();
+    ~USGSAstroPlugin();
 
     virtual std::string getStateFromISD(csm::Isd imageSupportData) const;
     virtual std::string getPluginName() const;
@@ -50,7 +50,7 @@ class UsgsAstroFramePlugin : public csm::Plugin {
     // TODO when implementing, add any other necessary members.
 
 private:
-    static const UsgsAstroFramePlugin m_registeredPlugin;
+    static const USGSAstroPlugin m_registeredPlugin;
     static const std::string _PLUGIN_NAME;
     static const std::string _MANUFACTURER_NAME;
     static const std::string _RELEASE_DATE;

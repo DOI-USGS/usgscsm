@@ -1,7 +1,7 @@
 #ifndef Fixtures_h
 #define Fixtures_h
 
-#include "UsgsAstroFramePlugin.h"
+#include "UsgsAstroPlugin.h"
 #include "UsgsAstroFrameSensorModel.h"
 
 #include <json.hpp>
@@ -39,11 +39,11 @@ class FrameSensorModel : public ::testing::Test {
       void SetUp() override {
          sensorModel = NULL;
          csm::Isd isd;
-         std::ifstream isdFile("data/simpleFramerISD.json");
-         json jsonIsd = json::parse(isdFile);
-         jsonToIsd(jsonIsd, isd);
-         isdFile.close();
-         UsgsAstroFramePlugin frameCameraPlugin;
+         isd.setFilename("data/simpleFramerISD.json");
+         // json jsonIsd = json::parse(isdFile);
+         // jsonToIsd(jsonIsd, isd);
+         // isdFile.close();
+         USGSAstroPlugin frameCameraPlugin;
          csm::Model *model = frameCameraPlugin.constructModelFromISD(
                isd,
                "USGS_ASTRO_FRAME_SENSOR_MODEL");
