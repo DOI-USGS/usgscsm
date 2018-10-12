@@ -1,7 +1,7 @@
 {
    "DT_EPHEM": 0.2,
    "NUMBER_OF_EPHEM": 9,
-   "T0_QUAT": -8.0,
+   "T0_QUAT": -0.8,
    "MIN_VALID_HT": -10,
    "SEMI_MAJOR_AXIS": 10,
    "QUATERNIONS": [
@@ -16,14 +16,12 @@
      0.0, -0.707106781186547, 0.0, 0.707106781186547
    ],
    "SENSOR_ID": "USGS_LINE_SCANNER",
-   "SCAN_DURATION": 16.0,
+   "SCAN_DURATION": 1.6,
    "ECCENTRICITY": 0.0,
-   "STARTING_EPHEMERIS_TIME": 992.0,
-   "STARTING_LINE": 1,
+   "STARTING_EPHEMERIS_TIME": 999.2,
+   "STARTING_LINE": 0,
    "STARTING_SAMPLE": 0,
-   "DETECTOR_SAMPLE_ORIGIN": [
-     8.5
-   ],
+   "DETECTOR_SAMPLE_ORIGIN": 7.0,
    "IMAGE_ID": "UNKNOWN",
    "PLATFORM": 1,
    "TOTAL_LINES": 16,
@@ -43,14 +41,14 @@
      50.0
    ],
    "DETECTOR_LINE_ORIGIN": [
-     0.5
+     0.0
    ],
    "MOUNTING_ANGLES": [
      0,
      0,
      0
    ],
-   "T0_EPHEM": -8.0,
+   "T0_EPHEM": -0.8,
    "DETECTOR_SAMPLE_SUMMING": 1,
    "REFERENCE_HEIGHT": 0,
    "ATMREF": 0,

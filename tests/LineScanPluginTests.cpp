@@ -1,6 +1,3 @@
-#include "UsgsAstroLsPlugin.h"
-#include "UsgsAstroLsSensorModel.h"
-
 #include <sstream>
 #include <fstream>
 

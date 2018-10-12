@@ -4,7 +4,8 @@ cmake_minimum_required(VERSION 3.10)
 add_executable(runCSMCameraModelTests
                FramePluginTests.cpp
                FrameCameraTests.cpp
-               LineScanPluginTests.cpp)
+               LineScanPluginTests.cpp
+               LineScanSensorModelTests.cpp)
 target_link_libraries(runCSMCameraModelTests usgscsm ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} pthread)
 
 gtest_discover_tests(runCSMCameraModelTests WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)

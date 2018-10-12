@@ -3,6 +3,8 @@
 
 #include "UsgsAstroFramePlugin.h"
 #include "UsgsAstroFrameSensorModel.h"
+#include "UsgsAstroLsPlugin.h"
+#include "UsgsAstroLsSensorModel.h"
 
 #include <json.hpp>
 
@@ -42,6 +44,34 @@ class FrameSensorModel : public ::testing::Test {
                isd,
                "USGS_ASTRO_FRAME_SENSOR_MODEL");
          sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+
+         ASSERT_NE(sensorModel, nullptr);
+      }
+
+      void TearDown() override {
+         if (sensorModel) {
+            delete sensorModel;
+            sensorModel = NULL;
+         }
+      }
+};
+
+class ConstVelLineScanSensorModel : public ::testing::Test {
+   protected:
+      csm::Isd isd;
+      UsgsAstroLsSensorModel *sensorModel;
+
+      void SetUp() override {
+         sensorModel = NULL;
+         std::ifstream isdFile("data/constVelocityLineScan.json");
+         json jsonIsd = json::parse(isdFile);
+         isd.clearAllParams();
+         jsonToIsd(jsonIsd, isd);
+         UsgsAstroLsPlugin cameraPlugin;
+         csm::Model *model = cameraPlugin.constructModelFromISD(
+               isd,
+               "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL");
+         sensorModel = dynamic_cast<UsgsAstroLsSensorModel *>(model);
 
          ASSERT_NE(sensorModel, nullptr);
       }
