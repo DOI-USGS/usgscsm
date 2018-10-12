@@ -1,391 +1,391 @@
-// //----------------------------------------------------------------------------
+// // //----------------------------------------------------------------------------
+// // //
+// // //                                UNCLASSIFIED
+// // //
+// // // Copyright © 1989-2017 BAE Systems Information and Electronic Systems Integration Inc.
+// // //                            ALL RIGHTS RESERVED
+// // // Use of this software product is governed by the terms of a license
+// // // agreement. The license agreement is found in the installation directory.
+// // //
+// // //             For support, please visit http://www.baesystems.com/gxp
+// // //
+// // //  Revision History:
+// // //  Date        Name        Description
+// // //  ----------- ---------   -----------------------------------------------
+// // //  30-APR-2017 BAE Systems Initial Implementation based on CSM 2.0 code
+// // //  16-OCT-2017 BAE Systems Update for CSM 3.0.3
+// // //
+// // //-----------------------------------------------------------------------------
 // //
-// //                                UNCLASSIFIED
+// // #define USGSASTROLINESCANNER_LIBRARY
 // //
-// // Copyright © 1989-2017 BAE Systems Information and Electronic Systems Integration Inc.
-// //                            ALL RIGHTS RESERVED
-// // Use of this software product is governed by the terms of a license
-// // agreement. The license agreement is found in the installation directory.
+// // #include "UsgsAstroLsPlugin.h"
+// // #include "UsgsAstroLsISD.h"
+// // #include "UsgsAstroLsSensorModel.h"
+// // #include "UsgsAstroLsSensorModel.h"
 // //
-// //             For support, please visit http://www.baesystems.com/gxp
+// // #ifdef _WIN32
+// // # define DIR_DELIMITER_STR "\\"
+// // #else
+// // # define DIR_DELIMITER_STR  "/"
+// // #endif
 // //
-// //  Revision History:
-// //  Date        Name        Description
-// //  ----------- ---------   -----------------------------------------------
-// //  30-APR-2017 BAE Systems Initial Implementation based on CSM 2.0 code
-// //  16-OCT-2017 BAE Systems Update for CSM 3.0.3
+// // //#ifdef WIN32
+// // //#pragma comment(linker, SENCSM_MANIFESTDEPENDENCY_GXP_CSMAPI)
+// // //#endif // WIN32
 // //
-// //-----------------------------------------------------------------------------
-//
-// #define USGSASTROLINESCANNER_LIBRARY
-//
-// #include "UsgsAstroLsPlugin.h"
-// #include "UsgsAstroLsISD.h"
-// #include "UsgsAstroLsSensorModel.h"
-// #include "UsgsAstroLsSensorModel.h"
-//
-// #ifdef _WIN32
-// # define DIR_DELIMITER_STR "\\"
-// #else
-// # define DIR_DELIMITER_STR  "/"
-// #endif
-//
-// //#ifdef WIN32
-// //#pragma comment(linker, SENCSM_MANIFESTDEPENDENCY_GXP_CSMAPI)
-// //#endif // WIN32
-//
-// #include <iostream>
-// #include <sstream>
-// #include <fstream>
-// #include <stdlib.h>
-// #include <math.h>
-// #include <json.hpp>
-//
-//
-// using json = nlohmann::json;
-//
-// // Declaration of static variables
-// static const std::string  PLUGIN_NAME       = "USGS_ASTRO_LINE_SCANNER_PLUGIN";
-// static const std::string  MANUFACTURER_NAME = "BAE_SYSTEMS_GXP";
-// static const std::string  RELEASE_DATE      = "20171230";
-// static const int          N_SENSOR_MODELS   = 1;
-// const std::string  UsgsAstroLsPlugin::mISD_KEYWORDS[] =
-// {
-//    "SENSOR_TYPE",
-//    "TOTAL_LINES",
-//    "TOTAL_SAMPLES",
-//    "PLATFORM",
-//    "ABERR",
-//    "ATMREF",
-//    "INT_TIME",
-//    "STARTING_EPHEMERIS_TIME",
-//    "CENTER_EPHEMERIS_TIME",
-//    "DETECTOR_SAMPLE_SUMMING",
-//    "STARTING_SAMPLE",
-//    "IKCODE",
-//    "FOCAL",
-//    "ISIS_Z_DIRECTION",
-//    "OPTICAL_DIST_COEF",
-//    "ITRANSS",
-//    "ITRANSL",
-//    "DETECTOR_SAMPLE_ORIGIN",
-//    "DETECTOR_LINE_ORIGIN",
-//    "DETECTOR_LINE_OFFSET",
-//    "MOUNTING_ANGLES",
-//    "DT_EPHEM",
-//    "T0_EPHEM",
-//    "DT_QUAT",
-//    "T0_QUAT",
-//    "NUMBER_OF_EPHEM",
-//    "NUMBER_OF_QUATERNIONS",
-//    "EPHEM_PTS",
-//    "EPHEM_RATES",
-//    "QUATERNIONS",
-//    "TRI_PARAMETERS",
-//    "SEMI_MAJOR_AXIS",
-//    "ECCENTRICITY",
-//    // Everything below here is optional
-//    "REFERENCE_HEIGHT",
-//    "MIN_VALID_HT",
-//    "MAX_VALID_HT",
-//    "IMAGE_ID",
-//    "SENSOR_ID",
-//    "PLATFORM_ID",
-//    "TRAJ_ID",
-//    "COLL_ID",
-//    "REF_DATE_TIME"
-// };
-//
-// const std::string  UsgsAstroLsPlugin::mSTATE_KEYWORDS[] =
-// {
-//    "STA_SENSOR_MODEL_NAME",
-//    "STA_IMAGE_IDENTIFIER",
-//    "STA_SENSOR_TYPE",
-//    "STA_TOTAL_LINES",
-//    "STA_TOTAL_SAMPLES",
-//    "STA_OFFSET_LINES",
-//    "STA_OFFSET_SAMPLES",
-//    "STA_PLATFORM_FLAG",
-//    "STA_ABERR_FLAG",
-//    "STA_ATMREF_FLAG",
-//    "STA_INT_TIME_LINES",
-//    "STA_INT_TIME_START_TIMES",
-//    "STA_INT_TIMES",
-//    "STA_STARTING_EPHEMERIS_TIME",
-//    "STA_CENTER_EPHEMERIS_TIME",
-//    "STA_DETECTOR_SAMPLE_SUMMING",
-//    "STA_STARTING_SAMPLE",
-//    "STA_IK_CODE",
-//    "STA_FOCAL",
-//    "STA_ISIS_Z_DIRECTION",
-//    "STA_OPTICAL_DIST_COEF",
-//    "STA_I_TRANS_S",
-//    "STA_I_TRANS_L",
-//    "STA_DETECTOR_SAMPLE_ORIGIN",
-//    "STA_DETECTOR_LINE_ORIGIN",
-//    "STA_DETECTOR_LINE_OFFSET",
-//    "STA_MOUNTING_MATRIX",
-//    "STA_SEMI_MAJOR_AXIS",
-//    "STA_SEMI_MINOR_AXIS",
-//    "STA_REFERENCE_DATE_AND_TIME",
-//    "STA_PLATFORM_IDENTIFIER",
-//    "STA_SENSOR_IDENTIFIER",
-//    "STA_TRAJECTORY_IDENTIFIER",
-//    "STA_COLLECTION_IDENTIFIER",
-//    "STA_REF_ELEVATION",
-//    "STA_MIN_ELEVATION",
-//    "STA_MAX_ELEVATION",
-//    "STA_DT_EPHEM",
-//    "STA_T0_EPHEM",
-//    "STA_DT_QUAT",
-//    "STA_T0_QUAT",
-//    "STA_NUM_EPHEM",
-//    "STA_NUM_QUATERNIONS",
-//    "STA_EPHEM_PTS",
-//    "STA_EPHEM_RATES",
-//    "STA_QUATERNIONS",
-//    "STA_PARAMETER_VALS",
-//    "STA_PARAMETER_TYPE",
-//    "STA_REFERENCE_POINT_XYZ",
-//    "STA_GSD",
-//    "STA_FLYING_HEIGHT",
-//    "STA_HALF_SWATH",
-//    "STA_HALF_TIME",
-//    "STA_COVARIANCE",
-//    "STA_IMAGE_FLIP_FLAG"
-// };
-//
-// //***************************************************************************
-// // Static instance of itself
-// //***************************************************************************
-// const UsgsAstroLsPlugin UsgsAstroLsPlugin::_theRegisteringObject;
-//
-//
-// //***************************************************************************
-// // UsgsAstroLsPlugin::UsgsAstroLsPlugin
-// //***************************************************************************
-// UsgsAstroLsPlugin::UsgsAstroLsPlugin()
-// {
-// }
-//
-// //*****************************************************************************
-// // UsgsAstroLsPlugin::~UsgsAstroLsPlugin
-// //*****************************************************************************
-// UsgsAstroLsPlugin::~UsgsAstroLsPlugin()
-// {
-// }
-//
-// //***************************************************************************
-// // UsgsAstroLsPlugin::getPluginName
-// //***************************************************************************
-// std::string UsgsAstroLsPlugin::getPluginName() const
-// {
-//    return PLUGIN_NAME;
-// }
-//
-// //***************************************************************************
-// // UsgsAstroLsPlugin::getManufacturer
-// //***************************************************************************
-// std::string UsgsAstroLsPlugin::getManufacturer() const
-// {
-//    return MANUFACTURER_NAME;
-// }
-//
-// //***************************************************************************
-// // UsgsAstroLsPlugin::getReleaseDate
-// //***************************************************************************
-// std::string UsgsAstroLsPlugin::getReleaseDate() const
-// {
-//    return RELEASE_DATE;
-// }
-//
-// //***************************************************************************
-// // UsgsAstroLsPlugin::getCSMVersion
-// //***************************************************************************
-// csm::Version UsgsAstroLsPlugin::getCsmVersion() const
-// {
-//    return CURRENT_CSM_VERSION;
-// }
-//
-// //***************************************************************************
-// // UsgsAstroLsPlugin::getNSensorModels
-// //***************************************************************************
-// size_t UsgsAstroLsPlugin::getNumModels() const
-// {
-//    return N_SENSOR_MODELS;
-// }
-//
-// //***************************************************************************
-// // UsgsAstroLsPlugin::getSensorModelName
-// //***************************************************************************
-// std::string UsgsAstroLsPlugin::getModelName(size_t modelIndex) const
-// {
-//    // Always return the only sensor model name defined regardless of index
-//    return UsgsAstroLsSensorModel::SENSOR_MODEL_NAME;
-// }
-//
-//
-// //***************************************************************************
-// // UsgsAstroLsPlugin::getModelFamily
-// //***************************************************************************
-// std::string UsgsAstroLsPlugin::getModelFamily(size_t modelIndex) const
-// {
-//    return CSM_RASTER_FAMILY;
-// }
-//
-// //***************************************************************************
-// // UsgsAstroLsPlugin::getSensorModelVersion
-// //***************************************************************************
-// csm::Version UsgsAstroLsPlugin::getModelVersion(
-//    const std::string &model_name) const
-// {
-//    if (model_name != UsgsAstroLsSensorModel::SENSOR_MODEL_NAME)
-//    {
-//       csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
-//       std::string aMessage = " Sensor model not supported: ";
-//       std::string aFunction = "UsgsAstroLsPlugin::getSensorModelVersion()";
-//       csm::Error csmErr(aErrorType, aMessage, aFunction);
-//       throw (csmErr);
-//    }
-//
-//    return csm::Version(1, 0, 0);
-// }
-//
-//
-// //***************************************************************************
-// // UsgsAstroLsPlugin::canSensorModelBeConstructedFromState
-// //***************************************************************************
-// bool UsgsAstroLsPlugin::canModelBeConstructedFromState(
-//    const std::string& model_name,
-//    const std::string& model_state,
-//    csm::WarningList* warnings) const
-// {
-//    // Initialize constructible flag
-//    bool constructible = true;
-//
-//    // Get sensor model from sensor model state
-//    std::string name_from_state;
-//
-//    try
-//    {
-//       name_from_state = getModelNameFromModelState(model_state);
-//    }
-//    catch (...)
-//    {
-//    }
-//
-//    // Check if plugin supports sensor model name
-//    if (model_name != name_from_state)
-//    {
-//       constructible = false;
-//    }
-//
-//    // Check that all of the necessary state keys are in place
-//    auto j = json::parse(model_state);
-//    for (auto &key : mSTATE_KEYWORDS){
-//        if (j.find(key) == j.end()){
-//            constructible = false;
-//        }
-//    }
-//
-//    return constructible;
-// }
-//
-// //***************************************************************************
-// // UsgsAstroLsPlugin::canSensorModelBeConstructedFromISD
-// //***************************************************************************
-// bool UsgsAstroLsPlugin::canModelBeConstructedFromISD(
-//    const csm::Isd &image_support_data,
-//    const std::string& model_name,
-//    csm::WarningList* warnings) const
-// {
-//    // Check file validity
-//    bool constructible = true;
-//
-//    std::string value;
-//    for(auto &key : mISD_KEYWORDS){
-//        value = image_support_data.param(key);
-//        if (value.empty()){
-//            std::cout<<key<<"\n"<<std::endl;
-//            constructible = false;
-//        }
-//    }
-//
-//    return constructible;
-// }
-//
-//
-// //***************************************************************************
-// // UsgsAstroLsPlugin::constructSensorModelFromState
-// //***************************************************************************
-// csm::Model* UsgsAstroLsPlugin::constructModelFromState(
-//    const std::string& model_state,
-//    csm::WarningList* warnings ) const
-// {
-//
-//     // Get the sensor model name from the sensor model state
-//     std::string model_name_from_state = getModelNameFromModelState(model_state);
-//
-//     if (!canModelBeConstructedFromState(model_name_from_state, model_state)){
-//         csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
-//         std::string aMessage = "Model state is not valid.";
-//         std::string aFunction = "UsgsAstroLsPlugin::constructModelFromState()";
-//         throw csm::Error(aErrorType, aMessage, aFunction);
-//     }
-//    UsgsAstroLsSensorModel data;
-//    data.setState( model_state );
-//
-//    UsgsAstroLsSensorModel* sensor_model = new UsgsAstroLsSensorModel();
-//    // I do not think that exposing a set method is necessarily CSM compliant?
-//    sensor_model->set( data );
-//
-//    return sensor_model;
-// }
-//
-// //***************************************************************************
-// // UsgsAstroLsPlugin::constructSensorModelFromISD
-// //***************************************************************************
-// csm::Model* UsgsAstroLsPlugin::constructModelFromISD(
-//    const csm::Isd&    image_support_data,
-//    const std::string& model_name,
-//    csm::WarningList*  warnings) const
-// {
-//    std::string stateStr = convertISDToModelState(image_support_data, model_name, warnings);
-//    UsgsAstroLsSensorModel state(stateStr);
-//
-//    UsgsAstroLsSensorModel* sm = new UsgsAstroLsSensorModel();
-//    // I do not see things like flying height getting set properly, are things overflowing?
-//    sm->set(state);
-//
-//    csm::Model* sensor_model = sm;
-//    return sensor_model;
-// }
-//
-// //***************************************************************************
-// // UsgsAstroLsPlugin::getSensorModelNameFromSensorModelState
-// //***************************************************************************
-// std::string UsgsAstroLsPlugin::getModelNameFromModelState(
-//    const std::string& model_state,
-//    csm::WarningList* warnings) const
-// {
-//     return UsgsAstroLsSensorModel::getModelNameFromModelState( model_state );
-// }
-//
-// //***************************************************************************
-// // UsgsAstroLsPlugin::canISDBeConvertedToSensorModelState
-// //***************************************************************************
-// bool UsgsAstroLsPlugin::canISDBeConvertedToModelState(
-//    const csm::Isd&    image_support_data,
-//    const std::string& model_name,
-//    csm::WarningList*  warnings) const
-// {
-//    // Check if ISD is supported
-//    return canModelBeConstructedFromISD(image_support_data, model_name);
-// }
-//
-// //***************************************************************************
-// // UsgsAstroLsPlugin::convertISDToSensorModelState
-// //***************************************************************************
+// // #include <iostream>
+// // #include <sstream>
+// // #include <fstream>
+// // #include <stdlib.h>
+// // #include <math.h>
+// // #include <json.hpp>
+// //
+// //
+// // using json = nlohmann::json;
+// //
+// // // Declaration of static variables
+// // static const std::string  PLUGIN_NAME       = "USGS_ASTRO_LINE_SCANNER_PLUGIN";
+// // static const std::string  MANUFACTURER_NAME = "BAE_SYSTEMS_GXP";
+// // static const std::string  RELEASE_DATE      = "20171230";
+// // static const int          N_SENSOR_MODELS   = 1;
+// // const std::string  UsgsAstroLsPlugin::mISD_KEYWORDS[] =
+// // {
+// //    "SENSOR_TYPE",
+// //    "TOTAL_LINES",
+// //    "TOTAL_SAMPLES",
+// //    "PLATFORM",
+// //    "ABERR",
+// //    "ATMREF",
+// //    "INT_TIME",
+// //    "STARTING_EPHEMERIS_TIME",
+// //    "CENTER_EPHEMERIS_TIME",
+// //    "DETECTOR_SAMPLE_SUMMING",
+// //    "STARTING_SAMPLE",
+// //    "IKCODE",
+// //    "FOCAL",
+// //    "ISIS_Z_DIRECTION",
+// //    "OPTICAL_DIST_COEF",
+// //    "ITRANSS",
+// //    "ITRANSL",
+// //    "DETECTOR_SAMPLE_ORIGIN",
+// //    "DETECTOR_LINE_ORIGIN",
+// //    "DETECTOR_LINE_OFFSET",
+// //    "MOUNTING_ANGLES",
+// //    "DT_EPHEM",
+// //    "T0_EPHEM",
+// //    "DT_QUAT",
+// //    "T0_QUAT",
+// //    "NUMBER_OF_EPHEM",
+// //    "NUMBER_OF_QUATERNIONS",
+// //    "EPHEM_PTS",
+// //    "EPHEM_RATES",
+// //    "QUATERNIONS",
+// //    "TRI_PARAMETERS",
+// //    "SEMI_MAJOR_AXIS",
+// //    "ECCENTRICITY",
+// //    // Everything below here is optional
+// //    "REFERENCE_HEIGHT",
+// //    "MIN_VALID_HT",
+// //    "MAX_VALID_HT",
+// //    "IMAGE_ID",
+// //    "SENSOR_ID",
+// //    "PLATFORM_ID",
+// //    "TRAJ_ID",
+// //    "COLL_ID",
+// //    "REF_DATE_TIME"
+// // };
+// //
+// // const std::string  UsgsAstroLsPlugin::mSTATE_KEYWORDS[] =
+// // {
+// //    "STA_SENSOR_MODEL_NAME",
+// //    "STA_IMAGE_IDENTIFIER",
+// //    "STA_SENSOR_TYPE",
+// //    "STA_TOTAL_LINES",
+// //    "STA_TOTAL_SAMPLES",
+// //    "STA_OFFSET_LINES",
+// //    "STA_OFFSET_SAMPLES",
+// //    "STA_PLATFORM_FLAG",
+// //    "STA_ABERR_FLAG",
+// //    "STA_ATMREF_FLAG",
+// //    "STA_INT_TIME_LINES",
+// //    "STA_INT_TIME_START_TIMES",
+// //    "STA_INT_TIMES",
+// //    "STA_STARTING_EPHEMERIS_TIME",
+// //    "STA_CENTER_EPHEMERIS_TIME",
+// //    "STA_DETECTOR_SAMPLE_SUMMING",
+// //    "STA_STARTING_SAMPLE",
+// //    "STA_IK_CODE",
+// //    "STA_FOCAL",
+// //    "STA_ISIS_Z_DIRECTION",
+// //    "STA_OPTICAL_DIST_COEF",
+// //    "STA_I_TRANS_S",
+// //    "STA_I_TRANS_L",
+// //    "STA_DETECTOR_SAMPLE_ORIGIN",
+// //    "STA_DETECTOR_LINE_ORIGIN",
+// //    "STA_DETECTOR_LINE_OFFSET",
+// //    "STA_MOUNTING_MATRIX",
+// //    "STA_SEMI_MAJOR_AXIS",
+// //    "STA_SEMI_MINOR_AXIS",
+// //    "STA_REFERENCE_DATE_AND_TIME",
+// //    "STA_PLATFORM_IDENTIFIER",
+// //    "STA_SENSOR_IDENTIFIER",
+// //    "STA_TRAJECTORY_IDENTIFIER",
+// //    "STA_COLLECTION_IDENTIFIER",
+// //    "STA_REF_ELEVATION",
+// //    "STA_MIN_ELEVATION",
+// //    "STA_MAX_ELEVATION",
+// //    "STA_DT_EPHEM",
+// //    "STA_T0_EPHEM",
+// //    "STA_DT_QUAT",
+// //    "STA_T0_QUAT",
+// //    "STA_NUM_EPHEM",
+// //    "STA_NUM_QUATERNIONS",
+// //    "STA_EPHEM_PTS",
+// //    "STA_EPHEM_RATES",
+// //    "STA_QUATERNIONS",
+// //    "STA_PARAMETER_VALS",
+// //    "STA_PARAMETER_TYPE",
+// //    "STA_REFERENCE_POINT_XYZ",
+// //    "STA_GSD",
+// //    "STA_FLYING_HEIGHT",
+// //    "STA_HALF_SWATH",
+// //    "STA_HALF_TIME",
+// //    "STA_COVARIANCE",
+// //    "STA_IMAGE_FLIP_FLAG"
+// // };
+// //
+// // //***************************************************************************
+// // // Static instance of itself
+// // //***************************************************************************
+// // const UsgsAstroLsPlugin UsgsAstroLsPlugin::_theRegisteringObject;
+// //
+// //
+// // //***************************************************************************
+// // // UsgsAstroLsPlugin::UsgsAstroLsPlugin
+// // //***************************************************************************
+// // UsgsAstroLsPlugin::UsgsAstroLsPlugin()
+// // {
+// // }
+// //
+// // //*****************************************************************************
+// // // UsgsAstroLsPlugin::~UsgsAstroLsPlugin
+// // //*****************************************************************************
+// // UsgsAstroLsPlugin::~UsgsAstroLsPlugin()
+// // {
+// // }
+// //
+// // //***************************************************************************
+// // // UsgsAstroLsPlugin::getPluginName
+// // //***************************************************************************
+// // std::string UsgsAstroLsPlugin::getPluginName() const
+// // {
+// //    return PLUGIN_NAME;
+// // }
+// //
+// // //***************************************************************************
+// // // UsgsAstroLsPlugin::getManufacturer
+// // //***************************************************************************
+// // std::string UsgsAstroLsPlugin::getManufacturer() const
+// // {
+// //    return MANUFACTURER_NAME;
+// // }
+// //
+// // //***************************************************************************
+// // // UsgsAstroLsPlugin::getReleaseDate
+// // //***************************************************************************
+// // std::string UsgsAstroLsPlugin::getReleaseDate() const
+// // {
+// //    return RELEASE_DATE;
+// // }
+// //
+// // //***************************************************************************
+// // // UsgsAstroLsPlugin::getCSMVersion
+// // //***************************************************************************
+// // csm::Version UsgsAstroLsPlugin::getCsmVersion() const
+// // {
+// //    return CURRENT_CSM_VERSION;
+// // }
+// //
+// // //***************************************************************************
+// // // UsgsAstroLsPlugin::getNSensorModels
+// // //***************************************************************************
+// // size_t UsgsAstroLsPlugin::getNumModels() const
+// // {
+// //    return N_SENSOR_MODELS;
+// // }
+// //
+// // //***************************************************************************
+// // // UsgsAstroLsPlugin::getSensorModelName
+// // //***************************************************************************
+// // std::string UsgsAstroLsPlugin::getModelName(size_t modelIndex) const
+// // {
+// //    // Always return the only sensor model name defined regardless of index
+// //    return UsgsAstroLsSensorModel::SENSOR_MODEL_NAME;
+// // }
+// //
+// //
+// // //***************************************************************************
+// // // UsgsAstroLsPlugin::getModelFamily
+// // //***************************************************************************
+// // std::string UsgsAstroLsPlugin::getModelFamily(size_t modelIndex) const
+// // {
+// //    return CSM_RASTER_FAMILY;
+// // }
+// //
+// // //***************************************************************************
+// // // UsgsAstroLsPlugin::getSensorModelVersion
+// // //***************************************************************************
+// // csm::Version UsgsAstroLsPlugin::getModelVersion(
+// //    const std::string &model_name) const
+// // {
+// //    if (model_name != UsgsAstroLsSensorModel::SENSOR_MODEL_NAME)
+// //    {
+// //       csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
+// //       std::string aMessage = " Sensor model not supported: ";
+// //       std::string aFunction = "UsgsAstroLsPlugin::getSensorModelVersion()";
+// //       csm::Error csmErr(aErrorType, aMessage, aFunction);
+// //       throw (csmErr);
+// //    }
+// //
+// //    return csm::Version(1, 0, 0);
+// // }
+// //
+// //
+// // //***************************************************************************
+// // // UsgsAstroLsPlugin::canSensorModelBeConstructedFromState
+// // //***************************************************************************
+// // bool UsgsAstroLsPlugin::canModelBeConstructedFromState(
+// //    const std::string& model_name,
+// //    const std::string& model_state,
+// //    csm::WarningList* warnings) const
+// // {
+// //    // Initialize constructible flag
+// //    bool constructible = true;
+// //
+// //    // Get sensor model from sensor model state
+// //    std::string name_from_state;
+// //
+// //    try
+// //    {
+// //       name_from_state = getModelNameFromModelState(model_state);
+// //    }
+// //    catch (...)
+// //    {
+// //    }
+// //
+// //    // Check if plugin supports sensor model name
+// //    if (model_name != name_from_state)
+// //    {
+// //       constructible = false;
+// //    }
+// //
+// //    // Check that all of the necessary state keys are in place
+// //    auto j = json::parse(model_state);
+// //    for (auto &key : mSTATE_KEYWORDS){
+// //        if (j.find(key) == j.end()){
+// //            constructible = false;
+// //        }
+// //    }
+// //
+// //    return constructible;
+// // }
+// //
+// // //***************************************************************************
+// // // UsgsAstroLsPlugin::canSensorModelBeConstructedFromISD
+// // //***************************************************************************
+// // bool UsgsAstroLsPlugin::canModelBeConstructedFromISD(
+// //    const csm::Isd &image_support_data,
+// //    const std::string& model_name,
+// //    csm::WarningList* warnings) const
+// // {
+// //    // Check file validity
+// //    bool constructible = true;
+// //
+// //    std::string value;
+// //    for(auto &key : mISD_KEYWORDS){
+// //        value = image_support_data.param(key);
+// //        if (value.empty()){
+// //            std::cout<<key<<"\n"<<std::endl;
+// //            constructible = false;
+// //        }
+// //    }
+// //
+// //    return constructible;
+// // }
+// //
+// //
+// // //***************************************************************************
+// // // UsgsAstroLsPlugin::constructSensorModelFromState
+// // //***************************************************************************
+// // csm::Model* UsgsAstroLsPlugin::constructModelFromState(
+// //    const std::string& model_state,
+// //    csm::WarningList* warnings ) const
+// // {
+// //
+// //     // Get the sensor model name from the sensor model state
+// //     std::string model_name_from_state = getModelNameFromModelState(model_state);
+// //
+// //     if (!canModelBeConstructedFromState(model_name_from_state, model_state)){
+// //         csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
+// //         std::string aMessage = "Model state is not valid.";
+// //         std::string aFunction = "UsgsAstroLsPlugin::constructModelFromState()";
+// //         throw csm::Error(aErrorType, aMessage, aFunction);
+// //     }
+// //    UsgsAstroLsSensorModel data;
+// //    data.setState( model_state );
+// //
+// //    UsgsAstroLsSensorModel* sensor_model = new UsgsAstroLsSensorModel();
+// //    // I do not think that exposing a set method is necessarily CSM compliant?
+// //    sensor_model->set( data );
+// //
+// //    return sensor_model;
+// // }
+// //
+// // //***************************************************************************
+// // // UsgsAstroLsPlugin::constructSensorModelFromISD
+// // //***************************************************************************
+// // csm::Model* UsgsAstroLsPlugin::constructModelFromISD(
+// //    const csm::Isd&    image_support_data,
+// //    const std::string& model_name,
+// //    csm::WarningList*  warnings) const
+// // {
+// //    std::string stateStr = convertISDToModelState(image_support_data, model_name, warnings);
+// //    UsgsAstroLsSensorModel state(stateStr);
+// //
+// //    UsgsAstroLsSensorModel* sm = new UsgsAstroLsSensorModel();
+// //    // I do not see things like flying height getting set properly, are things overflowing?
+// //    sm->set(state);
+// //
+// //    csm::Model* sensor_model = sm;
+// //    return sensor_model;
+// // }
+// //
+// // //***************************************************************************
+// // // UsgsAstroLsPlugin::getSensorModelNameFromSensorModelState
+// // //***************************************************************************
+// // std::string UsgsAstroLsPlugin::getModelNameFromModelState(
+// //    const std::string& model_state,
+// //    csm::WarningList* warnings) const
+// // {
+// //     return UsgsAstroLsSensorModel::getModelNameFromModelState( model_state );
+// // }
+// //
+// // //***************************************************************************
+// // // UsgsAstroLsPlugin::canISDBeConvertedToSensorModelState
+// // //***************************************************************************
+// // bool UsgsAstroLsPlugin::canISDBeConvertedToModelState(
+// //    const csm::Isd&    image_support_data,
+// //    const std::string& model_name,
+// //    csm::WarningList*  warnings) const
+// // {
+// //    // Check if ISD is supported
+// //    return canModelBeConstructedFromISD(image_support_data, model_name);
+// // }
+// //
+// // //***************************************************************************
+// // // UsgsAstroLsPlugin::convertISDToSensorModelState
+// // //***************************************************************************
 // std::string UsgsAstroLsPlugin::convertISDToModelState(
 //    const csm::Isd&    image_support_data,
 //    const std::string& model_name,

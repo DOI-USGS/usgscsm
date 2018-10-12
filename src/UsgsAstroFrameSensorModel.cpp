@@ -15,7 +15,7 @@ using namespace std;
 // Declaration of static variables
 const std::string UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME
                                       = "USGS_ASTRO_FRAME_SENSOR_MODEL";
-const int UsgsAstroFrameSensorModel::m_numParameters = 7;
+const int UsgsAstroFrameSensorModel::NUM_PARAMETERS = 7;
 const std::string UsgsAstroFrameSensorModel::m_parameterName[] = {
   "X Sensor Position (m)",  // 0
   "Y Sensor Position (m)",  // 1
@@ -29,43 +29,43 @@ const std::string UsgsAstroFrameSensorModel::m_parameterName[] = {
 const int         UsgsAstroFrameSensorModel::_NUM_STATE_KEYWORDS = 32;
 const std::string UsgsAstroFrameSensorModel::_STATE_KEYWORD[] =
 {
-    "m_focalLength",
-    "m_iTransS",
-    "m_iTransL",
-    "m_boresight",
-    "m_transX",
-    "m_transY",
-    "m_majorAxis",
-    "m_minorAxis",
-    "m_spacecraftVelocity",
-    "m_sunPosition",
-    "m_startingDetectorSample",
-    "m_startingDetectorLine",
-    "m_targetName",
-    "m_ifov",
-    "m_instrumentID",
-    "m_focalLengthEpsilon",
-    "m_ccdCenter",
-    "m_line_pp",
-    "m_sample_pp",
-    "m_minElevation",
-    "m_maxElevation",
-    "m_odtX",
-    "m_odtY",
-    "m_originalHalfLines",
-    "m_originalHalfSamples",
-    "m_spacecraftName",
-    "m_pixelPitch",
-    "m_ephemerisTime",
-    "m_nLines",
-    "m_nSamples",
-    "m_minElevation",
-    "m_maxElevation",
-    "m_currentParameterValue",
-    "m_currentParameterCovariance"
+  "m_modelName",
+  "m_majorAxis",
+  "m_minorAxis",
+  "m_focalLength",
+  "m_startingDetectorSample",
+  "m_startingDetectorLine",
+  "m_targetName",
+  "m_ifov",
+  "m_instrumentID",
+  "m_focalLengthEpsilon",
+  "m_linePp",
+  "m_samplePp",
+  "m_originalHalfLines",
+  "m_spacecraftName",
+  "m_pixelPitch",
+  "m_ephemerisTime",
+  "m_originalHalfSamples",
+  "m_nLines",
+  "m_nSamples",
+  "m_currentParameterValue",
+  "m_currentParameterCovariance",
+  "m_noAdjustments",
+  "m_ccdCenter",
+  "m_spacecraftVelocity",
+  "m_sunPosition",
+  "m_odtX",
+  "m_odtY",
+  "m_transX",
+  "m_transY",
+  "m_iTransS",
+  "m_iTransL",
+  "m_boresight",
+  "m_parameterType"
 };
 
 UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
+  m_modelName = _SENSOR_MODEL_NAME;
   m_majorAxis = 0.0;
   m_minorAxis = 0.0;
   m_focalLength = 0.0;
@@ -75,8 +75,8 @@ UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
   m_ifov = 0;
   m_instrumentID = "";
   m_focalLengthEpsilon = 0.0;
-  m_line_pp = 0.0;
-  m_sample_pp = 0.0;
+  m_linePp = 0.0;
+  m_samplePp = 0.0;
   m_originalHalfLines = 0.0;
   m_spacecraftName = "";
   m_pixelPitch = 0.0;
@@ -85,26 +85,30 @@ UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
   m_nLines = 0;
   m_nSamples = 0;
 
-  m_currentParameterValue.assign(m_numParameters, 0.0);
-  m_currentParameterCovariance.assign(m_numParameters*m_numParameters,0.0);
-  m_noAdjustments.assign(m_numParameters,0.0);
-  m_ccdCenter.assign(2, 0.0);
-  m_spacecraftVelocity.assign(3, 0.0);
-  m_sunPosition.assign(3, 0.0);
-  m_odtX.assign(10, 0.0);
-  m_odtY.assign(10, 0.0);
-  m_transX.assign(3, 0.0);
-  m_transY.assign(3, 0.0);
-  m_iTransS.assign(3, 0.0);
-  m_iTransL.assign(3, 0.0);
-  m_boresight.assign(3, 0.0);
-  m_parameterType.assign(m_numParameters, csm::param::REAL);
+  m_currentParameterValue = std::vector<double>(NUM_PARAMETERS, 0.0);
+  m_currentParameterCovariance = std::vector<double>(NUM_PARAMETERS*NUM_PARAMETERS,0.0);
+  m_noAdjustments = std::vector<double>(NUM_PARAMETERS,0.0);
+  m_ccdCenter = std::vector<double>(2, 0.0);
+  m_spacecraftVelocity = std::vector<double>(3, 0.0);
+  m_sunPosition = std::vector<double>(3, 0.0);
+  m_odtX = std::vector<double>(10, 0.0);
+  m_odtY = std::vector<double>(10, 0.0);
+  m_transX = std::vector<double>(3, 0.0);
+  m_transY = std::vector<double>(3, 0.0);
+  m_iTransS = std::vector<double>(3, 0.0);
+  m_iTransL = std::vector<double>(3, 0.0);
+  m_boresight = std::vector<double>(3, 0.0);
+  m_parameterType = std::vector<csm::param::Type>(NUM_PARAMETERS, csm::param::REAL);
+}
 
+
+UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel(std::string stringIsd) {
+    json jsonIsd = json::parse(stringIsd);
+    replaceModelState(constructStateFromIsd(jsonIsd));
 }
 
 
 UsgsAstroFrameSensorModel::~UsgsAstroFrameSensorModel() {}
-
 
 /**
  * @brief UsgsAstroFrameSensorModel::groundToImage
@@ -159,8 +163,8 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
   // Sensor position
   double undistortedx, undistortedy, denom;
   denom = m[0][2] * xo + m[1][2] * yo + m[2][2] * zo;
-  undistortedx = (f * (m[0][0] * xo + m[1][0] * yo + m[2][0] * zo)/denom) + m_sample_pp;  //m_sample_pp like this assumes mm
-  undistortedy = (f * (m[0][1] * xo + m[1][1] * yo + m[2][1] * zo)/denom) + m_line_pp;
+  undistortedx = (f * (m[0][0] * xo + m[1][0] * yo + m[2][0] * zo)/denom) + m_samplePp;  //m_samplePp like this assumes mm
+  undistortedy = (f * (m[0][1] * xo + m[1][1] * yo + m[2][1] * zo)/denom) + m_linePp;
 
   // Apply the distortion to the line/sample location and then convert back to line/sample
   double distortedx, distortedy;
@@ -202,8 +206,8 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
 
   //Apply the principal point offset, assuming the pp is given in pixels
   double xl, yl, zl, lo, so;
-  lo = line - m_line_pp;
-  so = sample - m_sample_pp;
+  lo = line - m_linePp;
+  so = sample - m_samplePp;
 
   //Convert from the pixel space into the metric space
   double line_center, sample_center, x_camera, y_camera;
@@ -463,7 +467,7 @@ csm::RasterGM::SensorPartials UsgsAstroFrameSensorModel::computeSensorPartials(i
 
   const double delta = 1.0;
   // Update the parameter
-  std::vector<double>adj(m_numParameters, 0.0);
+  std::vector<double>adj(NUM_PARAMETERS, 0.0);
   adj[index] = delta;
 
   csm::ImageCoord imagePt1 = groundToImage(groundPt,adj,desiredPrecision,achievedPrecision);
@@ -651,104 +655,365 @@ std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
 
 
 std::string UsgsAstroFrameSensorModel::getModelState() const {
-    json state = {
-      {"model_name", _SENSOR_MODEL_NAME},
-      {"m_focalLength" , m_focalLength},
-      {"m_iTransS", {m_iTransS[0], m_iTransS[1], m_iTransS[2]}},
-      {"m_iTransL", {m_iTransL[0], m_iTransL[1], m_iTransL[2]}},
-      {"m_boresight", {m_boresight[0], m_boresight[1], m_boresight[2]}},
-      {"m_transX", {m_transX[0], m_transX[1], m_transX[2]}},
-      {"m_transY", {m_transY[0], m_transY[1], m_transY[2]}},
-      {"m_iTransS", {m_iTransS[0], m_iTransS[1], m_iTransS[2]}},
-      {"m_iTransL", {m_iTransL[0], m_iTransL[1], m_iTransL[2]}},
-      {"m_majorAxis", m_majorAxis},
-      {"m_minorAxis", m_minorAxis},
-      {"m_spacecraftVelocity", {m_spacecraftVelocity[0], m_spacecraftVelocity[1], m_spacecraftVelocity[2]}},
-      {"m_sunPosition", {m_sunPosition[0], m_sunPosition[1], m_sunPosition[2]}},
-      {"m_startingDetectorSample", m_startingDetectorSample},
-      {"m_startingDetectorLine", m_startingDetectorLine},
-      {"m_targetName", m_targetName},
-      {"m_ifov", m_ifov},
-      {"m_instrumentID", m_instrumentID},
-      {"m_focalLengthEpsilon", m_focalLengthEpsilon},
-      {"m_ccdCenter", {m_ccdCenter[0], m_ccdCenter[1]}},
-      {"m_line_pp", m_line_pp},
-      {"m_sample_pp", m_sample_pp},
-      {"m_minElevation", m_minElevation},
-      {"m_maxElevation", m_maxElevation},
-      {"m_odtX", {m_odtX[0], m_odtX[1], m_odtX[2], m_odtX[3], m_odtX[4],
-                  m_odtX[5], m_odtX[6], m_odtX[7], m_odtX[8], m_odtX[9]}},
-      {"m_odtY", {m_odtY[0], m_odtY[1], m_odtY[2], m_odtY[3], m_odtY[4],
-                  m_odtY[5], m_odtY[6], m_odtY[7], m_odtY[8], m_odtY[9]}},
-      {"m_originalHalfLines", m_originalHalfLines},
-      {"m_originalHalfSamples", m_originalHalfSamples},
-      {"m_spacecraftName", m_spacecraftName},
-      {"m_pixelPitch", m_pixelPitch},
-      {"m_ephemerisTime", m_ephemerisTime},
-      {"m_nLines", m_nLines},
-      {"m_nSamples", m_nSamples},
-      {"m_currentParameterValue", {m_currentParameterValue[0], m_currentParameterValue[1],
-                                   m_currentParameterValue[2], m_currentParameterValue[3],
-                                   m_currentParameterValue[4], m_currentParameterValue[5]}},
-      {"m_currentParameterCovariance", m_currentParameterCovariance}
-    };
-    return state.dump();
+    return _state.dump();
 }
 
-
 void UsgsAstroFrameSensorModel::replaceModelState(const std::string& modelState) {
-    auto state = json::parse(modelState);
-    for(auto &key : _STATE_KEYWORD){
-        if (state.find(key) == state.end()){
-            csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
-            std::string aMessage = "State key %s mission", key;
-            std::string aFunction = "UsgsAstroFramePlugin::replaceModelState()";
-            throw csm::Error(aErrorType, aMessage, aFunction);
+    json state = json::parse(modelState);
+
+    // The json library's .at() will except if key is missing
+    try {
+        m_modelName = state.at("m_modelName").get<std::string>();
+        m_majorAxis = state.at("m_majorAxis").get<double>();
+        m_minorAxis = state.at("m_minorAxis").get<double>();
+        m_focalLength = state.at("m_focalLength").get<double>();
+        m_startingDetectorSample = state.at("m_startingDetectorSample").get<double>();
+        m_startingDetectorLine = state.at("m_startingDetectorLine").get<double>();
+        m_targetName = state.at("m_targetName").get<std::string>();
+        m_ifov = state.at("m_ifov").get<double>();
+        m_instrumentID = state.at("m_instrumentID").get<std::string>();
+        m_focalLengthEpsilon = state.at("m_focalLengthEpsilon").get<double>();
+        m_linePp = state.at("m_linePp").get<double>();
+        m_samplePp = state.at("m_samplePp").get<double>();
+        m_originalHalfLines = state.at("m_originalHalfLines").get<double>();
+        m_spacecraftName = state.at("m_spacecraftName").get<std::string>();
+        m_pixelPitch = state.at("m_pixelPitch").get<double>();
+        m_ephemerisTime = state.at("m_ephemerisTime").get<double>();
+        m_originalHalfSamples = state.at("m_originalHalfSamples").get<double>();
+        m_nLines = state.at("m_nLines").get<int>();
+        m_nSamples = state.at("m_nSamples").get<int>();
+        m_currentParameterValue = state.at("m_currentParameterValue").get<std::vector<double>>();
+        m_currentParameterCovariance = state.at("m_currentParameterCovariance").get<std::vector<double>>();
+        m_noAdjustments = state.at("m_noAdjustments").get<std::vector<double>>();
+        m_ccdCenter = state.at("m_ccdCenter").get<std::vector<double>>();
+        m_spacecraftVelocity = state.at("m_spacecraftVelocity").get<std::vector<double>>();
+        m_sunPosition = state.at("m_sunPosition").get<std::vector<double>>();
+        m_odtX = state.at("m_odtX").get<std::vector<double>>();
+        m_odtY = state.at("m_odtY").get<std::vector<double>>();
+        m_transX = state.at("m_transX").get<std::vector<double>>();
+        m_transY = state.at("m_transY").get<std::vector<double>>();
+        m_iTransS = state.at("m_iTransS").get<std::vector<double>>();
+        m_iTransL = state.at("m_iTransL").get<std::vector<double>>();
+        m_boresight = state.at("m_boresight").get<std::vector<double>>();
+
+        // Cast int vector to csm::param::Type vector by simply copying it
+        std::vector<int> paramType = state.at("m_parameterType").get<std::vector<int>>();
+        m_parameterType = std::vector<csm::param::Type>();
+        for(auto &t : paramType){
+           paramType.push_back(static_cast<csm::param::Type>(t));
         }
-        // TODO: This is pulled right out of the plugin - good reason to have the state be a
-        // distinct class a la the generic line scan model.
-        m_ccdCenter[0] = state["m_ccdCenter"][0];
-        m_ccdCenter[1] = state["m_ccdCenter"][1];
-        m_ephemerisTime = state["m_ephemerisTime"];
-        m_focalLength = state["m_focalLength"];
-        m_focalLengthEpsilon = state["m_focalLengthEpsilon"];
-        m_ifov = state["m_ifov"];
-        m_instrumentID = state["m_instrumentID"];
-
-        m_majorAxis = state["m_majorAxis"];
-        m_minorAxis = state["m_minorAxis"];
-        m_startingDetectorLine = state["m_startingDetectorLine"];
-        m_startingDetectorSample = state["m_startingDetectorSample"];
-        m_line_pp = state["m_line_pp"];
-        m_sample_pp = state["m_sample_pp"];
-        m_originalHalfLines = state["m_originalHalfLines"];
-        m_originalHalfSamples = state["m_originalHalfSamples"];
-        m_spacecraftName = state["m_spacecraftName"];
-        m_pixelPitch = state["m_pixelPitch"];
-        m_nLines = state["m_nLines"];
-        m_nSamples = state["m_nSamples"];
-        m_minElevation = state["m_minElevation"];
-        m_maxElevation = state["m_maxElevation"];
-
-        for (int i=0;i<3;i++){
-            m_boresight[i] = state["m_boresight"][i];
-            m_iTransL[i] = state["m_iTransL"][i];
-            m_iTransS[i] = state["m_iTransS"][i];
-
-            m_transX[i] = state["m_transX"][i];
-            m_transY[i] = state["m_transY"][i];
-            m_spacecraftVelocity[i] = state["m_spacecraftVelocity"][i];
-            m_sunPosition[i] = state["m_sunPosition"][i];
-        }
-
-        // Having types as vectors, instead of arrays makes interoperability with
-        // the JSON library very easy.
-        m_currentParameterValue = state["m_currentParameterValue"].get<std::vector<double>>();
-        m_odtX = state["m_odtX"].get<std::vector<double>>();
-        m_odtY = state["m_odtY"].get<std::vector<double>>();
-
-        m_currentParameterCovariance = state["m_currentParameterCovariance"].get<std::vector<double>>();
     }
+    catch(...) {
+      csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
+      std::string aMessage = "State Object missing requiered parameters.";
+      std::string aFunction = "UsgsAstroFrameSensorModel::replaceModelState";
+      csm::Error csmErr(aErrorType, aMessage, aFunction);
+      throw(csmErr);
+    }
+}
+std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& jsonIsd) {
+    auto metric_conversion = [](double val, std::string from, std::string to="m") {
+        json typemap = {
+          {"m", 0},
+          {"km", 3}
+        };
+
+        // everything to lowercase
+        std::transform(from.begin(), from.end(), from.begin(), ::tolower);
+        std::transform(to.begin(), to.end(), to.begin(), ::tolower);
+        return val*pow(10, typemap[from].get<int>() - typemap[to].get<int>());
+    };
+
+    auto isd = json::parse(jsonIsd);
+    json state;
+
+    // Keep track of necessary keywords that are missing from the ISD.
+    std::vector<std::string> missingKeywords;
+
+    state["m_startingDetectorSample"] =
+        atof(isd["starting_detector_sample"].get<std::string>().c_str());
+    state["m_startingDetectorLine"] =
+        atof(isd["starting_detector_line"].get<std::string>().c_str());
+
+    if (state.value<std::string>("focal_length_model", "") == "") {
+      missingKeywords.push_back("focal_length_model");
+    }
+    else {
+      json jayson = isd["focal_length_model"];
+      json focal_length = jayson.value("focal_length", json(""));
+      json epsilon = jayson.value("epsilon", json(""));
+
+      state["m_focalLength"] = atof(focal_length.dump().c_str());
+      state["m_focalLengthEpsilon"] = atof(epsilon.dump().c_str());
+
+      if (focal_length == json("")) {
+        missingKeywords.push_back("focal_length_model focal_length");
+      }
+      if (epsilon == json("")) {
+        missingKeywords.push_back("focal_length_model epsilon");
+      }
+    }
+
+    if (isd.value<std::string>("sensor_location", "") == "") {
+      missingKeywords.push_back("sensor_location");
+    }
+    else {
+      json jayson = state["m_sensor_location"];
+      json x = jayson.value("x", json(""));
+      json y = jayson.value("y", json(""));
+      json z = jayson.value("z", json(""));
+      json unit = jayson.value("unit", json(""));
+
+      state["m_currentParameterValue"][0] = atof(x.dump().c_str());
+      state["m_currentParameterValue"][1] = atof(y.dump().c_str());
+      state["m_currentParameterValue"][2] = atof(z.dump().c_str());
+
+      if (x == json("")) {
+        missingKeywords.push_back("sensor_location x");
+      }
+      if (y == json("")) {
+        missingKeywords.push_back("sensor_location y");
+      }
+      if (z == json("")) {
+        missingKeywords.push_back("sensor_location z");
+      }
+      if (unit == json("")) {
+        missingKeywords.push_back("sensor_location unit");
+      }
+      else {
+        unit = unit.get<std::string>();
+        state["m_currentParameterValue"][0] = metric_conversion(isd["currentParameterValue"][0], unit);
+        state["m_currentParameterValue"][1] = metric_conversion(isd["currentParameterValue"][1], unit);
+        state["m_currentParameterValue"][2] = metric_conversion(isd["currentParameterValue"][2], unit);
+      }
+    }
+
+    if (state["m_sensor_velocity"] == "") {
+      missingKeywords.push_back("sensor_velocity");
+    }
+    else {
+      json jayson = isd["sensor_velocity"];
+      json x = jayson.value("x", json(""));
+      json y = jayson.value("y", json(""));
+      json z = jayson.value("z", json(""));
+
+      state["m_spacecraftVelocity"][0] = atof(x.dump().c_str());
+      state["m_spacecraftVelocity"][1] = atof(y.dump().c_str());
+      state["m_spacecraftVelocity"][2] = atof(z.dump().c_str());
+
+      if (x == json("")) {
+        missingKeywords.push_back("sensor_velocity x");
+      }
+      if (y == json("")) {
+        missingKeywords.push_back("sensor_velocity y");
+      }
+      if (z == json("")) {
+        missingKeywords.push_back("sensor_velocity z");
+      }
+    }
+
+    if (isd["sun_position"] == "") {
+      missingKeywords.push_back("sun_position");
+    }
+    else {
+      json jayson = isd["sun_position"];
+      json x = jayson.value("x", json(""));
+      json y = jayson.value("y", json(""));
+      json z = jayson.value("z", json(""));
+
+      state["m_sunPosition"][0] = atof(x.dump().c_str());
+      state["m_sunPosition"][1] = atof(y.dump().c_str());
+      state["m_sunPosition"][2] = atof(z.dump().c_str());
+
+      if (x == json("")) {
+        missingKeywords.push_back("sun_position x");
+      }
+      if (y == json("")) {
+        missingKeywords.push_back("sun_position y");
+      }
+      if (z == json("")) {
+        missingKeywords.push_back("sun_position z");
+      }
+    }
+
+    // sun position is not strictly necessary, but is required for getIlluminationDirection.
+    if (isd["sensor_orientation"] == "") {
+      missingKeywords.push_back("sensor_orientation");
+    }
+    else {
+      state["m_currentParameterValue"][3] = atof(isd["sensor_orientation"][0].get<std::string>().c_str());
+      state["m_currentParameterValue"][4] = atof(isd["sensor_orientation"][1].get<std::string>().c_str());
+      state["m_currentParameterValue"][5] = atof(isd["sensor_orientation"][2].get<std::string>().c_str());
+      state["m_currentParameterValue"][6] = atof(isd["sensor_orientation"][3].get<std::string>().c_str());
+    }
+
+
+    if (isd["optical_distortion"] == "") {
+      missingKeywords.push_back("optical_distortion");
+    }
+    else {
+      json jayson = isd["optical_distortion"];
+      std::vector<double> xDistortion = jayson["x"];
+      std::vector<double> yDistortion = jayson["y"];
+      xDistortion.resize(10, 0.0);
+      yDistortion.resize(10, 0.0);
+      state["m_odtX"] = xDistortion;
+      state["m_odtY"] = yDistortion;
+    }
+
+    state["m_ephemerisTime"] = atof(isd["center_ephemeris_time"].get<std::string>().c_str());
+
+    if (isd["center_ephemeris_time"] == "") {
+      missingKeywords.push_back("center_ephemeris_time");
+    }
+
+    state["m_nLines"] = atoi(isd["image_lines"].get<std::string>().c_str());
+    state["m_nSamples"] = atoi(isd["image_samples"].get<std::string>().c_str());
+    if (isd["image_lines"] == "") {
+      missingKeywords.push_back("image_lines");
+    }
+    if (isd["image_samples"] == "") {
+      missingKeywords.push_back("image_samples");
+    }
+
+    if (isd["detector_center"] == "") {
+      missingKeywords.push_back("detector_center");
+    }
+    else {
+      json jayson = isd["detector_center"];
+      json sample = jayson.value("sample", json(""));
+      json line = jayson.value("line", json(""));
+
+      state["m_ccdCenter"][0] = atof(line.dump().c_str());
+      state["m_ccdCenter"][1] = atof(sample.dump().c_str());
+
+      if (sample == json("")) {
+        missingKeywords.push_back("detector_center x");
+      }
+      if (line == json("")) {
+        missingKeywords.push_back("detector_center y");
+      }
+    }
+
+    state["m_iTransL"][0] = atof(isd["focal2pixel_lines"][0].get<std::string>().c_str());
+    state["m_iTransL"][1] = atof(isd["focal2pixel_lines"][1].get<std::string>().c_str());
+    state["m_iTransL"][2] = atof(isd["focal2pixel_lines"][2].get<std::string>().c_str());
+
+    if (isd["focal2pixel_lines"][0] == "") {
+      missingKeywords.push_back("focal2pixel_lines 0");
+    }
+    else if (isd["focal2pixel_lines"][1] == "") {
+      missingKeywords.push_back("focal2pixel_lines 1");
+    }
+    else if (isd["focal2pixel_lines"][2] == "") {
+      missingKeywords.push_back("focal2pixel_lines 2");
+    }
+
+    state["m_iTransS"][0] = atof(isd["focal2pixel_samples"][0].get<std::string>().c_str());
+    state["m_iTransS"][1] = atof(isd["focal2pixel_samples"][1].get<std::string>().c_str());
+    state["m_iTransS"][2] = atof(isd["focal2pixel_samples"][2].get<std::string>().c_str());
+    if (isd["focal2pixel_samples"][0] == "") {
+      missingKeywords.push_back("focal2pixel_samples 0");
+    }
+    else if (isd["focal2pixel_samples"][1] == ""){
+      missingKeywords.push_back("focal2pixel_samples 1");
+    }
+    else if (isd["focal2pixel_samples"][2] == ""){
+      missingKeywords.push_back("focal2pixel_samples 2");
+    }
+
+    // We don't pass the pixel to focal plane transformation so invert the
+    // focal plane to pixel transformation
+    double determinant = isd["iTransL"][1].get<double>() * isd["iTransS"][2].get<double>() -
+                         isd["iTransL"][2].get<double>() * isd["iTransS"][1].get<double>();
+
+    state["m_transX"][1] =  isd["iTransL"][1].get<double>() / determinant;
+    state["m_transX"][2] = -isd["iTransS"][1].get<double>() / determinant;
+    state["m_transX"][0] = -(isd["transX"][1].get<double>() * isd["iTransL"][0].get<double>() +
+                            isd["transX"][2].get<double>() * isd["iTransS"][0].get<double>());
+
+    state["m_transY"][1] = -isd["iTransL"][2].get<double>() / determinant;
+    state["m_transY"][2] =  isd["iTransS"][2].get<double>() / determinant;
+    state["m_transY"][0] = -(isd["transY"][1].get<double>() * isd["iTransL"][0].get<double>() +
+                             isd["transY"][2].get<double>() * isd["iTransS"][0].get<double>());
+
+    if (state.value("radii", "") == "") {
+      missingKeywords.push_back("radii");
+    }
+    else {
+      json jayson = isd["radii"];
+      json semiminor = jayson.value("semiminor", json(""));
+      json semimajor = jayson.value("semimajor", json(""));
+      json unit = jayson.value("unit", json(""));
+
+      state["m_minorAxis"] = atof(semiminor.dump().c_str());
+      state["m_majorAxis"] = atof(semimajor.dump().c_str());
+
+      if (semiminor == json("")) {
+        missingKeywords.push_back("radii semiminor");
+      }
+      if (semimajor == json("")) {
+        missingKeywords.push_back("radii semimajor");
+      }
+      if (unit == json("")) {
+        missingKeywords.push_back("radii unit");
+      }
+      else {
+        unit = unit.get<std::string>();
+        state["m_minorAxis"] = metric_conversion(isd["minorAxis"], unit);
+        state["m_majorAxis"] = metric_conversion(isd["majorAxis"], unit);
+      }
+    }
+
+    if (state.value("reference_height", "") == "") {
+      missingKeywords.push_back("reference_height");
+    }
+    else {
+      json reference_height = isd["reference_height"];
+      json maxheight = reference_height.value("maxheight", json(""));
+      json minheight = reference_height.value("minheight", json(""));
+      json unit = reference_height.value("unit", json(""));
+
+      state["m_minElevation"] = atof(minheight.dump().c_str());
+      state["m_maxElevation"] = atof(maxheight.dump().c_str());
+
+      if (maxheight == json("")) {
+        missingKeywords.push_back("reference_height maxheight");
+      }
+      if (minheight == json("")) {
+        missingKeywords.push_back("reference_height minheight");
+      }
+      if (unit == json("")) {
+        missingKeywords.push_back("reference_height unit");
+      }
+      else {
+        unit = unit.get<std::string>();
+        state["m_minElevation"] = metric_conversion(isd["minElevation"], unit);
+        state["m_maxElevation"] = metric_conversion(isd["maxElevation"], unit);
+      }
+    }
+
+    // If we are missing necessary keywords from ISD, we cannot create a valid sensor model.
+    if (missingKeywords.size() != 0) {
+
+      std::string errorMessage = "ISD is missing the necessary keywords: [";
+
+      for (int i = 0; i < (int)missingKeywords.size(); i++) {
+        if (i == (int)missingKeywords.size() - 1) {
+          errorMessage += missingKeywords[i] + "]";
+        }
+        else {
+          errorMessage += missingKeywords[i] + ", ";
+        }
+      }
+
+      throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
+                       errorMessage,
+                       "UsgsAstroFramePlugin::constructModelFromISD");
+    }
+
+    return state.dump();
+
 }
 
 
@@ -768,7 +1033,7 @@ void UsgsAstroFrameSensorModel::setReferencePoint(const csm::EcefCoord &groundPt
 
 int UsgsAstroFrameSensorModel::getNumParameters() const {
 
-  return m_numParameters;
+  return NUM_PARAMETERS;
 }
 
 
