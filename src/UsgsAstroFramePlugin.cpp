@@ -8,7 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
-#include <map> 
+#include <map>
 
 #include <math.h>
 #include <csm.h>
@@ -263,21 +263,21 @@ return sensor_model;
 
 // This function takes a csm::Isd which only has the image filename set. It uses this filename to
 // find a metadata json file loacated alongside the image file. It creates and returns new csm::Isd
-// with its parameters populated by the metadata file. 
+// with its parameters populated by the metadata file.
 csm::Isd UsgsAstroFramePlugin::loadImageSupportData(const csm::Isd &imageSupportDataOriginal) const{
-  // Get image location from the input csm::Isd: 
-  std::string imageFilename = imageSupportDataOriginal.filename(); 
-  
+  // Get image location from the input csm::Isd:
+  std::string imageFilename = imageSupportDataOriginal.filename();
+
   // Load 'sidecar' ISD file
-  size_t lastIndex = imageFilename.find_last_of("."); 
-  std::string baseName = imageFilename.substr(0, lastIndex); 
+  size_t lastIndex = imageFilename.find_last_of(".");
+  std::string baseName = imageFilename.substr(0, lastIndex);
   std::string isdFilename = baseName.append(".json");
 
   csm::Isd imageSupportData(isdFilename);
   imageSupportData.clearAllParams();
 
   try {
-    std::ifstream isdFile(isdFilename); 
+    std::ifstream isdFile(isdFilename);
     json jsonIsd = json::parse(isdFile);
 
     for (json::iterator it = jsonIsd.begin(); it != jsonIsd.end(); ++it) {
@@ -291,34 +291,45 @@ csm::Isd UsgsAstroFramePlugin::loadImageSupportData(const csm::Isd &imageSupport
         imageSupportData.addParam(it.key(), jsonValue.dump());
      }
   }
-    isdFile.close(); 
+    isdFile.close();
   } catch (...) {
     std::string errorMessage = "Could not read metadata file associated with image: ";
     errorMessage.append(isdFilename);
-    throw csm::Error(csm::Error::FILE_READ, errorMessage, 
-                     "UsgsAstroFramePlugin::loadImageSupportData"); 
+    throw csm::Error(csm::Error::FILE_READ, errorMessage,
+                     "UsgsAstroFramePlugin::loadImageSupportData");
   }
 
-  return imageSupportData; 
+  return imageSupportData;
 }
 
 csm::Model *UsgsAstroFramePlugin::constructModelFromISD(const csm::Isd &imageSupportDataOriginal,
                                               const std::string &modelName,
                                               csm::WarningList *warnings) const {
 
-  csm::Isd imageSupportData = loadImageSupportData(imageSupportDataOriginal); 
+  auto metric_conversion = [](double val, std::string from, std::string to="m") {
+     json typemap = {
+        {"m", 0},
+        {"km", 3}
+     };
 
-  // FIXME: Check needs to be updated to use new JSON isd spec
+     // everything to lowercase
+     std::transform(from.begin(), from.end(), from.begin(), ::tolower);
+     std::transform(to.begin(), to.end(), to.begin(), ::tolower);
+     return val*pow(10, typemap[from].get<int>() - typemap[to].get<int>());
+  };
+
   // Check if the sensor model can be constructed from ISD given the model name
-  if (!canModelBeConstructedFromISD(imageSupportData, modelName)) {
+  if (!canModelBeConstructedFromISD(imageSupportDataOriginal, modelName)) {
     throw csm::Error(csm::Error::ISD_NOT_SUPPORTED,
                      "Sensor model support data provided is not supported by this plugin",
                      "UsgsAstroFramePlugin::constructModelFromISD");
   }
 
+  csm::Isd imageSupportData = loadImageSupportData(imageSupportDataOriginal);
+
   // Create the empty sensorModel
   UsgsAstroFrameSensorModel *sensorModel = new UsgsAstroFrameSensorModel();
-  
+
   // Keep track of necessary keywords that are missing from the ISD.
   std::vector<std::string> missingKeywords;
 
@@ -633,9 +644,12 @@ bool UsgsAstroFramePlugin::canISDBeConvertedToModelState(const csm::Isd &imageSu
       convertible = false;
   }
 
-  csm::Isd localImageSupportData = imageSupportData; 
-  if (imageSupportData.parameters().empty()) {
-    localImageSupportData = loadImageSupportData(imageSupportData); 
+  csm::Isd localImageSupportData;
+  try {
+    localImageSupportData = loadImageSupportData(imageSupportData);
+  }
+  catch (...) {
+     return false;
   }
 
   std::string value;

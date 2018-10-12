@@ -78,7 +78,15 @@ TEST_F(FrameIsdTest, Constructible) {
                "USGS_ASTRO_FRAME_SENSOR_MODEL"));
 }
 
-TEST_F(FrameIsdTest, ConstructValidCamera) {
+TEST_F(SimpleFrameIsdTest, NotConstructible) {
+   UsgsAstroFramePlugin testPlugin;
+   isd.setFilename("Not a file");
+   EXPECT_FALSE(testPlugin.canModelBeConstructedFromISD(
+                isd,
+                "USGS_ASTRO_FRAME_SENSOR_MODEL"));
+}
+
+TEST_F(SimpleFrameIsdTest, ConstructValidCamera) {
    UsgsAstroFramePlugin testPlugin;
    csm::Model *cameraModel = NULL;
    EXPECT_NO_THROW(
