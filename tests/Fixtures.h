@@ -63,11 +63,23 @@ class SimpleFrameIsdTest : public ::testing::Test {
    }
 };
 
+class ConstVelLineScanIsdTest : public ::testing::Test {
+   protected:
+      csm::Isd isd;
+
+   virtual void SetUp() {
+      std::ifstream isdFile("data/constVelocityLineScan.json");
+      json jsonIsd = json::parse(isdFile);
+      isd.clearAllParams();
+      jsonToIsd(jsonIsd, isd);
+   }
+};
+
 class FramerParameterizedTest : public ::testing::TestWithParam<csm::ImageCoord> {
 
 protected:
   csm::Isd isd;
-  
+
   std::string printIsd(csm::Isd &localIsd) {
     std::string str;
     std::multimap<std::string,std::string> isdmap= localIsd.parameters();
@@ -79,11 +91,11 @@ protected:
     return str;
   }
   UsgsAstroFrameSensorModel* createModel(csm::Isd &modifiedIsd) {
-    
+
     UsgsAstroFramePlugin frameCameraPlugin;
     csm::Model *model = frameCameraPlugin.constructModelFromISD(
         modifiedIsd,"USGS_ASTRO_FRAME_SENSOR_MODEL");
-    
+
     UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
 
     if (sensorModel)
