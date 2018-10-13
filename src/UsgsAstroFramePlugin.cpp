@@ -1,3 +1,4 @@
+#define USGS_SENSOR_LIBRARY
 #include "UsgsAstroFramePlugin.h"
 #include "UsgsAstroFrameSensorModel.h"
 
