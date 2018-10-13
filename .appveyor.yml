@@ -9,7 +9,7 @@ configuration:
   - Release
 
 install:
-  - git submodule update --remote --merge
+  - git submodule update --init --recursive
 
 before_build:
   - mkdir build
