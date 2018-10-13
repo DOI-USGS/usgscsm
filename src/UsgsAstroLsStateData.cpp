@@ -26,7 +26,7 @@
 //
 //#############################################################################
 
-#define USGSASTROLINESCANNER_LIBRARY
+#define USGS_SENSOR_LIBRARY
 
 
 #include <UsgsAstroLsStateData.h>
