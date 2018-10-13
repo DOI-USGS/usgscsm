@@ -20,7 +20,6 @@
 #define USGSASTROLINESCANNER_LIBRARY
 
 #include "UsgsAstroLsPlugin.h"
-#include "UsgsAstroLsISD.h"
 #include "UsgsAstroLsSensorModel.h"
 #include "UsgsAstroLsStateData.h"
 
