@@ -119,33 +119,13 @@ csm::Version UsgsAstroPlugin::getModelVersion(const std::string &modelName) cons
 bool UsgsAstroPlugin::canModelBeConstructedFromState(const std::string &modelName,
                                                 const std::string &modelState,
                                                 csm::WarningList *warnings) const {
-
-  bool constructible = true;
-
-  // Get the model name from the model state
-  std::string model_name_from_state;
-  try {
-    model_name_from_state = getModelNameFromModelState(modelState, warnings);
-  }
-  catch(...) {
-    return false;
-  }
-
-  // Check that the plugin supports the model
-  if (modelName != model_name_from_state ||
-      modelName != UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME){
-          constructible = false;
-      }
-  // Check that the necessary keys are there (this does not chek values at all.)
-  // This sort of check should probably be moved into the sensor model
-  // auto state = json::parse(modelState);
-  // for(auto &key : MODEL_KEYWORDS[model_name_from_state]){
-  //     if (state.find(key) == state.end()){
-  //         constructible = false;
-  //         break;
-  //     }
-  // }
-  return constructible;
+    try {
+      csm::Model* model = constructModelFromState(modelState, warnings);
+      return (bool)model;
+    }
+    catch(...) {
+      return false;
+    }
 }
 
 
@@ -163,8 +143,8 @@ bool UsgsAstroPlugin::canModelBeConstructedFromISD(const csm::Isd &imageSupportD
 
 
 // This function takes a csm::Isd which only has the image filename set. It uses this filename to
-// find a metadata json file loacated alongside the image file. It creates and returns new csm::Isd
-// with its parameters populated by the metadata file.
+// find a metadata json file located alongside the image file and returns a json
+// encoded string.
 std::string UsgsAstroPlugin::loadImageSupportData(const csm::Isd &imageSupportDataOriginal) const {
 
   // Get image location from the input csm::Isd:
@@ -202,14 +182,6 @@ std::string UsgsAstroPlugin::getModelNameFromModelState(const std::string &model
       throw(csmErr);
   }
 
-  // if (MODEL_KEYWORDS.find(name) == MODEL_KEYWORDS.end()){
-  //     csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
-  //     std::string aMessage = "Sensor model not supported.";
-  //     std::string aFunction = "UsgsAstroPlugin::getModelNameFromModelState()";
-  //     csm::Error csmErr(aErrorType, aMessage, aFunction);
-  //     throw(csmErr);
-  // }
-
   return name;
 }
 
@@ -218,7 +190,7 @@ bool UsgsAstroPlugin::canISDBeConvertedToModelState(const csm::Isd &imageSupport
                                                const std::string &modelName,
                                                csm::WarningList *warnings) const {
   try {
-       convertISDToModelState(imageSupportData, modelName);
+       convertISDToModelState(imageSupportData, modelName, warnings);
   }
   catch(...) {
       return false;
@@ -241,7 +213,7 @@ std::string UsgsAstroPlugin::convertISDToModelState(const csm::Isd &imageSupport
   csm::Model* sensor_model = constructModelFromISD(
                              imageSupportData, modelName, warnings);
 
-  if (sensor_model == 0) {
+  if (!sensor_model) {
       csm::Error::ErrorType aErrorType = csm::Error::ISD_NOT_SUPPORTED;
       std::string aMessage = "ISD not supported: ";
       std::string aFunction = "UsgsAstroPlugin::convertISDToModelState()";
@@ -249,6 +221,7 @@ std::string UsgsAstroPlugin::convertISDToModelState(const csm::Isd &imageSupport
   }
   return sensor_model->getModelState();
 }
+
 
 csm::Model *UsgsAstroPlugin::constructModelFromISD(const csm::Isd &imageSupportDataOriginal,
                                               const std::string &modelName,
