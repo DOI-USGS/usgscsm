@@ -13,11 +13,18 @@ requirements:
     - {{ compiler('cxx') }}  # [linux]
     - cmake >=3.10
     - libcsm
+    - vc 14  # [win]
+    - csmapi
+  run:
+    - vc  # [win]
+    - csmapi
 
 test:
   commands:
     - test -e $PREFIX/lib/libusgscsm.so  # [linux]
     - test -e $PREFIX/lib/libusgscsm.dylib  # [osx]
+    - if not exist %LIBRARY_BIN%\usgscam.dll exit 1  # [win]
+    - if not exist %LIBRARY_LIB%\usgscam.lib exit 1  # [win]
 
 about:
   home: https://github.com/USGS-Astrogeology/CSM-CameraModels
