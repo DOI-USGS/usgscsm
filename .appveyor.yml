@@ -16,7 +16,7 @@ install:
   - cmd: conda install conda-build anaconda-client
   - cmd: conda config --set anaconda_upload yes
   - cmd: conda config --add channels usgs-astrogeology
-  
+
 before_build:
   - mkdir build
   - cd build
@@ -30,5 +30,5 @@ artifacts:
     name: usgscsm.dll
 
 on_success:
-- cmd: conda build --token %CONDA_UPLOAD_TOKEN% .
+- cmd: conda build --token %CONDA_UPLOAD_TOKEN% recipe/
 
