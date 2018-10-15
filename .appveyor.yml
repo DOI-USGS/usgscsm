@@ -10,12 +10,12 @@ configuration:
 
 install:
   - git submodule update --init --recursive
-  - cmd: call C:\\Miniconda36-x64\Scripts\activate.bat
-  - cmd: conda config --set always_yes yes --set changeps1 no
-  - cmd: conda update -q conda
-  - cmd: conda install conda-build anaconda-client
-  - cmd: conda config --set anaconda_upload yes
-  - cmd: conda config --add channels usgs-astrogeology
+  - call C:\\Miniconda36-x64\Scripts\activate.bat
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda install conda-build anaconda-client
+  - conda config --set anaconda_upload yes
+  - conda config --add channels usgs-astrogeology
 
 before_build:
   - mkdir build
@@ -31,5 +31,5 @@ artifacts:
 
 on_success:
 - cd ../
-- cmd: conda build --token %CONDA_UPLOAD_TOKEN% recipe/
+- conda build --token %CONDA_UPLOAD_TOKEN% recipe/
 
