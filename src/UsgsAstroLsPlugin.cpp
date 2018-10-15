@@ -20,7 +20,10 @@
 #define USGS_SENSOR_LIBRARY
 
 #include "UsgsAstroLsPlugin.h"
+<<<<<<< HEAD
 //#include "UsgsAstroLsISD.h"
+=======
+>>>>>>> 43e997ccc6ea116b052f39c68defaa48f30b5537
 #include "UsgsAstroLsSensorModel.h"
 #include "UsgsAstroLsStateData.h"
 

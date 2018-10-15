@@ -1,0 +1,17 @@
+C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/CMakeFiles/gtest.dir
+C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/CMakeFiles/usgscsm.dir
+C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/CMakeFiles/NightlyMemoryCheck.dir
+C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/CMakeFiles/Experimental.dir
+C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/CMakeFiles/Continuous.dir
+C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/CMakeFiles/Nightly.dir
+C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/CMakeFiles/INSTALL.dir
+C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/CMakeFiles/RUN_TESTS.dir
+C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/CMakeFiles/ALL_BUILD.dir
+C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/CMakeFiles/ZERO_CHECK.dir
+C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/csm/CMakeFiles/csmapi.dir
+C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/csm/CMakeFiles/INSTALL.dir
+C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/csm/CMakeFiles/RUN_TESTS.dir
+C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/csm/CMakeFiles/ALL_BUILD.dir
+C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/CMakeFiles/runCSMCameraModelTests.dir
+C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/CMakeFiles/INSTALL.dir
+C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/CMakeFiles/RUN_TESTS.dir

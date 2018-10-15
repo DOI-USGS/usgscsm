@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm\BundleGM.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm\CorrelationModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm\csmPointCloud.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm\Ellipsoid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm\FourParameterCorrelationModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm\GeometricModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm\Isd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm\LinearDecayCorrelationModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm\ModelIdentifier.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm\Plugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm\PointCloudGM.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm\PointCloudIsd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm\RasterGM.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm\SettableEllipsoid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm\Version.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{495E2C3D-94D6-3432-AB85-FDDF45C45A2C}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

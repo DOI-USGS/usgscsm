@@ -199,8 +199,8 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
 
   //Convert distorted mm into line/sample
   double sample, line;
-  sample = m_iTransS[0] + m_iTransS[1] * distortedx + m_iTransS[2] * distortedy + m_ccdCenter[1];
-  line =   m_iTransL[0] + m_iTransL[1] * distortedx + m_iTransL[2] * distortedy + m_ccdCenter[0];
+  sample = m_iTransS[0] + m_iTransS[1] * distortedx + m_iTransS[2] * distortedx + m_ccdCenter[0];
+  line =   m_iTransL[0] + m_iTransL[1] * distortedy + m_iTransL[2] * distortedy + m_ccdCenter[0];
 
   return csm::ImageCoord(line, sample);
 }
@@ -235,12 +235,21 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   lo = line - m_line_pp;
   so = sample - m_sample_pp;
 
+<<<<<<< HEAD
   // Convert from the pixel space into the metric space
   double line_center, sample_center, x_camera, y_camera;
   line_center = m_ccdCenter[0];
   sample_center = m_ccdCenter[1];
   y_camera = m_transY[0] + m_transY[1] * (lo - line_center) + m_transY[2] * (so - sample_center);
   x_camera = m_transX[0] + m_transX[1] * (lo - line_center) + m_transX[2] * (so - sample_center);
+=======
+  //Convert from the pixel space into the metric space
+  double optical_center_x, optical_center_y, x_camera, y_camera;
+  optical_center_x = m_ccdCenter[0];
+  optical_center_y = m_ccdCenter[1];
+  y_camera = m_transY[0] + m_transY[1] * (lo - optical_center_y) + m_transY[2] * (lo - optical_center_y);
+  x_camera = m_transX[0] + m_transX[1] * (so - optical_center_x) + m_transX[2] * (so - optical_center_x);
+>>>>>>> 43e997ccc6ea116b052f39c68defaa48f30b5537
 
   // Apply the distortion model (remove distortion)
   double undistorted_cameraX, undistorted_cameraY = 0.0;
@@ -296,10 +305,10 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(const csm::I
                                                              csm::WarningList *warnings) const {
   // Find the line,sample on the focal plane (mm)
   // CSM center = 0.5, MDIS IK center = 1.0
-  double row = imagePt.line - m_ccdCenter[0];
-  double col = imagePt.samp - m_ccdCenter[1];
-  double focalPlaneX = m_transX[0] + m_transX[1] * row + m_transX[2] * col;
-  double focalPlaneY = m_transY[0] + m_transY[1] * row + m_transY[2] * col;
+  double col = imagePt.samp - (m_ccdCenter[0]);
+  double row = imagePt.line - (m_ccdCenter[1]);
+  double focalPlaneX = m_transX[0] + m_transX[1] * col + m_transX[2] * col;
+  double focalPlaneY = m_transY[0] + m_transY[1] * row + m_transY[2] * row;
 
   // Distort
   double undistortedFocalPlaneX = focalPlaneX;

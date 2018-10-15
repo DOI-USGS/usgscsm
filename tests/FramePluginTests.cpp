@@ -6,7 +6,15 @@
 
 #include <gtest/gtest.h>
 
-#include "Fixtures.h"
+using json = nlohmann::json;
+
+class FrameIsdTest : public ::testing::Test {
+   protected:
+     csm::Isd isd;
+     virtual void SetUp() {
+       isd.setFilename("data/simpleFramerISD.img");
+     };
+};
 
 TEST(FramePluginTests, PluginName) {
    UsgsAstroFramePlugin testPlugin;
@@ -70,6 +78,17 @@ TEST_F(SimpleFrameIsdTest, Constructible) {
                "USGS_ASTRO_FRAME_SENSOR_MODEL"));
 }
 
+<<<<<<< HEAD
+=======
+TEST_F(SimpleFrameIsdTest, NotConstructible) {
+   UsgsAstroFramePlugin testPlugin;
+   isd.setFilename("Not a file");
+   EXPECT_FALSE(testPlugin.canModelBeConstructedFromISD(
+                isd,
+                "USGS_ASTRO_FRAME_SENSOR_MODEL"));
+}
+
+>>>>>>> 43e997ccc6ea116b052f39c68defaa48f30b5537
 TEST_F(SimpleFrameIsdTest, ConstructValidCamera) {
    UsgsAstroFramePlugin testPlugin;
    csm::Model *cameraModel = NULL;

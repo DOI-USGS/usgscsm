@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\build2\CMakeFiles\e5386b5329705c858dfc42f8a84bd038\Nightly.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\build2\CMakeFiles\Nightly" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{CC5C0928-B039-35A7-9BBE-D5BCF8CF1861}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
