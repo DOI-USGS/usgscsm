@@ -19,8 +19,11 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
 
   public:
     UsgsAstroFrameSensorModel();
-    UsgsAstroFrameSensorModel(std::string stringIsd);
     ~UsgsAstroFrameSensorModel();
+
+
+    bool isValidModelState(const std::string& stringState, csm::WarningList *warnings);
+    bool isValidIsd(const std::string& stringIsd, csm::WarningList *warnings);
 
     virtual csm::ImageCoord groundToImage(const csm::EcefCoord &groundPt,
                                      double desiredPrecision=0.001,
@@ -28,7 +31,7 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
                                      csm::WarningList *warnings=NULL) const;
 
 
-    std::string constructStateFromIsd(const std::string& jsonIsd);
+    std::string constructStateFromIsd(const std::string& jsonIsd, csm::WarningList *warnings);
     void reset();
 
     virtual csm::ImageCoordCovar groundToImage(const csm::EcefCoordCovar &groundPt,

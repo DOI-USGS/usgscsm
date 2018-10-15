@@ -25,7 +25,7 @@ TEST(FramePluginTests, ReleaseDate) {
 
 TEST(FramePluginTests, NumModels) {
    UsgsAstroPlugin testPlugin;
-   EXPECT_EQ(1, testPlugin.getNumModels());;
+   EXPECT_EQ(2, testPlugin.getNumModels());;
 }
 
 TEST(FramePluginTests, NoStateName) {

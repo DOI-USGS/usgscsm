@@ -40,10 +40,28 @@ public:
    // in a string by the toString() method
    void setState(const std::string &state);
 
+
+    virtual void replaceModelState(const std::string& argState);
+    //> This method attempts to initialize the current model with the state
+    //  given by argState.  The argState argument can be a string previously
+    //  retrieved from the getModelState method.
+    //
+    //  If argState contains a valid state for the current model,
+    //  the internal state of the model is updated.
+    //
+    //  If the model cannot be updated to the given state, a csm::Error is
+    //  thrown and the internal state of the model is undefined.
+    //
+    //  If the argument state string is empty, the model remains unchanged.
+    //<
+
+
    // This method checks to see if the model name is recognized
    // in the input state string.
    static std::string getModelNameFromModelState(
       const std::string& model_state);
+
+  std::string constructStateFromIsd(const std::string imageSupportData, csm::WarningList *list) const;
 
    // State data elements;
    std::string  m_imageIdentifier;                // 1
@@ -119,10 +137,10 @@ public:
    //--------------------------------------------------------------
 
    UsgsAstroLsSensorModel();
-   UsgsAstroLsSensorModel(std::string stringIsd);
    ~UsgsAstroLsSensorModel();
 
    virtual std::string getModelState() const;
+
 
    // Set the sensor model based on the input state data
    void set( const std::string &state_data );
@@ -865,20 +883,6 @@ public:
    //  current state.
    //<
 
-   virtual void replaceModelState(const std::string& argState);
-   //> This method attempts to initialize the current model with the state
-   //  given by argState.  The argState argument can be a string previously
-   //  retrieved from the getModelState method.
-   //
-   //  If argState contains a valid state for the current model,
-   //  the internal state of the model is updated.
-   //
-   //  If the model cannot be updated to the given state, a csm::Error is
-   //  thrown and the internal state of the model is undefined.
-   //
-   //  If the argument state string is empty, the model remains unchanged.
-   //<
-
    virtual csm::Ellipsoid getEllipsoid() const;
    //> This method returns the planetary ellipsoid.
    //<
@@ -1017,8 +1021,6 @@ private:
       const csm::EcefCoord& groundPoint,      // The ground coordinate
       const std::vector<double>& adj // Parameter Adjustments for partials
    ) const;
-
-   std::string constructStateFromIsd(const std::string imageSupportData) const;
 
    // The linear approximation for the sensor model is used as the starting point
    // for iterative rigorous calculations.

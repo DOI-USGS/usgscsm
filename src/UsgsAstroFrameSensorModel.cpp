@@ -27,52 +27,9 @@ const std::string UsgsAstroFrameSensorModel::m_parameterName[] = {
 };
 
 const int         UsgsAstroFrameSensorModel::_NUM_STATE_KEYWORDS = 32;
-const std::string UsgsAstroFrameSensorModel::_STATE_KEYWORD[] =
-{
-  "m_modelName",
-  "m_majorAxis",
-  "m_minorAxis",
-  "m_focalLength",
-  "m_startingDetectorSample",
-  "m_startingDetectorLine",
-  "m_targetName",
-  "m_ifov",
-  "m_instrumentID",
-  "m_focalLengthEpsilon",
-  "m_linePp",
-  "m_samplePp",
-  "m_originalHalfLines",
-  "m_spacecraftName",
-  "m_pixelPitch",
-  "m_ephemerisTime",
-  "m_originalHalfSamples",
-  "m_nLines",
-  "m_nSamples",
-  "m_currentParameterValue",
-  "m_currentParameterCovariance",
-  "m_noAdjustments",
-  "m_ccdCenter",
-  "m_spacecraftVelocity",
-  "m_sunPosition",
-  "m_odtX",
-  "m_odtY",
-  "m_transX",
-  "m_transY",
-  "m_iTransS",
-  "m_iTransL",
-  "m_boresight",
-  "m_parameterType"
-};
-
 
 UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
     reset();
-}
-
-
-UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel(std::string stringIsd) {
-    reset();
-    replaceModelState(constructStateFromIsd(stringIsd));
 }
 
 
@@ -708,6 +665,77 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
     return state.dump();
 }
 
+bool UsgsAstroFrameSensorModel::isValidModelState(const std::string& stringState, csm::WarningList *warnings) {
+  std::vector<std::string> requiredKeywords = {
+    "m_modelName",
+    "m_majorAxis",
+    "m_minorAxis",
+    "m_focalLength",
+    "m_startingDetectorSample",
+    "m_startingDetectorLine",
+    "m_focalLengthEpsilon",
+    "m_nLines",
+    "m_nSamples",
+    "m_currentParameterValue",
+    "m_ccdCenter",
+    "m_spacecraftVelocity",
+    "m_sunPosition",
+    "m_odtX",
+    "m_odtY",
+    "m_transX",
+    "m_transY",
+    "m_iTransS",
+    "m_iTransL"
+  };
+
+  json jsonState = json::parse(stringState);
+  std::vector<std::string> missingKeywords;
+
+  for (auto &key : requiredKeywords) {
+    if (jsonState.find(key) == jsonState.end()) {
+      missingKeywords.push_back(key);
+    }
+  }
+
+  if (!missingKeywords.empty()) {
+    std::ostringstream oss;
+    std::copy(missingKeywords.begin(), missingKeywords.end(), std::ostream_iterator<std::string>(oss, " "));
+    warnings->push_back(csm::Warning(
+      csm::Warning::DATA_NOT_AVAILABLE,
+      "State has missing keywrods: " + oss.str(),
+      "UsgsAstroFrameSensorModel::isValidModelState"
+    ));
+  }
+
+  std::string modelName = jsonState.value<std::string>("m_modelName", "");
+
+  if (modelName != _SENSOR_MODEL_NAME) {
+    warnings->push_back(csm::Warning(
+      csm::Warning::DATA_NOT_AVAILABLE,
+      "Incorrect model name in state, expected " + _SENSOR_MODEL_NAME + " but got " + modelName,
+      "UsgsAstroFrameSensorModel::isValidModelState"
+    ));
+  }
+
+  return modelName == _SENSOR_MODEL_NAME && missingKeywords.empty();
+}
+
+
+bool UsgsAstroFrameSensorModel::isValidIsd(const std::string& Isd, csm::WarningList *warnings) {
+  // no obvious clean way to truely validate ISD with it's nested structure,
+  // or rather, it would be a pain to maintain, so just check if
+  // we can get a valid state from ISD. Once ISD schema is 100% clear
+  // we can change this.
+   try {
+     std::string state = constructStateFromIsd(Isd, warnings);
+     return isValidModelState(state, warnings);
+   }
+   catch(...) {
+     return false;
+   }
+}
+
+
 void UsgsAstroFrameSensorModel::replaceModelState(const std::string& modelState) {
     json state = json::parse(modelState);
 
@@ -763,7 +791,9 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& modelState)
       throw(csmErr);
     }
 }
-std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& jsonIsd) {
+
+
+std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& jsonIsd, csm::WarningList* warnings) {
     auto metric_conversion = [](double val, std::string from, std::string to="m") {
         json typemap = {
           {"m", 0},
@@ -779,291 +809,167 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
     json isd = json::parse(jsonIsd);
     json state = {};
 
-    // Keep track of necessary keywords that are missing from the ISD.
-    std::vector<std::string> missingKeywords;
+
     state["m_modelName"] = _SENSOR_MODEL_NAME;
-    state["m_startingDetectorSample"] = isd["starting_detector_sample"];
-    state["m_startingDetectorLine"] = isd["starting_detector_line"];
 
-    if (isd.value("focal_length_model", json("")) == json("")) {
-      missingKeywords.push_back("focal_length_model");
-    }
-    else {
-      json jayson = isd["focal_length_model"];
-      json focal_length = jayson.value("focal_length", json(""));
-      json epsilon = jayson.value("epsilon", json(""));
+    try {
+      state["m_startingDetectorSample"] = isd.at("starting_detector_sample");
+      state["m_startingDetectorLine"] = isd.at("starting_detector_line");
 
-      state["m_focalLength"] = focal_length;
-      state["m_focalLengthEpsilon"] = epsilon;
+      // get focal length
+      {
+        json jayson = isd.at("focal_length_model");
+        json focal_length = jayson.at("focal_length");
+        json epsilon = jayson.at("epsilon");
 
-      if (focal_length == json("")) {
-        missingKeywords.push_back("focal_length_model focal_length");
+        state["m_focalLength"] = focal_length;
+        state["m_focalLengthEpsilon"] = epsilon;
       }
-      if (epsilon == json("")) {
-        missingKeywords.push_back("focal_length_model epsilon");
-      }
-    }
 
-    if (isd.value("sensor_location", json("")) == json("")) {
-      missingKeywords.push_back("sensor_location");
-    }
-    else {
-      json jayson = isd["sensor_location"];
-      json x = jayson.value("x", json(""));
-      json y = jayson.value("y", json(""));
-      json z = jayson.value("z", json(""));
-      json unit = jayson.value("unit", json(""));
+      // get sensor_location
+      {
+        json jayson = isd.at("sensor_location");
+        json x = jayson.at("x");
+        json y = jayson.at("y");
+        json z = jayson.at("z");
+        json unit = jayson.at("unit");
 
-      state["m_currentParameterValue"] = json();
-      state["m_currentParameterValue"][0] = x;
-      state["m_currentParameterValue"][1] = y;
-      state["m_currentParameterValue"][2] = z;
+        state["m_currentParameterValue"] = json();
+        state["m_currentParameterValue"][0] = x;
+        state["m_currentParameterValue"][1] = y;
+        state["m_currentParameterValue"][2] = z;
 
-      if (x == json("")) {
-        missingKeywords.push_back("sensor_location x");
-      }
-      if (y == json("")) {
-        missingKeywords.push_back("sensor_location y");
-      }
-      if (z == json("")) {
-        missingKeywords.push_back("sensor_location z");
-      }
-      if (unit == json("")) {
-        missingKeywords.push_back("sensor_location unit");
-      }
-      else {
         unit = unit.get<std::string>();
         state["m_currentParameterValue"][0] = metric_conversion(state["m_currentParameterValue"][0].get<double>(), unit);
         state["m_currentParameterValue"][1] = metric_conversion(state["m_currentParameterValue"][1].get<double>(), unit);
         state["m_currentParameterValue"][2] = metric_conversion(state["m_currentParameterValue"][2].get<double>(), unit);
       }
-    }
-    if (isd.value("sensor_velocity", json("")) == json("")) {
-      missingKeywords.push_back("sensor_velocity");
-    }
-    else {
-      json jayson = isd["sensor_velocity"];
-      json x = jayson.value("x", json(""));
-      json y = jayson.value("y", json(""));
-      json z = jayson.value("z", json(""));
 
-      state["m_spacecraftVelocity"] = json();
-      state["m_spacecraftVelocity"][0] = x;
-      state["m_spacecraftVelocity"][1] = y;
-      state["m_spacecraftVelocity"][2] = z;
+      // get  sensor_velocity
+      {
+        json jayson = isd.at("sensor_velocity");
+        json x = jayson.at("x");
+        json y = jayson.at("y");
+        json z = jayson.at("z");
 
-      if (x == json("")) {
-        missingKeywords.push_back("sensor_velocity x");
+        state["m_spacecraftVelocity"] = json();
+        state["m_spacecraftVelocity"][0] = x;
+        state["m_spacecraftVelocity"][1] = y;
+        state["m_spacecraftVelocity"][2] = z;
       }
-      if (y == json("")) {
-        missingKeywords.push_back("sensor_velocity y");
+
+      // get sun_position
+      {
+        json jayson = isd.at("sun_position");
+        json x = jayson.at("x");
+        json y = jayson.at("y");
+        json z = jayson.at("z");
+
+        state["m_sunPosition"][0] = x;
+        state["m_sunPosition"][1] = y;
+        state["m_sunPosition"][2] = z;
       }
-      if (z == json("")) {
-        missingKeywords.push_back("sensor_velocity z");
+
+      // get sun_position
+      // sun position is not strictly necessary, but is required for getIlluminationDirection.
+      {
+        state["m_currentParameterValue"][3] = isd.at("sensor_orientation").at(0);
+        state["m_currentParameterValue"][4] = isd.at("sensor_orientation").at(1);
+        state["m_currentParameterValue"][5] = isd.at("sensor_orientation").at(2);
+        state["m_currentParameterValue"][6] = isd.at("sensor_orientation").at(3);
       }
-    }
 
-    if (isd.value("sun_position", json("")) == json("")) {
-      missingKeywords.push_back("sun_position");
-    }
-    else {
-      json jayson = isd["sun_position"];
-      json x = jayson.value("x", json(""));
-      json y = jayson.value("y", json(""));
-      json z = jayson.value("z", json(""));
+      // get optical_distortion
+      {
+        json jayson = isd.at("optical_distortion");
+        std::vector<double> xDistortion = jayson.at("x");
+        std::vector<double> yDistortion = jayson.at("y");
+        xDistortion.resize(10, 0.0);
+        yDistortion.resize(10, 0.0);
 
-      state["m_sunPosition"][0] = x;
-      state["m_sunPosition"][1] = y;
-      state["m_sunPosition"][2] = z;
-
-      if (x == json("")) {
-        missingKeywords.push_back("sun_position x");
+        state["m_odtX"] = xDistortion;
+        state["m_odtY"] = yDistortion;
       }
-      if (y == json("")) {
-        missingKeywords.push_back("sun_position y");
+
+      // get detector_center
+      {
+        json jayson = isd.at("detector_center");
+        json sample = jayson.at("sample");
+        json line = jayson.at("line");
+
+        state["m_ccdCenter"][0] = line;
+        state["m_ccdCenter"][1] = sample;
       }
-      if (z == json("")) {
-        missingKeywords.push_back("sun_position z");
-      }
-    }
 
-    // sun position is not strictly necessary, but is required for getIlluminationDirection.
-    if (isd.value("sensor_orientation", json("")) == json("")) {
-      missingKeywords.push_back("sensor_orientation");
-    }
+      // get radii
+      {
+        json jayson = isd.at("radii");
+        json semiminor = jayson.at("semiminor");
+        json semimajor = jayson.at("semimajor");
+        json unit = jayson.at("unit");
 
-    else {
-      state["m_currentParameterValue"][3] = isd["sensor_orientation"][0];
-      state["m_currentParameterValue"][4] = isd["sensor_orientation"][1];
-      state["m_currentParameterValue"][5] = isd["sensor_orientation"][2];
-      state["m_currentParameterValue"][6] = isd["sensor_orientation"][3];
-    }
+        state["m_minorAxis"] = semiminor;
+        state["m_majorAxis"] = semimajor;
 
-    if (isd.value("optical_distortion", json("")) == json("")) {
-      missingKeywords.push_back("optical_distortion");
-    }
-    else {
-      json jayson = isd["optical_distortion"];
-      std::vector<double> xDistortion = jayson["x"];
-      std::vector<double> yDistortion = jayson["y"];
-      xDistortion.resize(10, 0.0);
-      yDistortion.resize(10, 0.0);
-
-      state["m_odtX"] = xDistortion;
-      state["m_odtY"] = yDistortion;
-    }
-
-    state["m_ephemerisTime"] = isd["center_ephemeris_time"];
-
-    if (isd.value("center_ephemeris_time", json("")) == json("")) {
-      missingKeywords.push_back("center_ephemeris_time");
-    }
-
-    state["m_nLines"] = isd["image_lines"];
-    state["m_nSamples"] = isd["image_samples"];
-
-    if (isd.value("image_lines", json("")) == json("")) {
-      missingKeywords.push_back("image_lines");
-    }
-    if (isd.value("image_samples", json("")) == json("")) {
-      missingKeywords.push_back("image_samples");
-    }
-    if (isd.value("detector_center", json("")) == json("")) {
-      missingKeywords.push_back("detector_center");
-    }
-    else {
-      json jayson = isd["detector_center"];
-      json sample = jayson.value("sample", json(""));
-      json line = jayson.value("line", json(""));
-
-      state["m_ccdCenter"][0] = line;
-      state["m_ccdCenter"][1] = sample;
-
-      if (sample == json("")) {
-        missingKeywords.push_back("detector_center x");
-      }
-      if (line == json("")) {
-        missingKeywords.push_back("detector_center y");
-      }
-    }
-    state["m_iTransL"][0] = isd["focal2pixel_lines"][0];
-    state["m_iTransL"][1] = isd["focal2pixel_lines"][1];
-    state["m_iTransL"][2] = isd["focal2pixel_lines"][2];
-
-    if (isd["focal2pixel_lines"][0] == "") {
-      missingKeywords.push_back("focal2pixel_lines 0");
-    }
-    else if (isd["focal2pixel_lines"][1] == "") {
-      missingKeywords.push_back("focal2pixel_lines 1");
-    }
-    else if (isd["focal2pixel_lines"][2] == "") {
-      missingKeywords.push_back("focal2pixel_lines 2");
-    }
-
-    state["m_iTransS"][0] = isd["focal2pixel_samples"][0];
-    state["m_iTransS"][1] = isd["focal2pixel_samples"][1];
-    state["m_iTransS"][2] = isd["focal2pixel_samples"][2];
-
-    if (isd["focal2pixel_samples"][0] == "") {
-      missingKeywords.push_back("focal2pixel_samples 0");
-    }
-    else if (isd["focal2pixel_samples"][1] == ""){
-      missingKeywords.push_back("focal2pixel_samples 1");
-    }
-    else if (isd["focal2pixel_samples"][2] == ""){
-      missingKeywords.push_back("focal2pixel_samples 2");
-    }
-
-    // We don't pass the pixel to focal plane transformation so invert the
-    // focal plane to pixel transformation
-    double determinant = state["m_iTransL"][1].get<double>() * state["m_iTransS"][2].get<double>() -
-                         state["m_iTransL"][2].get<double>() * state["m_iTransS"][1].get<double>();
-
-    state["m_transX"][1] =  state["m_iTransL"][1].get<double>() / determinant;
-    state["m_transX"][2] = -state["m_iTransS"][1].get<double>() / determinant;
-    state["m_transX"][0] = -(state["m_transX"][1].get<double>() * state["m_iTransL"][0].get<double>() +
-                            state["m_transX"][2].get<double>() * state["m_iTransS"][0].get<double>());
-
-    state["m_transY"][1] = -state["m_iTransL"][2].get<double>() / determinant;
-    state["m_transY"][2] =  state["m_iTransS"][2].get<double>() / determinant;
-    state["m_transY"][0] = -(state["m_transY"][1].get<double>() * state["m_iTransL"][0].get<double>() +
-                             state["m_transY"][2].get<double>() * state["m_iTransS"][0].get<double>());
-
-
-    if (isd.value("radii", json("")) == json("")) {
-      missingKeywords.push_back("radii");
-    }
-    else {
-      json jayson = isd["radii"];
-      json semiminor = jayson.value("semiminor", json(""));
-      json semimajor = jayson.value("semimajor", json(""));
-      json unit = jayson.value("unit", json(""));
-
-      state["m_minorAxis"] = semiminor;
-      state["m_majorAxis"] = semimajor;
-
-      if (semiminor == json("")) {
-        missingKeywords.push_back("radii semiminor");
-      }
-      if (semimajor == json("")) {
-        missingKeywords.push_back("radii semimajor");
-      }
-      if (unit == json("")) {
-        missingKeywords.push_back("radii unit");
-      }
-      else {
         unit = unit.get<std::string>();
         state["m_minorAxis"] = metric_conversion(state["m_minorAxis"].get<double>(), unit);
         state["m_majorAxis"] = metric_conversion(state["m_minorAxis"].get<double>(), unit);
       }
-    }
 
-    if (isd.value("reference_height", json("")) == json("")) {
-      missingKeywords.push_back("reference_height");
-    }
-    else {
-      json reference_height = isd["reference_height"];
-      json maxheight = reference_height.value("maxheight", json(""));
-      json minheight = reference_height.value("minheight", json(""));
-      json unit = reference_height.value("unit", json(""));
+      // get reference_height
+      {
+        json reference_height = isd.at("reference_height");
+        json maxheight = reference_height.at("maxheight");
+        json minheight = reference_height.at("minheight");
+        json unit = reference_height.at("unit");
 
-      state["m_minElevation"] = minheight;
-      state["m_maxElevation"] = maxheight;
+        state["m_minElevation"] = minheight;
+        state["m_maxElevation"] = maxheight;
 
-      if (maxheight == json("")) {
-        missingKeywords.push_back("reference_height maxheight");
-      }
-      if (minheight == json("")) {
-        missingKeywords.push_back("reference_height minheight");
-      }
-      if (unit == json("")) {
-        missingKeywords.push_back("reference_height unit");
-      }
-      else {
         unit = unit.get<std::string>();
         state["m_minElevation"] = metric_conversion(state["m_minElevation"].get<double>(), unit);
         state["m_maxElevation"] = metric_conversion(state["m_minElevation"].get<double>(), unit);
       }
+
+      state["m_ephemerisTime"] = isd.at("center_ephemeris_time");
+      state["m_nLines"] = isd.at("image_lines");
+      state["m_nSamples"] = isd.at("image_samples");
+
+      state["m_iTransL"][0] = isd.at("focal2pixel_lines").at(0);
+      state["m_iTransL"][1] = isd.at("focal2pixel_lines").at(1);
+      state["m_iTransL"][2] = isd.at("focal2pixel_lines").at(2);
+
+      state["m_iTransS"][0] = isd.at("focal2pixel_samples").at(0);
+      state["m_iTransS"][1] = isd.at("focal2pixel_samples").at(1);
+      state["m_iTransS"][2] = isd.at("focal2pixel_samples").at(2);
+
+      // We don't pass the pixel to focal plane transformation so invert the
+      // focal plane to pixel transformation
+      double determinant = state["m_iTransL"][1].get<double>() * state["m_iTransS"][2].get<double>() -
+                           state["m_iTransL"][2].get<double>() * state["m_iTransS"][1].get<double>();
+
+      state["m_transX"][1] =  state["m_iTransL"][1].get<double>() / determinant;
+      state["m_transX"][2] = -state["m_iTransS"][1].get<double>() / determinant;
+      state["m_transX"][0] = -(state["m_transX"][1].get<double>() * state["m_iTransL"][0].get<double>() +
+                              state["m_transX"][2].get<double>() * state["m_iTransS"][0].get<double>());
+
+      state["m_transY"][1] = -state["m_iTransL"][2].get<double>() / determinant;
+      state["m_transY"][2] =  state["m_iTransS"][2].get<double>() / determinant;
+      state["m_transY"][0] = -(state["m_transY"][1].get<double>() * state["m_iTransL"][0].get<double>() +
+                               state["m_transY"][2].get<double>() * state["m_iTransS"][0].get<double>());
+
     }
-
-    // If we are missing necessary keywords from ISD, we cannot create a valid sensor model.
-    if (missingKeywords.size() != 0) {
-
-      std::string errorMessage = "ISD is missing the necessary keywords: [";
-
-      for (int i = 0; i < (int)missingKeywords.size(); i++) {
-        if (i == (int)missingKeywords.size() - 1) {
-          errorMessage += missingKeywords[i] + "]";
-        }
-        else {
-          errorMessage += missingKeywords[i] + ", ";
-        }
-      }
-
+    catch(std::out_of_range& e) {
       throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
-                       errorMessage,
-                       "UsgsAstroFramePlugin::constructModelFromISD");
+                       "ISD missing necessary keywords to create sensor model: " + std::string(e.what()),
+                       "UsgsAstroFrameSensorModel::constructModelFromISD");
     }
+    catch(...) {
+      throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
+                       "ISD is invalid for creating the sensor model.",
+                       "UsgsAstroFrameSensorModel::constructModelFromISD");
+    }
+
     return state.dump();
 
 }

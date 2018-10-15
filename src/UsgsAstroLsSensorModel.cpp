@@ -420,13 +420,6 @@ UsgsAstroLsSensorModel::UsgsAstroLsSensorModel()
 }
 
 
-UsgsAstroLsSensorModel::UsgsAstroLsSensorModel(std::string stringIsd)
-{
-  json jsonIsd = json::parse(stringIsd);
-  replaceModelState(constructStateFromIsd(jsonIsd));
-}
-
-
 //*****************************************************************************
 // UsgsAstroLsSensorModel Destructor
 //*****************************************************************************
@@ -2707,7 +2700,7 @@ double UsgsAstroLsSensorModel::determinant3x3(double mat[9]) const
 
 
 
-std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imageSupportData) const
+std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imageSupportData, csm::WarningList *warnings) const
 {
    // Instantiate UsgsAstroLineScanner sensor model
    json isd = json::parse(imageSupportData);
