@@ -30,5 +30,6 @@ artifacts:
     name: usgscsm.dll
 
 on_success:
+- cd ../
 - cmd: conda build --token %CONDA_UPLOAD_TOKEN% recipe/
 
