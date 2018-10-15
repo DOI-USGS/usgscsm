@@ -210,15 +210,7 @@ std::string UsgsAstroPlugin::convertISDToModelState(const csm::Isd &imageSupport
                                                const std::string &modelName,
                                                csm::WarningList *warnings) const {
 
-  csm::Model* sensor_model = constructModelFromISD(
-                             imageSupportData, modelName, warnings);
-
-  if (!sensor_model) {
-      csm::Error::ErrorType aErrorType = csm::Error::ISD_NOT_SUPPORTED;
-      std::string aMessage = "ISD not supported: ";
-      std::string aFunction = "UsgsAstroPlugin::convertISDToModelState()";
-      throw csm::Error(aErrorType, aMessage, aFunction);
-  }
+  csm::Model* sensor_model = constructModelFromISD(imageSupportData, modelName, warnings);
   return sensor_model->getModelState();
 }
 
