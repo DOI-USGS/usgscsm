@@ -8,6 +8,7 @@
 
 using json = nlohmann::json;
 
+<<<<<<< HEAD
 INSTANTIATE_TEST_CASE_P(JacobianTest,FramerParameterizedTest,
                         ::testing::Values(csm::ImageCoord(2.5,2.5),csm::ImageCoord(7.5,7.5)));
 
@@ -37,6 +38,123 @@ TEST_P(FramerParameterizedTest, JacobianTest) {
 
 // NOTE: The imagePt format is (Lines,Samples)
 
+=======
+
+class FramerParameterizedTest : public ::testing::TestWithParam<csm::ImageCoord> {
+
+protected:
+  csm::Isd isd;
+
+      void printIsd(csm::Isd &localIsd) {
+           multimap<string,string> isdmap= localIsd.parameters();
+           for (auto it = isdmap.begin(); it != isdmap.end();++it){
+
+                      cout << it->first << " : " << it->second << endl;
+           }
+      }
+      UsgsAstroFrameSensorModel* createModel(csm::Isd &modifiedIsd) {
+
+        UsgsAstroFramePlugin frameCameraPlugin;
+        csm::Model *model = frameCameraPlugin.constructModelFromISD(
+              modifiedIsd,"USGS_ASTRO_FRAME_SENSOR_MODEL");
+
+        UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+
+        if (sensorModel)
+          return sensorModel;
+        else
+          return nullptr;
+      }
+
+
+   virtual void SetUp() {
+     isd.setFilename("data/simpleFramerISD.img");
+   };
+};
+
+
+class FrameIsdTest : public ::testing::Test {
+  protected:
+    csm::Isd isd;
+    void printIsd(csm::Isd &localIsd) {
+      multimap<string,string> isdmap= localIsd.parameters();
+      for (auto it = isdmap.begin(); it != isdmap.end();++it){
+        cout << it->first << " : " << it->second << endl;
+      }
+    }
+    UsgsAstroFrameSensorModel* createModel(csm::Isd &modifiedIsd) {
+      UsgsAstroFramePlugin frameCameraPlugin;
+      csm::Model *model = frameCameraPlugin.constructModelFromISD(
+              modifiedIsd,"USGS_ASTRO_FRAME_SENSOR_MODEL");
+      UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+      if (sensorModel)
+        return sensorModel;
+      else
+        return nullptr;
+      }
+
+
+    virtual void SetUp() {
+      isd.setFilename("data/simpleFramerISD.img");
+   }
+};
+
+class FrameSensorModel : public ::testing::Test {
+   protected:
+      protected :
+      csm::Isd isd;
+      UsgsAstroFrameSensorModel *sensorModel;
+
+      void SetUp() override {
+         sensorModel = NULL;
+
+         isd.setFilename("data/simpleFramerISD.img");
+         UsgsAstroFramePlugin frameCameraPlugin;
+         csm::Model *model = frameCameraPlugin.constructModelFromISD(
+               isd,
+               "USGS_ASTRO_FRAME_SENSOR_MODEL");
+         sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+         ASSERT_NE(sensorModel, nullptr);
+      }
+
+      void TearDown() override {
+         if (sensorModel) {
+            delete sensorModel;
+            sensorModel = NULL;
+         }
+      }
+};
+
+INSTANTIATE_TEST_CASE_P(JacobianTest,FramerParameterizedTest,
+                        ::testing::Values(csm::ImageCoord(2.5,2.5),csm::ImageCoord(7.5,7.5)));
+
+TEST_P(FramerParameterizedTest, JacobianTest) {
+
+   UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
+   std::string modelState = sensorModel->getModelState(); 
+   auto state = json::parse(modelState);
+
+   state["m_odtX"] = {1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0};
+   state["m_odtY"] = {0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0};
+   sensorModel->replaceModelState(state.dump()); 
+   
+   double Jxx,Jxy,Jyx,Jyy;
+   ASSERT_NE(sensorModel, nullptr);
+
+   csm::ImageCoord imagePt1 = GetParam();
+//   cout << "[" << imagePt1.samp << "," << imagePt1.line << "]"<< endl;
+   sensorModel->distortionJacobian(imagePt1.samp, imagePt1.line, Jxx, Jxy,Jyx,Jyy);
+
+   double determinant = fabs(Jxx*Jyy - Jxy*Jyx);
+   EXPECT_GT(determinant,1e-3);
+
+   delete sensorModel;
+   sensorModel=NULL;
+}
+
+// NOTE: The imagePt format is (Lines,Samples)
+
+>>>>>>> 43e997ccc6ea116b052f39c68defaa48f30b5537
 // centered and slightly off-center:
 TEST_F(FrameSensorModel, Center) {
    csm::ImageCoord imagePt(7.5, 7.5);
@@ -472,4 +590,7 @@ TEST_F(FrameSensorModel, SemiMinorAxis10x_SlightlyOffCenter) {
    delete sensorModel;
    sensorModel = NULL;
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 43e997ccc6ea116b052f39c68defaa48f30b5537

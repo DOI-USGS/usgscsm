@@ -1,0 +1,5 @@
+if(EXISTS "C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/runCSMCameraModelTests[1]_tests.cmake")
+  include("C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/runCSMCameraModelTests[1]_tests.cmake")
+else()
+  add_test(runCSMCameraModelTests_NOT_BUILT runCSMCameraModelTests_NOT_BUILT)
+endif()
