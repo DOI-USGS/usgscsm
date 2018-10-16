@@ -31,5 +31,11 @@ artifacts:
 
 on_success:
 - cd ../
-- conda build --token %CONDA_UPLOAD_TOKEN% recipe/
-
+- if ($env:APPVEYOR_PULL_REQUEST_NUMBER)
+{
+  conda build --token %CONDA_UPLOAD_TOKEN% recipe/
+}
+else
+{
+  conda build recipe
+}
