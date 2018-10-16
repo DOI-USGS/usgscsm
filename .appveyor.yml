@@ -30,4 +30,4 @@ build_script:
 
 on_success:
 - cd ../
-- conda build recipe/
+- conda build --token %CONDA_UPLOAD_TOKEN% recipe/
