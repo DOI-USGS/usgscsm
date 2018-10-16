@@ -662,6 +662,8 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
                                    m_currentParameterValue[6]}},
       {"m_currentParameterCovariance", m_currentParameterCovariance}
     };
+
+    std::cout << state.dump() << std::endl;
     return state.dump();
 }
 
@@ -910,9 +912,13 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
         state["m_minorAxis"] = semiminor;
         state["m_majorAxis"] = semimajor;
 
+        std::cout << "before: " << semimajor << ", " << semiminor << std::endl;
+
         unit = unit.get<std::string>();
         state["m_minorAxis"] = metric_conversion(state["m_minorAxis"].get<double>(), unit);
-        state["m_majorAxis"] = metric_conversion(state["m_minorAxis"].get<double>(), unit);
+        state["m_majorAxis"] = metric_conversion(state["m_majorAxis"].get<double>(), unit);
+
+        std::cout << "after: " << state["m_majorAxis"] << ", " << state["m_minorAxis"] << std::endl;
       }
 
       // get reference_height
