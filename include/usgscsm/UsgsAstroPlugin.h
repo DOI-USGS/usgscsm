@@ -1,5 +1,5 @@
-#ifndef UsgsAstroFramePlugin_h
-#define UsgsAstroFramePlugin_h
+#ifndef UsgsAstroPlugin_h
+#define UsgsAstroPlugin_h
 
 
 #include <string>
@@ -7,13 +7,16 @@
 #include <Plugin.h>
 #include <Version.h>
 
+#include <json.hpp>
+using json = nlohmann::json;
 
-class UsgsAstroFramePlugin : public csm::Plugin {
+class UsgsAstroPlugin : public csm::Plugin {
 
   public:
-    UsgsAstroFramePlugin();
-    ~UsgsAstroFramePlugin();
+    UsgsAstroPlugin();
+    ~UsgsAstroPlugin();
 
+    virtual std::string getStateFromISD(csm::Isd imageSupportData) const;
     virtual std::string getPluginName() const;
     virtual std::string getManufacturer() const;
     virtual std::string getReleaseDate() const;
@@ -42,12 +45,12 @@ class UsgsAstroFramePlugin : public csm::Plugin {
                                                const std::string &modelName,
                                                csm::WarningList *warnings = NULL) const;
 
+    std::string loadImageSupportData(const csm::Isd &imageSupportDataOriginal) const;
+
     // TODO when implementing, add any other necessary members.
 
 private:
-    csm::Isd loadImageSupportData(const csm::Isd &imageSupportData) const; 
-
-    static const UsgsAstroFramePlugin m_registeredPlugin;
+    static const UsgsAstroPlugin m_registeredPlugin;
     static const std::string _PLUGIN_NAME;
     static const std::string _MANUFACTURER_NAME;
     static const std::string _RELEASE_DATE;
@@ -56,6 +59,10 @@ private:
     static const std::string _ISD_KEYWORD[];
     static const int         _NUM_STATE_KEYWORDS;
     static const std::string _STATE_KEYWORD[];
+    static const json MODEL_KEYWORDS;
+
+    typedef csm::Model* (*sensorConstructor)(void);
+    static std::map<std::string, sensorConstructor> MODELS;
 };
 
 #endif
