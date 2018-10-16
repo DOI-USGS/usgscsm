@@ -1,0 +1,384 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{596B10A7-57E6-33C1-8D25-CB565934CCCA}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>runCSMCameraModelTests</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\build2\tests\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">runCSMCameraModelTests.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">runCSMCameraModelTests</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\build2\tests\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">runCSMCameraModelTests.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">runCSMCameraModelTests</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\build2\tests\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">runCSMCameraModelTests.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">runCSMCameraModelTests</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\build2\tests\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">runCSMCameraModelTests.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">runCSMCameraModelTests</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\usgscsm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\json;\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Debug/</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\usgscsm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\json;\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\usgscsm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\json;\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message></Message>
+      <Command>setlocal
+C:\Users\astro_admin\Miniconda3\Library\bin\cmake.exe -D TEST_TARGET=runCSMCameraModelTests -D TEST_EXECUTABLE=C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/Debug/runCSMCameraModelTests.exe -D TEST_EXECUTOR= -D TEST_WORKING_DIR=C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/tests -D TEST_EXTRA_ARGS= -D TEST_PROPERTIES= -D TEST_PREFIX= -D TEST_SUFFIX= -D NO_PRETTY_TYPES=FALSE -D NO_PRETTY_VALUES=FALSE -D TEST_LIST=runCSMCameraModelTests_TESTS -D CTEST_FILE=C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/runCSMCameraModelTests[1]_tests.cmake -D TEST_DISCOVERY_TIMEOUT=5 -P C:/Users/astro_admin/Miniconda3/Library/share/cmake-3.12/Modules/GoogleTestAddTests.cmake
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>..\Debug\usgscsm.lib;..\csm\Debug\csmapi.lib;..\Debug\gtest.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/Debug/runCSMCameraModelTests.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/Debug/runCSMCameraModelTests.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\usgscsm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\json;\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Release/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\usgscsm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\json;\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\usgscsm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\json;\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message></Message>
+      <Command>setlocal
+C:\Users\astro_admin\Miniconda3\Library\bin\cmake.exe -D TEST_TARGET=runCSMCameraModelTests -D TEST_EXECUTABLE=C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/Release/runCSMCameraModelTests.exe -D TEST_EXECUTOR= -D TEST_WORKING_DIR=C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/tests -D TEST_EXTRA_ARGS= -D TEST_PROPERTIES= -D TEST_PREFIX= -D TEST_SUFFIX= -D NO_PRETTY_TYPES=FALSE -D NO_PRETTY_VALUES=FALSE -D TEST_LIST=runCSMCameraModelTests_TESTS -D CTEST_FILE=C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/runCSMCameraModelTests[1]_tests.cmake -D TEST_DISCOVERY_TIMEOUT=5 -P C:/Users/astro_admin/Miniconda3/Library/share/cmake-3.12/Modules/GoogleTestAddTests.cmake
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>..\Release\usgscsm.lib;..\csm\Release\csmapi.lib;..\Release\gtest.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/Release/runCSMCameraModelTests.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/Release/runCSMCameraModelTests.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\usgscsm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\json;\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\usgscsm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\json;\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\usgscsm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\json;\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message></Message>
+      <Command>setlocal
+C:\Users\astro_admin\Miniconda3\Library\bin\cmake.exe -D TEST_TARGET=runCSMCameraModelTests -D TEST_EXECUTABLE=C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/MinSizeRel/runCSMCameraModelTests.exe -D TEST_EXECUTOR= -D TEST_WORKING_DIR=C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/tests -D TEST_EXTRA_ARGS= -D TEST_PROPERTIES= -D TEST_PREFIX= -D TEST_SUFFIX= -D NO_PRETTY_TYPES=FALSE -D NO_PRETTY_VALUES=FALSE -D TEST_LIST=runCSMCameraModelTests_TESTS -D CTEST_FILE=C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/runCSMCameraModelTests[1]_tests.cmake -D TEST_DISCOVERY_TIMEOUT=5 -P C:/Users/astro_admin/Miniconda3/Library/share/cmake-3.12/Modules/GoogleTestAddTests.cmake
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>..\MinSizeRel\usgscsm.lib;..\csm\MinSizeRel\csmapi.lib;..\MinSizeRel\gtest.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/MinSizeRel/runCSMCameraModelTests.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/MinSizeRel/runCSMCameraModelTests.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\usgscsm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\json;\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\usgscsm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\json;\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\usgscsm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\include\json;\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\csm;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\gtest\googletest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message></Message>
+      <Command>setlocal
+C:\Users\astro_admin\Miniconda3\Library\bin\cmake.exe -D TEST_TARGET=runCSMCameraModelTests -D TEST_EXECUTABLE=C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/RelWithDebInfo/runCSMCameraModelTests.exe -D TEST_EXECUTOR= -D TEST_WORKING_DIR=C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/tests -D TEST_EXTRA_ARGS= -D TEST_PROPERTIES= -D TEST_PREFIX= -D TEST_SUFFIX= -D NO_PRETTY_TYPES=FALSE -D NO_PRETTY_VALUES=FALSE -D TEST_LIST=runCSMCameraModelTests_TESTS -D CTEST_FILE=C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/runCSMCameraModelTests[1]_tests.cmake -D TEST_DISCOVERY_TIMEOUT=5 -P C:/Users/astro_admin/Miniconda3/Library/share/cmake-3.12/Modules/GoogleTestAddTests.cmake
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>..\RelWithDebInfo\usgscsm.lib;..\csm\RelWithDebInfo\csmapi.lib;..\RelWithDebInfo\gtest.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/RelWithDebInfo/runCSMCameraModelTests.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/RelWithDebInfo/runCSMCameraModelTests.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\tests\CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/tests/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\Users\astro_admin\Miniconda3\Library\bin\cmake.exe -HC:/Users/astro_admin/Documents/GitHub/CSM-CameraModel -BC:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2 --check-stamp-file C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/tests/CMakeLists.txt;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\tests\CMakeLists.txt;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\tests\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\build2\tests\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/tests/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\Users\astro_admin\Miniconda3\Library\bin\cmake.exe -HC:/Users/astro_admin/Documents/GitHub/CSM-CameraModel -BC:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2 --check-stamp-file C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/tests/CMakeLists.txt;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\tests\CMakeLists.txt;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\tests\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\build2\tests\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/tests/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\Users\astro_admin\Miniconda3\Library\bin\cmake.exe -HC:/Users/astro_admin/Documents/GitHub/CSM-CameraModel -BC:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2 --check-stamp-file C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/tests/CMakeLists.txt;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\tests\CMakeLists.txt;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\tests\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\build2\tests\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/tests/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\Users\astro_admin\Miniconda3\Library\bin\cmake.exe -HC:/Users/astro_admin/Documents/GitHub/CSM-CameraModel -BC:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2 --check-stamp-file C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/build2/tests/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:/Users/astro_admin/Documents/GitHub/CSM-CameraModel/tests/CMakeLists.txt;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\tests\CMakeLists.txt;C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\tests\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\build2\tests\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\tests\FramePluginTests.cpp" />
+    <ClCompile Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\tests\FrameCameraTests.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\build2\ZERO_CHECK.vcxproj">
+      <Project>{60AB282C-DA0B-3493-91C0-37F102E240D2}</Project>
+      <Name>ZERO_CHECK</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\build2\csm\csmapi.vcxproj">
+      <Project>{EF259E59-04BD-3CDE-9102-9911FE148002}</Project>
+      <Name>csmapi</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\build2\gtest.vcxproj">
+      <Project>{CFF3CD43-E03A-377D-A970-BBEAF3283903}</Project>
+      <Name>gtest</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\astro_admin\Documents\GitHub\CSM-CameraModel\build2\usgscsm.vcxproj">
+      <Project>{AD4CD36B-F0FD-3056-8243-4D1A6D35D2E5}</Project>
+      <Name>usgscsm</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
