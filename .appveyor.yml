@@ -10,6 +10,11 @@ configuration:
 
 install:
   - git submodule update --init --recursive
+  - cmd: conda config --set always_yes yes --set changeps1 no
+  - cmd: conda update -q conda
+  - cmd: conda install conda-build anaconda-client
+  - cmd: conda config --set anaconda_upload yes
+  - cms: conda config --add channels usgs-astrogeology
 
 before_build:
   - mkdir build
@@ -19,3 +24,5 @@ build_script:
   - cmake -G "Visual Studio 15 2017 Win64" -DBUILD_TESTS=OFF ..
   - cmake --build . --target ALL_BUILD --config Release
 
+after_success:
+  - cmd: conda build --token %CONDA_UPLOAD_TOKEN% .
