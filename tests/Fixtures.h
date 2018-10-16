@@ -1,7 +1,7 @@
 #ifndef Fixtures_h
 #define Fixtures_h
 
-#include "UsgsAstroFramePlugin.h"
+#include "UsgsAstroPlugin.h"
 #include "UsgsAstroFrameSensorModel.h"
 
 #include <json.hpp>
@@ -23,6 +23,9 @@ inline void jsonToIsd(json &object, csm::Isd &isd, std::string prefix="") {
            isd.addParam(prefix+it.key(), jsonValue[i].dump());
         }
      }
+     else if (jsonValue.is_string()) {
+        isd.addParam(prefix+it.key(), jsonValue.get<std::string>());
+     }
      else {
         isd.addParam(prefix+it.key(), jsonValue.dump());
      }
@@ -36,8 +39,10 @@ class FrameSensorModel : public ::testing::Test {
 
       void SetUp() override {
          sensorModel = NULL;
+
          isd.setFilename("data/simpleFramerISD.img");
-         UsgsAstroFramePlugin frameCameraPlugin;
+         UsgsAstroPlugin frameCameraPlugin;
+
          csm::Model *model = frameCameraPlugin.constructModelFromISD(
                isd,
                "USGS_ASTRO_FRAME_SENSOR_MODEL");
@@ -67,7 +72,7 @@ class FramerParameterizedTest : public ::testing::TestWithParam<csm::ImageCoord>
 
 protected:
   csm::Isd isd;
-  
+
   std::string printIsd(csm::Isd &localIsd) {
     std::string str;
     std::multimap<std::string,std::string> isdmap= localIsd.parameters();
@@ -79,11 +84,11 @@ protected:
     return str;
   }
   UsgsAstroFrameSensorModel* createModel(csm::Isd &modifiedIsd) {
-    
-    UsgsAstroFramePlugin frameCameraPlugin;
+
+    UsgsAstroPlugin frameCameraPlugin;
     csm::Model *model = frameCameraPlugin.constructModelFromISD(
         modifiedIsd,"USGS_ASTRO_FRAME_SENSOR_MODEL");
-    
+
     UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
 
     if (sensorModel)
@@ -108,7 +113,7 @@ class FrameIsdTest : public ::testing::Test {
       }
     }
     UsgsAstroFrameSensorModel* createModel(csm::Isd &modifiedIsd) {
-      UsgsAstroFramePlugin frameCameraPlugin;
+      UsgsAstroPlugin frameCameraPlugin;
       modifiedIsd.setFilename("data/simpleFramerISD.img");
       csm::Model *model = frameCameraPlugin.constructModelFromISD(
               modifiedIsd,"USGS_ASTRO_FRAME_SENSOR_MODEL");
