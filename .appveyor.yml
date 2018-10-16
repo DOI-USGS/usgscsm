@@ -30,4 +30,4 @@ build_script:
 
 on_success:
 - cd ../
-- if [$env:APPVEYOR_PULL_REQUEST_NUMBER] ( conda build recipe/ ) ELSE ( conda build --token %CONDA_UPLOAD_TOKEN% recipe/ )
+- conda build recipe/
