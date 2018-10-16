@@ -621,7 +621,7 @@ std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
 
 std::string UsgsAstroFrameSensorModel::getModelState() const {
     json state = {
-      {"model_name", _SENSOR_MODEL_NAME},
+      {"m_modelName", _SENSOR_MODEL_NAME},
       {"m_focalLength" , m_focalLength},
       {"m_iTransS", {m_iTransS[0], m_iTransS[1], m_iTransS[2]}},
       {"m_iTransL", {m_iTransL[0], m_iTransL[1], m_iTransL[2]}},
@@ -736,8 +736,9 @@ bool UsgsAstroFrameSensorModel::isValidIsd(const std::string& Isd, csm::WarningL
 }
 
 
-void UsgsAstroFrameSensorModel::replaceModelState(const std::string& modelState) {
-    json state = json::parse(modelState);
+void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState) {
+
+    json state = json::parse(stringState);
 
     // The json library's .at() will except if key is missing
     try {
@@ -783,12 +784,10 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& modelState)
            // paramType.push_back(static_cast<csm::param::Type>(t));
         // }
     }
-    catch(...) {
-      csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
-      std::string aMessage = "State Object missing requiered parameters.";
-      std::string aFunction = "UsgsAstroFrameSensorModel::replaceModelState";
-      csm::Error csmErr(aErrorType, aMessage, aFunction);
-      throw(csmErr);
+    catch(std::out_of_range& e) {
+      throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
+                       "State keywords required to generate sensor model missing: " + std::string(e.what()) + "\nUsing model string: " + stringState,
+                       "UsgsAstroFrameSensorModel::replaceModelState");
     }
 }
 
@@ -810,9 +809,9 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
     json state = {};
 
 
-    state["m_modelName"] = _SENSOR_MODEL_NAME;
-
     try {
+      state["m_modelName"] = isd.at("model_name");
+
       state["m_startingDetectorSample"] = isd.at("starting_detector_sample");
       state["m_startingDetectorLine"] = isd.at("starting_detector_line");
 
@@ -962,12 +961,12 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
     catch(std::out_of_range& e) {
       throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
                        "ISD missing necessary keywords to create sensor model: " + std::string(e.what()),
-                       "UsgsAstroFrameSensorModel::constructModelFromISD");
+                       "UsgsAstroFrameSensorModel::constructStateFromIsd");
     }
     catch(...) {
       throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
                        "ISD is invalid for creating the sensor model.",
-                       "UsgsAstroFrameSensorModel::constructModelFromISD");
+                       "UsgsAstroFrameSensorModel::constructStateFromIsd");
     }
 
     return state.dump();
