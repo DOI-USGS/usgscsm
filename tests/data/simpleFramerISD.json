@@ -1,4 +1,5 @@
 {
+	"model_name" : "USGS_ASTRO_FRAME_SENSOR_MODEL",
 	"center_ephemeris_time": 50,
 	"dt_ephemeris": 100,
   "focal2pixel_lines": [0.0, 0.0, 10.0],
@@ -56,4 +57,3 @@
 		"z": 0
 	}
 }
-
