@@ -63,14 +63,14 @@ TEST(FramePluginTests, MissingStateValue) {
          badState));;
 }
 
-TEST_F(SimpleFrameIsdTest, Constructible) {
+TEST_F(FrameIsdTest, Constructible) {
    UsgsAstroFramePlugin testPlugin;
    EXPECT_TRUE(testPlugin.canModelBeConstructedFromISD(
                isd,
                "USGS_ASTRO_FRAME_SENSOR_MODEL"));
 }
 
-TEST_F(SimpleFrameIsdTest, NotConstructible) {
+TEST_F(FrameIsdTest, NotConstructible) {
    UsgsAstroFramePlugin testPlugin;
    isd.setFilename("Not a file");
    EXPECT_FALSE(testPlugin.canModelBeConstructedFromISD(
@@ -78,7 +78,7 @@ TEST_F(SimpleFrameIsdTest, NotConstructible) {
                 "USGS_ASTRO_FRAME_SENSOR_MODEL"));
 }
 
-TEST_F(SimpleFrameIsdTest, ConstructValidCamera) {
+TEST_F(FrameIsdTest, ConstructValidCamera) {
    UsgsAstroFramePlugin testPlugin;
    csm::Model *cameraModel = NULL;
    EXPECT_NO_THROW(
@@ -94,7 +94,7 @@ TEST_F(SimpleFrameIsdTest, ConstructValidCamera) {
    }
 }
 
-TEST_F(SimpleFrameIsdTest, ConstructInValidCamera) {
+TEST_F(FrameIsdTest, ConstructInValidCamera) {
    UsgsAstroFramePlugin testPlugin;
    // Remove the model_name keyword from the ISD to make it invalid
    isd.clearParams("model_name");

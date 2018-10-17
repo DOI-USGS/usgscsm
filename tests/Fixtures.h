@@ -54,7 +54,7 @@ class FrameSensorModel : public ::testing::Test {
       }
 };
 
-class SimpleFrameIsdTest : public ::testing::Test {
+class FrameIsdTest : public ::testing::Test {
    protected:
       csm::Isd isd;
 
