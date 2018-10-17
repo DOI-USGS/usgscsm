@@ -31,5 +31,5 @@ build_script:
 on_success:
 - cd ../
 - conda build -q recipe/
-- FOR /F "tokens=*" %g IN ('conda build recipe --output') do (SET builddir=%g)
+- ps: $builddir = FOR /F "tokens=*" %%g IN ('conda build recipe --output') do (SET builddir=%%g)
 - anaconda -t %CONDA_UPLOAD_TOKEN% upload %builddir% --label dev --force
