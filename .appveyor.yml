@@ -31,7 +31,15 @@ build_script:
 on_success:
 - cd ../
 - conda build -q recipe/
-- ps: $builddir = conda build recipe --output
-- ps: $parameters = '-t', "$Env:CONDA_UPLOAD_TOKEN", 'upload', "$builddir", '-l',
-                    "dev", '--force', '--no-progress'
-- ps: & cmd /c 'anaconda 2>&1' $parameters
+- ps:
+      $tar_glob = ".\conda-bld\win-*\${Env:PYPKG}-${Env:APPVEYOR_REPO_TAG_NAME}-*.tar.bz2";
+      Write-Host "tar_glob $tar_glob";
+      if ($Env:APPVEYOR_REPO_TAG_NAME -like "*dev*") {
+        $anaconda_label = "dev"
+      } else {
+        $anaconda_label = "main"
+      };
+      Write-Host "anaconda_label $anaconda_label";
+      $parameters = '-t', "$Env:CONDA_UPLOAD_TOKEN", 'upload', "$tar_glob", '-l',
+                    "$anaconda_label", '--force', '--no-progress';
+      & cmd /c 'anaconda 2>&1' $parameters;
