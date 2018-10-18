@@ -11,22 +11,33 @@
 
 TEST(PluginTests, PluginName) {
    UsgsAstroPlugin testPlugin;
-   EXPECT_EQ("UsgsAstroPluginCSM", testPlugin.getPluginName());;
+   EXPECT_EQ("UsgsAstroPluginCSM", testPlugin.getPluginName());
 }
 
 TEST(PluginTests, ManufacturerName) {
    UsgsAstroPlugin testPlugin;
-   EXPECT_EQ("UsgsAstrogeology", testPlugin.getManufacturer());;
+   EXPECT_EQ("UsgsAstrogeology", testPlugin.getManufacturer());
 }
 
 TEST(PluginTests, ReleaseDate) {
    UsgsAstroPlugin testPlugin;
-   EXPECT_EQ("20170425", testPlugin.getReleaseDate());;
+   EXPECT_EQ("20170425", testPlugin.getReleaseDate());
 }
 
 TEST(PluginTests, NumModels) {
    UsgsAstroPlugin testPlugin;
-   EXPECT_EQ(2, testPlugin.getNumModels());;
+   EXPECT_EQ(2, testPlugin.getNumModels());
+}
+
+TEST(PluginTests, BadISDFile) {
+   UsgsAstroPlugin testPlugin;
+   csm::Isd badIsd("Not a file");
+   EXPECT_FALSE(testPlugin.canModelBeConstructedFromISD(
+                badIsd,
+                "USGS_ASTRO_FRAME_SENSOR_MODEL"));
+   EXPECT_FALSE(testPlugin.canModelBeConstructedFromISD(
+                badIsd,
+                "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL"));
 }
 
 TEST(FrameStateTests, NoStateName) {
@@ -34,7 +45,7 @@ TEST(FrameStateTests, NoStateName) {
    std::string badState = "{\"not_a_name\":\"bad_name\"}";
    EXPECT_FALSE(testPlugin.canModelBeConstructedFromState(
          "USGS_ASTRO_FRAME_SENSOR_MODEL",
-         badState));;
+         badState));
 }
 
 TEST(FrameStateTests, BadStateName) {
@@ -42,7 +53,7 @@ TEST(FrameStateTests, BadStateName) {
    std::string badState = "{\"m_model_name\":\"bad_name\"}";
    EXPECT_FALSE(testPlugin.canModelBeConstructedFromState(
          "USGS_ASTRO_FRAME_SENSOR_MODEL",
-         badState));;
+         badState));
 }
 
 TEST(FrameStateTests, BadStateValue) {
@@ -52,7 +63,7 @@ TEST(FrameStateTests, BadStateValue) {
          "\"bad_param\":\"bad_value\"}";
    EXPECT_FALSE(testPlugin.canModelBeConstructedFromState(
          "USGS_ASTRO_FRAME_SENSOR_MODEL",
-         badState));;
+         badState));
 }
 
 TEST(FrameStateTests, MissingStateValue) {
@@ -61,7 +72,7 @@ TEST(FrameStateTests, MissingStateValue) {
          "\"m_model_name\":\"USGS_ASTRO_FRAME_SENSOR_MODEL\"}";
    EXPECT_FALSE(testPlugin.canModelBeConstructedFromState(
          "USGS_ASTRO_FRAME_SENSOR_MODEL",
-         badState));;
+         badState));
 }
 
 TEST_F(FrameIsdTest, Constructible) {
@@ -73,7 +84,7 @@ TEST_F(FrameIsdTest, Constructible) {
 
 TEST_F(FrameIsdTest, NotConstructible) {
    UsgsAstroPlugin testPlugin;
-   isd.setFilename("Not a file");
+   isd.setFilename("data/constVelocityLineScan.img");
    EXPECT_FALSE(testPlugin.canModelBeConstructedFromISD(
                 isd,
                 "USGS_ASTRO_FRAME_SENSOR_MODEL"));
@@ -129,7 +140,7 @@ TEST_F(ConstVelLineScanIsdTest, Constructible) {
 
 TEST_F(ConstVelLineScanIsdTest, NotConstructible) {
    UsgsAstroPlugin testPlugin;
-   isd.setFilename("Not a file");
+   isd.setFilename("data/simpleFramerISD.img");
    EXPECT_FALSE(testPlugin.canModelBeConstructedFromISD(
                isd,
                "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL"));
