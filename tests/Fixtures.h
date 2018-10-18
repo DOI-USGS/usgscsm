@@ -59,7 +59,7 @@ class FrameSensorModel : public ::testing::Test {
       }
 };
 
-class SimpleFrameIsdTest : public ::testing::Test {
+class FrameIsdTest : public ::testing::Test {
    protected:
       csm::Isd isd;
 
@@ -103,30 +103,33 @@ protected:
   };
 };
 
-class FrameIsdTest : public ::testing::Test {
+class FrameStateTest : public ::testing::Test {
   protected:
-    csm::Isd isd;
-    void printIsd(csm::Isd &localIsd) {
-      std::multimap<std::string,std::string> isdmap= localIsd.parameters();
-      for (auto it = isdmap.begin(); it != isdmap.end();++it){
-        std::cout << it->first << " : " << it->second << std::endl;
-      }
-    }
-    UsgsAstroFrameSensorModel* createModel(csm::Isd &modifiedIsd) {
-      UsgsAstroPlugin frameCameraPlugin;
-      modifiedIsd.setFilename("data/simpleFramerISD.img");
-      csm::Model *model = frameCameraPlugin.constructModelFromISD(
-              modifiedIsd,"USGS_ASTRO_FRAME_SENSOR_MODEL");
+    csm::Isd isd;    
+    UsgsAstroFrameSensorModel* createModifiedStateSensorModel(std::string key, double newValue) {
+      UsgsAstroPlugin cameraPlugin;
+      csm::Model *model = cameraPlugin.constructModelFromISD(isd,"USGS_ASTRO_FRAME_SENSOR_MODEL");
+
       UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
-      if (sensorModel)
+      if (sensorModel) {
+        sensorModel->getModelState(); 
+        std::string modelState = sensorModel->getModelState(); 
+        auto state = json::parse(modelState);
+        state[key] = newValue; 
+        sensorModel->replaceModelState(state.dump()); 
+
         return sensorModel;
-      else
+      }
+      else {
         return nullptr;
       }
+    }
 
-    virtual void SetUp() {
+    void SetUp() override {
       isd.setFilename("data/simpleFramerISD.img");
-   }
+    }
 };
+
+
 
 #endif

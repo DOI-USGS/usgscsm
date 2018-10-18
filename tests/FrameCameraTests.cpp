@@ -216,22 +216,11 @@ TEST_F(FrameSensorModel, setFocalPlane_AlternatingOnes) {
 }
 
 
-
 // Focal Length Tests:
-TEST_F(FrameSensorModel, FL500_OffBody4) {
+TEST_F(FrameStateTest, FL500_OffBody4) {
   std::string key = "m_focalLength";
   double newValue = 500.0;
-
-  std::string modelState = sensorModel->getModelState();
-  auto state = json::parse(modelState);
-  state[key] = newValue;
-  sensorModel->replaceModelState(state.dump());
-
-  sensorModel->setParameterValue(0, 1000.0); // X
-  sensorModel->setParameterValue(1, 0.0); // Y
-  sensorModel->setParameterValue(2, 0.0); // Z
-
-  modelState = sensorModel->getModelState();
+  UsgsAstroFrameSensorModel* sensorModel = createModifiedStateSensorModel(key, newValue);
 
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(15.0, 15.0);
@@ -245,14 +234,10 @@ TEST_F(FrameSensorModel, FL500_OffBody4) {
 }
 
 
-TEST_F(FrameSensorModel, FL500_OffBody3) {
+TEST_F(FrameStateTest, FL500_OffBody3) {
   std::string key = "m_focalLength";
   double newValue = 500.0;
-
-  std::string modelState = sensorModel->getModelState();
-  auto state = json::parse(modelState);
-  state[key] = newValue;
-  sensorModel->replaceModelState(state.dump());
+  UsgsAstroFrameSensorModel* sensorModel = createModifiedStateSensorModel(key, newValue);
 
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(0.0, 0.0);
@@ -266,14 +251,10 @@ TEST_F(FrameSensorModel, FL500_OffBody3) {
 }
 
 
-TEST_F(FrameSensorModel, FL500_Center) {
+TEST_F(FrameStateTest, FL500_Center) {
   std::string key = "m_focalLength";
   double newValue = 500.0;
-
-  std::string modelState = sensorModel->getModelState();
-  auto state = json::parse(modelState);
-  state[key] = newValue;
-  sensorModel->replaceModelState(state.dump());
+  UsgsAstroFrameSensorModel* sensorModel = createModifiedStateSensorModel(key, newValue);
 
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(7.5, 7.5);
@@ -287,14 +268,10 @@ TEST_F(FrameSensorModel, FL500_Center) {
 }
 
 
-TEST_F(FrameSensorModel, FL500_SlightlyOffCenter) {
+TEST_F(FrameStateTest, FL500_SlightlyOffCenter) {
   std::string key = "m_focalLength";
   double newValue = 500.0;
-
-  std::string modelState = sensorModel->getModelState();
-  auto state = json::parse(modelState);
-  state[key] = newValue;
-  sensorModel->replaceModelState(state.dump());
+  UsgsAstroFrameSensorModel* sensorModel = createModifiedStateSensorModel(key, newValue);
 
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(7.5, 6.5);
@@ -325,7 +302,6 @@ TEST_F(FrameSensorModel, X10_SlightlyOffCenter) {
 
 TEST_F(FrameSensorModel, X1e9_SlightlyOffCenter) {
    double newValue = 1000000000.0;
-
    sensorModel->setParameterValue(0, newValue); // X
 
    ASSERT_NE(sensorModel, nullptr);
@@ -343,10 +319,10 @@ TEST_F(FrameSensorModel, X1e9_SlightlyOffCenter) {
 
 // Angle rotations:
 TEST_F(FrameSensorModel, Rotation_omegaPi_Center) {
+   sensorModel->setParameterValue(3, 1.0); 
+   sensorModel->setParameterValue(4, 1.0); 
+   sensorModel->setParameterValue(5, 1.0); 
 
-   sensorModel->setParameterValue(3, 1.0);
-   sensorModel->setParameterValue(4, 1.0);
-   sensorModel->setParameterValue(5, 1.0);
    sensorModel->setParameterValue(6, 1.0);
 
    sensorModel->setParameterValue(0, 1000.0); // X
@@ -366,10 +342,10 @@ TEST_F(FrameSensorModel, Rotation_omegaPi_Center) {
 
 
 TEST_F(FrameSensorModel, Rotation_NPole_Center) {
+  sensorModel->setParameterValue(3, 0.0); 
+  sensorModel->setParameterValue(4, -1.0); 
+  sensorModel->setParameterValue(5, 0.0); 
 
-  sensorModel->setParameterValue(3, 0.0);
-  sensorModel->setParameterValue(4, -1.0);
-  sensorModel->setParameterValue(5, 0.0);
   sensorModel->setParameterValue(6, 0.0);
 
   sensorModel->setParameterValue(0, 0.0); // X
@@ -407,14 +383,11 @@ TEST_F(FrameSensorModel, Rotation_SPole_Center) {
 
 
 // Ellipsoid axis tests:
-TEST_F(FrameSensorModel, SemiMajorAxis100x_Center) {
+TEST_F(FrameStateTest, SemiMajorAxis100x_Center) {
   std::string key = "m_majorAxis";
   double newValue = 1000.0;
 
-  std::string modelState = sensorModel->getModelState();
-  auto state = json::parse(modelState);
-  state[key] = newValue;
-  sensorModel->replaceModelState(state.dump());
+  UsgsAstroFrameSensorModel* sensorModel = createModifiedStateSensorModel(key, newValue);
 
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(7.5, 7.5);
@@ -428,14 +401,10 @@ TEST_F(FrameSensorModel, SemiMajorAxis100x_Center) {
 }
 
 
-TEST_F(FrameSensorModel, SemiMajorAxis10x_SlightlyOffCenter) {
+TEST_F(FrameStateTest, SemiMajorAxis10x_SlightlyOffCenter) {
   std::string key = "m_majorAxis";
   double newValue = 100.0;
-
-  std::string modelState = sensorModel->getModelState();
-  auto state = json::parse(modelState);
-  state[key] = newValue;
-  sensorModel->replaceModelState(state.dump());
+  UsgsAstroFrameSensorModel* sensorModel = createModifiedStateSensorModel(key, newValue);
 
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(7.5, 6.5);
@@ -453,22 +422,18 @@ TEST_F(FrameSensorModel, SemiMajorAxis10x_SlightlyOffCenter) {
 
 // The following test is for the scenario where the semi_minor_axis is actually larger
 // than the semi_major_axis:
-TEST_F(FrameSensorModel, SemiMinorAxis10x_SlightlyOffCenter) {
-   std::string key = "m_minorAxis";
-   double newValue = 100.0;
+TEST_F(FrameStateTest, SemiMinorAxis10x_SlightlyOffCenter) {
+  std::string key = "m_minorAxis";
+  double newValue = 100.0;
+  UsgsAstroFrameSensorModel* sensorModel = createModifiedStateSensorModel(key, newValue);
 
-   std::string modelState = sensorModel->getModelState();
-   auto state = json::parse(modelState);
-   state[key] = newValue;
-   sensorModel->replaceModelState(state.dump());
+  ASSERT_NE(sensorModel, nullptr);
+  csm::ImageCoord imagePt(7.5, 6.5);
+  csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+  EXPECT_NEAR(groundPt.x, 9.99803960, 1e-8);
+  EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
+  EXPECT_NEAR(groundPt.z, 1.98000392, 1e-8);
 
-   ASSERT_NE(sensorModel, nullptr);
-   csm::ImageCoord imagePt(7.5, 6.5);
-   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   EXPECT_NEAR(groundPt.x, 9.99803960, 1e-8);
-   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
-   EXPECT_NEAR(groundPt.z, 1.98000392, 1e-8);
-
-   delete sensorModel;
-   sensorModel = NULL;
+  delete sensorModel;
+  sensorModel = NULL;
 }
