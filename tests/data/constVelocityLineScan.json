@@ -21,9 +21,7 @@
    "STARTING_EPHEMERIS_TIME": 992.0,
    "STARTING_LINE": 1,
    "STARTING_SAMPLE": 0,
-   "DETECTOR_SAMPLE_ORIGIN": [
-     8.5
-   ],
+   "DETECTOR_SAMPLE_ORIGIN": 8.5,
    "IMAGE_ID": "UNKNOWN",
    "PLATFORM": 1,
    "TOTAL_LINES": 16,
@@ -39,12 +37,8 @@
      0.0, 0.0, -20.0
    ],
    "DT_QUAT": 0.2,
-   "FOCAL": [
-     50.0
-   ],
-   "DETECTOR_LINE_ORIGIN": [
-     0.5
-   ],
+   "FOCAL": 50.0,
+   "DETECTOR_LINE_ORIGIN": 0.5,
    "MOUNTING_ANGLES": [
      0,
      0,

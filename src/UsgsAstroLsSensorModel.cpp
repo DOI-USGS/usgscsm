@@ -148,7 +148,7 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
    m_offsetSamples = j["m_offsetSamples"];
    m_platformFlag = j["m_platformFlag"];
    m_aberrFlag = j["m_aberrFlag"];
-   m_atmRefFlag = j["m_atmrefFlag"];
+   m_atmRefFlag = j["m_atmRefFlag"];
    m_intTimeLines = j["m_intTimeLines"].get<std::vector<double>>();
    m_intTimeStartTimes = j["m_intTimeStartTimes"].get<std::vector<double>>();
    m_intTimes = j["m_intTimes"].get<std::vector<double>>();
@@ -207,6 +207,21 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
          break;
      }
     }
+   }
+
+   // If computed state values are still default, then compute them
+   if (m_gsd == 1.0  && m_flyingHeight == 1000.0)
+   {
+     updateState();
+   }
+
+   try
+   {
+     setLinearApproximation();
+   }
+   catch (...)
+   {
+     _linear = false;
    }
 }
 
@@ -392,22 +407,6 @@ void UsgsAstroLsSensorModel::reset()
     m_covariance[i * NUM_PARAMETERS + i] = 1.0;
   }
   m_imageFlipFlag = 0;                     // 53
-
-  // If needed set state data elements that need a sensor model to compute
-  // Update if still using default settings
-  if (m_gsd == 1.0  && m_flyingHeight == 1000.0)
-  {
-    updateState();
-  }
-
-  try
-  {
-    setLinearApproximation();
-  }
-  catch (...)
-  {
-    _linear = false;
-  }
 }
 
 
@@ -477,49 +476,6 @@ void UsgsAstroLsSensorModel::updateState()
    {
       m_covariance[i * num_params + i] = variance;
    }
-
-   // Set flag for flipping image along horizontal axis
-   int index = int((m_numEphem - 1) / 2.0) * 3;
-   double xs, ys, zs;    // mid sensor position
-   xs = m_ephemPts[index];
-   ys = m_ephemPts[index + 1];
-   zs = m_ephemPts[index + 2];
-   double xv, yv, zv;    // mid sensor velocity
-   xv = m_ephemRates[index];
-   yv = m_ephemRates[index + 1];
-   zv = m_ephemRates[index + 2];
-   double xm, ym, zm;    // mid line position (mid sample)
-   xm = m_referencePointXyz.x;
-   ym = m_referencePointXyz.y;
-   zm = m_referencePointXyz.z;
-   // mid line position (first sample)
-   csm::EcefCoord posf = imageToGround(csm::ImageCoord(lineCtr, 0.0), refHeight);
-   // mid line position (last sample)
-   csm::EcefCoord posl = imageToGround(csm::ImageCoord(lineCtr, m_totalSamples - 1), refHeight);
-   double xd, yd, zd;    // unit vector normal to image footprint
-   xd = posl.x - posf.x;
-   yd = posl.y - posf.y;
-   zd = posl.z - posf.z;
-   double xn, yn, zn;
-   xn = yv*zd - zv*yd;
-   yn = zv*xd - xv*zd;
-   zn = xv*yd - yv*xd;
-   double nmag = sqrt(xn*xn + yn*yn + zn*zn);
-   xn /= nmag;
-   yn /= nmag;
-   zn /= nmag;
-   double xo, yo, zo;   // unit vector ground-to_satellite
-   xo = xs - xm;
-   yo = ys - ym;
-   zo = zs - zm;
-   double omag = sqrt(xo*xo + yo*yo + zo*zo);
-   xo /= omag;
-   yo /= omag;
-   zo /= omag;
-   double triple_product = xn*xo + yn*yo + zn*zo;
-   m_imageFlipFlag = 0;
-   if (triple_product > 0.0)
-      m_imageFlipFlag = 1;
 }
 
 
@@ -2721,10 +2677,10 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    state["m_startingEphemerisTime"] = isd.at("STARTING_EPHEMERIS_TIME");
    state["m_centerEphemerisTime"] = isd.at("CENTER_EPHEMERIS_TIME");
 
-   if (isd.at("NUMBER_OF_INT_TIMES").empty()) {
+   if (isd.find("NUMBER_OF_INT_TIMES") == isd.end()) {
      state["m_intTimeLines"] = {0.5};
      state["m_intTimeStartTimes"] = {state["m_startingEphemerisTime"].get<double>() - state["m_centerEphemerisTime"].get<double>()};
-     state["m_intTimes"] = {isd.at("INT_TIME")};
+     state["m_intTimes"] = {isd.at("INT_TIME").get<double>()};
    }
    else {
      int numIntTimes = isd.at("NUMBER_OF_INT_TIMES");
@@ -2794,7 +2750,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    //state["m_ephemRates"] = isd.m_ephem_rates;
    //state["m_quaternions"] = isd.m_quaternions;
    state["m_parameterVals"] = json::array();
-   for (int i=0; i < 18;i++){
+   for (int i=0; i < 18; i++){
        state["m_parameterVals"].push_back(isd.at("TRI_PARAMETERS").at(i));
    }
    //state["m_parameterVals"] = isd.m_tRI_PARAMETERS;
@@ -2817,7 +2773,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    state["m_collectionIdentifier"] = isd.at("COLL_ID");
 
    // Ground elevations
-   state["m_refElevation"] = isd.at("REFERNCE_HEIGHT");
+   state["m_refElevation"] = isd.at("REFERENCE_HEIGHT");
    state["m_minElevation"] = isd.at("MIN_VALID_HT");
    state["m_maxElevation"] = isd.at("MAX_VALID_HT");
 
@@ -2827,6 +2783,21 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
       state["m_parameterVals"][i] = 0.0;
       state["m_ateterType"][i] = csm::param::REAL;
    }
+
+   // Default to identity covariance
+   state["m_covariance"] =
+         std::vector<double>(NUM_PARAMETERS * NUM_PARAMETERS, 0.0);
+   for (int i = 0; i < NUM_PARAMETERS; i++) {
+     state["m_covariance"][i * NUM_PARAMETERS + i] = 1.0;
+   }
+
+   // Zero computed state values
+   state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
+   state["m_gsd"] = 0.0;
+   state["m_flyingHeight"] = 0.0;
+   state["m_halfSwath"] = 0.0;
+   state["m_halfTime"] = 0.0;
+   state["m_imageFlipFlag"] = 0;
 
    // The state data will still be updated when a sensor model is created since
    // some state data is notin the ISD and requires a SM to compute them.
