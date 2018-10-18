@@ -32,7 +32,6 @@ UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
     reset();
 }
 
-
 void UsgsAstroFrameSensorModel::reset() {
     m_modelName = _SENSOR_MODEL_NAME;
     m_majorAxis = 0.0;
@@ -87,7 +86,7 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(const csm::EcefCoord &g
                               double *achievedPrecision,
                               csm::WarningList *warnings) const {
 
-  return groundToImage(groundPt,m_noAdjustments,desiredPrecision,achievedPrecision,warnings);
+  return groundToImage(groundPt, m_noAdjustments, desiredPrecision, achievedPrecision, warnings);
 }
 
 
@@ -134,7 +133,7 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
   distortionFunction(undistortedx, undistortedy, distortedx, distortedy);
 
 
-  //Convert distorted mm into line/sample
+  // Convert distorted mm into line/sample
   double sample, line;
   sample = m_iTransS[0] + m_iTransS[1] * distortedx + m_iTransS[2] * distortedy + m_ccdCenter[1];
   line =   m_iTransL[0] + m_iTransL[1] * distortedx + m_iTransL[2] * distortedy + m_ccdCenter[0];
@@ -163,11 +162,11 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   double sample = imagePt.samp;
   double line = imagePt.line;
 
-  //Here is where we should be able to apply an adjustment to opk
+  // Here is where we should be able to apply an adjustment to opk
   double m[3][3];
   calcRotationMatrix(m);
 
-  //Apply the principal point offset, assuming the pp is given in pixels
+  // Apply the principal point offset, assuming the pp is given in pixels
   double xl, yl, zl, lo, so;
   lo = line - m_linePp;
   so = sample - m_samplePp;
@@ -184,7 +183,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
 
   setFocalPlane(x_camera, y_camera, undistorted_cameraX, undistorted_cameraY);
 
-  //Now back from distorted mm to pixels
+  // Now back from distorted mm to pixels
   double udx, udy; //distorted line and sample
   udx = undistorted_cameraX;
   udy = undistorted_cameraY;
@@ -452,103 +451,101 @@ std::vector<csm::RasterGM::SensorPartials> UsgsAstroFrameSensorModel::computeAll
     csm::param::Set pset,
     double desiredPrecision,
     double *achievedPrecision,
-    csm::WarningList *warnings) const
-    {
-        std::vector<int> indices = getParameterSetIndices(pset);
-        size_t num = indices.size();
-        std::vector<csm::RasterGM::SensorPartials> partials;
-        for (int index = 0;index < num;index++){
-            partials.push_back(computeSensorPartials(
-                                indices[index],
-                                imagePt, groundPt,
-                                desiredPrecision, achievedPrecision, warnings));
-        }
-        return partials;
-    }
+    csm::WarningList *warnings) const {
+  std::vector<int> indices = getParameterSetIndices(pset);
+  size_t num = indices.size();
+  std::vector<csm::RasterGM::SensorPartials> partials;
+  for (int index = 0;index < num;index++){
+    partials.push_back(computeSensorPartials(
+        indices[index],
+        imagePt, groundPt,
+        desiredPrecision, achievedPrecision, warnings));
+  }
+  return partials;
+}
 
 std::vector<csm::RasterGM::SensorPartials> UsgsAstroFrameSensorModel::computeAllSensorPartials(
     const csm::EcefCoord& groundPt,
     csm::param::Set pset,
     double desiredPrecision,
     double *achievedPrecision,
-    csm::WarningList *warnings) const
-    {
-        csm::ImageCoord imagePt = groundToImage(groundPt,
-                                    desiredPrecision, achievedPrecision, warnings);
-        return computeAllSensorPartials(imagePt, groundPt,
-                                    pset, desiredPrecision, achievedPrecision, warnings);
+    csm::WarningList *warnings) const {
+  csm::ImageCoord imagePt = groundToImage(groundPt,
+                                          desiredPrecision, achievedPrecision, warnings);
+  return computeAllSensorPartials(imagePt, groundPt,
+                                  pset, desiredPrecision, achievedPrecision, warnings);
     }
 
-std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::EcefCoord &groundPt) const {
+std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::EcefCoord 
+                                                                     &groundPt) const {
+  // Partials of line, sample wrt X, Y, Z
+  // Uses collinearity equations
+  std::vector<double> partials(6, 0.0);
 
-    // Partials of line, sample wrt X, Y, Z
-    // Uses collinearity equations
-    std::vector<double> partials(6, 0.0);
+  double m[3][3];
+  calcRotationMatrix(m, m_noAdjustments);
+  
+  double xo, yo, zo;
+  xo = groundPt.x - m_currentParameterValue[0];
+  yo = groundPt.y - m_currentParameterValue[1];
+  zo = groundPt.z - m_currentParameterValue[2];
 
-    double m[3][3];
-    calcRotationMatrix(m, m_noAdjustments);
+  double u, v, w;
+  u = m[0][0] * xo + m[0][1] * yo + m[0][2] * zo;
+  v = m[1][0] * xo + m[1][1] * yo + m[1][2] * zo;
+  w = m[2][0] * xo + m[2][1] * yo + m[2][2] * zo;
 
-    double xo, yo, zo;
-    xo = groundPt.x - m_currentParameterValue[0];
-    yo = groundPt.y - m_currentParameterValue[1];
-    zo = groundPt.z - m_currentParameterValue[2];
+  double fdw, udw, vdw;
+  fdw = m_focalLength / w;
+  udw = u / w;
+  vdw = v / w;
 
-    double u, v, w;
-    u = m[0][0] * xo + m[0][1] * yo + m[0][2] * zo;
-    v = m[1][0] * xo + m[1][1] * yo + m[1][2] * zo;
-    w = m[2][0] * xo + m[2][1] * yo + m[2][2] * zo;
+  double upx, vpx, wpx;
+  upx = m[0][0];
+  vpx = m[1][0];
+  wpx = m[2][0];
+  partials[0] = -fdw * ( upx - udw * wpx );
+  partials[3] = -fdw * ( vpx - vdw * wpx );
 
-    double fdw, udw, vdw;
-    fdw = m_focalLength / w;
-    udw = u / w;
-    vdw = v / w;
+  double upy, vpy, wpy;
+  upy = m[0][1];
+  vpy = m[1][1];
+  wpy = m[2][1];
+  partials[1] = -fdw * ( upy - udw * wpy );
+  partials[4] = -fdw * ( vpy - vdw * wpy );
 
-    double upx, vpx, wpx;
-    upx = m[0][0];
-    vpx = m[1][0];
-    wpx = m[2][0];
-    partials[0] = -fdw * ( upx - udw * wpx );
-    partials[3] = -fdw * ( vpx - vdw * wpx );
-
-    double upy, vpy, wpy;
-    upy = m[0][1];
-    vpy = m[1][1];
-    wpy = m[2][1];
-    partials[1] = -fdw * ( upy - udw * wpy );
-    partials[4] = -fdw * ( vpy - vdw * wpy );
-
-    double upz, vpz, wpz;
-    upz = m[0][2];
-    vpz = m[1][2];
-    wpz = m[2][2];
-    partials[2] = -fdw * ( upz - udw * wpz );
-    partials[5] = -fdw * ( vpz - vdw * wpz );
-
-    return partials;
+  double upz, vpz, wpz;
+  upz = m[0][2];
+  vpz = m[1][2];
+  wpz = m[2][2];
+  partials[2] = -fdw * ( upz - udw * wpz );
+  partials[5] = -fdw * ( vpz - vdw * wpz );
+  
+  return partials;
 }
 
 
 const csm::CorrelationModel& UsgsAstroFrameSensorModel::getCorrelationModel() const {
-    return _no_corr_model;
+  return _no_corr_model;
 }
 
 
 std::vector<double> UsgsAstroFrameSensorModel::getUnmodeledCrossCovariance(const csm::ImageCoord &pt1,
                                                 const csm::ImageCoord &pt2) const {
 
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "UsgsAstroFrameSensorModel::getUnmodeledCrossCovariance");
+  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
+                   "Unsupported function",
+                   "UsgsAstroFrameSensorModel::getUnmodeledCrossCovariance");
 }
 
 
 csm::Version UsgsAstroFrameSensorModel::getVersion() const {
-    return csm::Version(0,1,0);
+  return csm::Version(0,1,0);
 }
 
 
 std::string UsgsAstroFrameSensorModel::getModelName() const {
-    return _SENSOR_MODEL_NAME;
+  return _SENSOR_MODEL_NAME;
 }
 
 
@@ -995,13 +992,11 @@ void UsgsAstroFrameSensorModel::setReferencePoint(const csm::EcefCoord &groundPt
 
 
 int UsgsAstroFrameSensorModel::getNumParameters() const {
-
   return NUM_PARAMETERS;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getParameterName(int index) const {
-
   return m_parameterName[index];
 }
 
@@ -1288,9 +1283,7 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
     undistortedY = dy;
     return false;
   }
-
   return true;
-
 }
 
 
@@ -1343,8 +1336,6 @@ void UsgsAstroFrameSensorModel::distortionJacobian(double x, double y, double &J
     Jyx = Jyx + d_dx[i] * m_odtY[i];
     Jyy = Jyy + d_dy[i] * m_odtY[i];
   }
-
-
 }
 
 
