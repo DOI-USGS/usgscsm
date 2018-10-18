@@ -32,4 +32,4 @@ on_success:
 - cd ../
 - conda build -q recipe/
 - ps: $builddir = conda build recipe --output
-- ps: anaconda -t $env:CONDA_UPLOAD_TOKEN upload $env:builddir --label dev --force
+- ps: anaconda -t $env:CONDA_UPLOAD_TOKEN upload --label dev --force $builddir 
