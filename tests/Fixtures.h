@@ -73,10 +73,7 @@ class ConstVelLineScanIsdTest : public ::testing::Test {
       csm::Isd isd;
 
    virtual void SetUp() {
-      std::ifstream isdFile("data/constVelocityLineScan.json");
-      json jsonIsd = json::parse(isdFile);
-      isd.clearAllParams();
-      jsonToIsd(jsonIsd, isd);
+      isd.setFilename("data/constVelocityLineScan.img");
    }
 };
 
