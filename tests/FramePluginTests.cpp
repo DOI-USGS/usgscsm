@@ -99,14 +99,14 @@ TEST_F(FrameIsdTest, ConstructValidCamera) {
 TEST_F(FrameIsdTest, ConstructInValidCamera) {
    UsgsAstroPlugin testPlugin;
    // Remove the model_name keyword from the ISD to make it invalid
-   isd.clearParams("model_name");
+   isd.setFilename("data/constVelocityLineScan.img");
    csm::Model *cameraModel = NULL;
    try {
       testPlugin.constructModelFromISD(
             isd,
             "USGS_ASTRO_FRAME_SENSOR_MODEL",
             NULL);
-
+      FAIL() << "Expected csm ISD_NOT_SUPPORTED error";
    }
    catch(csm::Error &e) {
       EXPECT_EQ(e.getError(), csm::Error::ISD_NOT_SUPPORTED);

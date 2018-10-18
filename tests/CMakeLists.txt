@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Link runCSMCameraModelTests with what we want to test and the GTest and pthread library
-add_executable(runCSMCameraModelTests FramePluginTests.cpp FrameCameraTests.cpp)
+add_executable(runCSMCameraModelTests
+               FramePluginTests.cpp
+               FrameCameraTests.cpp
+               LineScanPluginTests.cpp)
 if(WIN32)
   option(CMAKE_USE_WIN32_THREADS_INIT "using WIN32 threads" ON)
   option(gtest_disable_pthreads "Disable uses of pthreads in gtest." ON)
