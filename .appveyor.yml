@@ -32,4 +32,6 @@ on_success:
 - cd ../
 - conda build -q recipe/
 - ps: $builddir = conda build recipe --output
-- ps: anaconda -t $env:CONDA_UPLOAD_TOKEN upload $builddir --label dev --force --no-progress
+- ps: $parameters = '-t', "$Env:CONDA_UPLOAD_TOKEN", 'upload', "$builddir", '-l',
+                    "dev", '--force', '--no-progress'
+- ps: & cmd /c 'anaconda 2>&1' $parameters
