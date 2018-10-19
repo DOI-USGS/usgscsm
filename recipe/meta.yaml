@@ -23,7 +23,6 @@ test:
     - test -e $PREFIX/lib/libusgscsm.so  # [linux]
     - test -e $PREFIX/lib/libusgscsm.dylib  # [osx]
     - if not exist %LIBRARY_BIN%\usgscsm.dll exit 1  # [win]
-    - if not exist %LIBRARY_LIB%\usgscsm.lib exit 1  # [win]
 
 about:
   home: https://github.com/USGS-Astrogeology/CSM-CameraModels
