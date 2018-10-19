@@ -31,14 +31,14 @@ on_success:
 - cd ../
 - conda build -q recipe/
 - ps:
-      $tar_glob = ".\conda-bld\win-*\${Env:PYPKG}-${Env:APPVEYOR_REPO_TAG_NAME}-*.tar.bz2";
+      $tar_glob = conda build recipe --output;
       Write-Host "tar_glob $tar_glob";
-      if ($Env:APPVEYOR_REPO_TAG_NAME -like "*dev*") {
+      if ($env:APPVEYOR_REPO_TAG_NAME == "dev") {
         $anaconda_label = "dev"
       } else {
         $anaconda_label = "main"
       };
       Write-Host "anaconda_label $anaconda_label";
-      $parameters = '-t', "$Env:CONDA_UPLOAD_TOKEN", 'upload', "$tar_glob", '-l',
+      $parameters = '-t', "$env:CONDA_UPLOAD_TOKEN", 'upload', "$tar_glob", '-l',
                     "$anaconda_label", '--force', '--no-progress';
       & cmd /c 'anaconda 2>&1' $parameters;
