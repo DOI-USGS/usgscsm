@@ -14,7 +14,6 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda install conda-build anaconda-client
-  - conda config --set anaconda_upload yes
   - conda config --add channels usgs-astrogeology
 
 before_build:
