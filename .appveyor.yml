@@ -33,7 +33,7 @@ on_success:
 - ps:
       $tar_glob = conda build recipe --output;
       Write-Host "tar_glob $tar_glob";
-      if ($env:APPVEYOR_REPO_TAG_NAME -eq "dev") {
+      if ($env:APPVEYOR_PULL_REQUEST_NUMBER -eq "") {
         $anaconda_label = "dev"
       } else {
         $anaconda_label = "main"
