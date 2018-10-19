@@ -31,14 +31,16 @@ on_success:
 - cd ../
 - conda build -q recipe/
 - ps:
+    if ($env:APPVEYOR_PULL_REQUEST_NUMBER -eq "") {
       $tar_glob = conda build recipe --output;
       Write-Host "tar_glob $tar_glob";
-      if ($env:APPVEYOR_PULL_REQUEST_NUMBER -eq "") {
+      if ($env:APPVEYOR_REPO_BRANCH -eq "dev") {
         $anaconda_label = "dev"
       } else {
         $anaconda_label = "main"
       };
-      Write-Host "anaconda_label $anaconda_label";
-      $parameters = '-t', "$env:CONDA_UPLOAD_TOKEN", 'upload', "$tar_glob", '-l',
-                    "$anaconda_label", '--force', '--no-progress';
-      & cmd /c 'anaconda 2>&1' $parameters;
+    Write-Host "anaconda_label $anaconda_label";
+    $parameters = '-t', "$env:CONDA_UPLOAD_TOKEN", 'upload', "$tar_glob", '-l',
+                  "$anaconda_label", '--force', '--no-progress';
+    & cmd /c 'anaconda 2>&1' $parameters;
+    };
