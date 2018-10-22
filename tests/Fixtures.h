@@ -68,6 +68,15 @@ class FrameIsdTest : public ::testing::Test {
    }
 };
 
+class ConstVelLineScanIsdTest : public ::testing::Test {
+   protected:
+      csm::Isd isd;
+
+   virtual void SetUp() {
+      isd.setFilename("data/constVelocityLineScan.img");
+   }
+};
+
 class FramerParameterizedTest : public ::testing::TestWithParam<csm::ImageCoord> {
 
 protected:
@@ -105,18 +114,18 @@ protected:
 
 class FrameStateTest : public ::testing::Test {
   protected:
-    csm::Isd isd;    
+    csm::Isd isd;
     UsgsAstroFrameSensorModel* createModifiedStateSensorModel(std::string key, double newValue) {
       UsgsAstroPlugin cameraPlugin;
       csm::Model *model = cameraPlugin.constructModelFromISD(isd,"USGS_ASTRO_FRAME_SENSOR_MODEL");
 
       UsgsAstroFrameSensorModel* sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
       if (sensorModel) {
-        sensorModel->getModelState(); 
-        std::string modelState = sensorModel->getModelState(); 
+        sensorModel->getModelState();
+        std::string modelState = sensorModel->getModelState();
         auto state = json::parse(modelState);
-        state[key] = newValue; 
-        sensorModel->replaceModelState(state.dump()); 
+        state[key] = newValue;
+        sensorModel->replaceModelState(state.dump());
 
         return sensorModel;
       }
