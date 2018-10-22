@@ -1,6 +1,6 @@
 
 package:
-  name: usgscam
+  name: usgscsm
   version: "0.1.0"
 
 source:
@@ -22,8 +22,7 @@ test:
   commands:
     - test -e $PREFIX/lib/libusgscsm.so  # [linux]
     - test -e $PREFIX/lib/libusgscsm.dylib  # [osx]
-    - if not exist %LIBRARY_BIN%\usgscam.dll exit 1  # [win]
-    - if not exist %LIBRARY_LIB%\usgscam.lib exit 1  # [win]
+    - if not exist %LIBRARY_BIN%\usgscsm.dll exit 1  # [win]
 
 about:
   home: https://github.com/USGS-Astrogeology/CSM-CameraModels
