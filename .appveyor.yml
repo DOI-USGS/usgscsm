@@ -24,6 +24,7 @@ build_script:
   - cmake -G "Visual Studio 15 2017 Win64" -DBUILD_TESTS=OFF ..
   - cmake --build . --target ALL_BUILD --config Release
 
+artifacts:
   - path: build\Release\usgscsm.dll
     name: usgscsm.dll
 
