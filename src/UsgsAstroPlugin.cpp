@@ -101,8 +101,11 @@ size_t UsgsAstroPlugin::getNumModels() const {
 
 
 std::string UsgsAstroPlugin::getModelName(size_t modelIndex) const {
-  // return SUPPORTED_MODELS[modelIndex];
-  return "";
+  std::vector<std::string> supportedModelNames = {
+    UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME,
+    UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME
+  };
+  return supportedModelNames[modelIndex];
 }
 
 

@@ -476,7 +476,7 @@ std::vector<csm::RasterGM::SensorPartials> UsgsAstroFrameSensorModel::computeAll
                                   pset, desiredPrecision, achievedPrecision, warnings);
     }
 
-std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::EcefCoord 
+std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::EcefCoord
                                                                      &groundPt) const {
   // Partials of line, sample wrt X, Y, Z
   // Uses collinearity equations
@@ -484,7 +484,7 @@ std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::
 
   double m[3][3];
   calcRotationMatrix(m, m_noAdjustments);
-  
+
   double xo, yo, zo;
   xo = groundPt.x - m_currentParameterValue[0];
   yo = groundPt.y - m_currentParameterValue[1];
@@ -520,7 +520,7 @@ std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::
   wpz = m[2][2];
   partials[2] = -fdw * ( upz - udw * wpz );
   partials[5] = -fdw * ( vpz - vdw * wpz );
-  
+
   return partials;
 }
 
@@ -660,7 +660,6 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_currentParameterCovariance", m_currentParameterCovariance}
     };
 
-    std::cout << state.dump() << std::endl;
     return state.dump();
 }
 
@@ -909,13 +908,10 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
         state["m_minorAxis"] = semiminor;
         state["m_majorAxis"] = semimajor;
 
-        std::cout << "before: " << semimajor << ", " << semiminor << std::endl;
 
         unit = unit.get<std::string>();
         state["m_minorAxis"] = metric_conversion(state["m_minorAxis"].get<double>(), unit);
         state["m_majorAxis"] = metric_conversion(state["m_majorAxis"].get<double>(), unit);
-
-        std::cout << "after: " << state["m_majorAxis"] << ", " << state["m_minorAxis"] << std::endl;
       }
 
       // get reference_height
