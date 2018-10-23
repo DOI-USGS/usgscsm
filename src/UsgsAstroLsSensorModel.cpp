@@ -2670,35 +2670,22 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    state["m_aberrFlag"] = 0;
    state["m_atmRefFlag"] = 0;
    state["m_centerEphemerisTime"] = isd.at("center_ephemeris_time");
+   state["m_startingEphemerisTime"] = isd.at("starting_ephemeris_time");
 
-   if (isd.find("number_of_int_times") == isd.end()) {
-     state["m_intTimeLines"] = {0.5};
-     state["m_intTimes"] = {isd.at("int_time").get<double>()};
-     state["m_intTimeStartTimes"] = {state["m_totalLines"].get<double>() * state["m_intTimes"][0].get<double>() / 2 };
-   }
-   else {
-     int numIntTimes = isd.at("number_of_int_times");
-     for (int i = 0; i < numIntTimes; i++) {
-       // TODO what does this look like under the new spec?
-       state["m_intTimeLines"].push_back(isd.at("int_time").at(i*3));
-       state["m_intTimeStartTimes"].push_back(isd.at("int_time").at(i*3+1));
-       state["m_intTimes"].push_back(isd.at("int_time").at(i*3+2));
-     }
+   for (auto& scanRate : isd.at("line_scan_rate")) {
+     state["m_intTimeLines"].push_back(scanRate[0]);
+     state["m_intTimeStartTimes"].push_back(scanRate[1]);
+     state["m_intTimes"].push_back(scanRate[2]);
    }
 
-   state["m_startingEphemerisTime"] = state["m_intTimes"].at(0);
-   state["m_detectorSampleSumming"] = 1;
-   state["m_startingSample"] = 0;
+   state["m_detectorSampleSumming"] = isd.at("detector_sample_summing");
+   state["m_startingSample"] = isd.at("detector_line_summing");
    state["m_ikCode"] = 0;
    state["m_focal"] = isd.at("focal_length_model").at("focal_length");
    state["m_isisZDirection"] = 1;
-
-   for (int i = 0; i < 3; i++)
-   {
-      state["m_opticalDistCoef"][i] = isd.at("optical_distortion").at("r").at(i);
-      state["m_iTransS"][i] = isd.at("focal2pixel_samples").at(i);
-      state["m_iTransL"][i] = isd.at("focal2pixel_lines").at(i);
-   }
+   state["m_opticalDistCoef"] = isd.at("optical_distortion").at("radial").at("coefficients");
+   state["m_iTransS"] = isd.at("focal2pixel_samples");
+   state["m_iTransL"] = isd.at("focal2pixel_lines");
 
    state["m_detectorSampleOrigin"] = isd.at("detector_center").at("sample");
    state["m_detectorLineOrigin"] = isd.at("detector_center").at("line");
@@ -2724,25 +2711,31 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
 
    state["m_dtEphem"] = isd.at("dt_ephemeris");
    state["m_t0Ephem"] = isd.at("t0_ephemeris");
-   state["m_dtQuat"] =  isd.at("dt_ephemeris");
-   state["m_t0Quat"] =  isd.at("t0_ephemeris");
+   state["m_dtQuat"] =  isd.at("dt_quaternion");
+   state["m_t0Quat"] =  isd.at("t0_quaternion");
 
-   state["m_numEphem"] = isd.at("number_of_ephemerides");
-   state["m_numQuaternions"] = isd.at("number_of_ephemerides");
+   state["m_numEphem"] = isd.at("sensor_location").at("locations").size();
+   state["m_numQuaternions"] = isd.at("sensor_orientation").at("quaternions").size();
 
-   int numEphem = isd.at("number_of_ephemerides");
-   for (int i=0;i < numEphem; i++){
-       state["m_ephemPts"].push_back(isd.at("sensor_location").at("x").at(i));
-       state["m_ephemPts"].push_back(isd.at("sensor_location").at("y").at(i));
-       state["m_ephemPts"].push_back(isd.at("sensor_location").at("z").at(i));
-       state["m_ephemRates"].push_back(isd.at("sensor_velocity").at("x").at(i));
-       state["m_ephemRates"].push_back(isd.at("sensor_velocity").at("y").at(i));
-       state["m_ephemRates"].push_back(isd.at("sensor_velocity").at("z").at(i));
-       state["m_quaternions"].push_back(isd.at("sensor_orientation").at("w").at(i));
-       state["m_quaternions"].push_back(isd.at("sensor_orientation").at("v1").at(i));
-       state["m_quaternions"].push_back(isd.at("sensor_orientation").at("v2").at(i));
-       state["m_quaternions"].push_back(isd.at("sensor_orientation").at("v3").at(i));
+   for (auto& location : isd.at("sensor_location").at("locations")) {
+     state["m_ephemPts"].push_back(location[0]);
+     state["m_ephemPts"].push_back(location[1]);
+     state["m_ephemPts"].push_back(location[2]);
    }
+
+   for (auto& velocity : isd.at("sensor_velocity").at("velocities")) {
+     state["m_ephemRates"].push_back(velocity[0]);
+     state["m_ephemRates"].push_back(velocity[1]);
+     state["m_ephemRates"].push_back(velocity[2]);
+   }
+
+   for (auto& quaternion : isd.at("sensor_orientation").at("quaternions")) {
+     state["m_quaternions"].push_back(quaternion[0]);
+     state["m_quaternions"].push_back(quaternion[1]);
+     state["m_quaternions"].push_back(quaternion[2]);
+     state["m_quaternions"].push_back(quaternion[3]);
+    }
+
 
    state["m_parameterVals"] = std::vector<double>(NUM_PARAMETERS, 0.0);
    state["m_parameterVals"][15] = state["m_focal"].get<double>();
