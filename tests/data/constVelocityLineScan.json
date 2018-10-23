@@ -1,111 +1,65 @@
 {
-   "DT_EPHEM": 0.2,
-   "NUMBER_OF_EPHEM": 9,
-   "T0_QUAT": -8.0,
-   "MIN_VALID_HT": -10,
-   "SEMI_MAJOR_AXIS": 10,
-   "QUATERNIONS": [
-     0.0, -0.707106781186547, 0.0, 0.707106781186547,
-     0.0, -0.707106781186547, 0.0, 0.707106781186547,
-     0.0, -0.707106781186547, 0.0, 0.707106781186547,
-     0.0, -0.707106781186547, 0.0, 0.707106781186547,
-     0.0, -0.707106781186547, 0.0, 0.707106781186547,
-     0.0, -0.707106781186547, 0.0, 0.707106781186547,
-     0.0, -0.707106781186547, 0.0, 0.707106781186547,
-     0.0, -0.707106781186547, 0.0, 0.707106781186547,
-     0.0, -0.707106781186547, 0.0, 0.707106781186547
-   ],
-   "SENSOR_ID": "USGS_LINE_SCANNER",
-   "SCAN_DURATION": 16.0,
-   "ECCENTRICITY": 0.0,
-   "STARTING_EPHEMERIS_TIME": 992.0,
-   "STARTING_LINE": 1,
-   "STARTING_SAMPLE": 0,
-   "DETECTOR_SAMPLE_ORIGIN": 8.5,
-   "IMAGE_ID": "UNKNOWN",
-   "PLATFORM": 1,
-   "TOTAL_LINES": 16,
-   "EPHEM_RATES": [
-     0.0, 0.0, -20.0,
-     0.0, 0.0, -20.0,
-     0.0, 0.0, -20.0,
-     0.0, 0.0, -20.0,
-     0.0, 0.0, -20.0,
-     0.0, 0.0, -20.0,
-     0.0, 0.0, -20.0,
-     0.0, 0.0, -20.0,
-     0.0, 0.0, -20.0
-   ],
-   "DT_QUAT": 0.2,
-   "FOCAL": 50.0,
-   "DETECTOR_LINE_ORIGIN": 0.5,
-   "MOUNTING_ANGLES": [
-     0,
-     0,
-     0
-   ],
-   "T0_EPHEM": -8.0,
-   "DETECTOR_SAMPLE_SUMMING": 1,
-   "REFERENCE_HEIGHT": 0,
-   "ATMREF": 0,
-   "SENSOR_TYPE": "USGSAstroLineScanner",
-   "TOTAL_SAMPLES": 16,
-   "ABERR": 0,
-   "OPTICAL_DIST_COEF": [
-     0.0,
-     0.0,
-     0.0
-   ],
-   "COLL_ID": "UNKNOWN",
-   "DETECTOR_LINE_OFFSET": 0,
-   "EPHEM_PTS": [
-     1000.0, 0.0, 16.0,
-     1000.0, 0.0, 12.0,
-     1000.0, 0.0, 8.0,
-     1000.0, 0.0, 4.0,
-     1000.0, 0.0, 0.0,
-     1000.0, 0.0, -4.0,
-     1000.0, 0.0, -8.0,
-     1000.0, 0.0, -12.0,
-     1000.0, 0.0, -16.0
-   ],
-   "CENTER_EPHEMERIS_TIME": 1000.0,
-   "INT_TIME": 0.1,
-   "NUMBER_OF_QUATERNIONS": 9,
-   "ITRANSS": [
-     0,
-     0,
-     10.0
-   ],
-   "IKCODE": -99999,
-   "PLATFORM_ID": "UNKNOWN",
-   "ISIS_Z_DIRECTION": 1,
-   "MAX_VALID_HT": 20,
-   "TRI_PARAMETERS": [
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     50.0,
-     0,
-     0
-   ],
-   "TRAJ_ID": "UNKNOWN",
-   "ITRANSL": [
-     0,
-     10.0,
-     0
-   ],
-   "REF_DATE_TIME": "UNKNOWN"
+   "model_name" : "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL",
+   "center_ephemeris_time": 1000.0,
+   "int_time": 0.1,
+   "t0_ephemeris": -8.0,
+   "dt_ephemeris": 0.2,
+   "focal2pixel_lines": [0.0, 10.0, 0.0],
+   "focal2pixel_samples": [0.0, 0.0, 10.0],
+   "focal_length_model": {
+      "focal_length": 50,
+      "epsilon": 1.0
+   },
+   "image_lines": 16,
+   "image_samples": 16,
+   "detector_center" : {
+      "line" : 0.5,
+      "sample" : 7.5
+  },
+   "interpolation_method": "lagrange",
+   "number_of_ephemerides": 9,
+   "optical_distortion": {
+      "r": [0.0, 0.0, 0.0]
+   },
+   "radii": {
+      "semimajor": 10,
+      "semiminor": 10,
+      "unit":"m"
+   },
+   "reference_height": {
+      "maxheight": 1,
+      "minheight": -1,
+      "unit": "m"
+   },
+   "sensor_location": {
+      "unit": "m",
+      "x": [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0],
+      "y": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+      "z": [16.0, 12.0, 8.0, 4.0, 0.0, -4.0, -8.0, -12.0, -16.0]
+   },
+   "sensor_orientation": {
+      "w": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+      "v1": [-0.707106781186547, -0.707106781186547, -0.707106781186547, -0.707106781186547, -0.707106781186547, -0.707106781186547, -0.707106781186547, -0.707106781186547, -0.707106781186547],
+      "v2": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+      "v3": [0.707106781186547, 0.707106781186547, 0.707106781186547, 0.707106781186547, 0.707106781186547, 0.707106781186547, 0.707106781186547, 0.707106781186547, 0.707106781186547]
+   },
+   "sensor_velocity": {
+      "unit": "m",
+      "x": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+      "y": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+      "z": [-20.0, -20.0, -20.0, -20.0, -20.0, -20.0, -20.0, -20.0, -20.0]
+   },
+   "starting_detector_line": 0,
+   "starting_detector_sample": 0,
+   "starting_ephemeris_time": 0,
+   "sun_position": {
+      "x": 100,
+      "y": 100,
+      "z": 0
+   },
+   "sun_velocity": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+   }
 }
