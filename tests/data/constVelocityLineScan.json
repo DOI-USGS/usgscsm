@@ -1,5 +1,5 @@
 {
-  "model_name" : "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL",
+  "name_model" : "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL",
   "center_ephemeris_time": 1000.0,
   "starting_ephemeris_time": 992.0,
   "line_scan_rate": [

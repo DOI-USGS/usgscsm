@@ -476,7 +476,7 @@ std::vector<csm::RasterGM::SensorPartials> UsgsAstroFrameSensorModel::computeAll
                                   pset, desiredPrecision, achievedPrecision, warnings);
     }
 
-std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::EcefCoord 
+std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::EcefCoord
                                                                      &groundPt) const {
   // Partials of line, sample wrt X, Y, Z
   // Uses collinearity equations
@@ -484,7 +484,7 @@ std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::
 
   double m[3][3];
   calcRotationMatrix(m, m_noAdjustments);
-  
+
   double xo, yo, zo;
   xo = groundPt.x - m_currentParameterValue[0];
   yo = groundPt.y - m_currentParameterValue[1];
@@ -520,7 +520,7 @@ std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::
   wpz = m[2][2];
   partials[2] = -fdw * ( upz - udw * wpz );
   partials[5] = -fdw * ( vpz - vdw * wpz );
-  
+
   return partials;
 }
 
@@ -809,7 +809,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
 
     try {
-      state["m_modelName"] = isd.at("model_name");
+      state["m_modelName"] = isd.at("name_model");
 
       state["m_startingDetectorSample"] = isd.at("starting_detector_sample");
       state["m_startingDetectorLine"] = isd.at("starting_detector_line");

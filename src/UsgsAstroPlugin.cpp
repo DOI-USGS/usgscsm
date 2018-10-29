@@ -34,7 +34,7 @@ const int         UsgsAstroPlugin::_NUM_ISD_KEYWORDS = 21;
 
 const std::string UsgsAstroPlugin::_ISD_KEYWORD[] =
 {
-   "model_name",
+   "name_model",
    "center_ephemeris_time",
    "dt_ephemeris",
    "focal2pixel_lines",
@@ -172,11 +172,11 @@ std::string UsgsAstroPlugin::getModelNameFromModelState(const std::string &model
                                                    csm::WarningList *warnings) const {
   auto state = json::parse(modelState);
 
-  std::string name = state.value<std::string>("model_name", "");
+  std::string name = state.value<std::string>("name_model", "");
 
   if (name == "") {
       csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
-      std::string aMessage = "No 'model_name' key in the model state object.";
+      std::string aMessage = "No 'name_model' key in the model state object.";
       std::string aFunction = "UsgsAstroPlugin::getModelNameFromModelState";
       csm::Error csmErr(aErrorType, aMessage, aFunction);
       throw(csmErr);
