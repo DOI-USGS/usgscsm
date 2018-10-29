@@ -810,9 +810,12 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
     try {
       state["m_modelName"] = isd.at("name_model");
+      std::cerr << "Model Name Parsed!" << std::endl;
 
       state["m_startingDetectorSample"] = isd.at("starting_detector_sample");
       state["m_startingDetectorLine"] = isd.at("starting_detector_line");
+
+      std::cerr << "Detector Starting Pixel Parsed!" << std::endl;
 
       // get focal length
       {
@@ -822,71 +825,68 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
         state["m_focalLength"] = focal_length;
         state["m_focalLengthEpsilon"] = epsilon;
+
+        std::cerr << "Focal Length Parsed!" << std::endl;
       }
 
-      // get sensor_location
+      // get sensor_position
       {
-        json jayson = isd.at("sensor_location");
-        json x = jayson.at("x");
-        json y = jayson.at("y");
-        json z = jayson.at("z");
+        json jayson = isd.at("sensor_position");
+        json positions = jayson.at("positions")[0];
+        json velocities = jayson.at("velocities")[0];
         json unit = jayson.at("unit");
 
-        state["m_currentParameterValue"] = json();
-        state["m_currentParameterValue"][0] = x;
-        state["m_currentParameterValue"][1] = y;
-        state["m_currentParameterValue"][2] = z;
-
         unit = unit.get<std::string>();
-        state["m_currentParameterValue"][0] = metric_conversion(state["m_currentParameterValue"][0].get<double>(), unit);
-        state["m_currentParameterValue"][1] = metric_conversion(state["m_currentParameterValue"][1].get<double>(), unit);
-        state["m_currentParameterValue"][2] = metric_conversion(state["m_currentParameterValue"][2].get<double>(), unit);
-      }
+        state["m_currentParameterValue"] = json();
+        state["m_currentParameterValue"][0] = metric_conversion(positions[0].get<double>(), unit);
+        state["m_currentParameterValue"][1] = metric_conversion(positions[1].get<double>(), unit);
+        state["m_currentParameterValue"][2] = metric_conversion(positions[2].get<double>(), unit);
+        state["m_spacecraftVelocity"] = velocities;
 
-      // get  sensor_velocity
-      {
-        json jayson = isd.at("sensor_velocity");
-        json x = jayson.at("x");
-        json y = jayson.at("y");
-        json z = jayson.at("z");
-
-        state["m_spacecraftVelocity"] = json();
-        state["m_spacecraftVelocity"][0] = x;
-        state["m_spacecraftVelocity"][1] = y;
-        state["m_spacecraftVelocity"][2] = z;
-      }
-
-      // get sun_position
-      {
-        json jayson = isd.at("sun_position");
-        json x = jayson.at("x");
-        json y = jayson.at("y");
-        json z = jayson.at("z");
-
-        state["m_sunPosition"][0] = x;
-        state["m_sunPosition"][1] = y;
-        state["m_sunPosition"][2] = z;
+        std::cerr << "Sensor Location Parsed!" << std::endl;
       }
 
       // get sun_position
       // sun position is not strictly necessary, but is required for getIlluminationDirection.
       {
-        state["m_currentParameterValue"][3] = isd.at("sensor_orientation").at(0);
-        state["m_currentParameterValue"][4] = isd.at("sensor_orientation").at(1);
-        state["m_currentParameterValue"][5] = isd.at("sensor_orientation").at(2);
-        state["m_currentParameterValue"][6] = isd.at("sensor_orientation").at(3);
+        json jayson = isd.at("sun_position");
+        json positions = jayson.at("positions")[0];
+        json unit = jayson.at("unit");
+
+        unit = unit.get<std::string>();
+        state["m_sunPosition"] = json();
+        state["m_sunPosition"][0] = metric_conversion(positions[0].get<double>(), unit);
+        state["m_sunPosition"][1] = metric_conversion(positions[1].get<double>(), unit);
+        state["m_sunPosition"][2] = metric_conversion(positions[2].get<double>(), unit);
+
+        std::cerr << "Sun Position Parsed!" << std::endl;
+      }
+
+      // get sensor_orientation quaternion
+      {
+        json jayson = isd.at("sensor_orientation");
+        json quaternion = jayson.at("quaternions")[0];
+
+        state["m_currentParameterValue"][3] = quaternion[0];
+        state["m_currentParameterValue"][4] = quaternion[1];
+        state["m_currentParameterValue"][5] = quaternion[2];
+        state["m_currentParameterValue"][6] = quaternion[3];
+
+        std::cerr << "Sensor Orientation Parsed!" << std::endl;
       }
 
       // get optical_distortion
       {
         json jayson = isd.at("optical_distortion");
-        std::vector<double> xDistortion = jayson.at("x");
-        std::vector<double> yDistortion = jayson.at("y");
+        std::vector<double> xDistortion = jayson.at("transverse").at("x");
+        std::vector<double> yDistortion = jayson.at("transverse").at("y");
         xDistortion.resize(10, 0.0);
         yDistortion.resize(10, 0.0);
 
         state["m_odtX"] = xDistortion;
         state["m_odtY"] = yDistortion;
+
+        std::cerr << "Distortion Parsed!" << std::endl;
       }
 
       // get detector_center
@@ -897,6 +897,8 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
         state["m_ccdCenter"][0] = line;
         state["m_ccdCenter"][1] = sample;
+
+        std::cerr << "Detector Center Parsed!" << std::endl;
       }
 
       // get radii
@@ -906,16 +908,11 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
         json semimajor = jayson.at("semimajor");
         json unit = jayson.at("unit");
 
-        state["m_minorAxis"] = semiminor;
-        state["m_majorAxis"] = semimajor;
-
-        std::cout << "before: " << semimajor << ", " << semiminor << std::endl;
-
         unit = unit.get<std::string>();
-        state["m_minorAxis"] = metric_conversion(state["m_minorAxis"].get<double>(), unit);
-        state["m_majorAxis"] = metric_conversion(state["m_majorAxis"].get<double>(), unit);
+        state["m_minorAxis"] = metric_conversion(semiminor.get<double>(), unit);
+        state["m_majorAxis"] = metric_conversion(semimajor.get<double>(), unit);
 
-        std::cout << "after: " << state["m_majorAxis"] << ", " << state["m_minorAxis"] << std::endl;
+        std::cerr << "Target Radii Parsed!" << std::endl;
       }
 
       // get reference_height
@@ -925,25 +922,20 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
         json minheight = reference_height.at("minheight");
         json unit = reference_height.at("unit");
 
-        state["m_minElevation"] = minheight;
-        state["m_maxElevation"] = maxheight;
-
         unit = unit.get<std::string>();
-        state["m_minElevation"] = metric_conversion(state["m_minElevation"].get<double>(), unit);
-        state["m_maxElevation"] = metric_conversion(state["m_minElevation"].get<double>(), unit);
+        state["m_minElevation"] = metric_conversion(minheight.get<double>(), unit);
+        state["m_maxElevation"] = metric_conversion(maxheight.get<double>(), unit);
+
+        std::cerr << "Reference Height Parsed!" << std::endl;
       }
 
       state["m_ephemerisTime"] = isd.at("center_ephemeris_time");
       state["m_nLines"] = isd.at("image_lines");
       state["m_nSamples"] = isd.at("image_samples");
 
-      state["m_iTransL"][0] = isd.at("focal2pixel_lines").at(0);
-      state["m_iTransL"][1] = isd.at("focal2pixel_lines").at(1);
-      state["m_iTransL"][2] = isd.at("focal2pixel_lines").at(2);
+      state["m_iTransL"] = isd.at("focal2pixel_lines");
 
-      state["m_iTransS"][0] = isd.at("focal2pixel_samples").at(0);
-      state["m_iTransS"][1] = isd.at("focal2pixel_samples").at(1);
-      state["m_iTransS"][2] = isd.at("focal2pixel_samples").at(2);
+      state["m_iTransS"] = isd.at("focal2pixel_samples");
 
       // We don't pass the pixel to focal plane transformation so invert the
       // focal plane to pixel transformation
@@ -959,6 +951,8 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
       state["m_transY"][2] =  state["m_iTransS"][2].get<double>() / determinant;
       state["m_transY"][0] = -(state["m_transY"][1].get<double>() * state["m_iTransL"][0].get<double>() +
                                state["m_transY"][2].get<double>() * state["m_iTransS"][0].get<double>());
+
+      std::cerr << "Focal To Pixel Transformation Parsed!" << std::endl;
 
     }
     catch(std::out_of_range& e) {
