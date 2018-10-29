@@ -2714,16 +2714,16 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    state["m_dtQuat"] =  isd.at("dt_quaternion");
    state["m_t0Quat"] =  isd.at("t0_quaternion");
 
-   state["m_numEphem"] = isd.at("sensor_location").at("locations").size();
+   state["m_numEphem"] = isd.at("sensor_position").at("positions").size();
    state["m_numQuaternions"] = isd.at("sensor_orientation").at("quaternions").size();
 
-   for (auto& location : isd.at("sensor_location").at("locations")) {
+   for (auto& location : isd.at("sensor_position").at("positions")) {
      state["m_ephemPts"].push_back(location[0]);
      state["m_ephemPts"].push_back(location[1]);
      state["m_ephemPts"].push_back(location[2]);
    }
 
-   for (auto& velocity : isd.at("sensor_velocity").at("velocities")) {
+   for (auto& velocity : isd.at("sensor_position").at("velocities")) {
      state["m_ephemRates"].push_back(velocity[0]);
      state["m_ephemRates"].push_back(velocity[1]);
      state["m_ephemRates"].push_back(velocity[2]);
