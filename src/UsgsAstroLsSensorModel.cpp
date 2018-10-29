@@ -2749,7 +2749,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    // set identifiers
    state["m_referenceDateAndTime"] = "UNKNOWN";
    state["m_platformIdentifier"]   = isd.at("name_platform");
-   state["m_sensorIdentifier"]     = ias.at("name_sensor");
+   state["m_sensorIdentifier"]     = isd.at("name_sensor");
    state["m_trajectoryIdentifier"] = "UNKNOWN";
    state["m_collectionIdentifier"] = "UNKNOWN";
 
