@@ -660,7 +660,6 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_currentParameterCovariance", m_currentParameterCovariance}
     };
 
-    std::cout << state.dump() << std::endl;
     return state.dump();
 }
 
