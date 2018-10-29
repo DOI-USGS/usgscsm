@@ -84,6 +84,15 @@
   },
   "starting_detector_line": 0,
   "starting_detector_sample": 0,
-  "sun_position": [100.0, 100.0, 0.0],
-  "sun_velocity": [0.0, 0.0, 0.0]
+  "sun_position": {
+    "locations": [
+      [100.0, 100.0, 0.0]
+    ],
+    "unit": "m"
+  },
+  "sun_velocity": {
+    "velocities": [
+      [0.0, 0.0, 0.0]
+    ],
+    "unit": "m"
 }
