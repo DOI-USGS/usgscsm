@@ -1717,30 +1717,19 @@ void UsgsAstroLsSensorModel::losToEcf(
    // Remove lens distortion
    double isisFocalPlaneX = isisNatFocalPlaneX;
    double isisFocalPlaneY = isisNatFocalPlaneY;
-   switch (m_ikCode)
+  if (m_opticalDistCoef[0] != 0.0 ||
+     m_opticalDistCoef[1] != 0.0 ||
+     m_opticalDistCoef[2] != 0.0)
    {
-   case -85610:
-   case -85600:
-      isisFocalPlaneY = isisNatFocalPlaneY / (1.0 + m_opticalDistCoef[0]
-         * isisNatFocalPlaneY * isisNatFocalPlaneY);
-      break;
-
-   default:
-      if (m_opticalDistCoef[0] != 0.0 ||
-         m_opticalDistCoef[1] != 0.0 ||
-         m_opticalDistCoef[2] != 0.0)
+      double rr = isisNatFocalPlaneX * isisNatFocalPlaneX
+         + isisNatFocalPlaneY * isisNatFocalPlaneY;
+      if (rr > 1.0E-6)
       {
-         double rr = isisNatFocalPlaneX * isisNatFocalPlaneX
-            + isisNatFocalPlaneY * isisNatFocalPlaneY;
-         if (rr > 1.0E-6)
-         {
-            double dr = m_opticalDistCoef[0] + (rr * (m_opticalDistCoef[1]
-               + rr * m_opticalDistCoef[2]));
-            isisFocalPlaneX = isisNatFocalPlaneX * (1.0 - dr);
-            isisFocalPlaneY = isisNatFocalPlaneY * (1.0 - dr);
-         }
+         double dr = m_opticalDistCoef[0] + (rr * (m_opticalDistCoef[1]
+            + rr * m_opticalDistCoef[2]));
+         isisFocalPlaneX = isisNatFocalPlaneX * (1.0 - dr);
+         isisFocalPlaneY = isisNatFocalPlaneY * (1.0 - dr);
       }
-      break;
    }
 
    // Define imaging ray in image space
