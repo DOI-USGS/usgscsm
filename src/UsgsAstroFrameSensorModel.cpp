@@ -820,7 +820,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
       {
         json jayson = isd.at("focal_length_model");
         json focal_length = jayson.at("focal_length");
-        json epsilon = jayson.at("epsilon");
+        json epsilon = jayson.at("focal_epsilon");
 
         state["m_focalLength"] = focal_length;
         state["m_focalLengthEpsilon"] = epsilon;
