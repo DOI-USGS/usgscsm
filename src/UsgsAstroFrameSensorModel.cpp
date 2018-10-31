@@ -735,7 +735,6 @@ bool UsgsAstroFrameSensorModel::isValidIsd(const std::string& Isd, csm::WarningL
 void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState) {
 
     json state = json::parse(stringState);
-
     // The json library's .at() will except if key is missing
     try {
         m_modelName = state.at("m_modelName").get<std::string>();
@@ -761,7 +760,7 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
         m_platformName = state.at("m_platformName").get<std::string>();
         m_sensorName = state.at("m_sensorName").get<std::string>();
         m_collectionIdentifier = state.at("m_collectionIdentifier").get<std::string>();
-      
+
 
         // Leaving unused params commented out
         // m_targetName = state.at("m_targetName").get<std::string>();
@@ -960,6 +959,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
       std::cerr << "Focal To Pixel Transformation Parsed!" << std::endl;
 
       state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
+      state["m_currentParameterCovariance"] = std::vector<double>(NUM_PARAMETERS*NUM_PARAMETERS,0.0)
       state["m_collectionIdentifier"] = ""; 
 
       std::cerr << "Constants Set!" << std::endl;
