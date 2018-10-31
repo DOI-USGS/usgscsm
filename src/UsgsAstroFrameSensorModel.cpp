@@ -32,6 +32,8 @@ UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
 
 void UsgsAstroFrameSensorModel::reset() {
     m_modelName = _SENSOR_MODEL_NAME;
+    m_platformName = "";
+    m_sensorName = "";
     m_imageIdentifier = "";
     m_majorAxis = 0.0;
     m_minorAxis = 0.0;
@@ -552,9 +554,7 @@ std::string UsgsAstroFrameSensorModel::getModelName() const {
 
 
 std::string UsgsAstroFrameSensorModel::getPedigree() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getPedigree");
+  return "USGS_FRAMER";
 }
 
 
@@ -570,16 +570,12 @@ void UsgsAstroFrameSensorModel::setImageIdentifier(const std::string& imageId,
 
 
 std::string UsgsAstroFrameSensorModel::getSensorIdentifier() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getSensorIdentifier");
+  return m_sensorName;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getPlatformIdentifier() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getPlatformIdentifier");
+  return m_platformName;
 }
 
 
@@ -617,6 +613,8 @@ std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
 std::string UsgsAstroFrameSensorModel::getModelState() const {
     json state = {
       {"m_modelName", _SENSOR_MODEL_NAME},
+      {"m_sensorName", m_sensorName},
+      {"m_platformName", m_platformName},
       {"m_focalLength" , m_focalLength},
       {"m_iTransS", {m_iTransS[0], m_iTransS[1], m_iTransS[2]}},
       {"m_iTransL", {m_iTransL[0], m_iTransL[1], m_iTransL[2]}},
@@ -762,6 +760,8 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
         m_iTransS = state.at("m_iTransS").get<std::vector<double>>();
         m_iTransL = state.at("m_iTransL").get<std::vector<double>>();
         m_imageIdentifier = state.at("m_imageIdentifier").get<std::string>();
+        m_platformName = state.at("m_platformName").get<std::string>();
+        m_sensorName = state.at("m_sensorName").get<std::string>();
         // Leaving unused params commented out
         // m_targetName = state.at("m_targetName").get<std::string>();
         // m_ifov = state.at("m_ifov").get<double>();
@@ -812,6 +812,8 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
     try {
       state["m_modelName"] = isd.at("name_model");
       state["m_imageIdentifier"] = isd.at("image_identifier");
+      state["m_sensorName"] = isd.at("name_sensor");
+      state["m_platformName"] = isd.at("name_platform");
       std::cerr << "Model Name Parsed!" << std::endl;
 
       state["m_startingDetectorSample"] = isd.at("starting_detector_sample");

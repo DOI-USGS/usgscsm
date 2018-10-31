@@ -356,6 +356,8 @@ protected:
     double m_startingDetectorLine;
     std::string m_targetName;
     std::string m_modelName;
+    std::string m_sensorName;
+    std::string m_platformName;
     std::string m_imageIdentifier;
     double m_ifov;
     std::string m_instrumentID;
