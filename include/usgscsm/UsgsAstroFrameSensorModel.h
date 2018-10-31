@@ -370,6 +370,8 @@ protected:
     int m_nSamples;
     int m_nParameters;
 
+    csm::EcefCoord m_referencePointXyz; 
+
     json _state;
     static const int         _NUM_STATE_KEYWORDS;
     static const int         NUM_PARAMETERS;

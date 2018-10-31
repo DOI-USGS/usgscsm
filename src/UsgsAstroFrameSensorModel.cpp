@@ -66,6 +66,9 @@ void UsgsAstroFrameSensorModel::reset() {
     m_iTransL = std::vector<double>(3, 0.0);
     m_boresight = std::vector<double>(3, 0.0);
     m_parameterType = std::vector<csm::param::Type>(NUM_PARAMETERS, csm::param::REAL);
+    m_referencePointXyz.x = 0;
+    m_referencePointXyz.y = 0;
+    m_referencePointXyz.z = 0;
 }
 
 
@@ -655,7 +658,10 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_currentParameterCovariance", m_currentParameterCovariance},
       {"m_imageIdentifier", m_imageIdentifier}
     };
-
+    state["m_referencePointXyz"] = json();
+    state["m_referencePointXyz"]["x"] = m_referencePointXyz.x;
+    state["m_referencePointXyz"]["y"] = m_referencePointXyz.y;
+    state["m_referencePointXyz"]["z"] = m_referencePointXyz.z;
     return state.dump();
 }
 
@@ -950,6 +956,8 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
       std::cerr << "Focal To Pixel Transformation Parsed!" << std::endl;
 
+      state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
+
     }
     catch(std::out_of_range& e) {
       throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
@@ -968,16 +976,12 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
 
 csm::EcefCoord UsgsAstroFrameSensorModel::getReferencePoint() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getReferencePoint");
+  return m_referencePointXyz;
 }
 
 
 void UsgsAstroFrameSensorModel::setReferencePoint(const csm::EcefCoord &groundPt) {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::setReferencePoint");
+  m_referencePointXyz = groundPt;
 }
 
 
@@ -1046,16 +1050,14 @@ void UsgsAstroFrameSensorModel::setParameterType(int index, csm::param::Type pTy
 
 
 double UsgsAstroFrameSensorModel::getParameterCovariance(int index1, int index2) const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getParameterCovariance");
+   int index = UsgsAstroFrameSensorModel::NUM_PARAMETERS * index1 + index2;
+   return m_currentParameterCovariance[index];
 }
 
 
 void UsgsAstroFrameSensorModel::setParameterCovariance(int index1, int index2, double covariance) {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::setParameterCovariance");
+   int index = UsgsAstroFrameSensorModel::NUM_PARAMETERS * index1 + index2;
+   m_currentParameterCovariance[index] = covariance;
 }
 
 
