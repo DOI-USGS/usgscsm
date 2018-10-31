@@ -359,6 +359,7 @@ protected:
     std::string m_sensorName;
     std::string m_platformName;
     std::string m_imageIdentifier;
+    std::string m_collectionIdentifier;
     double m_ifov;
     std::string m_instrumentID;
     double m_focalLengthEpsilon;
