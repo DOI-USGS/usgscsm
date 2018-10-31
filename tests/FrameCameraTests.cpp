@@ -37,6 +37,14 @@ TEST_P(FramerParameterizedTest, JacobianTest) {
 
 // NOTE: The imagePt format is (Lines,Samples)
 
+TEST_F(FrameSensorModel, State) {
+   std::string modelState = sensorModel->getModelState();
+   EXPECT_NO_THROW(
+         sensorModel->replaceModelState(modelState)
+   );
+   EXPECT_EQ(sensorModel->getModelState(), modelState);
+}
+
 // centered and slightly off-center:
 TEST_F(FrameSensorModel, Center) {
    csm::ImageCoord imagePt(7.5, 7.5);
@@ -319,9 +327,9 @@ TEST_F(FrameSensorModel, X1e9_SlightlyOffCenter) {
 
 // Angle rotations:
 TEST_F(FrameSensorModel, Rotation_omegaPi_Center) {
-   sensorModel->setParameterValue(3, 1.0); 
-   sensorModel->setParameterValue(4, 1.0); 
-   sensorModel->setParameterValue(5, 1.0); 
+   sensorModel->setParameterValue(3, 1.0);
+   sensorModel->setParameterValue(4, 1.0);
+   sensorModel->setParameterValue(5, 1.0);
 
    sensorModel->setParameterValue(6, 1.0);
 
@@ -342,9 +350,9 @@ TEST_F(FrameSensorModel, Rotation_omegaPi_Center) {
 
 
 TEST_F(FrameSensorModel, Rotation_NPole_Center) {
-  sensorModel->setParameterValue(3, 0.0); 
-  sensorModel->setParameterValue(4, -1.0); 
-  sensorModel->setParameterValue(5, 0.0); 
+  sensorModel->setParameterValue(3, 0.0);
+  sensorModel->setParameterValue(4, -1.0);
+  sensorModel->setParameterValue(5, 0.0);
 
   sensorModel->setParameterValue(6, 0.0);
 
