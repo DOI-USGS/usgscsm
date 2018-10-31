@@ -2660,7 +2660,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
 
    int num_params = NUM_PARAMETERS;
 
-   state["m_imageIdentifier"] = "UNKNOWN";
+   state["m_imageIdentifier"] = isd.at("image_identifier");
    state["m_sensorType"] = "LINE_SCAN";
    state["m_totalLines"] = isd.at("image_lines");
    state["m_totalSamples"] = isd.at("image_samples");
