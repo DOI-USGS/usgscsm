@@ -26,8 +26,6 @@ const std::string UsgsAstroFrameSensorModel::m_parameterName[] = {
   "v3"                      // 6
 };
 
-const int         UsgsAstroFrameSensorModel::_NUM_STATE_KEYWORDS = 32;
-
 UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
     reset();
 }
