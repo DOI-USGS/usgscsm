@@ -154,12 +154,15 @@ std::string UsgsAstroPlugin::loadImageSupportData(const csm::Isd &imageSupportDa
   std::string imageFilename = imageSupportDataOriginal.filename();
   size_t lastIndex = imageFilename.find_last_of(".");
   std::string baseName = imageFilename.substr(0, lastIndex);
+  lastIndex = baseName.find_last_of("/");
+  std::string filename = baseName.substr(lastIndex + 1);
   std::string isdFilename = baseName.append(".json");
 
   try {
     std::ifstream isd_sidecar(isdFilename);
     json jsonisd;
     isd_sidecar >> jsonisd;
+    jsonisd["image_identifier"] = filename;
     return jsonisd.dump();
 
   } catch (...) {

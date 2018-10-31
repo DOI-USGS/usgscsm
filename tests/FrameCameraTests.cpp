@@ -86,6 +86,10 @@ TEST_F(FrameSensorModel, OffBody4) {
    EXPECT_NEAR(groundPt.z, -14.99325304, 1e-8);
 }
 
+TEST_F(FrameSensorModel, getImageIdentifier) {
+  EXPECT_EQ("simpleFramerISD", sensorModel->getImageIdentifier());
+}
+
 TEST_F(FrameSensorModel, setFocalPlane1) {
   csm::ImageCoord imagePt(7.5, 7.5);
   double ux,uy;
