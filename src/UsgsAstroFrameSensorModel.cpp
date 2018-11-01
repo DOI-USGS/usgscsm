@@ -636,10 +636,8 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_samplePp", m_samplePp},
       {"m_minElevation", m_minElevation},
       {"m_maxElevation", m_maxElevation},
-      {"m_odtX", {m_odtX[0], m_odtX[1], m_odtX[2], m_odtX[3], m_odtX[4],
-                  m_odtX[5], m_odtX[6], m_odtX[7], m_odtX[8], m_odtX[9]}},
-      {"m_odtY", {m_odtY[0], m_odtY[1], m_odtY[2], m_odtY[3], m_odtY[4],
-                  m_odtY[5], m_odtY[6], m_odtY[7], m_odtY[8], m_odtY[9]}},
+      {"m_odtX", m_odtX},
+      {"m_odtY", m_odtY},
       {"m_originalHalfLines", m_originalHalfLines},
       {"m_originalHalfSamples", m_originalHalfSamples},
       {"m_spacecraftName", m_spacecraftName},
@@ -647,17 +645,14 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_ephemerisTime", m_ephemerisTime},
       {"m_nLines", m_nLines},
       {"m_nSamples", m_nSamples},
-      {"m_currentParameterValue", {m_currentParameterValue[0], m_currentParameterValue[1],
-                                   m_currentParameterValue[2], m_currentParameterValue[3],
-                                   m_currentParameterValue[4], m_currentParameterValue[5],
-                                   m_currentParameterValue[6]}},
+      {"m_currentParameterValue", m_currentParameterValue},
       {"m_imageIdentifier", m_imageIdentifier},
-      {"m_collectionIdentifier", m_collectionIdentifier}
+      {"m_collectionIdentifier", m_collectionIdentifier},
+      {"m_referencePointXyz", {m_referencePointXyz.x, 
+                               m_referencePointXyz.y, 
+                               m_referencePointXyz.z}},
+      {"m_currentParameterCovariance", m_currentParameterCovariance}
     };
-    state["m_referencePointXyz"] = json();
-    state["m_referencePointXyz"]["x"] = m_referencePointXyz.x;
-    state["m_referencePointXyz"]["y"] = m_referencePointXyz.y;
-    state["m_referencePointXyz"]["z"] = m_referencePointXyz.z;
     return state.dump();
 }
 
@@ -760,6 +755,11 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
         m_platformName = state.at("m_platformName").get<std::string>();
         m_sensorName = state.at("m_sensorName").get<std::string>();
         m_collectionIdentifier = state.at("m_collectionIdentifier").get<std::string>();
+        std::vector<double> refpt = state.at("m_referencePointXyz").get<std::vector<double>>();
+        m_referencePointXyz.x = refpt[0];
+        m_referencePointXyz.y = refpt[1];
+        m_referencePointXyz.z = refpt[2];
+        m_currentParameterCovariance = state.at("m_currentParameterCovariance").get<std::vector<double>>();
 
 
         // Leaving unused params commented out
@@ -959,7 +959,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
       std::cerr << "Focal To Pixel Transformation Parsed!" << std::endl;
 
       state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
-      state["m_currentParameterCovariance"] = std::vector<double>(NUM_PARAMETERS*NUM_PARAMETERS,0.0)
+      state["m_currentParameterCovariance"] = std::vector<double>(NUM_PARAMETERS*NUM_PARAMETERS,0.0);
       state["m_collectionIdentifier"] = ""; 
 
       std::cerr << "Constants Set!" << std::endl;
