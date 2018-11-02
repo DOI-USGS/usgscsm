@@ -152,9 +152,17 @@ csm::ImageCoordCovar UsgsAstroFrameSensorModel::groundToImage(const csm::EcefCoo
                                    double *achievedPrecision,
                                    csm::WarningList *warnings) const {
 
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "UsgsAstroFrameSensorModel::groundToImage");
+    csm::EcefCoord gp;
+    gp.x = groundPt.x;
+    gp.y = groundPt.y;
+    gp.z = groundPt.z;
+
+    csm::ImageCoord ip = groundToImage(                                          
+      gp, desiredPrecision, achievedPrecision, warnings);                     
+   csm::ImageCoordCovar result(ip.line, ip.samp);                                    
+   // This is a partial, incorrect implementation to test if SocetGXP needs
+   // this method implemented in order to load the sensor.
+   return result;
 }
 
 
@@ -215,9 +223,9 @@ csm::EcefCoordCovar UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoo
                                   double heightVariance, double desiredPrecision,
                                   double *achievedPrecision,
                                   csm::WarningList *warnings) const {
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "UsgsAstroFrameSensorModel::imageToGround");
+    // This is an incomplete implementation to see if SocetGXP needs this method implemented.
+    csm::EcefCoordCovar result;
+    return result;
 }
 
 
@@ -585,9 +593,7 @@ std::string UsgsAstroFrameSensorModel::getCollectionIdentifier() const {
 
 
 std::string UsgsAstroFrameSensorModel::getTrajectoryIdentifier() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getTrajectoryIdentifier");
+  return "";
 }
 
 
@@ -602,9 +608,7 @@ std::string UsgsAstroFrameSensorModel::getSensorMode() const {
 
 
 std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getReferenceDateAndTime");
+  return "";
 }
 
 
