@@ -750,6 +750,7 @@ csm::EcefCoord UsgsAstroLsSensorModel::imageToGround(
             "Desired precision not achieved.",
             "UsgsAstroLsSensorModel::imageToGround()"));
    }
+
    return csm::EcefCoord(x, y, z);
 }
 
@@ -1686,7 +1687,6 @@ void UsgsAstroLsSensorModel::losToEcf(
    getAdjSensorPosVel(time, adj, xc, yc, zc, vx, vy, vz);
    // CSM image image convention: UL pixel center == (0.5, 0.5)
    // USGS image convention: UL pixel center == (1.0, 1.0)
-
    double sampleCSMFull = sample + m_offsetSamples;
    double sampleUSGSFull = sampleCSMFull + 0.5;
    double fractionalLine = line - floor(line) - 0.5;
@@ -1796,6 +1796,7 @@ void UsgsAstroLsSensorModel::losToEcf(
    plFromApl[6] = -sin_b;
    plFromApl[7] = sin_a * cos_b;
    plFromApl[8] = cos_a * cos_b;
+
    double losPl[3];
    losPl[0] = plFromApl[0] * losApl[0] + plFromApl[1] * losApl[1]
       + plFromApl[2] * losApl[2];
@@ -1831,6 +1832,8 @@ void UsgsAstroLsSensorModel::losToEcf(
    ecfFromPl[6] = 2 * (q[0] * q[2] - q[1] * q[3]);
    ecfFromPl[7] = 2 * (q[1] * q[2] + q[0] * q[3]);
    ecfFromPl[8] = -q[0] * q[0] - q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
+
+
    xl = ecfFromPl[0] * losPl[0] + ecfFromPl[1] * losPl[1]
       + ecfFromPl[2] * losPl[2];
    yl = ecfFromPl[3] * losPl[0] + ecfFromPl[4] * losPl[1]
@@ -2329,7 +2332,6 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(
    ecfFromIcr[6] = inTrackUnitVec[2];
    ecfFromIcr[7] = crossTrackUnitVec[2];
    ecfFromIcr[8] = radialUnitVec[2];
-
    // Apply position and velocity corrections
 
    double aTime = time - m_t0Ephem;
@@ -2772,12 +2774,11 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
 
    // Zero computed state values
    state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
-   state["m_gsd"] = 0.0;
-   state["m_flyingHeight"] = 0.0;
-   state["m_halfSwath"] = 0.0;
-   state["m_halfTime"] = 0.0;
+   state["m_gsd"] = 1.0;
+   state["m_flyingHeight"] = 1000.0;
+   state["m_halfSwath"] = 1000.0;
+   state["m_halfTime"] = 10.0;
    state["m_imageFlipFlag"] = 0;
-
    // The state data will still be updated when a sensor model is created since
    // some state data is notin the ISD and requires a SM to compute them.
    return state.dump();
