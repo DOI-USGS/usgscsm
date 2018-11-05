@@ -2023,10 +2023,6 @@ void UsgsAstroLsSensorModel::lagrangeInterp(
          valueVector[j] += d[i] * valueArray[jndex + j];
       }
    }
-
-   for (int i = 0; i < vectorLength; i++)
-   {
-   }
 }
 
 //***************************************************************************
