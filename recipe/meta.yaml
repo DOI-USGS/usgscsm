@@ -6,7 +6,7 @@ package:
 source:
   git_url: https://github.com/USGS-Astrogeology/CSM-CameraModel.git
 build:
-  string: dev
+  string: {{ environ['GIT_DESCRIBE_HASH'] }}
 
 requirements:
   build:
