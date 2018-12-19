@@ -9,6 +9,10 @@
 #include "RasterGM.h"
 #include "CorrelationModel.h"
 
+#include <json.hpp>
+using json = nlohmann::json;
+
+
 class UsgsAstroFrameSensorModel : public csm::RasterGM {
   // UsgsAstroFramePlugin needs to access private members
   friend class UsgsAstroFramePlugin;
@@ -17,10 +21,18 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
     UsgsAstroFrameSensorModel();
     ~UsgsAstroFrameSensorModel();
 
+
+    bool isValidModelState(const std::string& stringState, csm::WarningList *warnings);
+    bool isValidIsd(const std::string& stringIsd, csm::WarningList *warnings);
+
     virtual csm::ImageCoord groundToImage(const csm::EcefCoord &groundPt,
                                      double desiredPrecision=0.001,
                                      double *achievedPrecision=NULL,
                                      csm::WarningList *warnings=NULL) const;
+
+
+    std::string constructStateFromIsd(const std::string& jsonIsd, csm::WarningList *warnings);
+    void reset();
 
     virtual csm::ImageCoordCovar groundToImage(const csm::EcefCoordCovar &groundPt,
                                           double desiredPrecision=0.001,
@@ -301,12 +313,12 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
 protected:
 
     FRIEND_TEST(FramerParameterizedTest,JacobianTest);
-    FRIEND_TEST(FrameIsdTest, setFocalPlane1);
-    FRIEND_TEST(FrameIsdTest, Jacobian1);
-    FRIEND_TEST(FrameIsdTest, setFocalPlane_AllCoefficientsOne);
-    FRIEND_TEST(FrameIsdTest, distortMe_AllCoefficientsOne);
-    FRIEND_TEST(FrameIsdTest, setFocalPlane_AlternatingOnes);
-    FRIEND_TEST(FrameIsdTest, distortMe_AlternatingOnes);
+    FRIEND_TEST(FrameSensorModel, setFocalPlane1);
+    FRIEND_TEST(FrameSensorModel, Jacobian1);
+    FRIEND_TEST(FrameSensorModel, setFocalPlane_AllCoefficientsOne);
+    FRIEND_TEST(FrameSensorModel, distortMe_AllCoefficientsOne);
+    FRIEND_TEST(FrameSensorModel, setFocalPlane_AlternatingOnes);
+    FRIEND_TEST(FrameSensorModel, distortMe_AlternatingOnes);
 
     virtual bool setFocalPlane(double dx,double dy,double &undistortedX,double &undistortedY) const;
     virtual void distortionFunction(double ux, double uy, double &dx, double &dy) const;
@@ -316,7 +328,6 @@ protected:
 
 
   private:
-
     // Input parameters
     static const int m_numParameters;
     static const std::string m_parameterName[];
@@ -326,39 +337,42 @@ protected:
     std::vector<double> m_noAdjustments;
     std::vector<double> m_odtX;
     std::vector<double> m_odtY;
-
-    static const int         _NUM_STATE_KEYWORDS;
-    static const std::string _STATE_KEYWORD[];
-
-    double m_transX[3];
-    double m_transY[3];
+    std::vector<double> m_transX;
+    std::vector<double> m_transY;
+    std::vector<double> m_spacecraftVelocity;
+    std::vector<double> m_sunPosition;
+    std::vector<double> m_ccdCenter;
+    std::vector<double> m_iTransS;
+    std::vector<double> m_iTransL;
+    std::vector<double> m_boresight;
     double m_majorAxis;
     double m_minorAxis;
     double m_focalLength;
-    double m_spacecraftVelocity[3];
-    double m_sunPosition[3];
-    double m_ccdCenter[2];
     double m_minElevation;
     double m_maxElevation;
-    double m_line_pp;
-    double m_sample_pp;
+    double m_linePp;
+    double m_samplePp;
     double m_startingDetectorSample;
     double m_startingDetectorLine;
     std::string m_targetName;
+    std::string m_modelName;
     double m_ifov;
     std::string m_instrumentID;
     double m_focalLengthEpsilon;
     double m_originalHalfLines;
     std::string m_spacecraftName;
     double m_pixelPitch;
-    double m_iTransS[3];
-    double m_iTransL[3];
+
     double m_ephemerisTime;
     double m_originalHalfSamples;
-    double m_boresight[3];
     int m_nLines;
     int m_nSamples;
     int m_nParameters;
+
+    json _state;
+    static const int         _NUM_STATE_KEYWORDS;
+    static const int         NUM_PARAMETERS;
+    static const std::string _STATE_KEYWORD[];
 
     csm::NoCorrelationModel _no_corr_model;
 
@@ -371,6 +385,7 @@ protected:
                                 double xl, double yl,
                                 double zl,
                                 double& x,double& y, double&  z) const;
+
 };
 
 #endif

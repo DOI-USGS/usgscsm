@@ -16,7 +16,7 @@
 //  24-Apr-2017 BAE Systems  Update for CSM 3.0.2
 //  24-OCT-2017 BAE Systems  Update for CSM 3.0.3
 //-----------------------------------------------------------------------------
-#define USGSASTROLINESCANNER_LIBRARY
+#define USGS_SENSOR_LIBRARY
 
 #include "UsgsAstroLsSensorModel.h"
 
@@ -25,54 +25,401 @@
 #include <sstream>
 #include <math.h>
 
+#define USGSASTROLINESCANNER_LIBRARY
+
+#include <sstream>
+#include <Error.h>
+#include <json.hpp>
+using json = nlohmann::json;
+
+const std::string UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME
+         = "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL";
+const int     UsgsAstroLsSensorModel::NUM_PARAMETERS = 16;
+const std::string  UsgsAstroLsSensorModel::PARAMETER_NAME[] =
+{
+   "IT Pos. Bias   ",   // 0
+   "CT Pos. Bias   ",   // 1
+   "Rad Pos. Bias  ",   // 2
+   "IT Vel. Bias   ",   // 3
+   "CT Vel. Bias   ",   // 4
+   "Rad Vel. Bias  ",   // 5
+   "Omega Bias     ",   // 6
+   "Phi Bias       ",   // 7
+   "Kappa Bias     ",   // 8
+   "Omega Rate     ",   // 9
+   "Phi Rate       ",   // 10
+   "Kappa Rate     ",   // 11
+   "Omega Accl     ",   // 12
+   "Phi Accl       ",   // 13
+   "Kappa Accl     ",   // 14
+   "Focal Bias     "    // 15
+};
+
+
+const std::string  UsgsAstroLsSensorModel::_STATE_KEYWORD[] =
+{
+   "m_sensorModelName",
+   "m_imageIdentifier",
+   "m_sensorType",
+   "m_totalLines",
+   "m_totalSamples",
+   "m_offsetLines",
+   "m_offsetSamples",
+   "m_platformFlag",
+   "m_aberrFlag",
+   "m_atmrefFlag",
+   "m_intTimeLines",
+   "m_intTimeStartTimes",
+   "m_intTimes",
+   "m_startingEphemerisTime",
+   "m_centerEphemerisTime",
+   "m_detectorSampleSumming",
+   "m_startingSample",
+   "m_ikCode",
+   "m_focal",
+   "m_isisZDirection",
+   "m_opticalDistCoef",
+   "m_iTransS",
+   "m_iTransL",
+   "m_detectorSampleOrigin",
+   "m_detectorLineOrigin",
+   "m_detectorLineOffset",
+   "m_mountingMatrix",
+   "m_semiMajorAxis",
+   "m_semiMinorAxis",
+   "m_referenceDateAndTime",
+   "m_platformIdentifier",
+   "m_sensorIdentifier",
+   "m_trajectoryIdentifier",
+   "m_collectionIdentifier",
+   "m_refElevation",
+   "m_minElevation",
+   "m_maxElevation",
+   "m_dtEphem",
+   "m_t0Ephem",
+   "m_dtQuat",
+   "m_t0Quat",
+   "m_numEphem",
+   "m_numQuaternions",
+   "m_ephemPts",
+   "m_ephemRates",
+   "m_quaternions",
+   "m_parameterVals",
+   "m_parameterType",
+   "m_referencePointXyz",
+   "m_gsd",
+   "m_flyingHeight",
+   "m_halfSwath",
+   "m_halfTime",
+   "m_covariance",
+   "m_imageFlipFlag"
+};
+
+const int UsgsAstroLsSensorModel::NUM_PARAM_TYPES = 4;
+const std::string UsgsAstroLsSensorModel::PARAM_STRING_ALL[] =
+{
+   "NONE",
+   "FICTITIOUS",
+   "REAL",
+   "FIXED"
+};
+const csm::param::Type
+      UsgsAstroLsSensorModel::PARAM_CHAR_ALL[] =
+{
+   csm::param::NONE,
+   csm::param::FICTITIOUS,
+   csm::param::REAL,
+   csm::param::FIXED
+};
+
+
+void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
+{
+   reset();
+   auto j = json::parse(stateString);
+   int num_params    = NUM_PARAMETERS;
+   int num_paramsSq = num_params * num_params;
+
+   m_imageIdentifier = j["m_imageIdentifier"].get<std::string>();
+   m_sensorType = j["m_sensorType"];
+   m_totalLines = j["m_totalLines"];
+   m_totalSamples = j["m_totalSamples"];
+   m_offsetLines = j["m_offsetLines"];
+   m_offsetSamples = j["m_offsetSamples"];
+   m_platformFlag = j["m_platformFlag"];
+   m_aberrFlag = j["m_aberrFlag"];
+   m_atmRefFlag = j["m_atmRefFlag"];
+   m_intTimeLines = j["m_intTimeLines"].get<std::vector<double>>();
+   m_intTimeStartTimes = j["m_intTimeStartTimes"].get<std::vector<double>>();
+   m_intTimes = j["m_intTimes"].get<std::vector<double>>();
+   m_startingEphemerisTime = j["m_startingEphemerisTime"];
+   m_centerEphemerisTime = j["m_centerEphemerisTime"];
+   m_detectorSampleSumming = j["m_detectorSampleSumming"];
+   m_startingSample = j["m_startingSample"];
+   m_ikCode = j["m_ikCode"];
+   m_focal = j["m_focal"];
+   m_isisZDirection = j["m_isisZDirection"];
+   for (int i = 0; i < 3; i++) {
+     m_opticalDistCoef[i] = j["m_opticalDistCoef"][i];
+     m_iTransS[i] = j["m_iTransS"][i];
+     m_iTransL[i] = j["m_iTransL"][i];
+   }
+   m_detectorSampleOrigin = j["m_detectorSampleOrigin"];
+   m_detectorLineOrigin = j["m_detectorLineOrigin"];
+   m_detectorLineOffset = j["m_detectorLineOffset"];
+   for (int i = 0; i < 9; i++) {
+       m_mountingMatrix[i] = j["m_mountingMatrix"][i];
+   }
+   m_semiMajorAxis = j["m_semiMajorAxis"];
+   m_semiMinorAxis = j["m_semiMinorAxis"];
+   m_referenceDateAndTime = j["m_referenceDateAndTime"];
+   m_platformIdentifier = j["m_platformIdentifier"];
+   m_sensorIdentifier = j["m_sensorIdentifier"];
+   m_trajectoryIdentifier = j["m_trajectoryIdentifier"];
+   m_collectionIdentifier = j["m_collectionIdentifier"];
+   m_refElevation = j["m_refElevation"];
+   m_minElevation = j["m_minElevation"];
+   m_maxElevation = j["m_maxElevation"];
+   m_dtEphem = j["m_dtEphem"];
+   m_t0Ephem = j["m_t0Ephem"];
+   m_dtQuat = j["m_dtQuat"];
+   m_t0Quat = j["m_t0Quat"];
+   m_numEphem = j["m_numEphem"];
+   m_numQuaternions = j["m_numQuaternions"];
+   m_referencePointXyz.x = j["m_referencePointXyz"][0];
+   m_referencePointXyz.y = j["m_referencePointXyz"][1];
+   m_referencePointXyz.z = j["m_referencePointXyz"][2];
+   m_gsd = j["m_gsd"];
+   m_flyingHeight = j["m_flyingHeight"];
+   m_halfSwath = j["m_halfSwath"];
+   m_halfTime = j["m_halfTime"];
+   m_imageFlipFlag = j["m_imageFlipFlag"];
+   // Vector = is overloaded so explicit get with type required.
+   m_ephemPts = j["m_ephemPts"].get<std::vector<double>>();
+   m_ephemRates = j["m_ephemRates"].get<std::vector<double>>();
+   m_quaternions = j["m_quaternions"].get<std::vector<double>>();
+   m_parameterVals = j["m_parameterVals"].get<std::vector<double>>();
+   m_covariance = j["m_covariance"].get<std::vector<double>>();
+   for (int i = 0; i < num_params; i++) {
+     for (int k = 0; k < NUM_PARAM_TYPES; k++) {
+       if (j["m_parameterType"][i] == PARAM_STRING_ALL[k]) {
+         m_parameterType[i] = PARAM_CHAR_ALL[k];
+         break;
+     }
+    }
+   }
+
+   // If computed state values are still default, then compute them
+   if (m_gsd == 1.0  && m_flyingHeight == 1000.0)
+   {
+     updateState();
+   }
+
+   try
+   {
+     setLinearApproximation();
+   }
+   catch (...)
+   {
+     _linear = false;
+   }
+}
+
+std::string UsgsAstroLsSensorModel::getModelNameFromModelState(
+   const std::string& model_state)
+{
+   // Parse the string to JSON
+   auto j = json::parse(model_state);
+   // If model name cannot be determined, return a blank string
+   std::string model_name;
+
+   if (j.find("m_sensorModelName") != j.end()) {
+       model_name = j["m_sensorModelName"];
+   } else {
+       csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
+       std::string aMessage = "No 'm_sensorModelName' key in the model state object.";
+       std::string aFunction = "UsgsAstroLsPlugin::getModelNameFromModelState";
+       csm::Error csmErr(aErrorType, aMessage, aFunction);
+       throw(csmErr);
+   }
+   if (model_name != _SENSOR_MODEL_NAME){
+       csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
+       std::string aMessage = "Sensor model not supported.";
+       std::string aFunction = "UsgsAstroLsPlugin::getModelNameFromModelState()";
+       csm::Error csmErr(aErrorType, aMessage, aFunction);
+       throw(csmErr);
+   }
+   return model_name;
+}
+
+std::string UsgsAstroLsSensorModel::getModelState() const {
+      json state;
+      state["m_imageIdentifier"] = m_imageIdentifier;
+      state["m_sensorType"] = m_sensorType;
+      state["m_totalLines"] = m_totalLines;
+      state["m_totalSamples"] = m_totalSamples;
+      state["m_offsetLines"] = m_offsetLines;
+      state["m_offsetSamples"] = m_offsetSamples;
+      state["m_platformFlag"] = m_platformFlag;
+      state["m_aberrFlag"] = m_aberrFlag;
+      state["m_atmRefFlag"] = m_atmRefFlag;
+      state["m_intTimeLines"] = m_intTimeLines;
+      state["m_intTimeStartTimes"] = m_intTimeStartTimes;
+      state["m_intTimes"] = m_intTimes;
+      state["m_startingEphemerisTime"] = m_startingEphemerisTime;
+      state["m_centerEphemerisTime"] = m_centerEphemerisTime;
+      state["m_detectorSampleSumming"] = m_detectorSampleSumming;
+      state["m_startingSample"] = m_startingSample;
+      state["m_ikCode"] = m_ikCode;
+      state["m_focal"] = m_focal;
+      state["m_isisZDirection"] = m_isisZDirection;
+      state["m_opticalDistCoef"] = std::vector<double>(m_opticalDistCoef, m_opticalDistCoef+3);
+      state["m_iTransS"] = std::vector<double>(m_iTransS, m_iTransS+3);
+      state["m_iTransL"] = std::vector<double>(m_iTransL, m_iTransL+3);
+      state["m_detectorSampleOrigin"] = m_detectorSampleOrigin;
+      state["m_detectorLineOrigin"] = m_detectorLineOrigin;
+      state["m_detectorLineOffset"] = m_detectorLineOffset;
+      state["m_mountingMatrix"] = std::vector<double>(m_mountingMatrix, m_mountingMatrix+9);
+      state["m_semiMajorAxis"] = m_semiMajorAxis;
+      state["m_semiMinorAxis"] = m_semiMinorAxis;
+      state["m_referenceDateAndTime"] = m_referenceDateAndTime;
+      state["m_platformIdentifier"] = m_platformIdentifier;
+      state["m_sensorIdentifier"] = m_sensorIdentifier;
+      state["m_trajectoryIdentifier"] = m_trajectoryIdentifier;
+      state["m_collectionIdentifier"] = m_collectionIdentifier;
+      state["m_refElevation"] = m_refElevation;
+      state["m_minElevation"] = m_minElevation;
+      state["m_maxElevation"] = m_maxElevation;
+      state["m_dtEphem"] = m_dtEphem;
+      state["m_t0Ephem"] = m_t0Ephem;
+      state["m_dtQuat"] = m_dtQuat;
+      state["m_t0Quat"] = m_t0Quat;
+      state["m_numEphem"] = m_numEphem;
+      state["m_numQuaternions"] = m_numQuaternions;
+      state["m_ephemPts"] = m_ephemPts;
+      state["m_ephemRates"] = m_ephemRates;
+      state["m_quaternions"] = m_quaternions;
+      state["m_parameterVals"] = m_parameterVals;
+      state["m_parameterType"] = m_parameterType;
+      state["m_gsd"] = m_gsd;
+      state["m_flyingHeight"] = m_flyingHeight;
+      state["m_halfSwath"] = m_halfSwath;
+      state["m_halfTime"] = m_halfTime;
+      state["m_covariance"] = m_covariance;
+      state["m_imageFlipFlag"] = m_imageFlipFlag;
+
+      state["m_referencePointXyz"] = json();
+      state["m_referencePointXyz"]["x"] = m_referencePointXyz.x;
+      state["m_referencePointXyz"]["y"] = m_referencePointXyz.y;
+      state["m_referencePointXyz"]["z"] = m_referencePointXyz.z;
+
+      return state.dump();
+ }
+
+void UsgsAstroLsSensorModel::reset()
+{
+  _linear = false; // default until a linear model is made
+  _u0    = 0.0;
+  _du_dx = 0.0;
+  _du_dy = 0.0;
+  _du_dz = 0.0;
+  _v0    = 0.0;
+  _dv_dx = 0.0;
+  _dv_dy = 0.0;
+  _dv_dz = 0.0;
+
+  _no_adjustment.assign(UsgsAstroLsSensorModel::NUM_PARAMETERS, 0.0);
+
+  m_imageIdentifier = "";                    // 1
+  m_sensorType    = "USGSAstroLineScanner";  // 2
+  m_totalLines    = 0;                       // 3
+  m_totalSamples  = 0;                       // 4
+  m_offsetLines   = 0.0;                     // 7
+  m_offsetSamples = 0.0;                     // 8
+  m_platformFlag  = 1;                       // 9
+  m_aberrFlag     = 0;                       // 10
+  m_atmRefFlag    = 0;                       // 11
+  m_intTimeLines.clear();
+  m_intTimeStartTimes.clear();
+  m_intTimes.clear();
+  m_startingEphemerisTime = 0.0;             // 13
+  m_centerEphemerisTime = 0.0;               // 14
+  m_detectorSampleSumming = 1.0;             // 15
+  m_startingSample = 1.0;                    // 16
+  m_ikCode = -85600;                         // 17
+  m_focal = 350.0;                           // 18
+  m_isisZDirection = 1.0;                    // 19
+  m_opticalDistCoef[0] = 0.0;                // 20
+  m_opticalDistCoef[1] = 0.0;                // 20
+  m_opticalDistCoef[2] = 0.0;                // 20
+  m_iTransS[0] = 0.0;                        // 21
+  m_iTransS[1] = 0.0;                        // 21
+  m_iTransS[2] = 150.0;                      // 21
+  m_iTransL[0] = 0.0;                        // 22
+  m_iTransL[1] = 150.0;                      // 22
+  m_iTransL[2] = 0.0;                        // 22
+  m_detectorSampleOrigin = 2500.0;           // 23
+  m_detectorLineOrigin = 0.0;                // 24
+  m_detectorLineOffset = 0.0;                // 25
+  m_mountingMatrix[0] = 1.0;                 // 26
+  m_mountingMatrix[1] = 0.0;                 // 26
+  m_mountingMatrix[2] = 0.0;                 // 26
+  m_mountingMatrix[3] = 0.0;                 // 26
+  m_mountingMatrix[4] = 1.0;                 // 26
+  m_mountingMatrix[5] = 0.0;                 // 26
+  m_mountingMatrix[6] = 0.0;                 // 26
+  m_mountingMatrix[7] = 0.0;                 // 26
+  m_mountingMatrix[8] = 1.0;                 // 26
+  m_semiMajorAxis = 3400000.0;               // 27
+  m_semiMinorAxis = 3350000.0;               // 28
+  m_referenceDateAndTime = "";               // 30
+  m_platformIdentifier = "";                 // 31
+  m_sensorIdentifier = "";                   // 32
+  m_trajectoryIdentifier = "";               // 33
+  m_collectionIdentifier = "";               // 33
+  m_refElevation = 30;                       // 34
+  m_minElevation = -8000.0;                  // 34
+  m_maxElevation =  8000.0;                  // 35
+  m_dtEphem = 2.0;                           // 36
+  m_t0Ephem = -70.0;                         // 37
+  m_dtQuat =  0.1;                           // 38
+  m_t0Quat = -40.0;                          // 39
+  m_numEphem = 0;                            // 40
+  m_numQuaternions = 0;                      // 41
+  m_ephemPts.clear();                        // 42
+  m_ephemRates.clear();                      // 43
+  m_quaternions.clear();                     // 44
+
+  m_parameterVals.assign(NUM_PARAMETERS,0.0);
+  m_parameterType.assign(NUM_PARAMETERS,csm::param::REAL);
+
+  m_referencePointXyz.x = 0.0;             // 47
+  m_referencePointXyz.y = 0.0;             // 47
+  m_referencePointXyz.z = 0.0;             // 47
+  m_gsd = 1.0;                             // 48
+  m_flyingHeight = 1000.0;                 // 49
+  m_halfSwath = 1000.0;                    // 50
+  m_halfTime = 10.0;                       // 51
+
+  m_covariance = std::vector<double>(NUM_PARAMETERS * NUM_PARAMETERS,0.0); // 52
+  m_imageFlipFlag = 0;                     // 53
+}
+
+
 //*****************************************************************************
 // UsgsAstroLsSensorModel Constructor
 //*****************************************************************************
 UsgsAstroLsSensorModel::UsgsAstroLsSensorModel()
 {
-   _no_adjustment.assign(UsgsAstroLsStateData::NUM_PARAMETERS, 0.0);
+   _no_adjustment.assign(UsgsAstroLsSensorModel::NUM_PARAMETERS, 0.0);
 }
+
 
 //*****************************************************************************
 // UsgsAstroLsSensorModel Destructor
 //*****************************************************************************
 UsgsAstroLsSensorModel::~UsgsAstroLsSensorModel()
 {
-}
-
-//*****************************************************************************
-// UsgsAstroLsSensorModel set
-//*****************************************************************************
-void UsgsAstroLsSensorModel::set(const UsgsAstroLsStateData &state_data)
-{
-   _linear = false; // default until a linear model is made
-   _u0    = 0.0;
-   _du_dx = 0.0;
-   _du_dy = 0.0;
-   _du_dz = 0.0;
-   _v0    = 0.0;
-   _dv_dx = 0.0;
-   _dv_dy = 0.0;
-   _dv_dz = 0.0;
-
-   _no_adjustment.assign(UsgsAstroLsStateData::NUM_PARAMETERS, 0.0);
-   _data = state_data;
-
-   // If needed set state data elements that need a sensor model to compute
-   // Update if still using default settings
-   if (_data.m_Gsd == 1.0  && _data.m_FlyingHeight == 1000.0)
-   {
-      updateState();
-   }
-
-   try
-   {
-      setLinearApproximation();
-   }
-   catch (...)
-   {
-      _linear = false;
-   }
 }
 
 //*****************************************************************************
@@ -84,90 +431,47 @@ void UsgsAstroLsSensorModel::updateState()
    // This routine will set some parameters not found in the ISD.
 
    // Reference point (image center)
-   double lineCtr = _data.m_TotalLines / 2.0;
-   double sampCtr = _data.m_TotalSamples / 2.0;
+   double lineCtr = m_totalLines / 2.0;
+   double sampCtr = m_totalSamples / 2.0;
    csm::ImageCoord ip(lineCtr, sampCtr);
-   double refHeight = _data.m_RefElevation;
-   _data.m_ReferencePointXyz = imageToGround(ip, refHeight);
+   double refHeight = m_refElevation;
+   m_referencePointXyz = imageToGround(ip, refHeight);
    // Compute ground sample distance
    ip.line += 1;
    ip.samp += 1;
    csm::EcefCoord delta = imageToGround(ip, refHeight);
-   double dx = delta.x - _data.m_ReferencePointXyz.x;
-   double dy = delta.y - _data.m_ReferencePointXyz.y;
-   double dz = delta.z - _data.m_ReferencePointXyz.z;
-   _data.m_Gsd = sqrt((dx*dx + dy*dy + dz*dz) / 2.0);
+   double dx = delta.x - m_referencePointXyz.x;
+   double dy = delta.y - m_referencePointXyz.y;
+   double dz = delta.z - m_referencePointXyz.z;
+   m_gsd = sqrt((dx*dx + dy*dy + dz*dz) / 2.0);
 
    // Compute flying height
    csm::EcefCoord sensorPos = getSensorPosition(0.0);
-   dx = sensorPos.x - _data.m_ReferencePointXyz.x;
-   dy = sensorPos.y - _data.m_ReferencePointXyz.y;
-   dz = sensorPos.z - _data.m_ReferencePointXyz.z;
-   _data.m_FlyingHeight = sqrt(dx*dx + dy*dy + dz*dz);
+   dx = sensorPos.x - m_referencePointXyz.x;
+   dy = sensorPos.y - m_referencePointXyz.y;
+   dz = sensorPos.z - m_referencePointXyz.z;
+   m_flyingHeight = sqrt(dx*dx + dy*dy + dz*dz);
 
    // Compute half swath
-   _data.m_HalfSwath = _data.m_Gsd * _data.m_TotalSamples / 2.0;
+   m_halfSwath = m_gsd * m_totalSamples / 2.0;
 
    // Compute half time duration
-   double fullImageTime = _data.m_IntTimeStartTimes.back() - _data.m_IntTimeStartTimes.front()
-                          + _data.m_IntTimes.back() * (_data.m_TotalLines - _data.m_IntTimeLines.back());
-   _data.m_HalfTime = fullImageTime / 2.0;
+   double fullImageTime = m_intTimeStartTimes.back() - m_intTimeStartTimes.front()
+                          + m_intTimes.back() * (m_totalLines - m_intTimeLines.back());
+   m_halfTime = fullImageTime / 2.0;
 
    // Parameter covariance, hardcoded accuracy values
-   int num_params = _data.NUM_PARAMETERS;
-   int num_params_square = num_params * num_params;
-   double variance = _data.m_Gsd * _data.m_Gsd;
-   for (int i = 0; i < num_params_square; i++)
+   int num_params = NUM_PARAMETERS;
+   int num_paramsSquare = num_params * num_params;
+   double variance = m_gsd * m_gsd;
+   for (int i = 0; i < num_paramsSquare; i++)
    {
-      _data.m_Covariance[i] = 0.0;
+      m_covariance[i] = 0.0;
    }
    for (int i = 0; i < num_params; i++)
    {
-      _data.m_Covariance[i * num_params + i] = variance;
+      m_covariance[i * num_params + i] = variance;
    }
-
-   // Set flag for flipping image along horizontal axis
-   int index = int((_data.m_NumEphem - 1) / 2.0) * 3;
-   double xs, ys, zs;    // mid sensor position
-   xs = _data.m_EphemPts[index];
-   ys = _data.m_EphemPts[index + 1];
-   zs = _data.m_EphemPts[index + 2];
-   double xv, yv, zv;    // mid sensor velocity
-   xv = _data.m_EphemRates[index];
-   yv = _data.m_EphemRates[index + 1];
-   zv = _data.m_EphemRates[index + 2];
-   double xm, ym, zm;    // mid line position (mid sample)
-   xm = _data.m_ReferencePointXyz.x;
-   ym = _data.m_ReferencePointXyz.y;
-   zm = _data.m_ReferencePointXyz.z;
-   // mid line position (first sample)
-   csm::EcefCoord posf = imageToGround(csm::ImageCoord(lineCtr, 0.0), refHeight);
-   // mid line position (last sample)
-   csm::EcefCoord posl = imageToGround(csm::ImageCoord(lineCtr, _data.m_TotalSamples - 1), refHeight);
-   double xd, yd, zd;    // unit vector normal to image footprint
-   xd = posl.x - posf.x;
-   yd = posl.y - posf.y;
-   zd = posl.z - posf.z;
-   double xn, yn, zn;
-   xn = yv*zd - zv*yd;
-   yn = zv*xd - xv*zd;
-   zn = xv*yd - yv*xd;
-   double nmag = sqrt(xn*xn + yn*yn + zn*zn);
-   xn /= nmag;
-   yn /= nmag;
-   zn /= nmag;
-   double xo, yo, zo;   // unit vector ground-to_satellite
-   xo = xs - xm;
-   yo = ys - ym;
-   zo = zs - zm;
-   double omag = sqrt(xo*xo + yo*yo + zo*zo);
-   xo /= omag;
-   yo /= omag;
-   zo /= omag;
-   double triple_product = xn*xo + yn*yo + zn*zo;
-   _data.m_ImageFlipFlag = 0;
-   if (triple_product > 0.0)
-      _data.m_ImageFlipFlag = 1;
 }
 
 
@@ -222,9 +526,9 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    // in some situations.
 
    // Start bisection search on the image lines
-   double sampCtr = _data.m_TotalSamples / 2.0;
+   double sampCtr = m_totalSamples / 2.0;
    double firstTime = getImageTime(csm::ImageCoord(0.0, sampCtr));
-   double lastTime = getImageTime(csm::ImageCoord(_data.m_TotalLines, sampCtr));
+   double lastTime = getImageTime(csm::ImageCoord(m_totalLines, sampCtr));
    double firstOffset = computeViewingPixel(firstTime, ground_pt, adj).line - 0.5;
    double lastOffset = computeViewingPixel(lastTime, ground_pt, adj).line - 0.5;
 
@@ -242,14 +546,14 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    csm::ImageCoord approxPoint;
    computeLinearApproximation(ground_pt, approxPoint);
    csm::ImageCoord approxNextPoint = approxPoint;
-   if (approxNextPoint.line + 1 < _data.m_TotalLines) {
+   if (approxNextPoint.line + 1 < m_totalLines) {
       ++approxNextPoint.line;
    }
    else {
       --approxNextPoint.line;
    }
-   csm::EcefCoord approxIntersect = imageToGround(approxPoint, _data.m_RefElevation);
-   csm::EcefCoord approxNextIntersect = imageToGround(approxNextPoint, _data.m_RefElevation);
+   csm::EcefCoord approxIntersect = imageToGround(approxPoint, m_refElevation);
+   csm::EcefCoord approxNextIntersect = imageToGround(approxNextPoint, m_refElevation);
    double lineDX = approxNextIntersect.x - approxIntersect.x;
    double lineDY = approxNextIntersect.y - approxIntersect.y;
    double lineDZ = approxNextIntersect.z - approxIntersect.z;
@@ -283,17 +587,17 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
                        / (lastOffset - firstOffset);
    csm::ImageCoord calculatedPixel = computeViewingPixel(computedTime, ground_pt, adj);
    // The computed viewing line is the detector line, so we need to convert that to image lines
-   auto referenceTimeIt = std::upper_bound(_data.m_IntTimeStartTimes.begin(),
-                                           _data.m_IntTimeStartTimes.end(),
+   auto referenceTimeIt = std::upper_bound(m_intTimeStartTimes.begin(),
+                                           m_intTimeStartTimes.end(),
                                            computedTime);
-   if (referenceTimeIt != _data.m_IntTimeStartTimes.begin()) {
+   if (referenceTimeIt != m_intTimeStartTimes.begin()) {
       --referenceTimeIt;
    }
-   size_t referenceIndex = std::distance(_data.m_IntTimeStartTimes.begin(), referenceTimeIt);
-   calculatedPixel.line += _data.m_IntTimeLines[referenceIndex] - 1
-                         + (computedTime - _data.m_IntTimeStartTimes[referenceIndex])
-                         / _data.m_IntTimes[referenceIndex];
-   csm::EcefCoord calculatedPoint = imageToGround(calculatedPixel, _data.m_RefElevation);
+   size_t referenceIndex = std::distance(m_intTimeStartTimes.begin(), referenceTimeIt);
+   calculatedPixel.line += m_intTimeLines[referenceIndex] - 1
+                         + (computedTime - m_intTimeStartTimes[referenceIndex])
+                         / m_intTimes[referenceIndex];
+   csm::EcefCoord calculatedPoint = imageToGround(calculatedPixel, m_refElevation);
    double dx = ground_pt.x - calculatedPoint.x;
    double dy = ground_pt.y - calculatedPoint.y;
    double dz = ground_pt.z - calculatedPoint.z;
@@ -301,7 +605,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
 
    // Check that the pixel is actually in the image
    if ((calculatedPixel.samp < 0) ||
-       (calculatedPixel.samp > _data.m_TotalSamples)) {
+       (calculatedPixel.samp > m_totalSamples)) {
       throw csm::Warning(
          csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS,
          "The image coordinate is out of bounds of the image size.",
@@ -422,7 +726,7 @@ csm::EcefCoord UsgsAstroLsSensorModel::imageToGround(
    losToEcf(
       image_pt.line, image_pt.samp, _no_adjustment,
       xc, yc, zc, vx, vy, vz, xl, yl, zl);
-   if (_data.m_AberrFlag == 1)
+   if (m_aberrFlag == 1)
    {
       lightAberrationCorr(vx, vy, vz, xl, yl, zl, dxl, dyl, dzl);
       xl += dxl;
@@ -446,6 +750,7 @@ csm::EcefCoord UsgsAstroLsSensorModel::imageToGround(
             "Desired precision not achieved.",
             "UsgsAstroLsSensorModel::imageToGround()"));
    }
+
    return csm::EcefCoord(x, y, z);
 }
 
@@ -492,7 +797,7 @@ csm::EcefCoordCovar UsgsAstroLsSensorModel::imageToGround(
    // Use numerical partials
 
    const double DELTA_IMAGE = 1.0;
-   const double DELTA_GROUND = _data.m_Gsd;
+   const double DELTA_GROUND = m_gsd;
    csm::ImageCoord ip(image_pt.line, image_pt.samp);
 
    csm::EcefCoord gp = imageToGround(
@@ -574,7 +879,7 @@ csm::EcefLocus UsgsAstroLsSensorModel::imageToProximateImagingLocus(
    csm::WarningList* warnings) const
 {
    // Object ray unit direction near given ground location
-   const double DELTA_GROUND = _data.m_Gsd;
+   const double DELTA_GROUND = m_gsd;
 
    double x = ground_pt.x;
    double y = ground_pt.y;
@@ -639,7 +944,7 @@ csm::EcefLocus UsgsAstroLsSensorModel::imageToRemoteImagingLocus(
 
    // Set esposure station elevation to zero
    double height = 0.0;
-   double GND_DELTA = _data.m_Gsd;
+   double GND_DELTA = m_gsd;
    // Point on object ray at zero elevation
    csm::EcefCoord gp1 = imageToGround(
       image_pt, height, desired_precision, achieved_precision, warnings);
@@ -677,7 +982,7 @@ csm::EcefLocus UsgsAstroLsSensorModel::imageToRemoteImagingLocus(
 std::vector<double> UsgsAstroLsSensorModel::computeGroundPartials(
    const csm::EcefCoord& ground_pt) const
 {
-   double GND_DELTA = _data.m_Gsd;
+   double GND_DELTA = m_gsd;
    // Partial of line, sample wrt X, Y, Z
    double x = ground_pt.x;
    double y = ground_pt.y;
@@ -732,8 +1037,8 @@ csm::RasterGM::SensorPartials UsgsAstroLsSensorModel::computeSensorPartials(
 {
    // Compute numerical partials ls wrt specific parameter
 
-   const double DELTA = _data.m_Gsd;
-   std::vector<double> adj(UsgsAstroLsStateData::NUM_PARAMETERS, 0.0);
+   const double DELTA = m_gsd;
+   std::vector<double> adj(UsgsAstroLsSensorModel::NUM_PARAMETERS, 0.0);
    adj[index] = DELTA;
 
    csm::ImageCoord img1 = groundToImage(
@@ -795,8 +1100,8 @@ double UsgsAstroLsSensorModel::getParameterCovariance(
    int index1,
    int index2) const
 {
-   int index = UsgsAstroLsStateData::NUM_PARAMETERS * index1 + index2;
-   return _data.m_Covariance[index];
+   int index = UsgsAstroLsSensorModel::NUM_PARAMETERS * index1 + index2;
+   return m_covariance[index];
 }
 
 //***************************************************************************
@@ -807,8 +1112,8 @@ void UsgsAstroLsSensorModel::setParameterCovariance(
    int index2,
    double covariance)
 {
-   int index = UsgsAstroLsStateData::NUM_PARAMETERS * index1 + index2;
-   _data.m_Covariance[index] = covariance;
+   int index = UsgsAstroLsSensorModel::NUM_PARAMETERS * index1 + index2;
+   m_covariance[index] = covariance;
 }
 
 //---------------------------------------------------------------------------
@@ -820,7 +1125,7 @@ void UsgsAstroLsSensorModel::setParameterCovariance(
 //***************************************************************************
 std::string UsgsAstroLsSensorModel::getTrajectoryIdentifier() const
 {
-   return _data.m_TrajectoryIdentifier;
+   return m_trajectoryIdentifier;
 }
 
 //***************************************************************************
@@ -828,14 +1133,14 @@ std::string UsgsAstroLsSensorModel::getTrajectoryIdentifier() const
 //***************************************************************************
 std::string UsgsAstroLsSensorModel::getReferenceDateAndTime() const
 {
-   if (_data.m_ReferenceDateAndTime == "UNKNOWN")
+   if (m_referenceDateAndTime == "UNKNOWN")
    {
       throw csm::Error(
          csm::Error::UNSUPPORTED_FUNCTION,
          "Unsupported function",
          "UsgsAstroLsSensorModel::getReferenceDateAndTime");
    }
-   return _data.m_ReferenceDateAndTime;
+   return m_referenceDateAndTime;
 }
 
 //***************************************************************************
@@ -850,21 +1155,21 @@ double UsgsAstroLsSensorModel::getImageTime(
    // CSM image convention: UL pixel center == (0.5, 0.5)
    // USGS image convention: UL pixel center == (1.0, 1.0)
 
-   double lineCSMFull = line1 + _data.m_OffsetLines;
+   double lineCSMFull = line1 + m_offsetLines;
    double lineUSGSFull = lineCSMFull + 0.5;
 
    // These calculation assumes that the values in the integration time
    // vectors are in terms of ISIS' pixels
-   auto referenceLineIt = std::upper_bound(_data.m_IntTimeLines.begin(),
-                                           _data.m_IntTimeLines.end(),
+   auto referenceLineIt = std::upper_bound(m_intTimeLines.begin(),
+                                           m_intTimeLines.end(),
                                            lineUSGSFull);
-   if (referenceLineIt != _data.m_IntTimeLines.begin()) {
+   if (referenceLineIt != m_intTimeLines.begin()) {
       --referenceLineIt;
    }
-   size_t referenceIndex = std::distance(_data.m_IntTimeLines.begin(), referenceLineIt);
+   size_t referenceIndex = std::distance(m_intTimeLines.begin(), referenceLineIt);
 
-   double time = _data.m_IntTimeStartTimes[referenceIndex]
-      + _data.m_IntTimes[referenceIndex] * (lineUSGSFull - _data.m_IntTimeLines[referenceIndex]);
+   double time = m_intTimeStartTimes[referenceIndex]
+      + m_intTimes[referenceIndex] * (lineUSGSFull - m_intTimeLines[referenceIndex]);
 
    return time;
 
@@ -920,7 +1225,7 @@ csm::EcefVector UsgsAstroLsSensorModel::getSensorVelocity(double time) const
 //***************************************************************************
 void UsgsAstroLsSensorModel::setParameterValue(int index, double value)
 {
-   _data.m_ParameterVals[index] = value;
+   m_parameterVals[index] = value;
 }
 
 //***************************************************************************
@@ -928,7 +1233,7 @@ void UsgsAstroLsSensorModel::setParameterValue(int index, double value)
 //***************************************************************************
 double UsgsAstroLsSensorModel::getParameterValue(int index) const
 {
-   return _data.m_ParameterVals[index];
+   return m_parameterVals[index];
 }
 
 //***************************************************************************
@@ -936,7 +1241,7 @@ double UsgsAstroLsSensorModel::getParameterValue(int index) const
 //***************************************************************************
 std::string UsgsAstroLsSensorModel::getParameterName(int index) const
 {
-   return _data.PARAMETER_NAME[index];
+   return PARAMETER_NAME[index];
 }
 
 std::string UsgsAstroLsSensorModel::getParameterUnits(int index) const
@@ -951,7 +1256,7 @@ std::string UsgsAstroLsSensorModel::getParameterUnits(int index) const
 //***************************************************************************
 int UsgsAstroLsSensorModel::getNumParameters() const
 {
-   return UsgsAstroLsStateData::NUM_PARAMETERS;
+   return UsgsAstroLsSensorModel::NUM_PARAMETERS;
 }
 
 
@@ -960,7 +1265,7 @@ int UsgsAstroLsSensorModel::getNumParameters() const
 //***************************************************************************
 csm::param::Type UsgsAstroLsSensorModel::getParameterType(int index) const
 {
-   return _data.m_ParameterType[index];
+   return m_parameterType[index];
 }
 
 
@@ -970,7 +1275,7 @@ csm::param::Type UsgsAstroLsSensorModel::getParameterType(int index) const
 void UsgsAstroLsSensorModel::setParameterType(
    int index, csm::param::Type pType)
 {
-   _data.m_ParameterType[index] = pType;
+   m_parameterType[index] = pType;
 }
 
 //---------------------------------------------------------------------------
@@ -990,7 +1295,7 @@ std::string UsgsAstroLsSensorModel::getPedigree() const
 //***************************************************************************
 std::string UsgsAstroLsSensorModel::getImageIdentifier() const
 {
-   return _data.m_ImageIdentifier;
+   return m_imageIdentifier;
 }
 
 //***************************************************************************
@@ -1001,7 +1306,7 @@ void UsgsAstroLsSensorModel::setImageIdentifier(
    csm::WarningList* warnings)
 {
    // Image id should include the suffix without the path name
-   _data.m_ImageIdentifier = imageId;
+   m_imageIdentifier = imageId;
 }
 
 //***************************************************************************
@@ -1009,7 +1314,7 @@ void UsgsAstroLsSensorModel::setImageIdentifier(
 //***************************************************************************
 std::string UsgsAstroLsSensorModel::getSensorIdentifier() const
 {
-   return _data.m_SensorIdentifier;
+   return m_sensorIdentifier;
 }
 
 //***************************************************************************
@@ -1017,7 +1322,7 @@ std::string UsgsAstroLsSensorModel::getSensorIdentifier() const
 //***************************************************************************
 std::string UsgsAstroLsSensorModel::getPlatformIdentifier() const
 {
-   return _data.m_PlatformIdentifier;
+   return m_platformIdentifier;
 }
 
 //***************************************************************************
@@ -1025,7 +1330,7 @@ std::string UsgsAstroLsSensorModel::getPlatformIdentifier() const
 //***************************************************************************
 void UsgsAstroLsSensorModel::setReferencePoint(const csm::EcefCoord& ground_pt)
 {
-   _data.m_ReferencePointXyz = ground_pt;
+   m_referencePointXyz = ground_pt;
 }
 
 //***************************************************************************
@@ -1034,7 +1339,7 @@ void UsgsAstroLsSensorModel::setReferencePoint(const csm::EcefCoord& ground_pt)
 csm::EcefCoord UsgsAstroLsSensorModel::getReferencePoint() const
 {
    // Return ground point at image center
-   return _data.m_ReferencePointXyz;
+   return m_referencePointXyz;
 }
 
 //***************************************************************************
@@ -1042,7 +1347,7 @@ csm::EcefCoord UsgsAstroLsSensorModel::getReferencePoint() const
 //***************************************************************************
 std::string UsgsAstroLsSensorModel::getModelName() const
 {
-   return UsgsAstroLsStateData::SENSOR_MODEL_NAME;
+   return UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME;
 }
 
 //***************************************************************************
@@ -1058,20 +1363,93 @@ csm::ImageCoord UsgsAstroLsSensorModel::getImageStart() const
 //***************************************************************************
 csm::ImageVector UsgsAstroLsSensorModel::getImageSize() const
 {
-   return csm::ImageVector(_data.m_TotalLines, _data.m_TotalSamples);
+   return csm::ImageVector(m_totalLines, m_totalSamples);
 }
 
 //---------------------------------------------------------------------------
 // Sensor Model State
 //---------------------------------------------------------------------------
-
-//***************************************************************************
-// UsgsAstroLsSensorModel::getSensorModelState
-//***************************************************************************
-std::string UsgsAstroLsSensorModel::getModelState() const
-{
-   return _data.toJson();
-}
+//
+// //***************************************************************************
+// // UsgsAstroLsSensorModel::getSensorModelState
+// //***************************************************************************
+// std::string UsgsAstroLsSensorModel::setModelState(std::string stateString) const
+// {
+//   auto j = json::parse(stateString);
+//   int num_params    = NUM_PARAMETERS;
+//   int num_paramsSq = num_params * num_params;
+//
+//   m_imageIdentifier = j["m_imageIdentifier"];
+//   m_sensorType = j["m_sensorType"];
+//   m_totalLines = j["m_totalLines"];
+//   m_totalSamples = j["m_totalSamples"];
+//   m_offsetLines = j["m_offsetLines"];
+//   m_offsetSamples = j["m_offsetSamples"];
+//   m_platformFlag = j["m_platformFlag"];
+//   m_aberrFlag = j["m_aberrFlag"];
+//   m_atmRefFlag = j["m_atmrefFlag"];
+//   m_intTimeLines = j["m_intTimeLines"].get<std::vector<double>>();
+//   m_intTimeStartTimes = j["m_intTimeStartTimes"].get<std::vector<double>>();
+//   m_intTimes = j["m_intTimes"].get<std::vector<double>>();
+//   m_startingEphemerisTime = j["m_startingEphemerisTime"];
+//   m_centerEphemerisTime = j["m_centerEphemerisTime"];
+//   m_detectorSampleSumming = j["m_detectorSampleSumming"];
+//   m_startingSample = j["m_startingSample"];
+//   m_ikCode = j["m_ikCode"];
+//   m_focal = j["m_focal"];
+//   m_isisZDirection = j["m_isisZDirection"];
+//   for (int i = 0; i < 3; i++) {
+//     m_opticalDistCoef[i] = j["m_opticalDistCoef"][i];
+//     m_iTransS[i] = j["m_iTransS"][i];
+//     m_iTransL[i] = j["m_iTransL"][i];
+//   }
+//   m_detectorSampleOrigin = j["m_detectorSampleOrigin"];
+//   m_detectorLineOrigin = j["m_detectorLineOrigin"];
+//   m_detectorLineOffset = j["m_detectorLineOffset"];
+//   for (int i = 0; i < 9; i++) {
+//       m_mountingMatrix[i] = j["m_mountingMatrix"][i];
+//   }
+//   m_semiMajorAxis = j["m_semiMajorAxis"];
+//   m_semiMinorAxis = j["m_semiMinorAxis"];
+//   m_referenceDateAndTime = j["m_referenceDateAndTime"];
+//   m_platformIdentifier = j["m_platformIdentifier"];
+//   m_sensorIdentifier = j["m_sensorIdentifier"];
+//   m_trajectoryIdentifier = j["m_trajectoryIdentifier"];
+//   m_collectionIdentifier = j["m_collectionIdentifier"];
+//   m_refElevation = j["m_refElevation"];
+//   m_minElevation = j["m_minElevation"];
+//   m_maxElevation = j["m_maxElevation"];
+//   m_dtEphem = j["m_dtEphem"];
+//   m_t0Ephem = j["m_t0Ephem"];
+//   m_dtQuat = j["m_dtQuat"];
+//   m_t0Quat = j["m_t0Quat"];
+//   m_numEphem = j["m_numEphem"];
+//   m_numQuaternions = j["m_numQuaternions"];
+//   m_referencePointXyz.x = j["m_referencePointXyz"][0];
+//   m_referencePointXyz.y = j["m_referencePointXyz"][1];
+//   m_referencePointXyz.z = j["m_referencePointXyz"][2];
+//   m_gsd = j["m_gsd"];
+//   m_flyingHeight = j["m_flyingHeight"];
+//   m_halfSwath = j["m_halfSwath"];
+//   m_halfTime = j["m_halfTime"];
+//   m_imageFlipFlag = j["m_imageFlipFlag"];
+//   // Vector = is overloaded so explicit get with type required.
+//   m_ephemPts = j["m_ephemPts"].get<std::vector<double>>();
+//   m_ephemRates = j["m_ephemRates"].get<std::vector<double>>();
+//   m_quaternions = j["m_quaternions"].get<std::vector<double>>();
+//   m_parameterVals = j["m_parameterVals"].get<std::vector<double>>();
+//   m_covariance = j["m_covariance"].get<std::vector<double>>();
+//
+//   for (int i = 0; i < num_params; i++) {
+//     for (int k = 0; k < NUM_PARAM_TYPES; k++) {
+//       if (j["m_parameterType"][i] == PARAM_STRING_ALL[k]) {
+//         m_parameterType[i] = PARAM_CHAR_ALL[k];
+//         break;
+//     }
+//    }
+//   }
+//
+// }
 
 //---------------------------------------------------------------------------
 //  Monoscopic Mensuration
@@ -1082,7 +1460,7 @@ std::string UsgsAstroLsSensorModel::getModelState() const
 //***************************************************************************
 std::pair<double, double> UsgsAstroLsSensorModel::getValidHeightRange() const
 {
-   return std::pair<double, double>(_data.m_MinElevation, _data.m_MaxElevation);
+   return std::pair<double, double>(m_minElevation, m_maxElevation);
 }
 
 //***************************************************************************
@@ -1093,7 +1471,7 @@ UsgsAstroLsSensorModel::getValidImageRange() const
 {
    return std::pair<csm::ImageCoord, csm::ImageCoord>(
       csm::ImageCoord(0.0, 0.0),
-      csm::ImageCoord(_data.m_TotalLines, _data.m_TotalSamples));
+      csm::ImageCoord(m_totalLines, m_totalSamples));
 }
 
 //***************************************************************************
@@ -1202,7 +1580,7 @@ std::vector<double> UsgsAstroLsSensorModel::getUnmodeledCrossCovariance(
 //***************************************************************************
 std::string UsgsAstroLsSensorModel::getCollectionIdentifier() const
 {
-   return _data.m_CollectionIdentifier;
+   return m_collectionIdentifier;
 }
 
 //***************************************************************************
@@ -1261,25 +1639,17 @@ csm::Version UsgsAstroLsSensorModel::getVersion() const
    return csm::Version(1, 0, 0);
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::replaceModelState
-//***************************************************************************
-void UsgsAstroLsSensorModel::replaceModelState(const std::string& argState)
-{
-   set(argState);
-}
-
 
 csm::Ellipsoid UsgsAstroLsSensorModel::getEllipsoid() const
 {
-   return csm::Ellipsoid(_data.m_SemiMajorAxis, _data.m_SemiMinorAxis);
+   return csm::Ellipsoid(m_semiMajorAxis, m_semiMinorAxis);
 }
 
 void UsgsAstroLsSensorModel::setEllipsoid(
    const csm::Ellipsoid &ellipsoid)
 {
-   _data.m_SemiMajorAxis = ellipsoid.getSemiMajorRadius();
-   _data.m_SemiMinorAxis = ellipsoid.getSemiMinorRadius();
+   m_semiMajorAxis = ellipsoid.getSemiMajorRadius();
+   m_semiMinorAxis = ellipsoid.getSemiMinorRadius();
 }
 
 
@@ -1288,7 +1658,7 @@ double UsgsAstroLsSensorModel::getValue(
    int   index,
    const std::vector<double> &adjustments) const
 {
-   return _data.m_ParameterVals[index] + adjustments[index];
+   return m_parameterVals[index] + adjustments[index];
 }
 
 //***************************************************************************
@@ -1317,22 +1687,21 @@ void UsgsAstroLsSensorModel::losToEcf(
    getAdjSensorPosVel(time, adj, xc, yc, zc, vx, vy, vz);
    // CSM image image convention: UL pixel center == (0.5, 0.5)
    // USGS image convention: UL pixel center == (1.0, 1.0)
-
-   double sampleCSMFull = sample + _data.m_OffsetSamples;
+   double sampleCSMFull = sample + m_offsetSamples;
    double sampleUSGSFull = sampleCSMFull + 0.5;
    double fractionalLine = line - floor(line) - 0.5;
 
    // Compute distorted image coordinates in mm
 
    double isisDetSample = (sampleUSGSFull - 1.0)
-      * _data.m_DetectorSampleSumming + _data.m_StartingSample;
-   double m11 = _data.m_ITransL[1];
-   double m12 = _data.m_ITransL[2];
-   double m21 = _data.m_ITransS[1];
-   double m22 = _data.m_ITransS[2];
-   double t1 = fractionalLine + _data.m_DetectorLineOffset
-               - _data.m_DetectorLineOrigin - _data.m_ITransL[0];
-   double t2 = isisDetSample - _data.m_DetectorSampleOrigin - _data.m_ITransS[0];
+      * m_detectorSampleSumming + m_startingSample;
+   double m11 = m_iTransL[1];
+   double m12 = m_iTransL[2];
+   double m21 = m_iTransS[1];
+   double m22 = m_iTransS[2];
+   double t1 = fractionalLine + m_detectorLineOffset
+               - m_detectorLineOrigin - m_iTransL[0];
+   double t2 = isisDetSample - m_detectorSampleOrigin - m_iTransS[0];
    double determinant = m11 * m22 - m12 * m21;
    double p11 = m11 / determinant;
    double p12 = -m12 / determinant;
@@ -1344,38 +1713,27 @@ void UsgsAstroLsSensorModel::losToEcf(
    // Remove lens distortion
    double isisFocalPlaneX = isisNatFocalPlaneX;
    double isisFocalPlaneY = isisNatFocalPlaneY;
-   switch (_data.m_IkCode)
+  if (m_opticalDistCoef[0] != 0.0 ||
+     m_opticalDistCoef[1] != 0.0 ||
+     m_opticalDistCoef[2] != 0.0)
    {
-   case -85610:
-   case -85600:
-      isisFocalPlaneY = isisNatFocalPlaneY / (1.0 + _data.m_OpticalDistCoef[0]
-         * isisNatFocalPlaneY * isisNatFocalPlaneY);
-      break;
-
-   default:
-      if (_data.m_OpticalDistCoef[0] != 0.0 ||
-         _data.m_OpticalDistCoef[1] != 0.0 ||
-         _data.m_OpticalDistCoef[2] != 0.0)
+      double rr = isisNatFocalPlaneX * isisNatFocalPlaneX
+         + isisNatFocalPlaneY * isisNatFocalPlaneY;
+      if (rr > 1.0E-6)
       {
-         double rr = isisNatFocalPlaneX * isisNatFocalPlaneX
-            + isisNatFocalPlaneY * isisNatFocalPlaneY;
-         if (rr > 1.0E-6)
-         {
-            double dr = _data.m_OpticalDistCoef[0] + (rr * (_data.m_OpticalDistCoef[1]
-               + rr * _data.m_OpticalDistCoef[2]));
-            isisFocalPlaneX = isisNatFocalPlaneX * (1.0 - dr);
-            isisFocalPlaneY = isisNatFocalPlaneY * (1.0 - dr);
-         }
+         double dr = m_opticalDistCoef[0] + (rr * (m_opticalDistCoef[1]
+            + rr * m_opticalDistCoef[2]));
+         isisFocalPlaneX = isisNatFocalPlaneX * (1.0 - dr);
+         isisFocalPlaneY = isisNatFocalPlaneY * (1.0 - dr);
       }
-      break;
    }
 
    // Define imaging ray in image space
 
    double losIsis[3];
-   losIsis[0] = -isisFocalPlaneX * _data.m_IsisZDirection;
-   losIsis[1] = -isisFocalPlaneY * _data.m_IsisZDirection;
-   losIsis[2] = -_data.m_Focal * (1.0 - getValue(15, adj) / _data.m_HalfSwath);
+   losIsis[0] = -isisFocalPlaneX * m_isisZDirection;
+   losIsis[1] = -isisFocalPlaneY * m_isisZDirection;
+   losIsis[2] = -m_focal * (1.0 - getValue(15, adj) / m_halfSwath);
    double isisMag = sqrt(losIsis[0] * losIsis[0]
       + losIsis[1] * losIsis[1]
       + losIsis[2] * losIsis[2]);
@@ -1387,30 +1745,30 @@ void UsgsAstroLsSensorModel::losToEcf(
 
    double losApl[3];
    losApl[0] =
-      _data.m_MountingMatrix[0] * losIsis[0]
-      + _data.m_MountingMatrix[1] * losIsis[1]
-      + _data.m_MountingMatrix[2] * losIsis[2];
+      m_mountingMatrix[0] * losIsis[0]
+      + m_mountingMatrix[1] * losIsis[1]
+      + m_mountingMatrix[2] * losIsis[2];
    losApl[1] =
-      _data.m_MountingMatrix[3] * losIsis[0]
-      + _data.m_MountingMatrix[4] * losIsis[1]
-      + _data.m_MountingMatrix[5] * losIsis[2];
+      m_mountingMatrix[3] * losIsis[0]
+      + m_mountingMatrix[4] * losIsis[1]
+      + m_mountingMatrix[5] * losIsis[2];
    losApl[2] =
-      _data.m_MountingMatrix[6] * losIsis[0]
-      + _data.m_MountingMatrix[7] * losIsis[1]
-      + _data.m_MountingMatrix[8] * losIsis[2];
+      m_mountingMatrix[6] * losIsis[0]
+      + m_mountingMatrix[7] * losIsis[1]
+      + m_mountingMatrix[8] * losIsis[2];
 
    // Apply attitude correction
 
-   double aTime = time - _data.m_T0Quat;
+   double aTime = time - m_t0Quat;
    double euler[3];
-   double nTime = aTime / _data.m_HalfTime;
+   double nTime = aTime / m_halfTime;
    double nTime2 = nTime * nTime;
    euler[0] =
-      (getValue(6, adj) + getValue(9, adj)* nTime + getValue(12, adj)* nTime2) / _data.m_FlyingHeight;
+      (getValue(6, adj) + getValue(9, adj)* nTime + getValue(12, adj)* nTime2) / m_flyingHeight;
    euler[1] =
-      (getValue(7, adj) + getValue(10, adj)* nTime + getValue(13, adj)* nTime2) / _data.m_FlyingHeight;
+      (getValue(7, adj) + getValue(10, adj)* nTime + getValue(13, adj)* nTime2) / m_flyingHeight;
    euler[2] =
-      (getValue(8, adj) + getValue(11, adj)* nTime + getValue(14, adj)* nTime2) / _data.m_HalfSwath;
+      (getValue(8, adj) + getValue(11, adj)* nTime + getValue(14, adj)* nTime2) / m_halfSwath;
    double cos_a = cos(euler[0]);
    double sin_a = sin(euler[0]);
    double cos_b = cos(euler[1]);
@@ -1427,6 +1785,7 @@ void UsgsAstroLsSensorModel::losToEcf(
    plFromApl[6] = -sin_b;
    plFromApl[7] = sin_a * cos_b;
    plFromApl[8] = cos_a * cos_b;
+
    double losPl[3];
    losPl[0] = plFromApl[0] * losApl[0] + plFromApl[1] * losApl[1]
       + plFromApl[2] * losApl[2];
@@ -1438,14 +1797,14 @@ void UsgsAstroLsSensorModel::losToEcf(
    // Apply rotation matrix from sensor quaternions
 
    int nOrder = 8;
-   if (_data.m_PlatformFlag == 0)
+   if (m_platformFlag == 0)
       nOrder = 4;
    int nOrderQuat = nOrder;
-   if (_data.m_NumQuaternions < 6 && nOrder == 8)
+   if (m_numQuaternions < 6 && nOrder == 8)
       nOrderQuat = 4;
    double q[4];
    lagrangeInterp(
-      _data.m_NumQuaternions, &_data.m_Quaternions[0], _data.m_T0Quat, _data.m_DtQuat,
+      m_numQuaternions, &m_quaternions[0], m_t0Quat, m_dtQuat,
       time, 4, nOrderQuat, q);
    double norm = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
    q[0] /= norm;
@@ -1462,6 +1821,8 @@ void UsgsAstroLsSensorModel::losToEcf(
    ecfFromPl[6] = 2 * (q[0] * q[2] - q[1] * q[3]);
    ecfFromPl[7] = 2 * (q[1] * q[2] + q[0] * q[3]);
    ecfFromPl[8] = -q[0] * q[0] - q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
+
+
    xl = ecfFromPl[0] * losPl[0] + ecfFromPl[1] * losPl[1]
       + ecfFromPl[2] * losPl[2];
    yl = ecfFromPl[3] * losPl[0] + ecfFromPl[4] * losPl[1]
@@ -1667,7 +2028,7 @@ void UsgsAstroLsSensorModel::computeElevation(
    // Compute elevation given xyz
    // Requires semi-major-axis and eccentricity-square
    const int MKTR = 10;
-   double ecc_sqr = 1.0 - _data.m_SemiMinorAxis * _data.m_SemiMinorAxis / _data.m_SemiMajorAxis / _data.m_SemiMajorAxis;
+   double ecc_sqr = 1.0 - m_semiMinorAxis * m_semiMinorAxis / m_semiMajorAxis / m_semiMajorAxis;
    double ep2 = 1.0 - ecc_sqr;
    double d2 = x * x + y * y;
    double d = sqrt(d2);
@@ -1684,7 +2045,7 @@ void UsgsAstroLsSensorModel::computeElevation(
       {
          hPrev = h;
          tt = tanPhi * tanPhi;
-         r = _data.m_SemiMajorAxis / sqrt(1.0 + ep2 * tt);
+         r = m_semiMajorAxis / sqrt(1.0 + ep2 * tt);
          zz = z + r * ecc_sqr * tanPhi;
          n = r * sqrt(1.0 + tt);
          h = sqrt(d2 + zz * zz) - n;
@@ -1702,7 +2063,7 @@ void UsgsAstroLsSensorModel::computeElevation(
       {
          hPrev = h;
          cc = cotPhi * cotPhi;
-         r = _data.m_SemiMajorAxis / sqrt(ep2 + cc);
+         r = m_semiMajorAxis / sqrt(ep2 + cc);
          dd = d - r * ecc_sqr * cotPhi;
          nn = r * sqrt(1.0 + cc) * ep2;
          h = sqrt(dd * dd + z * z) - nn;
@@ -1739,8 +2100,8 @@ void UsgsAstroLsSensorModel::losEllipsoidIntersect(
    const int MKTR = 10;
 
    double ap, bp, k;
-   ap = _data.m_SemiMajorAxis + height;
-   bp = _data.m_SemiMinorAxis + height;
+   ap = m_semiMajorAxis + height;
+   bp = m_semiMinorAxis + height;
    k = ap * ap / (bp * bp);
 
    // Solve quadratic equation for scale factor
@@ -1889,7 +2250,7 @@ void UsgsAstroLsSensorModel::imageToPlane(
 
    losToEcf(line, sample, adj, xc, yc, zc, vx, vy, vz, xl, yl, zl);
 
-   if (_data.m_AberrFlag == 1)
+   if (m_aberrFlag == 1)
    {
       lightAberrationCorr(vx, vy, vz, xl, yl, zl, dxl, dyl, dzl);
       xl += dxl;
@@ -1915,13 +2276,13 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(
 {
    // Sensor position and velocity (4th or 8th order Lagrange).
    int nOrder = 8;
-   if (_data.m_PlatformFlag == 0)
+   if (m_platformFlag == 0)
       nOrder = 4;
    double sensPosNom[3];
-   lagrangeInterp(_data.m_NumEphem, &_data.m_EphemPts[0], _data.m_T0Ephem, _data.m_DtEphem,
+   lagrangeInterp(m_numEphem, &m_ephemPts[0], m_t0Ephem, m_dtEphem,
       time, 3, nOrder, sensPosNom);
    double sensVelNom[3];
-   lagrangeInterp(_data.m_NumEphem, &_data.m_EphemRates[0], _data.m_T0Ephem, _data.m_DtEphem,
+   lagrangeInterp(m_numEphem, &m_ephemRates[0], m_t0Ephem, m_dtEphem,
       time, 3, nOrder, sensVelNom);
    // Compute rotation matrix from ICR to ECF
 
@@ -1960,13 +2321,12 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(
    ecfFromIcr[6] = inTrackUnitVec[2];
    ecfFromIcr[7] = crossTrackUnitVec[2];
    ecfFromIcr[8] = radialUnitVec[2];
-
    // Apply position and velocity corrections
 
-   double aTime = time - _data.m_T0Ephem;
-   double dvi = getValue(3, adj) / _data.m_HalfTime;
-   double dvc = getValue(4, adj) / _data.m_HalfTime;
-   double dvr = getValue(5, adj) / _data.m_HalfTime;
+   double aTime = time - m_t0Ephem;
+   double dvi = getValue(3, adj) / m_halfTime;
+   double dvc = getValue(4, adj) / m_halfTime;
+   double dvr = getValue(5, adj) / m_halfTime;
    vx = sensVelNom[0]
       + ecfFromIcr[0] * dvi + ecfFromIcr[1] * dvc + ecfFromIcr[2] * dvr;
    vy = sensVelNom[1]
@@ -2004,14 +2364,14 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
 
    // Rotate the look vector into the camera reference frame
    int nOrder = 8;
-   if (_data.m_PlatformFlag == 0)
+   if (m_platformFlag == 0)
       nOrder = 4;
    int nOrderQuat = nOrder;
-   if (_data.m_NumQuaternions < 6 && nOrder == 8)
+   if (m_numQuaternions < 6 && nOrder == 8)
       nOrderQuat = 4;
    double q[4];
    lagrangeInterp(
-      _data.m_NumQuaternions, &_data.m_Quaternions[0], _data.m_T0Quat, _data.m_DtQuat,
+      m_numQuaternions, &m_quaternions[0], m_t0Quat, m_dtQuat,
       time, 4, nOrderQuat, q);
    double norm = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
    // Divide by the negative norm for 0 through 2 to invert the quaternion
@@ -2040,16 +2400,16 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
                       + bodyToCamera[8] * bodyLookZ;
 
    // Invert the attitude correction
-   double aTime = time - _data.m_T0Quat;
+   double aTime = time - m_t0Quat;
    double euler[3];
-   double nTime = aTime / _data.m_HalfTime;
+   double nTime = aTime / m_halfTime;
    double nTime2 = nTime * nTime;
    euler[0] =
-      (getValue(6, adj) + getValue(9, adj)* nTime + getValue(12, adj)* nTime2) / _data.m_FlyingHeight;
+      (getValue(6, adj) + getValue(9, adj)* nTime + getValue(12, adj)* nTime2) / m_flyingHeight;
    euler[1] =
-      (getValue(7, adj) + getValue(10, adj)* nTime + getValue(13, adj)* nTime2) / _data.m_FlyingHeight;
+      (getValue(7, adj) + getValue(10, adj)* nTime + getValue(13, adj)* nTime2) / m_flyingHeight;
    euler[2] =
-      (getValue(8, adj) + getValue(11, adj)* nTime + getValue(14, adj)* nTime2) / _data.m_HalfSwath;
+      (getValue(8, adj) + getValue(11, adj)* nTime + getValue(14, adj)* nTime2) / m_halfSwath;
    double cos_a = cos(euler[0]);
    double sin_a = sin(euler[0]);
    double cos_b = cos(euler[1]);
@@ -2077,18 +2437,18 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
                         + attCorr[8] * cameraLookZ;
 
    // Invert the boresight correction
-   double correctedLookX = _data.m_MountingMatrix[0] * adjustedLookX
-                         + _data.m_MountingMatrix[3] * adjustedLookY
-                         + _data.m_MountingMatrix[6] * adjustedLookZ;
-   double correctedLookY = _data.m_MountingMatrix[1] * adjustedLookX
-                         + _data.m_MountingMatrix[4] * adjustedLookY
-                         + _data.m_MountingMatrix[7] * adjustedLookZ;
-   double correctedLookZ = _data.m_MountingMatrix[2] * adjustedLookX
-                         + _data.m_MountingMatrix[5] * adjustedLookY
-                         + _data.m_MountingMatrix[8] * adjustedLookZ;
+   double correctedLookX = m_mountingMatrix[0] * adjustedLookX
+                         + m_mountingMatrix[3] * adjustedLookY
+                         + m_mountingMatrix[6] * adjustedLookZ;
+   double correctedLookY = m_mountingMatrix[1] * adjustedLookX
+                         + m_mountingMatrix[4] * adjustedLookY
+                         + m_mountingMatrix[7] * adjustedLookZ;
+   double correctedLookZ = m_mountingMatrix[2] * adjustedLookX
+                         + m_mountingMatrix[5] * adjustedLookY
+                         + m_mountingMatrix[8] * adjustedLookZ;
 
    // Convert to focal plane coordinate
-   double lookScale = _data.m_Focal / correctedLookZ;
+   double lookScale = m_focal / correctedLookZ;
    double focalX = correctedLookX * lookScale;
    double focalY = correctedLookY * lookScale;
 
@@ -2098,18 +2458,18 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    // sometimes only well behaved close to the CCD.
 
    // Convert to detector line and sample
-   double detectorLine = _data.m_ITransL[0]
-                       + _data.m_ITransL[1] * focalX
-                       + _data.m_ITransL[2] * focalY;
-   double detectorSample = _data.m_ITransS[0]
-                         + _data.m_ITransS[1] * focalX
-                         + _data.m_ITransS[2] * focalY;
+   double detectorLine = m_iTransL[0]
+                       + m_iTransL[1] * focalX
+                       + m_iTransL[2] * focalY;
+   double detectorSample = m_iTransS[0]
+                         + m_iTransS[1] * focalX
+                         + m_iTransS[2] * focalY;
 
    // Convert to image sample line
-   double line = detectorLine + _data.m_DetectorLineOrigin - _data.m_DetectorLineOffset
-               - _data.m_OffsetLines + 0.5;
-   double sample = (detectorSample + _data.m_DetectorSampleOrigin - _data.m_StartingSample)
-                 / _data.m_DetectorSampleSumming - _data.m_OffsetSamples + 0.5;
+   double line = detectorLine + m_detectorLineOrigin - m_detectorLineOffset
+               - m_offsetLines + 0.5;
+   double sample = (detectorSample + m_detectorSampleOrigin - m_startingSample)
+                 / m_detectorSampleSumming - m_offsetSamples + 0.5;
    return csm::ImageCoord(line, sample);
 }
 
@@ -2128,8 +2488,8 @@ void UsgsAstroLsSensorModel::computeLinearApproximation(
 
       // Since this is valid only over image,
       // don't let result go beyond the image border.
-      double numRows = _data.m_TotalLines;
-      double numCols = _data.m_TotalSamples;
+      double numRows = m_totalLines;
+      double numCols = m_totalSamples;
       if (ip.line < 0.0)     ip.line = 0.0;
       if (ip.line > numRows) ip.line = numRows;
 
@@ -2138,8 +2498,8 @@ void UsgsAstroLsSensorModel::computeLinearApproximation(
    }
    else
    {
-      ip.line = _data.m_TotalLines / 2.0;
-      ip.samp = _data.m_TotalSamples / 2.0;
+      ip.line = m_totalLines / 2.0;
+      ip.samp = m_totalSamples / 2.0;
    }
 }
 
@@ -2164,8 +2524,8 @@ void UsgsAstroLsSensorModel::setLinearApproximation()
    }
 
 
-   double numRows = _data.m_TotalLines;
-   double numCols = _data.m_TotalSamples;
+   double numRows = m_totalLines;
+   double numCols = m_totalSamples;
 
    csm::ImageCoord imagePt;
    csm::EcefCoord  gp[8];
@@ -2278,4 +2638,137 @@ double UsgsAstroLsSensorModel::determinant3x3(double mat[9]) const
       mat[0] * (mat[4] * mat[8] - mat[7] * mat[5]) -
       mat[1] * (mat[3] * mat[8] - mat[6] * mat[5]) +
       mat[2] * (mat[3] * mat[7] - mat[6] * mat[4]);
+}
+
+
+
+
+std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imageSupportData, csm::WarningList *warnings) const
+{
+   // Instantiate UsgsAstroLineScanner sensor model
+   json isd = json::parse(imageSupportData);
+   json state;
+
+   int num_params = NUM_PARAMETERS;
+
+   state["m_imageIdentifier"] = "UNKNOWN";
+   state["m_sensorType"] = "LINE_SCAN";
+   state["m_totalLines"] = isd.at("image_lines");
+   state["m_totalSamples"] = isd.at("image_samples");
+   state["m_offsetLines"] = 0.0;
+   state["m_offsetSamples"] = 0.0;
+   state["m_platformFlag"] = 1;
+   state["m_aberrFlag"] = 0;
+   state["m_atmRefFlag"] = 0;
+   state["m_centerEphemerisTime"] = isd.at("center_ephemeris_time");
+   state["m_startingEphemerisTime"] = isd.at("starting_ephemeris_time");
+
+   for (auto& scanRate : isd.at("line_scan_rate")) {
+     state["m_intTimeLines"].push_back(scanRate[0]);
+     state["m_intTimeStartTimes"].push_back(scanRate[1]);
+     state["m_intTimes"].push_back(scanRate[2]);
+   }
+
+   state["m_detectorSampleSumming"] = isd.at("detector_sample_summing");
+   state["m_startingSample"] = isd.at("detector_line_summing");
+   state["m_ikCode"] = 0;
+   state["m_focal"] = isd.at("focal_length_model").at("focal_length");
+   state["m_isisZDirection"] = 1;
+   state["m_opticalDistCoef"] = isd.at("optical_distortion").at("radial").at("coefficients");
+   state["m_iTransS"] = isd.at("focal2pixel_samples");
+   state["m_iTransL"] = isd.at("focal2pixel_lines");
+
+   state["m_detectorSampleOrigin"] = isd.at("detector_center").at("sample");
+   state["m_detectorLineOrigin"] = isd.at("detector_center").at("line");
+   state["m_detectorLineOffset"] = 0;
+
+   double cos_a = cos(0);
+   double sin_a = sin(0);
+   double cos_b = cos(0);
+   double sin_b = sin(0);
+   double cos_c = cos(0);
+   double sin_c = sin(0);
+
+   state["m_mountingMatrix"] = json::array();
+   state["m_mountingMatrix"][0] = cos_b * cos_c;
+   state["m_mountingMatrix"][1] = -cos_a * sin_c + sin_a * sin_b * cos_c;
+   state["m_mountingMatrix"][2] = sin_a * sin_c + cos_a * sin_b * cos_c;
+   state["m_mountingMatrix"][3] = cos_b * sin_c;
+   state["m_mountingMatrix"][4] = cos_a * cos_c + sin_a * sin_b * sin_c;
+   state["m_mountingMatrix"][5] = -sin_a * cos_c + cos_a * sin_b * sin_c;
+   state["m_mountingMatrix"][6] = -sin_b;
+   state["m_mountingMatrix"][7] = sin_a * cos_b;
+   state["m_mountingMatrix"][8] = cos_a * cos_b;
+
+   state["m_dtEphem"] = isd.at("dt_ephemeris");
+   state["m_t0Ephem"] = isd.at("t0_ephemeris");
+   state["m_dtQuat"] =  isd.at("dt_quaternion");
+   state["m_t0Quat"] =  isd.at("t0_quaternion");
+
+   state["m_numEphem"] = isd.at("sensor_position").at("positions").size();
+   state["m_numQuaternions"] = isd.at("sensor_orientation").at("quaternions").size();
+
+   for (auto& location : isd.at("sensor_position").at("positions")) {
+     state["m_ephemPts"].push_back(location[0]);
+     state["m_ephemPts"].push_back(location[1]);
+     state["m_ephemPts"].push_back(location[2]);
+   }
+
+   for (auto& velocity : isd.at("sensor_position").at("velocities")) {
+     state["m_ephemRates"].push_back(velocity[0]);
+     state["m_ephemRates"].push_back(velocity[1]);
+     state["m_ephemRates"].push_back(velocity[2]);
+   }
+
+   for (auto& quaternion : isd.at("sensor_orientation").at("quaternions")) {
+     state["m_quaternions"].push_back(quaternion[0]);
+     state["m_quaternions"].push_back(quaternion[1]);
+     state["m_quaternions"].push_back(quaternion[2]);
+     state["m_quaternions"].push_back(quaternion[3]);
+    }
+
+
+   state["m_parameterVals"] = std::vector<double>(NUM_PARAMETERS, 0.0);
+   state["m_parameterVals"][15] = state["m_focal"].get<double>();
+
+   // Set the ellipsoid
+   state["m_semiMajorAxis"] = isd.at("radii").at("semimajor");
+   state["m_semiMinorAxis"] = isd.at("radii").at("semiminor");
+
+   // Now finish setting the state data from the ISD read in
+
+   // set identifiers
+   state["m_referenceDateAndTime"] = "UNKNOWN";
+   state["m_platformIdentifier"]   = isd.at("name_platform");
+   state["m_sensorIdentifier"]     = isd.at("name_sensor");
+   state["m_trajectoryIdentifier"] = "UNKNOWN";
+   state["m_collectionIdentifier"] = "UNKNOWN";
+
+   // Ground elevations
+   state["m_refElevation"] = 0.0;
+   state["m_minElevation"] = isd.at("reference_height").at("minheight");
+   state["m_maxElevation"] = isd.at("reference_height").at("maxheight");
+
+   // Zero ateter values
+   for (int i = 0; i < NUM_PARAMETERS; i++) {
+      state["m_ateterType"][i] = csm::param::REAL;
+   }
+
+   // Default to identity covariance
+   state["m_covariance"] =
+         std::vector<double>(NUM_PARAMETERS * NUM_PARAMETERS, 0.0);
+   for (int i = 0; i < NUM_PARAMETERS; i++) {
+     state["m_covariance"][i * NUM_PARAMETERS + i] = 1.0;
+   }
+
+   // Zero computed state values
+   state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
+   state["m_gsd"] = 1.0;
+   state["m_flyingHeight"] = 1000.0;
+   state["m_halfSwath"] = 1000.0;
+   state["m_halfTime"] = 10.0;
+   state["m_imageFlipFlag"] = 0;
+   // The state data will still be updated when a sensor model is created since
+   // some state data is notin the ISD and requires a SM to compute them.
+   return state.dump();
 }
