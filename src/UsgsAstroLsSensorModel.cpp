@@ -2452,10 +2452,47 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double focalX = correctedLookX * lookScale;
    double focalY = correctedLookY * lookScale;
 
-   // TODO invert distortion here
-   // We probably only want to try and invert the distortion if we are
-   // reasonably close to the actual CCD because the distortion equations are
-   // sometimes only well behaved close to the CCD.
+   // Invert distortion
+   if (m_opticalDistCoef[0] != 0.0 ||
+      m_opticalDistCoef[1] != 0.0 ||
+      m_opticalDistCoef[2] != 0.0)
+    {
+      double rp2 = (focalX * focalX) + (focalY * focalY);
+      double tolerance = 1.0E-6;
+      if (rp2 > tolerance) {
+        double rp = sqrt(rp2);
+        double drOverR = m_opticalDistCoef[0]
+                       + (rp2 * (m_opticalDistCoef[1] + (rp2 * m_opticalDistCoef[2])));
+        double r = rp + (drOverR * rp);
+        double r_prev, r2_prev;
+        int iteration = 0;
+        do {
+          // Don't get in an end-less loop.  This algorithm should
+          // converge quickly.  If not then we are probably way outside
+          // of the focal plane.  Just set the distorted position to the
+          // undistorted position. Also, make sure the focal plane is less
+          // than 1km, it is unreasonable for it to grow larger than that.
+          if (iteration >= 15 || r > 1E9) {
+            drOverR = 0.0;
+            break;
+          }
+
+          r_prev = r;
+          r2_prev = r * r;
+
+          // Compute new fractional distortion:
+          drOverR = m_opticalDistCoef[0]
+                  + (r2_prev * (m_opticalDistCoef[1] + (r2_prev * m_opticalDistCoef[2])));
+
+          r = rp + (drOverR * r_prev);  // Compute new estimate of r
+          iteration++;
+        }
+        while (fabs(r - r_prev) > tolerance);
+
+        focalX = focalX / (1.0 - drOverR);
+        focalY = focalY / (1.0 - drOverR);
+      }
+    }
 
    // Convert to detector line and sample
    double detectorLine = m_iTransL[0]
