@@ -1,12 +1,13 @@
 
 package:
   name: usgscsm
-  version: "0.1.0"
+  version: "1.0.0"
 
 source:
-  git_url: https://github.com/USGS-Astrogeology/CSM-CameraModel.git
+  url: https://github.com/USGS-Astrogeology/CSM-CameraModel/archive/1.0.0.zip
+  sha256: dd0894d0a6c370db0a0376bd4c7ea510f0b172a53b8216bba699c51a28f49c76
 build:
-  string: dev
+  number: 0
 
 requirements:
   build:
