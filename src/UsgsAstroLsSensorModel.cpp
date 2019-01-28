@@ -525,6 +525,8 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    // converge significantly faster, but it can be slower than simple bisection
    // in some situations.
 
+   std::cerr << std::setprecision(15) << "--== Starting Ground to Image! ==--" << std::endl;
+
    // Start bisection search on the image lines
    double sampCtr = m_totalSamples / 2.0;
    double firstTime = getImageTime(csm::ImageCoord(0.0, sampCtr));
@@ -561,11 +563,22 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    // Increase the precision by a small amount to ensure the desired precision is met
    double pixelPrec = desired_precision / approxLineRes * 0.9;
 
+   std::cerr << std::setprecision(15)<< "Starting Bisection Search!" << std::endl;
+
    // Start bisection search for zero
    for (int it = 0; it < 30; it++) {
+      std::cerr << std::setprecision(15) << std::endl  << "Starting Iteration " << it+1 << std::endl;
       double nextTime = ((firstTime * lastOffset) - (lastTime * firstOffset))
                       / (lastOffset - firstOffset);
       double nextOffset = computeViewingPixel(nextTime, ground_pt, adj).line - 0.5;
+
+      std::cerr << std::setprecision(15) << "First time:" << firstTime << std::endl;
+      std::cerr << std::setprecision(15) << "Last time:" << lastTime << std::endl;
+      std::cerr << std::setprecision(15) << "Next time " << nextTime << std::endl;
+      std::cerr << std::setprecision(15) << "First offset:" << firstOffset << std::endl;
+      std::cerr << std::setprecision(15) << "Last offset:" << lastOffset << std::endl;
+      std::cerr << std::setprecision(15) << "Next offset " << nextOffset << std::endl;
+
       // We're looking for a zero, so check that either firstLine and middleLine have
       // opposite signs, or middleLine and lastLine have opposite signs.
       if ((firstOffset > 0) == (nextOffset < 0)) {
@@ -580,6 +593,11 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
          break;
       }
    }
+
+   std::cerr << std::setprecision(15) << "Final First time:" << firstTime << std::endl;
+   std::cerr << std::setprecision(15) << "Final Last time:" << lastTime << std::endl;
+   std::cerr << std::setprecision(15) << "Final First offset:" << firstOffset << std::endl;
+   std::cerr << std::setprecision(15) << "Final Last offset:" << lastOffset << std::endl;
 
    // Check that the desired precision was met
 
@@ -598,6 +616,11 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
                          + (computedTime - m_intTimeStartTimes[referenceIndex])
                          / m_intTimes[referenceIndex];
    csm::EcefCoord calculatedPoint = imageToGround(calculatedPixel, m_refElevation);
+   std::cerr << std::setprecision(15) << "Ground to Image completed!" << std::endl;
+
+   std::cerr << std::setprecision(15) << "Computed Image Point: (" << calculatedPixel.line << ", " << calculatedPixel.samp << ")" << std::endl;
+   std::cerr << std::setprecision(15) << "Input Ground Point: (" << ground_pt.x << ", " << ground_pt.y << ", " << ground_pt.z << ")" << std::endl;
+   std::cerr << std::setprecision(15) << "Computed Ground Point: (" << calculatedPoint.x << ", " << calculatedPoint.y << ", " << calculatedPoint.z << ")" << std::endl;
    double dx = ground_pt.x - calculatedPoint.x;
    double dy = ground_pt.y - calculatedPoint.y;
    double dz = ground_pt.z - calculatedPoint.z;
@@ -1682,14 +1705,18 @@ void UsgsAstroLsSensorModel::losToEcf(
    //  Computes image ray in ecf coordinate system.
 
    // Compute adjusted sensor position and velocity
+   std::cerr << std::endl << std::setprecision(15) << "Computing LOS at pixel (" << line << ", " << sample << ")" << std::endl;
 
    double time = getImageTime(csm::ImageCoord(line, sample));
+   std::cerr << std::setprecision(15) << "Image time " << time << std::endl;
    getAdjSensorPosVel(time, adj, xc, yc, zc, vx, vy, vz);
+   std::cerr << std::setprecision(15) << "Sensor position (" << xc << ", " << yc << ", " << zc << ")" << std::endl;
+   std::cerr << std::setprecision(15) << "Sensor velocity (" << vx << ", " << vy << ", " << vz << ")" << std::endl;
    // CSM image image convention: UL pixel center == (0.5, 0.5)
    // USGS image convention: UL pixel center == (1.0, 1.0)
    double sampleCSMFull = sample + m_offsetSamples;
-   double sampleUSGSFull = sampleCSMFull + 0.5;
-   double fractionalLine = line - floor(line) - 0.5;
+   double sampleUSGSFull = sampleCSMFull;
+   double fractionalLine = line - floor(line);
 
    // Compute distorted image coordinates in mm
 
@@ -1709,6 +1736,9 @@ void UsgsAstroLsSensorModel::losToEcf(
    double p22 = m22 / determinant;
    double isisNatFocalPlaneX = p11 * t1 + p12 * t2;
    double isisNatFocalPlaneY = p21 * t1 + p22 * t2;
+
+   std::cerr << std::setprecision(15) << "Detector pixel (" << fractionalLine << ", " << isisDetSample << ")" << std::endl;
+   std::cerr << std::setprecision(15) << "Focal coordinate (" << isisNatFocalPlaneX << ", " << isisNatFocalPlaneY << ")" << std::endl;
 
    // Remove lens distortion
    double isisFocalPlaneX = isisNatFocalPlaneX;
@@ -1829,6 +1859,8 @@ void UsgsAstroLsSensorModel::losToEcf(
       + ecfFromPl[5] * losPl[2];
    zl = ecfFromPl[6] * losPl[0] + ecfFromPl[7] * losPl[1]
       + ecfFromPl[8] * losPl[2];
+
+   std::cerr << std::setprecision(15) << "Look vector (" << xl << ", " << yl << ", " << zl << ")" << std::endl;
 }
 
 
@@ -2353,6 +2385,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    const csm::EcefCoord& groundPoint,
    const std::vector<double>& adj) const
 {
+   std::cerr << std::endl << std::setprecision(15) << "Computing viewing CCD pixel for ground point (" << groundPoint.x << ", " << groundPoint.y << ", " << groundPoint.z << ") at image time " << time << std::endl;
    // Get the exterior orientation
    double xc, yc, zc, vx, vy, vz;
    getAdjSensorPosVel(time, adj, xc, yc, zc, vx, vy, vz);
@@ -2457,21 +2490,24 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
       m_opticalDistCoef[1] != 0.0 ||
       m_opticalDistCoef[2] != 0.0)
     {
+
+      std::cerr << std::setprecision(15) << "inverting distortion" << std::endl;
+      std::cerr << std::setprecision(15) << "distorted focal coordinate (" << focalX << ", " << focalY << ")" << std::endl;
       double rp2 = (focalX * focalX) + (focalY * focalY);
+      std::cerr << std::setprecision(15) << "distorted focal radius squared " << rp2 << std::endl;
       double tolerance = 1.0E-6;
       if (rp2 > tolerance) {
         double rp = sqrt(rp2);
+        std::cerr << std::setprecision(15) << "distorted focal radius " << rp << std::endl;
         double drOverR = m_opticalDistCoef[0]
                        + (rp2 * (m_opticalDistCoef[1] + (rp2 * m_opticalDistCoef[2])));
+        std::cerr << std::setprecision(15) << "first estimated fractional distortion " << drOverR << std::endl;
         double r = rp + (drOverR * rp);
+        std::cerr << std::setprecision(15) << "first undistorted focal radius estimate " << rp << std::endl;
         double r_prev, r2_prev;
         int iteration = 0;
         do {
-          // Don't get in an end-less loop.  This algorithm should
-          // converge quickly.  If not then we are probably way outside
-          // of the focal plane.  Just set the distorted position to the
-          // undistorted position. Also, make sure the focal plane is less
-          // than 1km, it is unreasonable for it to grow larger than that.
+          std::cerr << std::setprecision(15) << "Starting iteration " << iteration+1 << std::endl;
           if (iteration >= 15 || r > 1E9) {
             drOverR = 0.0;
             break;
@@ -2483,14 +2519,21 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
           // Compute new fractional distortion:
           drOverR = m_opticalDistCoef[0]
                   + (r2_prev * (m_opticalDistCoef[1] + (r2_prev * m_opticalDistCoef[2])));
+          std::cerr << std::setprecision(15) << "estimated fractional distortion " << drOverR << std::endl;
 
-          r = rp + (drOverR * r_prev);  // Compute new estimate of r
+          // Compute new estimate of r
+          r = rp + (drOverR * r_prev);
+          std::cerr << std::setprecision(15) << "undistorted focal radius estimate " << rp << std::endl;
           iteration++;
         }
         while (fabs(r - r_prev) > tolerance);
 
+        std::cerr << std::setprecision(15) << "final estimated fractional distortion " << drOverR << std::endl;
+
         focalX = focalX / (1.0 - drOverR);
         focalY = focalY / (1.0 - drOverR);
+
+        std::cerr << std::setprecision(15) << "undistorted focal coordinate (" << focalX << ", " << focalY << ")" << std::endl;
       }
     }
 
@@ -2502,11 +2545,15 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
                          + m_iTransS[1] * focalX
                          + m_iTransS[2] * focalY;
 
+   std::cerr << std::setprecision(15) << "Centered detector coordinate (" << detectorLine << ", " << detectorSample << ")" << std::endl;
+
    // Convert to image sample line
    double line = detectorLine + m_detectorLineOrigin - m_detectorLineOffset
-               - m_offsetLines + 0.5;
-   double sample = (detectorSample + m_detectorSampleOrigin - m_startingSample)
-                 / m_detectorSampleSumming - m_offsetSamples + 0.5;
+               - m_offsetLines;
+   double sample = (detectorSample + m_detectorSampleOrigin - m_startingSample + 1.0)
+                 / m_detectorSampleSumming - m_offsetSamples;
+
+   std::cerr << std::setprecision(15) << "Detector coordinate (" << line << ", " << sample << ")" << std::endl;
    return csm::ImageCoord(line, sample);
 }
 
