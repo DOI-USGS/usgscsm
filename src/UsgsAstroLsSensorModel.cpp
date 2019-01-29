@@ -2472,6 +2472,11 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
         double r_prev, r2_prev;
         int iteration = 0;
         do {
+          // Don't get in an end-less loop.  This algorithm should
+          // converge quickly.  If not then we are probably way outside
+          // of the focal plane.  Just set the distorted position to the
+          // undistorted position. Also, make sure the focal plane is less
+          // than 1km, it is unreasonable for it to grow larger than that.
           if (iteration >= 15 || r > 1E9) {
             drOverR = 0.0;
             break;
