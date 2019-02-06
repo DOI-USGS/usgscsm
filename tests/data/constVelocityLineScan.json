@@ -3,15 +3,15 @@
   "name_platform" : "TEST_PLATFORM",
   "name_sensor" : "TEST_SENSOR",
   "center_ephemeris_time": 1000.0,
-  "starting_ephemeris_time": 992.0,
+  "starting_ephemeris_time": 999.2,
   "line_scan_rate": [
-    [0.5, 992.0, 0.1]
+    [0.5, -0.8, 0.1]
   ],
   "detector_sample_summing": 1,
   "detector_line_summing": 1,
-  "t0_ephemeris": -8.0,
+  "t0_ephemeris": -0.8,
   "dt_ephemeris": 0.2,
-  "t0_quaternion": -8.0,
+  "t0_quaternion": -0.8,
   "dt_quaternion": 0.2,
   "focal2pixel_lines": [0.0, 10.0, 0.0],
   "focal2pixel_samples": [0.0, 0.0, 10.0],
@@ -23,7 +23,7 @@
   "image_samples": 16,
   "detector_center" : {
     "line" : 0.5,
-    "sample" : 7.5
+    "sample" : 8.0
   },
   "interpolation_method": "lagrange",
   "optical_distortion": {
