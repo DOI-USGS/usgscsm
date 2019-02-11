@@ -6,10 +6,10 @@
 
 // NOTE: The imagePt format is (Lines,Samples)
 
-INSTANTIATE_TEST_CASE_P(JacobianTest,FramerParameterizedTest,
+INSTANTIATE_TEST_CASE_P(JacobianTest,ImageCoordParameterizedTest,
                         ::testing::Values(csm::ImageCoord(2.5,2.5),csm::ImageCoord(7.5,7.5)));
 
-TEST_P(FramerParameterizedTest, JacobianTest) {
+TEST_P(ImageCoordParameterizedTest, JacobianTest) {
    std::vector<double> odtX = {1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0};
    std::vector<double> odtY = {0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0};
 
@@ -22,7 +22,7 @@ TEST_P(FramerParameterizedTest, JacobianTest) {
    EXPECT_GT(determinant,1e-3);
 }
 
-TEST_F(FrameSensorModel, Jacobian1) {
+TEST(Transverse, Jacobian1) {
   csm::ImageCoord imagePt(7.5, 7.5);
 
   std::vector<double> odtX = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0};
@@ -37,7 +37,7 @@ TEST_F(FrameSensorModel, Jacobian1) {
   EXPECT_NEAR(Jyy,281.25,1e-8);
 }
 
-TEST_F(FrameSensorModel, distortMe_AlternatingOnes) {
+TEST(Transverse, distortMe_AlternatingOnes) {
   csm::ImageCoord imagePt(7.5, 7.5);
 
   std::vector<double> odtX = {1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0};
@@ -50,7 +50,7 @@ TEST_F(FrameSensorModel, distortMe_AlternatingOnes) {
   EXPECT_NEAR(dy,963.75,1e-8);
 }
 
-TEST_F(FrameSensorModel, distortMe_AllCoefficientsOne) {
+TEST(Transverse,  distortMe_AllCoefficientsOne) {
   csm::ImageCoord imagePt(7.5, 7.5);
 
   std::vector<double> odtX = {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
