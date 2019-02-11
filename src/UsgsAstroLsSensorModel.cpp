@@ -1666,6 +1666,152 @@ double UsgsAstroLsSensorModel::getValue(
    return m_parameterVals[index] + adjustments[index];
 }
 
+
+//***************************************************************************
+// Functions pulled out of losToEcf
+// **************************************************************************
+
+// CSM image image convention: UL pixel center == (0.5, 0.5)
+// USGS image convention: UL pixel center == (1.0, 1.0)
+void UsgsAstroLsSensorModel::convertToUSGSCoordinates(const double& csmLine, const double& csmSample, double &usgsLine, double &usgsSample) const{
+  // apply the offset
+  double sampleCSMFull = csmSample + m_offsetSamples;
+  double sampleUSGSFull = sampleCSMFull + 0.5;
+  // why don't we apply a line offset? 
+  double fractionalLine = csmLine - floor(csmLine) - 0.5;
+
+  usgsSample = sampleUSGSFull;
+  usgsLine = fractionalLine; 
+}
+
+
+// Compute distorted focalPlane coordinates in mm
+void UsgsAstroLsSensorModel::computeDistortedFocalPlaneCoordinates(const double& lineUSGS, const double& sampleUSGS, double &distortedLine, double& distortedSample) const{
+  double isisDetSample = (sampleUSGS - 1.0)
+      * m_detectorSampleSumming + m_startingSample;
+  double m11 = m_iTransL[1];
+  double m12 = m_iTransL[2];
+  double m21 = m_iTransS[1];
+  double m22 = m_iTransS[2];
+  double t1 = lineUSGS + m_detectorLineOffset
+               - m_detectorLineOrigin - m_iTransL[0];
+  double t2 = isisDetSample - m_detectorSampleOrigin - m_iTransS[0];
+  double determinant = m11 * m22 - m12 * m21;
+  double p11 = m11 / determinant;
+  double p12 = -m12 / determinant;
+  double p21 = -m21 / determinant;
+  double p22 = m22 / determinant;
+  double isisNatFocalPlaneX = p11 * t1 + p12 * t2;
+  double isisNatFocalPlaneY = p21 * t1 + p22 * t2;
+  distortedLine = isisNatFocalPlaneX; 
+  distortedSample = isisNatFocalPlaneY; 
+}
+
+// Compute un-distorted image coordinates in mm / apply lens distortion correction
+void UsgsAstroLsSensorModel::computeUndistortedFocalPlaneCoordinates(const double &distortedFocalPlaneX, const double& distortedFocalPlaneY, double& undistortedFocalPlaneX, double& undistortedFocalPlaneY) const{
+  undistortedFocalPlaneX = distortedFocalPlaneX;
+  undistortedFocalPlaneY = distortedFocalPlaneY;
+ if (m_opticalDistCoef[0] != 0.0 ||
+    m_opticalDistCoef[1] != 0.0 ||
+    m_opticalDistCoef[2] != 0.0)
+  {
+     double rr = distortedFocalPlaneX * distortedFocalPlaneX
+        + distortedFocalPlaneY * distortedFocalPlaneY;
+     if (rr > 1.0E-6)
+     {
+        double dr = m_opticalDistCoef[0] + (rr * (m_opticalDistCoef[1]
+           + rr * m_opticalDistCoef[2]));
+        undistortedFocalPlaneX = distortedFocalPlaneX * (1.0 - dr);
+        undistortedFocalPlaneY = distortedFocalPlaneY * (1.0 - dr);
+     }
+  }
+};
+
+
+// Define imaging ray in image space (In other words, create a look vector in camera space)
+void UsgsAstroLsSensorModel::createCameraLookVector(double& undistortedFocalPlaneX, double& undistortedFocalPlaneY,  const std::vector<double>& adj, double losIsis[]) const{
+   losIsis[0] = -undistortedFocalPlaneX * m_isisZDirection;
+   losIsis[1] = -undistortedFocalPlaneY * m_isisZDirection;
+   losIsis[2] = -m_focal * (1.0 - getValue(15, adj) / m_halfSwath);
+   double isisMag = sqrt(losIsis[0] * losIsis[0]
+      + losIsis[1] * losIsis[1]
+      + losIsis[2] * losIsis[2]);
+   losIsis[0] /= isisMag;
+   losIsis[1] /= isisMag;
+   losIsis[2] /= isisMag;
+};
+
+
+// Given a time and a flag to indicate whether the a->b or b->a rotation should be calculated
+// uses the quaternions in the m_quaternions member to calclate a rotation matrix. 
+void UsgsAstroLsSensorModel::calculateRotationMatrixFromQuaternions(double time, bool invert, double rotationMatrix[9]) const {
+  int nOrder = 8;
+  if (m_platformFlag == 0)
+     nOrder = 4;
+  int nOrderQuat = nOrder;
+  if (m_numQuaternions < 6 && nOrder == 8)
+     nOrderQuat = 4;
+  double q[4];
+  lagrangeInterp(
+     m_numQuaternions, &m_quaternions[0], m_t0Quat, m_dtQuat,
+     time, 4, nOrderQuat, q);
+  double norm = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+
+  if (!invert) {
+    q[0] /= norm; 
+    q[1] /= norm;
+    q[2] /= norm;
+    q[3] /= norm;
+  }
+  else {
+    q[0] /= -norm; 
+    q[1] /= -norm;
+    q[2] /= -norm;
+    q[3] /= norm;
+  }
+
+  rotationMatrix[0] = q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
+  rotationMatrix[1] = 2 * (q[0] * q[1] - q[2] * q[3]);
+  rotationMatrix[2] = 2 * (q[0] * q[2] + q[1] * q[3]);
+  rotationMatrix[3] = 2 * (q[0] * q[1] + q[2] * q[3]);
+  rotationMatrix[4] = -q[0] * q[0] + q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
+  rotationMatrix[5] = 2 * (q[1] * q[2] - q[0] * q[3]);
+  rotationMatrix[6] = 2 * (q[0] * q[2] - q[1] * q[3]);
+  rotationMatrix[7] = 2 * (q[1] * q[2] + q[0] * q[3]);
+  rotationMatrix[8] = -q[0] * q[0] - q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
+};
+
+
+void UsgsAstroLsSensorModel::calculateAttitudeCorrection(double time, const std::vector<double>& adj, double attCorr[9]) const {
+  double aTime = time - m_t0Quat;
+    double euler[3];
+    double nTime = aTime / m_halfTime;
+    double nTime2 = nTime * nTime;
+    euler[0] =
+       (getValue(6, adj) + getValue(9, adj)* nTime + getValue(12, adj)* nTime2) / m_flyingHeight;
+    euler[1] =
+       (getValue(7, adj) + getValue(10, adj)* nTime + getValue(13, adj)* nTime2) / m_flyingHeight;
+    euler[2] =
+       (getValue(8, adj) + getValue(11, adj)* nTime + getValue(14, adj)* nTime2) / m_halfSwath;
+    double cos_a = cos(euler[0]);
+    double sin_a = sin(euler[0]);
+    double cos_b = cos(euler[1]);
+    double sin_b = sin(euler[1]);
+    double cos_c = cos(euler[2]);
+    double sin_c = sin(euler[2]);
+
+    attCorr[0] = cos_b * cos_c;
+    attCorr[1] = -cos_a * sin_c + sin_a * sin_b * cos_c;
+    attCorr[2] = sin_a * sin_c + cos_a * sin_b * cos_c;
+    attCorr[3] = cos_b * sin_c;
+    attCorr[4] = cos_a * cos_c + sin_a * sin_b * sin_c;
+    attCorr[5] = -sin_a * cos_c + cos_a * sin_b * sin_c;
+    attCorr[6] = -sin_b;
+    attCorr[7] = sin_a * cos_b;
+    attCorr[8] = cos_a * cos_b;
+}
+
+
 //***************************************************************************
 // UsgsAstroLsSensorModel::losToEcf
 //***************************************************************************
@@ -1679,12 +1825,13 @@ void UsgsAstroLsSensorModel::losToEcf(
    double&       vx,         // output sensor x velocity
    double&       vy,         // output sensor y velocity
    double&       vz,         // output sensor z velocity
-   double&       xl,         // output line-of-sight x coordinate
-   double&       yl,         // output line-of-sight y coordinate
-   double&       zl) const  // output line-of-sight z coordinate
+   double&       bodyLookX,         // output line-of-sight x coordinate
+   double&       bodyLookY,         // output line-of-sight y coordinate
+   double&       bodyLookZ) const  // output line-of-sight z coordinate
 {
    //# private_func_description
-   //  Computes image ray in ecf coordinate system.
+   //  Computes image ray (look vector) in ecf coordinate system.
+   // Compute adjusted sensor position and velocity
 
    double time = getImageTime(csm::ImageCoord(line, sample));
    getAdjSensorPosVel(time, adj, xc, yc, zc, vx, vy, vz);
@@ -1694,144 +1841,46 @@ void UsgsAstroLsSensorModel::losToEcf(
    double sampleUSGSFull = sampleCSMFull;
    double fractionalLine = line - floor(line);
 
-   // Compute distorted image coordinates in mm
-
-   double isisDetSample = (sampleUSGSFull - 1.0)
-      * m_detectorSampleSumming + m_startingSample;
-   double m11 = m_iTransL[1];
-   double m12 = m_iTransL[2];
-   double m21 = m_iTransS[1];
-   double m22 = m_iTransS[2];
-   double t1 = fractionalLine + m_detectorLineOffset
-               - m_detectorLineOrigin - m_iTransL[0];
-   double t2 = isisDetSample - m_detectorSampleOrigin - m_iTransS[0];
-   double determinant = m11 * m22 - m12 * m21;
-   double p11 = m11 / determinant;
-   double p12 = -m12 / determinant;
-   double p21 = -m21 / determinant;
-   double p22 = m22 / determinant;
-   double isisNatFocalPlaneX = p11 * t1 + p12 * t2;
-   double isisNatFocalPlaneY = p21 * t1 + p22 * t2;
+   // Compute distorted image coordinates in mm (sample, line on image (pixels) -> focal plane 
+   double isisNatFocalPlaneX, isisNatFocalPlaneY; 
+   computeDistortedFocalPlaneCoordinates(fractionalLine, sampleUSGSFull, isisNatFocalPlaneX, isisNatFocalPlaneY);
 
    // Remove lens distortion
-   double isisFocalPlaneX = isisNatFocalPlaneX;
-   double isisFocalPlaneY = isisNatFocalPlaneY;
-  if (m_opticalDistCoef[0] != 0.0 ||
-     m_opticalDistCoef[1] != 0.0 ||
-     m_opticalDistCoef[2] != 0.0)
-   {
-      double rr = isisNatFocalPlaneX * isisNatFocalPlaneX
-         + isisNatFocalPlaneY * isisNatFocalPlaneY;
-      if (rr > 1.0E-6)
-      {
-         double dr = m_opticalDistCoef[0] + (rr * (m_opticalDistCoef[1]
-            + rr * m_opticalDistCoef[2]));
-         isisFocalPlaneX = isisNatFocalPlaneX * (1.0 - dr);
-         isisFocalPlaneY = isisNatFocalPlaneY * (1.0 - dr);
-      }
-   }
-
-   // Define imaging ray in image space
-
+   double isisFocalPlaneX, isisFocalPlaneY; 
+   computeUndistortedFocalPlaneCoordinates(isisNatFocalPlaneX, isisNatFocalPlaneY, isisFocalPlaneX, isisFocalPlaneY);
+   
+  // Define imaging ray (look vector) in camera space
    double losIsis[3];
-   losIsis[0] = -isisFocalPlaneX * m_isisZDirection;
-   losIsis[1] = -isisFocalPlaneY * m_isisZDirection;
-   losIsis[2] = -m_focal * (1.0 - getValue(15, adj) / m_halfSwath);
-   double isisMag = sqrt(losIsis[0] * losIsis[0]
-      + losIsis[1] * losIsis[1]
-      + losIsis[2] * losIsis[2]);
-   losIsis[0] /= isisMag;
-   losIsis[1] /= isisMag;
-   losIsis[2] /= isisMag;
-
-   // Apply boresight correction
-
-   double losApl[3];
-   losApl[0] =
-      m_mountingMatrix[0] * losIsis[0]
-      + m_mountingMatrix[1] * losIsis[1]
-      + m_mountingMatrix[2] * losIsis[2];
-   losApl[1] =
-      m_mountingMatrix[3] * losIsis[0]
-      + m_mountingMatrix[4] * losIsis[1]
-      + m_mountingMatrix[5] * losIsis[2];
-   losApl[2] =
-      m_mountingMatrix[6] * losIsis[0]
-      + m_mountingMatrix[7] * losIsis[1]
-      + m_mountingMatrix[8] * losIsis[2];
+   createCameraLookVector(isisFocalPlaneX, isisFocalPlaneY, adj, losIsis);
 
    // Apply attitude correction
+   double attCorr[9];
+   calculateAttitudeCorrection(time, adj, attCorr); 
 
-   double aTime = time - m_t0Quat;
-   double euler[3];
-   double nTime = aTime / m_halfTime;
-   double nTime2 = nTime * nTime;
-   euler[0] =
-      (getValue(6, adj) + getValue(9, adj)* nTime + getValue(12, adj)* nTime2) / m_flyingHeight;
-   euler[1] =
-      (getValue(7, adj) + getValue(10, adj)* nTime + getValue(13, adj)* nTime2) / m_flyingHeight;
-   euler[2] =
-      (getValue(8, adj) + getValue(11, adj)* nTime + getValue(14, adj)* nTime2) / m_halfSwath;
-   double cos_a = cos(euler[0]);
-   double sin_a = sin(euler[0]);
-   double cos_b = cos(euler[1]);
-   double sin_b = sin(euler[1]);
-   double cos_c = cos(euler[2]);
-   double sin_c = sin(euler[2]);
-   double plFromApl[9];
-   plFromApl[0] = cos_b * cos_c;
-   plFromApl[1] = -cos_a * sin_c + sin_a * sin_b * cos_c;
-   plFromApl[2] = sin_a * sin_c + cos_a * sin_b * cos_c;
-   plFromApl[3] = cos_b * sin_c;
-   plFromApl[4] = cos_a * cos_c + sin_a * sin_b * sin_c;
-   plFromApl[5] = -sin_a * cos_c + cos_a * sin_b * sin_c;
-   plFromApl[6] = -sin_b;
-   plFromApl[7] = sin_a * cos_b;
-   plFromApl[8] = cos_a * cos_b;
+   double cameraLook[3];
+   cameraLook[0] = attCorr[0] * losIsis[0] 
+                 + attCorr[1] * losIsis[1]
+                 + attCorr[2] * losIsis[2];
+   cameraLook[1] = attCorr[3] * losIsis[0] 
+                 + attCorr[4] * losIsis[1]
+                 + attCorr[5] * losIsis[2];
+   cameraLook[2] = attCorr[6] * losIsis[0] 
+                 + attCorr[7] * losIsis[1]
+                 + attCorr[8] * losIsis[2];
 
-   double losPl[3];
-   losPl[0] = plFromApl[0] * losApl[0] + plFromApl[1] * losApl[1]
-      + plFromApl[2] * losApl[2];
-   losPl[1] = plFromApl[3] * losApl[0] + plFromApl[4] * losApl[1]
-      + plFromApl[5] * losApl[2];
-   losPl[2] = plFromApl[6] * losApl[0] + plFromApl[7] * losApl[1]
-      + plFromApl[8] * losApl[2];
+// Rotate the look vector into the body fixed frame from the camera reference frame by applying the rotation matrix from the sensor quaternions
+   double cameraToBody[9];
+   calculateRotationMatrixFromQuaternions(time, false, cameraToBody);
 
-   // Apply rotation matrix from sensor quaternions
-
-   int nOrder = 8;
-   if (m_platformFlag == 0)
-      nOrder = 4;
-   int nOrderQuat = nOrder;
-   if (m_numQuaternions < 6 && nOrder == 8)
-      nOrderQuat = 4;
-   double q[4];
-   lagrangeInterp(
-      m_numQuaternions, &m_quaternions[0], m_t0Quat, m_dtQuat,
-      time, 4, nOrderQuat, q);
-   double norm = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
-   q[0] /= norm;
-   q[1] /= norm;
-   q[2] /= norm;
-   q[3] /= norm;
-   double ecfFromPl[9];
-   ecfFromPl[0] = q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
-   ecfFromPl[1] = 2 * (q[0] * q[1] - q[2] * q[3]);
-   ecfFromPl[2] = 2 * (q[0] * q[2] + q[1] * q[3]);
-   ecfFromPl[3] = 2 * (q[0] * q[1] + q[2] * q[3]);
-   ecfFromPl[4] = -q[0] * q[0] + q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
-   ecfFromPl[5] = 2 * (q[1] * q[2] - q[0] * q[3]);
-   ecfFromPl[6] = 2 * (q[0] * q[2] - q[1] * q[3]);
-   ecfFromPl[7] = 2 * (q[1] * q[2] + q[0] * q[3]);
-   ecfFromPl[8] = -q[0] * q[0] - q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
-
-
-   xl = ecfFromPl[0] * losPl[0] + ecfFromPl[1] * losPl[1]
-      + ecfFromPl[2] * losPl[2];
-   yl = ecfFromPl[3] * losPl[0] + ecfFromPl[4] * losPl[1]
-      + ecfFromPl[5] * losPl[2];
-   zl = ecfFromPl[6] * losPl[0] + ecfFromPl[7] * losPl[1]
-      + ecfFromPl[8] * losPl[2];
+   bodyLookX = cameraToBody[0] * cameraLook[0] 
+             + cameraToBody[1] * cameraLook[1]
+             + cameraToBody[2] * cameraLook[2];
+   bodyLookY = cameraToBody[3] * cameraLook[0] 
+             + cameraToBody[4] * cameraLook[1]
+             + cameraToBody[5] * cameraLook[2];
+   bodyLookZ = cameraToBody[6] * cameraLook[0] 
+             + cameraToBody[7] * cameraLook[1]
+             + cameraToBody[8] * cameraLook[2];
 }
 
 

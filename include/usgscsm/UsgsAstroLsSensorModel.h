@@ -916,7 +916,23 @@ private:
       double* achievedPrecision = NULL,
       csm::WarningList* warnings = NULL) const;
 
-   // This method computes the imaging locus.
+   // methods pulled out of los2ecf
+
+void convertToUSGSCoordinates(const double& csmLine, const double& csmSample, double &usgsLine, double &usgsSample) const; 
+
+void computeDistortedFocalPlaneCoordinates(const double& lineUSGS, const double& sampleUSGS, double &distortedLine, double& distortedSample) const;
+
+void computeUndistortedFocalPlaneCoordinates(const double &isisNatFocalPlaneX, const double& isisNatFocalPlaneY, double& isisFocalPlaneX, double& isisFocalPlaneY) const; 
+
+void calculateRotationMatrixFromQuaternions(double time, bool invert, double cameraToBody[9]) const;
+
+// This method computes the imaging locus. // imaging locus : set of ground points associated with an image pixel.
+
+void createCameraLookVector(double& undistortedFocalPlaneX, double& undistortedFocalPlaneY,const std::vector<double>& adj,  double losIsis[]) const; 
+
+void calculateAttitudeCorrection(double time, const std::vector<double>& adj, double attCorr[9]) const; 
+
+// This method computes the imaging locus.
    void losToEcf(
       const double& line,       // CSM image convention
       const double& sample,     //    UL pixel center == (0.5, 0.5)
