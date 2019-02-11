@@ -614,9 +614,15 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    // If the final correction is greater than 10 meters,
    // the solution is not valid enough to report even with a warning
    if (len > 100.0) {
+      std::ostringstream msg;
+      msg << "Did not converge. Ground point: (" << ground_pt.x << ", "
+          << ground_pt.y << ", " << ground_pt.z << ") Computed image point: ("
+          << calculatedPixel.line << ", " << calculatedPixel.samp
+          << ") Computed ground point: (" << calculatedPoint.x << ", "
+          << calculatedPoint.y << ", " << calculatedPoint.z << ")";
       throw csm::Error(
          csm::Error::ALGORITHM,
-         "Did not converge.",
+         msg.str(),
          "UsgsAstroLsSensorModel::groundToImage");
    }
 
