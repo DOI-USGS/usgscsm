@@ -1,4 +1,5 @@
 #include "UsgsAstroFrameSensorModel.h"
+#include "Distortion.h"
 
 #include <iomanip>
 #include <iostream>
