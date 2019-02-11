@@ -1,4 +1,5 @@
 #include "UsgsAstroFrameSensorModel.h"
+#include "Distortion.h"
 
 #include <iomanip>
 #include <iostream>
@@ -130,7 +131,7 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
 
   // Apply the distortion to the line/sample location and then convert back to line/sample
   double distortedx, distortedy;
-  distortionFunction(undistortedx, undistortedy, distortedx, distortedy);
+  distortionFunction(undistortedx, undistortedy, distortedx, distortedy, m_odtX, m_odtY);
 
 
   // Convert distorted mm into line/sample
@@ -1234,17 +1235,17 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
   x = dx;
   y = dy;
 
-  distortionFunction(x, y, fx, fy);
+  distortionFunction(x, y, fx, fy, m_odtX, m_odtY);
 
 
   for (int count = 1; ((fabs(fx) +fabs(fy)) > tol) && (count < maxTries); count++) {
 
-    this->distortionFunction(x, y, fx, fy);
+    distortionFunction(x, y, fx, fy, m_odtX, m_odtY);
 
     fx = dx - fx;
     fy = dy - fy;
 
-    distortionJacobian(x, y, Jxx, Jxy, Jyx, Jyy);
+    distortionJacobian(x, y, Jxx, Jxy, Jyx, Jyy, m_odtX, m_odtY);
 
     double determinant = Jxx * Jyy - Jxy * Jyx;
     if (fabs(determinant) < 1E-6) {
@@ -1292,44 +1293,44 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
  * @param Jyx  Partial_yx
  * @param Jyy  Partial_yy
  */
-void UsgsAstroFrameSensorModel::distortionJacobian(double x, double y, double &Jxx, double &Jxy,
-                                            double &Jyx, double &Jyy) const {
-
-  double d_dx[10];
-  d_dx[0] = 0;
-  d_dx[1] = 1;
-  d_dx[2] = 0;
-  d_dx[3] = 2 * x;
-  d_dx[4] = y;
-  d_dx[5] = 0;
-  d_dx[6] = 3 * x * x;
-  d_dx[7] = 2 * x * y;
-  d_dx[8] = y * y;
-  d_dx[9] = 0;
-  double d_dy[10];
-  d_dy[0] = 0;
-  d_dy[1] = 0;
-  d_dy[2] = 1;
-  d_dy[3] = 0;
-  d_dy[4] = x;
-  d_dy[5] = 2 * y;
-  d_dy[6] = 0;
-  d_dy[7] = x * x;
-  d_dy[8] = 2 * x * y;
-  d_dy[9] = 3 * y * y;
-
-  Jxx = 0.0;
-  Jxy = 0.0;
-  Jyx = 0.0;
-  Jyy = 0.0;
-
-  for (int i = 0; i < 10; i++) {
-    Jxx = Jxx + d_dx[i] * m_odtX[i];
-    Jxy = Jxy + d_dy[i] * m_odtX[i];
-    Jyx = Jyx + d_dx[i] * m_odtY[i];
-    Jyy = Jyy + d_dy[i] * m_odtY[i];
-  }
-}
+// void UsgsAstroFrameSensorModel::distortionJacobian(double x, double y, double &Jxx, double &Jxy,
+//                                             double &Jyx, double &Jyy) const {
+//
+//   double d_dx[10];
+//   d_dx[0] = 0;
+//   d_dx[1] = 1;
+//   d_dx[2] = 0;
+//   d_dx[3] = 2 * x;
+//   d_dx[4] = y;
+//   d_dx[5] = 0;
+//   d_dx[6] = 3 * x * x;
+//   d_dx[7] = 2 * x * y;
+//   d_dx[8] = y * y;
+//   d_dx[9] = 0;
+//   double d_dy[10];
+//   d_dy[0] = 0;
+//   d_dy[1] = 0;
+//   d_dy[2] = 1;
+//   d_dy[3] = 0;
+//   d_dy[4] = x;
+//   d_dy[5] = 2 * y;
+//   d_dy[6] = 0;
+//   d_dy[7] = x * x;
+//   d_dy[8] = 2 * x * y;
+//   d_dy[9] = 3 * y * y;
+//
+//   Jxx = 0.0;
+//   Jxy = 0.0;
+//   Jyx = 0.0;
+//   Jyy = 0.0;
+//
+//   for (int i = 0; i < 10; i++) {
+//     Jxx = Jxx + d_dx[i] * m_odtX[i];
+//     Jxy = Jxy + d_dy[i] * m_odtX[i];
+//     Jyx = Jyx + d_dx[i] * m_odtY[i];
+//     Jyy = Jyy + d_dy[i] * m_odtY[i];
+//   }
+// }
 
 
 
@@ -1343,27 +1344,27 @@ void UsgsAstroFrameSensorModel::distortionJacobian(double x, double y, double &J
  * @param dx Result distorted x
  * @param dy Result distorted y
  */
-void UsgsAstroFrameSensorModel::distortionFunction(double ux, double uy, double &dx, double &dy) const {
-
-  double f[10];
-  f[0] = 1;
-  f[1] = ux;
-  f[2] = uy;
-  f[3] = ux * ux;
-  f[4] = ux * uy;
-  f[5] = uy * uy;
-  f[6] = ux * ux * ux;
-  f[7] = ux * ux * uy;
-  f[8] = ux * uy * uy;
-  f[9] = uy * uy * uy;
-
-  dx = 0.0;
-  dy = 0.0;
-  for (int i = 0; i < 10; i++) {
-    dx = dx + f[i] * m_odtX[i];
-    dy = dy + f[i] * m_odtY[i];
-  }
-}
+// void UsgsAstroFrameSensorModel::distortionFunction(double ux, double uy, double &dx, double &dy) const {
+//
+//   double f[10];
+//   f[0] = 1;
+//   f[1] = ux;
+//   f[2] = uy;
+//   f[3] = ux * ux;
+//   f[4] = ux * uy;
+//   f[5] = uy * uy;
+//   f[6] = ux * ux * ux;
+//   f[7] = ux * ux * uy;
+//   f[8] = ux * uy * uy;
+//   f[9] = uy * uy * uy;
+//
+//   dx = 0.0;
+//   dy = 0.0;
+//   for (int i = 0; i < 10; i++) {
+//     dx = dx + f[i] * m_odtX[i];
+//     dy = dy + f[i] * m_odtY[i];
+//   }
+// }
 
 /***** Helper Functions *****/
 
