@@ -932,7 +932,6 @@ private:
 
    void calculateRotationMatrixFromQuaternions(
        const double& time, 
-       const bool& invert, 
        double cameraToBody[9]) const;
 
    void calculateRotationMatrixFromEuler(

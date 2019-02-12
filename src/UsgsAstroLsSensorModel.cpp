@@ -1682,8 +1682,8 @@ void UsgsAstroLsSensorModel::computeUndistortedFocalPlaneCoordinates(const doubl
   undistortedFocalPlaneX = distortedFocalPlaneX;
   undistortedFocalPlaneY = distortedFocalPlaneY;
  if (m_opticalDistCoef[0] != 0.0 ||
-    m_opticalDistCoef[1] != 0.0 ||
-    m_opticalDistCoef[2] != 0.0)
+     m_opticalDistCoef[1] != 0.0 ||
+     m_opticalDistCoef[2] != 0.0)
   {
      double rr = distortedFocalPlaneX * distortedFocalPlaneX
         + distortedFocalPlaneY * distortedFocalPlaneY;
@@ -1714,7 +1714,7 @@ void UsgsAstroLsSensorModel::createCameraLookVector(const double& undistortedFoc
 
 // Given a time and a flag to indicate whether the a->b or b->a rotation should be calculated
 // uses the quaternions in the m_quaternions member to calclate a rotation matrix. 
-void UsgsAstroLsSensorModel::calculateRotationMatrixFromQuaternions(const double& time, const bool& invert, double rotationMatrix[9]) const {
+void UsgsAstroLsSensorModel::calculateRotationMatrixFromQuaternions(const double& time, double rotationMatrix[9]) const {
   int nOrder = 8;
   if (m_platformFlag == 0)
      nOrder = 4;
@@ -1726,19 +1726,10 @@ void UsgsAstroLsSensorModel::calculateRotationMatrixFromQuaternions(const double
      m_numQuaternions, &m_quaternions[0], m_t0Quat, m_dtQuat,
      time, 4, nOrderQuat, q);
   double norm = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
-
-  if (!invert) {
-    q[0] /= norm; 
-    q[1] /= norm;
-    q[2] /= norm;
-    q[3] /= norm;
-  }
-  else {
-    q[0] /= -norm; 
-    q[1] /= -norm;
-    q[2] /= -norm;
-    q[3] /= norm;
-  }
+  q[0] /= norm; 
+  q[1] /= norm;
+  q[2] /= norm;
+  q[3] /= norm;
 
   rotationMatrix[0] = q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
   rotationMatrix[1] = 2 * (q[0] * q[1] - q[2] * q[3]);
@@ -1846,7 +1837,7 @@ void UsgsAstroLsSensorModel::losToEcf(
 
 // Rotate the look vector into the body fixed frame from the camera reference frame by applying the rotation matrix from the sensor quaternions
    double cameraToBody[9];
-   calculateRotationMatrixFromQuaternions(time, false, cameraToBody);
+   calculateRotationMatrixFromQuaternions(time, cameraToBody);
 
    bodyLookX = cameraToBody[0] * correctedCameraLook[0] 
              + cameraToBody[1] * correctedCameraLook[1]
@@ -2396,22 +2387,24 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
 
    // Rotate the look vector into the camera reference frame
    double bodyToCamera[9];
-   calculateRotationMatrixFromQuaternions(time, true, bodyToCamera);
+   calculateRotationMatrixFromQuaternions(time, bodyToCamera);
 
+   // Apply transpose of matrix to rotate body->camera
    double cameraLookX = bodyToCamera[0] * bodyLookX
-                      + bodyToCamera[1] * bodyLookY
-                      + bodyToCamera[2] * bodyLookZ;
-   double cameraLookY = bodyToCamera[3] * bodyLookX
+                      + bodyToCamera[3] * bodyLookY
+                      + bodyToCamera[6] * bodyLookZ;
+   double cameraLookY = bodyToCamera[1] * bodyLookX
                       + bodyToCamera[4] * bodyLookY
-                      + bodyToCamera[5] * bodyLookZ;
-   double cameraLookZ = bodyToCamera[6] * bodyLookX
-                      + bodyToCamera[7] * bodyLookY
+                      + bodyToCamera[7] * bodyLookZ;
+   double cameraLookZ = bodyToCamera[2] * bodyLookX
+                      + bodyToCamera[5] * bodyLookY
                       + bodyToCamera[8] * bodyLookZ;
 
    // Invert the attitude correction
    double attCorr[9];
    calculateAttitudeCorrection(time, adj, attCorr);
 
+   // Apply transpose of matrix to invert the attidue correction
    double adjustedLookX = attCorr[0] * cameraLookX
                         + attCorr[3] * cameraLookY
                         + attCorr[6] * cameraLookZ;
