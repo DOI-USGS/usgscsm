@@ -82,7 +82,7 @@ public:
    double       m_startingSample;                 // 14
    int          m_ikCode;                         // 15
    double       m_focal;                          // 16
-   double       m_isisZDirection;                 // 17
+   double       m_zDirection;                     // 17
    double       m_opticalDistCoef[3];             // 18
    double       m_iTransS[3];                     // 19
    double       m_iTransL[3];                     // 20
@@ -916,38 +916,43 @@ private:
       double* achievedPrecision = NULL,
       csm::WarningList* warnings = NULL) const;
 
-   // methods pulled out of los2ecf
+   // methods pulled out of los2ecf and computeViewingPixel
 
    void computeDistortedFocalPlaneCoordinates(
-       const double& line, 
-       const double& sample, 
-       double& distortedLine, 
+       const double& line,
+       const double& sample,
+       double& distortedLine,
        double& distortedSample) const;
 
    void computeUndistortedFocalPlaneCoordinates(
-       const double& distortedFocalPlaneX, 
-       const double& distortedFocalPlaneY, 
-       double& undistortedFocalPlaneX, 
-       double& undistortedFocalPlaneY) const; 
+       const double& distortedFocalPlaneX,
+       const double& distortedFocalPlaneY,
+       double& undistortedFocalPlaneX,
+       double& undistortedFocalPlaneY) const;
 
    void calculateRotationMatrixFromQuaternions(
-       const double& time, 
+       const double& time,
        double cameraToBody[9]) const;
 
    void calculateRotationMatrixFromEuler(
-       double euler[], 
+       double euler[],
        double rotationMatrix[]) const;
 
    void createCameraLookVector(
-       const double& undistortedFocalPlaneX, 
+       const double& undistortedFocalPlaneX,
        const double& undistortedFocalPlaneY,
-       const std::vector<double>& adj,  
-       double cameraLook[]) const; 
+       const std::vector<double>& adj,
+       double cameraLook[]) const;
 
    void calculateAttitudeCorrection(
-       const double& time, 
-       const std::vector<double>& adj, 
-       double attCorr[9]) const; 
+       const double& time,
+       const std::vector<double>& adj,
+       double attCorr[9]) const;
+
+   void reconstructSensorDistortion(
+       double& focalX,
+       double& focalY,
+       const double& desiredPrecision) const;
 
 // This method computes the imaging locus.
 // imaging locus : set of ground points associated with an image pixel.

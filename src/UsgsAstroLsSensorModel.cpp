@@ -77,7 +77,7 @@ const std::string  UsgsAstroLsSensorModel::_STATE_KEYWORD[] =
    "m_startingSample",
    "m_ikCode",
    "m_focal",
-   "m_isisZDirection",
+   "m_zDirection",
    "m_opticalDistCoef",
    "m_iTransS",
    "m_iTransL",
@@ -157,7 +157,7 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
    m_startingSample = j["m_startingSample"];
    m_ikCode = j["m_ikCode"];
    m_focal = j["m_focal"];
-   m_isisZDirection = j["m_isisZDirection"];
+   m_zDirection = j["m_zDirection"];
    for (int i = 0; i < 3; i++) {
      m_opticalDistCoef[i] = j["m_opticalDistCoef"][i];
      m_iTransS[i] = j["m_iTransS"][i];
@@ -268,7 +268,7 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
       state["m_startingSample"] = m_startingSample;
       state["m_ikCode"] = m_ikCode;
       state["m_focal"] = m_focal;
-      state["m_isisZDirection"] = m_isisZDirection;
+      state["m_zDirection"] = m_zDirection;
       state["m_opticalDistCoef"] = std::vector<double>(m_opticalDistCoef, m_opticalDistCoef+3);
       state["m_iTransS"] = std::vector<double>(m_iTransS, m_iTransS+3);
       state["m_iTransL"] = std::vector<double>(m_iTransL, m_iTransL+3);
@@ -343,7 +343,7 @@ void UsgsAstroLsSensorModel::reset()
   m_startingSample = 1.0;                    // 16
   m_ikCode = -85600;                         // 17
   m_focal = 350.0;                           // 18
-  m_isisZDirection = 1.0;                    // 19
+  m_zDirection = 1.0;                        // 19
   m_opticalDistCoef[0] = 0.0;                // 20
   m_opticalDistCoef[1] = 0.0;                // 20
   m_opticalDistCoef[2] = 0.0;                // 20
@@ -1654,12 +1654,12 @@ double UsgsAstroLsSensorModel::getValue(
 
 
 //***************************************************************************
-// Functions pulled out of losToEcf
+// Functions pulled out of losToEcf and computeViewingPixel
 // **************************************************************************
 
 // Compute distorted focalPlane coordinates in mm
 void UsgsAstroLsSensorModel::computeDistortedFocalPlaneCoordinates(const double& line, const double& sample, double& distortedLine, double& distortedSample) const{
-  double isisDetSample = (sample - 1.0)
+  double detSample = (sample - 1.0)
       * m_detectorSampleSumming + m_startingSample;
   double m11 = m_iTransL[1];
   double m12 = m_iTransL[2];
@@ -1667,7 +1667,7 @@ void UsgsAstroLsSensorModel::computeDistortedFocalPlaneCoordinates(const double&
   double m22 = m_iTransS[2];
   double t1 = line + m_detectorLineOffset
                - m_detectorLineOrigin - m_iTransL[0];
-  double t2 = isisDetSample - m_detectorSampleOrigin - m_iTransS[0];
+  double t2 = detSample - m_detectorSampleOrigin - m_iTransS[0];
   double determinant = m11 * m22 - m12 * m21;
   double p11 = m11 / determinant;
   double p12 = -m12 / determinant;
@@ -1700,8 +1700,8 @@ void UsgsAstroLsSensorModel::computeUndistortedFocalPlaneCoordinates(const doubl
 
 // Define imaging ray in image space (In other words, create a look vector in camera space)
 void UsgsAstroLsSensorModel::createCameraLookVector(const double& undistortedFocalPlaneX, const double& undistortedFocalPlaneY, const std::vector<double>& adj, double cameraLook[]) const{
-   cameraLook[0] = -undistortedFocalPlaneX * m_isisZDirection;
-   cameraLook[1] = -undistortedFocalPlaneY * m_isisZDirection;
+   cameraLook[0] = -undistortedFocalPlaneX * m_zDirection;
+   cameraLook[1] = -undistortedFocalPlaneY * m_zDirection;
    cameraLook[2] = -m_focal * (1.0 - getValue(15, adj) / m_halfSwath);
    double magnitude = sqrt(cameraLook[0] * cameraLook[0]
                   + cameraLook[1] * cameraLook[1]
@@ -1713,7 +1713,7 @@ void UsgsAstroLsSensorModel::createCameraLookVector(const double& undistortedFoc
 
 
 // Given a time and a flag to indicate whether the a->b or b->a rotation should be calculated
-// uses the quaternions in the m_quaternions member to calclate a rotation matrix. 
+// uses the quaternions in the m_quaternions member to calclate a rotation matrix.
 void UsgsAstroLsSensorModel::calculateRotationMatrixFromQuaternions(const double& time, double rotationMatrix[9]) const {
   int nOrder = 8;
   if (m_platformFlag == 0)
@@ -1726,7 +1726,7 @@ void UsgsAstroLsSensorModel::calculateRotationMatrixFromQuaternions(const double
      m_numQuaternions, &m_quaternions[0], m_t0Quat, m_dtQuat,
      time, 4, nOrderQuat, q);
   double norm = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
-  q[0] /= norm; 
+  q[0] /= norm;
   q[1] /= norm;
   q[2] /= norm;
   q[3] /= norm;
@@ -1743,7 +1743,7 @@ void UsgsAstroLsSensorModel::calculateRotationMatrixFromQuaternions(const double
 };
 
 // Calculates a rotation matrix from Euler angles
-void UsgsAstroLsSensorModel::calculateRotationMatrixFromEuler(double euler[], 
+void UsgsAstroLsSensorModel::calculateRotationMatrixFromEuler(double euler[],
                                                               double rotationMatrix[]) const {
   double cos_a = cos(euler[0]);
   double sin_a = sin(euler[0]);
@@ -1774,8 +1774,61 @@ void UsgsAstroLsSensorModel::calculateAttitudeCorrection(const double& time, con
     (getValue(7, adj) + getValue(10, adj)* nTime + getValue(13, adj)* nTime2) / m_flyingHeight;
   euler[2] =
     (getValue(8, adj) + getValue(11, adj)* nTime + getValue(14, adj)* nTime2) / m_halfSwath;
-  
+
   calculateRotationMatrixFromEuler(euler, attCorr);
+}
+
+
+// This method works by iteratively adding distortion until the new distorted
+// point, r, undistorts to within a tolerance of the original point, rp.
+void UsgsAstroLsSensorModel::reconstructSensorDistortion(
+    double& focalX,
+    double& focalY,
+    const double& desiredPrecision) const
+{
+  if (m_opticalDistCoef[0] != 0.0 ||
+     m_opticalDistCoef[1] != 0.0 ||
+     m_opticalDistCoef[2] != 0.0)
+   {
+     double rp2 = (focalX * focalX) + (focalY * focalY);
+     double tolerance = 1.0E-6;
+     if (rp2 > tolerance) {
+       double rp = sqrt(rp2);
+       // Compute first fractional distortion using rp
+       double drOverR = m_opticalDistCoef[0]
+                      + (rp2 * (m_opticalDistCoef[1] + (rp2 * m_opticalDistCoef[2])));
+       // Compute first distorted point estimate, r
+       double r = rp + (drOverR * rp);
+       double r_prev, r2_prev;
+       int iteration = 0;
+       do {
+         // Don't get in an end-less loop.  This algorithm should
+         // converge quickly.  If not then we are probably way outside
+         // of the focal plane.  Just set the distorted position to the
+         // undistorted position. Also, make sure the focal plane is less
+         // than 1km, it is unreasonable for it to grow larger than that.
+         if (iteration >= 15 || r > 1E9) {
+           drOverR = 0.0;
+           break;
+         }
+
+         r_prev = r;
+         r2_prev = r * r;
+
+         // Compute new fractional distortion:
+         drOverR = m_opticalDistCoef[0]
+                 + (r2_prev * (m_opticalDistCoef[1] + (r2_prev * m_opticalDistCoef[2])));
+
+         // Compute new estimate of r
+         r = rp + (drOverR * r_prev);
+         iteration++;
+       }
+       while (fabs(r * (1 - drOverR) - rp) > desiredPrecision);
+
+       focalX = focalX / (1.0 - drOverR);
+       focalY = focalY / (1.0 - drOverR);
+     }
+   }
 }
 
 
@@ -1808,30 +1861,30 @@ void UsgsAstroLsSensorModel::losToEcf(
    double sampleUSGSFull = sampleCSMFull;
    double fractionalLine = line - floor(line);
 
-   // Compute distorted image coordinates in mm (sample, line on image (pixels) -> focal plane 
-   double isisNatFocalPlaneX, isisNatFocalPlaneY; 
-   computeDistortedFocalPlaneCoordinates(fractionalLine, sampleUSGSFull, isisNatFocalPlaneX, isisNatFocalPlaneY);
+   // Compute distorted image coordinates in mm (sample, line on image (pixels) -> focal plane
+   double natFocalPlaneX, natFocalPlaneY;
+   computeDistortedFocalPlaneCoordinates(fractionalLine, sampleUSGSFull, natFocalPlaneX, natFocalPlaneY);
 
    // Remove lens distortion
-   double isisFocalPlaneX, isisFocalPlaneY; 
-   computeUndistortedFocalPlaneCoordinates(isisNatFocalPlaneX, isisNatFocalPlaneY, isisFocalPlaneX, isisFocalPlaneY);
-   
+   double focalPlaneX, focalPlaneY;
+   computeUndistortedFocalPlaneCoordinates(natFocalPlaneX, natFocalPlaneY, focalPlaneX, focalPlaneY);
+
   // Define imaging ray (look vector) in camera space
    double cameraLook[3];
-   createCameraLookVector(isisFocalPlaneX, isisFocalPlaneY, adj, cameraLook);
+   createCameraLookVector(focalPlaneX, focalPlaneY, adj, cameraLook);
 
    // Apply attitude correction
    double attCorr[9];
-   calculateAttitudeCorrection(time, adj, attCorr); 
+   calculateAttitudeCorrection(time, adj, attCorr);
 
    double correctedCameraLook[3];
-   correctedCameraLook[0] = attCorr[0] * cameraLook[0] 
+   correctedCameraLook[0] = attCorr[0] * cameraLook[0]
                           + attCorr[1] * cameraLook[1]
                           + attCorr[2] * cameraLook[2];
-   correctedCameraLook[1] = attCorr[3] * cameraLook[0] 
+   correctedCameraLook[1] = attCorr[3] * cameraLook[0]
                           + attCorr[4] * cameraLook[1]
                           + attCorr[5] * cameraLook[2];
-   correctedCameraLook[2] = attCorr[6] * cameraLook[0] 
+   correctedCameraLook[2] = attCorr[6] * cameraLook[0]
                           + attCorr[7] * cameraLook[1]
                           + attCorr[8] * cameraLook[2];
 
@@ -1839,13 +1892,13 @@ void UsgsAstroLsSensorModel::losToEcf(
    double cameraToBody[9];
    calculateRotationMatrixFromQuaternions(time, cameraToBody);
 
-   bodyLookX = cameraToBody[0] * correctedCameraLook[0] 
+   bodyLookX = cameraToBody[0] * correctedCameraLook[0]
              + cameraToBody[1] * correctedCameraLook[1]
              + cameraToBody[2] * correctedCameraLook[2];
-   bodyLookY = cameraToBody[3] * correctedCameraLook[0] 
+   bodyLookY = cameraToBody[3] * correctedCameraLook[0]
              + cameraToBody[4] * correctedCameraLook[1]
              + cameraToBody[5] * correctedCameraLook[2];
-   bodyLookZ = cameraToBody[6] * correctedCameraLook[0] 
+   bodyLookZ = cameraToBody[6] * correctedCameraLook[0]
              + cameraToBody[7] * correctedCameraLook[1]
              + cameraToBody[8] * correctedCameraLook[2];
 }
@@ -2421,51 +2474,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double focalY = adjustedLookY * lookScale;
 
    // Invert distortion
-   // This method works by iteratively adding distortion until the new distorted
-   // point, r, undistorts to within a tolerance of the original point, rp.
-   if (m_opticalDistCoef[0] != 0.0 ||
-      m_opticalDistCoef[1] != 0.0 ||
-      m_opticalDistCoef[2] != 0.0)
-    {
-      double rp2 = (focalX * focalX) + (focalY * focalY);
-      double tolerance = 1.0E-6;
-      if (rp2 > tolerance) {
-        double rp = sqrt(rp2);
-        // Compute first fractional distortion using rp
-        double drOverR = m_opticalDistCoef[0]
-                       + (rp2 * (m_opticalDistCoef[1] + (rp2 * m_opticalDistCoef[2])));
-        // Compute first distorted point estimate, r
-        double r = rp + (drOverR * rp);
-        double r_prev, r2_prev;
-        int iteration = 0;
-        do {
-          // Don't get in an end-less loop.  This algorithm should
-          // converge quickly.  If not then we are probably way outside
-          // of the focal plane.  Just set the distorted position to the
-          // undistorted position. Also, make sure the focal plane is less
-          // than 1km, it is unreasonable for it to grow larger than that.
-          if (iteration >= 15 || r > 1E9) {
-            drOverR = 0.0;
-            break;
-          }
-
-          r_prev = r;
-          r2_prev = r * r;
-
-          // Compute new fractional distortion:
-          drOverR = m_opticalDistCoef[0]
-                  + (r2_prev * (m_opticalDistCoef[1] + (r2_prev * m_opticalDistCoef[2])));
-
-          // Compute new estimate of r
-          r = rp + (drOverR * r_prev);
-          iteration++;
-        }
-        while (fabs(r * (1 - drOverR) - rp) > desiredPrecision);
-
-        focalX = focalX / (1.0 - drOverR);
-        focalY = focalY / (1.0 - drOverR);
-      }
-    }
+   reconstructSensorDistortion(focalX, focalY, desiredPrecision);
 
    // Convert to detector line and sample
    double detectorLine = m_iTransL[0]
@@ -2684,7 +2693,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    state["m_startingSample"] = isd.at("detector_line_summing");
    state["m_ikCode"] = 0;
    state["m_focal"] = isd.at("focal_length_model").at("focal_length");
-   state["m_isisZDirection"] = 1;
+   state["m_zDirection"] = 1;
    state["m_opticalDistCoef"] = isd.at("optical_distortion").at("radial").at("coefficients");
    state["m_iTransS"] = isd.at("focal2pixel_samples");
    state["m_iTransL"] = isd.at("focal2pixel_lines");
