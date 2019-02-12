@@ -916,35 +916,40 @@ private:
       double* achievedPrecision = NULL,
       csm::WarningList* warnings = NULL) const;
 
-   // methods pulled out of los2ecf
+   // methods pulled out of los2ecf and computeViewingPixel
 
    void computeDistortedFocalPlaneCoordinates(
-       const double& lineUSGS, 
-       const double& sampleUSGS, 
-       double &distortedLine, 
+       const double& lineUSGS,
+       const double& sampleUSGS,
+       double &distortedLine,
        double& distortedSample) const;
 
    void computeUndistortedFocalPlaneCoordinates(
-       const double& isisNatFocalPlaneX, 
-       const double& isisNatFocalPlaneY, 
-       double& isisFocalPlaneX, 
-       double& isisFocalPlaneY) const; 
+       const double& isisNatFocalPlaneX,
+       const double& isisNatFocalPlaneY,
+       double& isisFocalPlaneX,
+       double& isisFocalPlaneY) const;
 
    void calculateRotationMatrixFromQuaternions(
-       const double& time, 
-       const bool& invert, 
+       const double& time,
+       const bool& invert,
        double cameraToBody[9]) const;
 
    void createCameraLookVector(
-       const double& undistortedFocalPlaneX, 
+       const double& undistortedFocalPlaneX,
        const double& undistortedFocalPlaneY,
-       const std::vector<double>& adj,  
-       double cameraLook[]) const; 
+       const std::vector<double>& adj,
+       double cameraLook[]) const;
 
    void calculateAttitudeCorrection(
-       const double& time, 
-       const std::vector<double>& adj, 
-       double attCorr[9]) const; 
+       const double& time,
+       const std::vector<double>& adj,
+       double attCorr[9]) const;
+
+   void reconstructSensorDistortion(
+       double focalX,
+       double focalY,
+       const double& desiredPrecision) const;
 
 // This method computes the imaging locus.
 // imaging locus : set of ground points associated with an image pixel.
