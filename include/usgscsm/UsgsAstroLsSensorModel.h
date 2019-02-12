@@ -82,7 +82,7 @@ public:
    double       m_startingSample;                 // 14
    int          m_ikCode;                         // 15
    double       m_focal;                          // 16
-   double       m_isisZDirection;                 // 17
+   double       m_zDirection;                     // 17
    double       m_opticalDistCoef[3];             // 18
    double       m_iTransS[3];                     // 19
    double       m_iTransL[3];                     // 20
