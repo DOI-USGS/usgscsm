@@ -1782,8 +1782,8 @@ void UsgsAstroLsSensorModel::calculateAttitudeCorrection(const double& time, con
 // This method works by iteratively adding distortion until the new distorted
 // point, r, undistorts to within a tolerance of the original point, rp.
 void UsgsAstroLsSensorModel::reconstructSensorDistortion(
-    double focalX,
-    double focalY,
+    double& focalX,
+    double& focalY,
     const double& desiredPrecision) const
 {
   if (m_opticalDistCoef[0] != 0.0 ||

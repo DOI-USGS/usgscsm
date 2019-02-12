@@ -950,8 +950,8 @@ private:
        double attCorr[9]) const;
 
    void reconstructSensorDistortion(
-       double focalX,
-       double focalY,
+       double& focalX,
+       double& focalY,
        const double& desiredPrecision) const;
 
 // This method computes the imaging locus.
