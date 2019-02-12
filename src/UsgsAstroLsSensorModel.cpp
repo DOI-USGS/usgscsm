@@ -1658,7 +1658,7 @@ double UsgsAstroLsSensorModel::getValue(
 // **************************************************************************
 
 // Compute distorted focalPlane coordinates in mm
-void UsgsAstroLsSensorModel::computeDistortedFocalPlaneCoordinates(const double& lineUSGS, const double& sampleUSGS, double &distortedLine, double& distortedSample) const{
+void UsgsAstroLsSensorModel::computeDistortedFocalPlaneCoordinates(const double& lineUSGS, const double& sampleUSGS, double& distortedLine, double& distortedSample) const{
   double isisDetSample = (sampleUSGS - 1.0)
       * m_detectorSampleSumming + m_startingSample;
   double m11 = m_iTransL[1];
@@ -1701,7 +1701,7 @@ void UsgsAstroLsSensorModel::computeUndistortedFocalPlaneCoordinates(const doubl
 
 
 // Define imaging ray in image space (In other words, create a look vector in camera space)
-void UsgsAstroLsSensorModel::createCameraLookVector(double& undistortedFocalPlaneX, double& undistortedFocalPlaneY,  const std::vector<double>& adj, double losIsis[]) const{
+void UsgsAstroLsSensorModel::createCameraLookVector(const double& undistortedFocalPlaneX, const double& undistortedFocalPlaneY, const std::vector<double>& adj, double losIsis[]) const{
    losIsis[0] = -undistortedFocalPlaneX * m_isisZDirection;
    losIsis[1] = -undistortedFocalPlaneY * m_isisZDirection;
    losIsis[2] = -m_focal * (1.0 - getValue(15, adj) / m_halfSwath);
@@ -1716,7 +1716,7 @@ void UsgsAstroLsSensorModel::createCameraLookVector(double& undistortedFocalPlan
 
 // Given a time and a flag to indicate whether the a->b or b->a rotation should be calculated
 // uses the quaternions in the m_quaternions member to calclate a rotation matrix. 
-void UsgsAstroLsSensorModel::calculateRotationMatrixFromQuaternions(double time, bool invert, double rotationMatrix[9]) const {
+void UsgsAstroLsSensorModel::calculateRotationMatrixFromQuaternions(const double& time, const bool& invert, double rotationMatrix[9]) const {
   int nOrder = 8;
   if (m_platformFlag == 0)
      nOrder = 4;
@@ -1754,7 +1754,7 @@ void UsgsAstroLsSensorModel::calculateRotationMatrixFromQuaternions(double time,
 };
 
 
-void UsgsAstroLsSensorModel::calculateAttitudeCorrection(double time, const std::vector<double>& adj, double attCorr[9]) const {
+void UsgsAstroLsSensorModel::calculateAttitudeCorrection(const double& time, const std::vector<double>& adj, double attCorr[9]) const {
   double aTime = time - m_t0Quat;
     double euler[3];
     double nTime = aTime / m_halfTime;

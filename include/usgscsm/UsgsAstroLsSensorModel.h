@@ -918,18 +918,36 @@ private:
 
    // methods pulled out of los2ecf
 
-void computeDistortedFocalPlaneCoordinates(const double& lineUSGS, const double& sampleUSGS, double &distortedLine, double& distortedSample) const;
+   void computeDistortedFocalPlaneCoordinates(
+       const double& lineUSGS, 
+       const double& sampleUSGS, 
+       double &distortedLine, 
+       double& distortedSample) const;
 
-void computeUndistortedFocalPlaneCoordinates(const double &isisNatFocalPlaneX, const double& isisNatFocalPlaneY, double& isisFocalPlaneX, double& isisFocalPlaneY) const; 
+   void computeUndistortedFocalPlaneCoordinates(
+       const double& isisNatFocalPlaneX, 
+       const double& isisNatFocalPlaneY, 
+       double& isisFocalPlaneX, 
+       double& isisFocalPlaneY) const; 
 
-void calculateRotationMatrixFromQuaternions(double time, bool invert, double cameraToBody[9]) const;
+   void calculateRotationMatrixFromQuaternions(
+       const double& time, 
+       const bool& invert, 
+       double cameraToBody[9]) const;
 
-// This method computes the imaging locus. // imaging locus : set of ground points associated with an image pixel.
-void createCameraLookVector(double& undistortedFocalPlaneX, double& undistortedFocalPlaneY,const std::vector<double>& adj,  double losIsis[]) const; 
+   void createCameraLookVector(
+       const double& undistortedFocalPlaneX, 
+       const double& undistortedFocalPlaneY,
+       const std::vector<double>& adj,  
+       double cameraLook[]) const; 
 
-void calculateAttitudeCorrection(double time, const std::vector<double>& adj, double attCorr[9]) const; 
+   void calculateAttitudeCorrection(
+       const double& time, 
+       const std::vector<double>& adj, 
+       double attCorr[9]) const; 
 
 // This method computes the imaging locus.
+// imaging locus : set of ground points associated with an image pixel.
    void losToEcf(
       const double& line,       // CSM image convention
       const double& sample,     //    UL pixel center == (0.5, 0.5)
