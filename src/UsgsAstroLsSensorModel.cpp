@@ -84,7 +84,6 @@ const std::string  UsgsAstroLsSensorModel::_STATE_KEYWORD[] =
    "m_detectorSampleOrigin",
    "m_detectorLineOrigin",
    "m_detectorLineOffset",
-   "m_mountingMatrix",
    "m_semiMajorAxis",
    "m_semiMinorAxis",
    "m_referenceDateAndTime",
@@ -167,9 +166,6 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
    m_detectorSampleOrigin = j["m_detectorSampleOrigin"];
    m_detectorLineOrigin = j["m_detectorLineOrigin"];
    m_detectorLineOffset = j["m_detectorLineOffset"];
-   for (int i = 0; i < 9; i++) {
-       m_mountingMatrix[i] = j["m_mountingMatrix"][i];
-   }
    m_semiMajorAxis = j["m_semiMajorAxis"];
    m_semiMinorAxis = j["m_semiMinorAxis"];
    m_referenceDateAndTime = j["m_referenceDateAndTime"];
@@ -279,7 +275,6 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
       state["m_detectorSampleOrigin"] = m_detectorSampleOrigin;
       state["m_detectorLineOrigin"] = m_detectorLineOrigin;
       state["m_detectorLineOffset"] = m_detectorLineOffset;
-      state["m_mountingMatrix"] = std::vector<double>(m_mountingMatrix, m_mountingMatrix+9);
       state["m_semiMajorAxis"] = m_semiMajorAxis;
       state["m_semiMinorAxis"] = m_semiMinorAxis;
       state["m_referenceDateAndTime"] = m_referenceDateAndTime;
@@ -361,15 +356,6 @@ void UsgsAstroLsSensorModel::reset()
   m_detectorSampleOrigin = 2500.0;           // 23
   m_detectorLineOrigin = 0.0;                // 24
   m_detectorLineOffset = 0.0;                // 25
-  m_mountingMatrix[0] = 1.0;                 // 26
-  m_mountingMatrix[1] = 0.0;                 // 26
-  m_mountingMatrix[2] = 0.0;                 // 26
-  m_mountingMatrix[3] = 0.0;                 // 26
-  m_mountingMatrix[4] = 1.0;                 // 26
-  m_mountingMatrix[5] = 0.0;                 // 26
-  m_mountingMatrix[6] = 0.0;                 // 26
-  m_mountingMatrix[7] = 0.0;                 // 26
-  m_mountingMatrix[8] = 1.0;                 // 26
   m_semiMajorAxis = 3400000.0;               // 27
   m_semiMinorAxis = 3350000.0;               // 28
   m_referenceDateAndTime = "";               // 30
@@ -2419,32 +2405,9 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double bodyLookZ = groundPoint.z - zc;
 
    // Rotate the look vector into the camera reference frame
-   int nOrder = 8;
-   if (m_platformFlag == 0)
-      nOrder = 4;
-   int nOrderQuat = nOrder;
-   if (m_numQuaternions < 6 && nOrder == 8)
-      nOrderQuat = 4;
-   double q[4];
-   lagrangeInterp(
-      m_numQuaternions, &m_quaternions[0], m_t0Quat, m_dtQuat,
-      time, 4, nOrderQuat, q);
-   double norm = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
-   // Divide by the negative norm for 0 through 2 to invert the quaternion
-   q[0] /= -norm;
-   q[1] /= -norm;
-   q[2] /= -norm;
-   q[3] /= norm;
    double bodyToCamera[9];
-   bodyToCamera[0] = q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
-   bodyToCamera[1] = 2 * (q[0] * q[1] - q[2] * q[3]);
-   bodyToCamera[2] = 2 * (q[0] * q[2] + q[1] * q[3]);
-   bodyToCamera[3] = 2 * (q[0] * q[1] + q[2] * q[3]);
-   bodyToCamera[4] = -q[0] * q[0] + q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
-   bodyToCamera[5] = 2 * (q[1] * q[2] - q[0] * q[3]);
-   bodyToCamera[6] = 2 * (q[0] * q[2] - q[1] * q[3]);
-   bodyToCamera[7] = 2 * (q[1] * q[2] + q[0] * q[3]);
-   bodyToCamera[8] = -q[0] * q[0] - q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
+   calculateRotationMatrixFromQuaternions(time, true, bodyToCamera);
+
    double cameraLookX = bodyToCamera[0] * bodyLookX
                       + bodyToCamera[1] * bodyLookY
                       + bodyToCamera[2] * bodyLookZ;
@@ -2456,32 +2419,9 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
                       + bodyToCamera[8] * bodyLookZ;
 
    // Invert the attitude correction
-   double aTime = time - m_t0Quat;
-   double euler[3];
-   double nTime = aTime / m_halfTime;
-   double nTime2 = nTime * nTime;
-   euler[0] =
-      (getValue(6, adj) + getValue(9, adj)* nTime + getValue(12, adj)* nTime2) / m_flyingHeight;
-   euler[1] =
-      (getValue(7, adj) + getValue(10, adj)* nTime + getValue(13, adj)* nTime2) / m_flyingHeight;
-   euler[2] =
-      (getValue(8, adj) + getValue(11, adj)* nTime + getValue(14, adj)* nTime2) / m_halfSwath;
-   double cos_a = cos(euler[0]);
-   double sin_a = sin(euler[0]);
-   double cos_b = cos(euler[1]);
-   double sin_b = sin(euler[1]);
-   double cos_c = cos(euler[2]);
-   double sin_c = sin(euler[2]);
    double attCorr[9];
-   attCorr[0] = cos_b * cos_c;
-   attCorr[1] = -cos_a * sin_c + sin_a * sin_b * cos_c;
-   attCorr[2] = sin_a * sin_c + cos_a * sin_b * cos_c;
-   attCorr[3] = cos_b * sin_c;
-   attCorr[4] = cos_a * cos_c + sin_a * sin_b * sin_c;
-   attCorr[5] = -sin_a * cos_c + cos_a * sin_b * sin_c;
-   attCorr[6] = -sin_b;
-   attCorr[7] = sin_a * cos_b;
-   attCorr[8] = cos_a * cos_b;
+   calculateAttitudeCorrection(time, adj, attCorr);
+
    double adjustedLookX = attCorr[0] * cameraLookX
                         + attCorr[3] * cameraLookY
                         + attCorr[6] * cameraLookZ;
@@ -2492,21 +2432,10 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
                         + attCorr[5] * cameraLookY
                         + attCorr[8] * cameraLookZ;
 
-   // Invert the boresight correction
-   double correctedLookX = m_mountingMatrix[0] * adjustedLookX
-                         + m_mountingMatrix[3] * adjustedLookY
-                         + m_mountingMatrix[6] * adjustedLookZ;
-   double correctedLookY = m_mountingMatrix[1] * adjustedLookX
-                         + m_mountingMatrix[4] * adjustedLookY
-                         + m_mountingMatrix[7] * adjustedLookZ;
-   double correctedLookZ = m_mountingMatrix[2] * adjustedLookX
-                         + m_mountingMatrix[5] * adjustedLookY
-                         + m_mountingMatrix[8] * adjustedLookZ;
-
    // Convert to focal plane coordinate
-   double lookScale = m_focal / correctedLookZ;
-   double focalX = correctedLookX * lookScale;
-   double focalY = correctedLookY * lookScale;
+   double lookScale = m_focal / adjustedLookZ;
+   double focalX = adjustedLookX * lookScale;
+   double focalY = adjustedLookY * lookScale;
 
    // Invert distortion
    // This method works by iteratively adding distortion until the new distorted
@@ -2780,24 +2709,6 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    state["m_detectorSampleOrigin"] = isd.at("detector_center").at("sample");
    state["m_detectorLineOrigin"] = isd.at("detector_center").at("line");
    state["m_detectorLineOffset"] = 0;
-
-   double cos_a = cos(0);
-   double sin_a = sin(0);
-   double cos_b = cos(0);
-   double sin_b = sin(0);
-   double cos_c = cos(0);
-   double sin_c = sin(0);
-
-   state["m_mountingMatrix"] = json::array();
-   state["m_mountingMatrix"][0] = cos_b * cos_c;
-   state["m_mountingMatrix"][1] = -cos_a * sin_c + sin_a * sin_b * cos_c;
-   state["m_mountingMatrix"][2] = sin_a * sin_c + cos_a * sin_b * cos_c;
-   state["m_mountingMatrix"][3] = cos_b * sin_c;
-   state["m_mountingMatrix"][4] = cos_a * cos_c + sin_a * sin_b * sin_c;
-   state["m_mountingMatrix"][5] = -sin_a * cos_c + cos_a * sin_b * sin_c;
-   state["m_mountingMatrix"][6] = -sin_b;
-   state["m_mountingMatrix"][7] = sin_a * cos_b;
-   state["m_mountingMatrix"][8] = cos_a * cos_b;
 
    state["m_dtEphem"] = isd.at("dt_ephemeris");
    state["m_t0Ephem"] = isd.at("t0_ephemeris");
