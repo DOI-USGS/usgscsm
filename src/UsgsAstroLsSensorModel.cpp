@@ -1657,20 +1657,6 @@ double UsgsAstroLsSensorModel::getValue(
 // Functions pulled out of losToEcf
 // **************************************************************************
 
-// CSM image image convention: UL pixel center == (0.5, 0.5)
-// USGS image convention: UL pixel center == (1.0, 1.0)
-void UsgsAstroLsSensorModel::convertToUSGSCoordinates(const double& csmLine, const double& csmSample, double &usgsLine, double &usgsSample) const{
-  // apply the offset
-  double sampleCSMFull = csmSample + m_offsetSamples;
-  double sampleUSGSFull = sampleCSMFull + 0.5;
-  // why don't we apply a line offset? 
-  double fractionalLine = csmLine - floor(csmLine) - 0.5;
-
-  usgsSample = sampleUSGSFull;
-  usgsLine = fractionalLine; 
-}
-
-
 // Compute distorted focalPlane coordinates in mm
 void UsgsAstroLsSensorModel::computeDistortedFocalPlaneCoordinates(const double& lineUSGS, const double& sampleUSGS, double &distortedLine, double& distortedSample) const{
   double isisDetSample = (sampleUSGS - 1.0)
@@ -1836,37 +1822,37 @@ void UsgsAstroLsSensorModel::losToEcf(
    computeUndistortedFocalPlaneCoordinates(isisNatFocalPlaneX, isisNatFocalPlaneY, isisFocalPlaneX, isisFocalPlaneY);
    
   // Define imaging ray (look vector) in camera space
-   double losIsis[3];
-   createCameraLookVector(isisFocalPlaneX, isisFocalPlaneY, adj, losIsis);
+   double cameraLook[3];
+   createCameraLookVector(isisFocalPlaneX, isisFocalPlaneY, adj, cameraLook);
 
    // Apply attitude correction
    double attCorr[9];
    calculateAttitudeCorrection(time, adj, attCorr); 
 
-   double cameraLook[3];
-   cameraLook[0] = attCorr[0] * losIsis[0] 
-                 + attCorr[1] * losIsis[1]
-                 + attCorr[2] * losIsis[2];
-   cameraLook[1] = attCorr[3] * losIsis[0] 
-                 + attCorr[4] * losIsis[1]
-                 + attCorr[5] * losIsis[2];
-   cameraLook[2] = attCorr[6] * losIsis[0] 
-                 + attCorr[7] * losIsis[1]
-                 + attCorr[8] * losIsis[2];
+   double correctedCameraLook[3];
+   correctedCameraLook[0] = attCorr[0] * cameraLook[0] 
+                          + attCorr[1] * cameraLook[1]
+                          + attCorr[2] * cameraLook[2];
+   correctedCameraLook[1] = attCorr[3] * cameraLook[0] 
+                          + attCorr[4] * cameraLook[1]
+                          + attCorr[5] * cameraLook[2];
+   correctedCameraLook[2] = attCorr[6] * cameraLook[0] 
+                          + attCorr[7] * cameraLook[1]
+                          + attCorr[8] * cameraLook[2];
 
 // Rotate the look vector into the body fixed frame from the camera reference frame by applying the rotation matrix from the sensor quaternions
    double cameraToBody[9];
    calculateRotationMatrixFromQuaternions(time, false, cameraToBody);
 
-   bodyLookX = cameraToBody[0] * cameraLook[0] 
-             + cameraToBody[1] * cameraLook[1]
-             + cameraToBody[2] * cameraLook[2];
-   bodyLookY = cameraToBody[3] * cameraLook[0] 
-             + cameraToBody[4] * cameraLook[1]
-             + cameraToBody[5] * cameraLook[2];
-   bodyLookZ = cameraToBody[6] * cameraLook[0] 
-             + cameraToBody[7] * cameraLook[1]
-             + cameraToBody[8] * cameraLook[2];
+   bodyLookX = cameraToBody[0] * correctedCameraLook[0] 
+             + cameraToBody[1] * correctedCameraLook[1]
+             + cameraToBody[2] * correctedCameraLook[2];
+   bodyLookY = cameraToBody[3] * correctedCameraLook[0] 
+             + cameraToBody[4] * correctedCameraLook[1]
+             + cameraToBody[5] * correctedCameraLook[2];
+   bodyLookZ = cameraToBody[6] * correctedCameraLook[0] 
+             + cameraToBody[7] * correctedCameraLook[1]
+             + cameraToBody[8] * correctedCameraLook[2];
 }
 
 

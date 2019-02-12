@@ -918,8 +918,6 @@ private:
 
    // methods pulled out of los2ecf
 
-void convertToUSGSCoordinates(const double& csmLine, const double& csmSample, double &usgsLine, double &usgsSample) const; 
-
 void computeDistortedFocalPlaneCoordinates(const double& lineUSGS, const double& sampleUSGS, double &distortedLine, double& distortedSample) const;
 
 void computeUndistortedFocalPlaneCoordinates(const double &isisNatFocalPlaneX, const double& isisNatFocalPlaneY, double& isisFocalPlaneX, double& isisFocalPlaneY) const; 
@@ -927,7 +925,6 @@ void computeUndistortedFocalPlaneCoordinates(const double &isisNatFocalPlaneX, c
 void calculateRotationMatrixFromQuaternions(double time, bool invert, double cameraToBody[9]) const;
 
 // This method computes the imaging locus. // imaging locus : set of ground points associated with an image pixel.
-
 void createCameraLookVector(double& undistortedFocalPlaneX, double& undistortedFocalPlaneY,const std::vector<double>& adj,  double losIsis[]) const; 
 
 void calculateAttitudeCorrection(double time, const std::vector<double>& adj, double attCorr[9]) const; 
@@ -943,9 +940,9 @@ void calculateAttitudeCorrection(double time, const std::vector<double>& adj, do
       double&       vx,         // output sensor x velocity
       double&       vy,         // output sensor y velocity
       double&       vz,         // output sensor z cvelocity
-      double&       xl,         // output line-of-sight x coordinate
-      double&       yl,         // output line-of-sight y coordinate
-      double&       zl ) const;
+      double&       bodyFixedX, // output line-of-sight x coordinate
+      double&       bodyFixedY, // output line-of-sight y coordinate
+      double&       bodyFixedZ ) const;
 
    // Computes the LOS correction due to light aberration
    void lightAberrationCorr(
