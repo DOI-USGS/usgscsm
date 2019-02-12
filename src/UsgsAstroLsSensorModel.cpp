@@ -19,6 +19,7 @@
 #define USGS_SENSOR_LIBRARY
 
 #include "UsgsAstroLsSensorModel.h"
+#include "Distortion.h"
 
 #include <algorithm>
 #include <iostream>
@@ -1710,20 +1711,9 @@ void UsgsAstroLsSensorModel::losToEcf(
    // Remove lens distortion
    double isisFocalPlaneX = isisNatFocalPlaneX;
    double isisFocalPlaneY = isisNatFocalPlaneY;
-  if (m_opticalDistCoef[0] != 0.0 ||
-     m_opticalDistCoef[1] != 0.0 ||
-     m_opticalDistCoef[2] != 0.0)
-   {
-      double rr = isisNatFocalPlaneX * isisNatFocalPlaneX
-         + isisNatFocalPlaneY * isisNatFocalPlaneY;
-      if (rr > 1.0E-6)
-      {
-         double dr = m_opticalDistCoef[0] + (rr * (m_opticalDistCoef[1]
-            + rr * m_opticalDistCoef[2]));
-         isisFocalPlaneX = isisNatFocalPlaneX * (1.0 - dr);
-         isisFocalPlaneY = isisNatFocalPlaneY * (1.0 - dr);
-      }
-   }
+
+   removeDistortion(isisFocalPlaneX, isisFocalPlaneY,
+                    isisFocalPlaneX, isisFocalPlaneY, m_opticalDistCoef);
 
    // Define imaging ray in image space
 
@@ -2456,49 +2446,52 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    // Invert distortion
    // This method works by iteratively adding distortion until the new distorted
    // point, r, undistorts to within a tolerance of the original point, rp.
-   if (m_opticalDistCoef[0] != 0.0 ||
-      m_opticalDistCoef[1] != 0.0 ||
-      m_opticalDistCoef[2] != 0.0)
-    {
-      double rp2 = (focalX * focalX) + (focalY * focalY);
-      double tolerance = 1.0E-6;
-      if (rp2 > tolerance) {
-        double rp = sqrt(rp2);
-        // Compute first fractional distortion using rp
-        double drOverR = m_opticalDistCoef[0]
-                       + (rp2 * (m_opticalDistCoef[1] + (rp2 * m_opticalDistCoef[2])));
-        // Compute first distorted point estimate, r
-        double r = rp + (drOverR * rp);
-        double r_prev, r2_prev;
-        int iteration = 0;
-        do {
-          // Don't get in an end-less loop.  This algorithm should
-          // converge quickly.  If not then we are probably way outside
-          // of the focal plane.  Just set the distorted position to the
-          // undistorted position. Also, make sure the focal plane is less
-          // than 1km, it is unreasonable for it to grow larger than that.
-          if (iteration >= 15 || r > 1E9) {
-            drOverR = 0.0;
-            break;
-          }
-
-          r_prev = r;
-          r2_prev = r * r;
-
-          // Compute new fractional distortion:
-          drOverR = m_opticalDistCoef[0]
-                  + (r2_prev * (m_opticalDistCoef[1] + (r2_prev * m_opticalDistCoef[2])));
-
-          // Compute new estimate of r
-          r = rp + (drOverR * r_prev);
-          iteration++;
-        }
-        while (fabs(r * (1 - drOverR) - rp) > desiredPrecision);
-
-        focalX = focalX / (1.0 - drOverR);
-        focalY = focalY / (1.0 - drOverR);
-      }
-    }
+   // Radial Here
+   invertDistortion(focalX, focalY, focalX, focalY,
+                    m_opticalDistCoef, desiredPrecision);
+   // if (m_opticalDistCoef[0] != 0.0 ||
+   //     m_opticalDistCoef[1] != 0.0 ||
+   //     m_opticalDistCoef[2] != 0.0)
+   //  {
+   //    double rp2 = (focalX * focalX) + (focalY * focalY);
+   //    double tolerance = 1.0E-6;
+   //    if (rp2 > tolerance) {
+   //      double rp = sqrt(rp2);
+   //      // Compute first fractional distortion using rp
+   //      double drOverR = m_opticalDistCoef[0]
+   //                     + (rp2 * (m_opticalDistCoef[1] + (rp2 * m_opticalDistCoef[2])));
+   //      // Compute first distorted point estimate, r
+   //      double r = rp + (drOverR * rp);
+   //      double r_prev, r2_prev;
+   //      int iteration = 0;
+   //      do {
+   //        // Don't get in an end-less loop.  This algorithm should
+   //        // converge quickly.  If not then we are probably way outside
+   //        // of the focal plane.  Just set the distorted position to the
+   //        // undistorted position. Also, make sure the focal plane is less
+   //        // than 1km, it is unreasonable for it to grow larger than that.
+   //        if (iteration >= 15 || r > 1E9) {
+   //          drOverR = 0.0;
+   //          break;
+   //        }
+   //
+   //        r_prev = r;
+   //        r2_prev = r * r;
+   //
+   //        // Compute new fractional distortion:
+   //        drOverR = m_opticalDistCoef[0]
+   //                + (r2_prev * (m_opticalDistCoef[1] + (r2_prev * m_opticalDistCoef[2])));
+   //
+   //        // Compute new estimate of r
+   //        r = rp + (drOverR * r_prev);
+   //        iteration++;
+   //      }
+   //      while (fabs(r * (1 - drOverR) - rp) > desiredPrecision);
+   //
+   //      focalX = focalX / (1.0 - drOverR);
+   //      focalY = focalY / (1.0 - drOverR);
+   //    }
+   //  }
 
    // Convert to detector line and sample
    double detectorLine = m_iTransL[0]

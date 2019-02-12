@@ -62,3 +62,43 @@ TEST(Transverse,  distortMe_AllCoefficientsOne) {
   EXPECT_NEAR(dx,1872.25,1e-8 );
   EXPECT_NEAR(dy,1872.25,1e-8);
 }
+
+TEST(Radial, testRemoveDistortion) {
+  csm::ImageCoord imagePt(0.0, 4.0);
+
+  double dx, dy;
+  double coeffs[3] = {0, 0, 0};
+
+  removeDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs);
+
+  EXPECT_NEAR(dx,4,1e-8);
+  EXPECT_NEAR(dy,0,1e-8);
+}
+
+// If coeffs are 0 then this will have the same result as removeDistortion
+// with 0 distortion coefficients
+TEST(Radial, testInverseDistortion){
+  csm::ImageCoord imagePt(0.0, 4.0);
+
+  double dx, dy;
+  double desiredPrecision = 0.01;
+  double coeffs[3] = {0, 0, 0};
+
+  invertDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs, desiredPrecision);
+
+  EXPECT_NEAR(dx,4,1e-8);
+  EXPECT_NEAR(dy,0,1e-8);
+}
+
+TEST(Radial, testInverseOnesCoeffs){
+  csm::ImageCoord imagePt(0.0, 4.0);
+
+  double dx, dy;
+  double desiredPrecision = 0.01;
+  double coeffs[3] = {1, 1, 1};
+
+  invertDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs, desiredPrecision);
+
+  EXPECT_NEAR(dx,4,1e-8);
+  EXPECT_NEAR(dy,0,1e-8);
+}
