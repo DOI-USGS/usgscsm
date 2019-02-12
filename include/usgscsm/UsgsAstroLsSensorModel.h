@@ -919,21 +919,25 @@ private:
    // methods pulled out of los2ecf
 
    void computeDistortedFocalPlaneCoordinates(
-       const double& lineUSGS, 
-       const double& sampleUSGS, 
-       double &distortedLine, 
+       const double& line, 
+       const double& sample, 
+       double& distortedLine, 
        double& distortedSample) const;
 
    void computeUndistortedFocalPlaneCoordinates(
-       const double& isisNatFocalPlaneX, 
-       const double& isisNatFocalPlaneY, 
-       double& isisFocalPlaneX, 
-       double& isisFocalPlaneY) const; 
+       const double& distortedFocalPlaneX, 
+       const double& distortedFocalPlaneY, 
+       double& undistortedFocalPlaneX, 
+       double& undistortedFocalPlaneY) const; 
 
    void calculateRotationMatrixFromQuaternions(
        const double& time, 
        const bool& invert, 
        double cameraToBody[9]) const;
+
+   void calculateRotationMatrixFromEuler(
+       double euler[], 
+       double rotationMatrix[]) const;
 
    void createCameraLookVector(
        const double& undistortedFocalPlaneX, 
