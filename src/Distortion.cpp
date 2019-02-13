@@ -7,10 +7,6 @@
  *
  * @param x
  * @param y
- * @param Jxx  Partial_xx
- * @param Jxy  Partial_xy
- * @param Jyx  Partial_yx
- * @param Jyy  Partial_yy
  * @param odtX opticalDistCoef In X
  * @param odtY opticalDistCoef In Y
  *
@@ -64,13 +60,11 @@ std::vector<std::vector<double>> distortionJacobian(double x, double y,
 
 /**
  * @description Compute distorted focal plane (dx,dy) coordinate  given an undistorted focal
- * plane (ux,uy) coordinate. This describes the third order Taylor approximation to the
+ * plane (ux,uy) coordinate. This uses the third order Taylor approximation to the
  * distortion model.
  *
  * @param ux Undistored x
  * @param uy Undistored y
- * @param dx Result distorted x
- * @param dy Result distorted y
  * @param odtX opticalDistCoef In X
  * @param odtY opticalDistCoef In Y
  *
@@ -106,8 +100,6 @@ std::tuple<double, double> distortionFunction(double ux, double uy,
  *
  * @param inFocalPlaneX Distorted x
  * @param inFocalPlaneY Distorted y
- * @param outFocalPlaneX Undistorted x
- * @param outFocalPlaneY Undistorted y
  * @param opticalDistCoef distortion coefficients
  *
  * @returns undistortedPoint Newly adjusted focal plane coordinates as an x, y tuple
@@ -134,8 +126,6 @@ std::tuple<double, double> removeDistortion(double inFocalPlaneX, double inFocal
  *
  * @param inFocalPlaneX Distorted x
  * @param inFocalPlaneY Distorted y
- * @param outFocalPlaneX Undistorted x
- * @param outFocalPlaneY Undistorted y
  * @param opticalDistCoef Distortion coefficients
  * @param desiredPrecision Convergence precision
  * @param tolerance Tolerance of r^2
