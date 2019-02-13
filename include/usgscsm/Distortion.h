@@ -3,20 +3,18 @@
 
 #include <vector>
 #include <math.h>
+#include <tuple>
 
-void distortionJacobian(double x, double y, double &Jxx, double &Jxy,
-                        double &Jyx, double &Jyy,
+std::vector<std::vector<double>> distortionJacobian(double x, double y,
                         const std::vector<double> &odtX, const std::vector<double> &odtY);
 
-void distortionFunction(double ux, double uy, double &dx, double &dy,
+std::tuple<double, double> distortionFunction(double ux, double uy,
                         const std::vector<double> &odtX, const std::vector<double> &odtY);
 
-void removeDistortion(double inFocalPlaneX, double inFocalPlaneY,
-                      double &outFocalPlaneX, double &outFocalPlaneY, const double opticalDistCoef[3],
-                      double tolerance = 1.0E-6);
+std::tuple<double, double> removeDistortion(double inFocalPlaneX, double inFocalPlaneY,
+                        const double opticalDistCoef[3], double tolerance = 1.0E-6);
 
-void invertDistortion(double inFocalPlaneX, double inFocalPlaneY,
-                      double &outFocalPlaneX, double &outFocalPlaneY, const double opticalDistCoef[3],
-                      double desiredPrecision, double tolerance = 1.0E-6);
+std::tuple<double, double> invertDistortion(double inFocalPlaneX, double inFocalPlaneY,
+                        const double opticalDistCoef[3], double desiredPrecision, double tolerance = 1.0E-6);
 
 #endif

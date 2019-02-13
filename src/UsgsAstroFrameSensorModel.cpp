@@ -130,14 +130,14 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
   undistortedy = (f * (m[0][1] * xo + m[1][1] * yo + m[2][1] * zo)/denom) + m_linePp;
 
   // Apply the distortion to the line/sample location and then convert back to line/sample
-  double distortedx, distortedy;
-  distortionFunction(undistortedx, undistortedy, distortedx, distortedy, m_odtX, m_odtY);
+  std::tuple<double, double> dpoint;
+  dpoint = distortionFunction(undistortedx, undistortedy, m_odtX, m_odtY);
 
 
   // Convert distorted mm into line/sample
   double sample, line;
-  sample = m_iTransS[0] + m_iTransS[1] * distortedx + m_iTransS[2] * distortedy + m_ccdCenter[1];
-  line =   m_iTransL[0] + m_iTransL[1] * distortedx + m_iTransL[2] * distortedy + m_ccdCenter[0];
+  sample = m_iTransS[0] + m_iTransS[1] * std::get<0>(dpoint) + m_iTransS[2] * std::get<1>(dpoint) + m_ccdCenter[1];
+  line =   m_iTransL[0] + m_iTransL[1] * std::get<0>(dpoint) + m_iTransL[2] * std::get<1>(dpoint) + m_ccdCenter[0];
 
   return csm::ImageCoord(line, sample);
 }
@@ -1224,8 +1224,7 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
 
   double x;
   double y;
-  double fx;
-  double fy;
+  std::tuple<double, double> dpoint;
   double Jxx;
   double Jxy;
   double Jyx;
@@ -1235,19 +1234,22 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
   x = dx;
   y = dy;
 
-  distortionFunction(x, y, fx, fy, m_odtX, m_odtY);
+  dpoint = distortionFunction(x, y, m_odtX, m_odtY);
 
+  for (int count = 1; ((fabs(std::get<0>(dpoint)) +fabs(std::get<1>(dpoint))) > tol) && (count < maxTries); count++) {
 
-  for (int count = 1; ((fabs(fx) +fabs(fy)) > tol) && (count < maxTries); count++) {
+    dpoint = distortionFunction(x, y, m_odtX, m_odtY);
 
-    distortionFunction(x, y, fx, fy, m_odtX, m_odtY);
+    // fx = dx - fx;
+    // fy = dy - fy;
+    dpoint = std::make_tuple(dx - std::get<0>(dpoint), dy - std::get<1>(dpoint));
 
-    fx = dx - fx;
-    fy = dy - fy;
+    std::vector<std::vector<double>> jacobian;
 
-    distortionJacobian(x, y, Jxx, Jxy, Jyx, Jyy, m_odtX, m_odtY);
+    jacobian = distortionJacobian(x, y, m_odtX, m_odtY);
 
-    double determinant = Jxx * Jyy - Jxy * Jyx;
+    // Jxx * Jyy - Jxy * Jyx
+    double determinant = jacobian[0][0] * jacobian[1][1] - jacobian[0][1] * jacobian[1][0];
     if (fabs(determinant) < 1E-6) {
 
       undistortedX = x;
@@ -1259,11 +1261,13 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
       return false;
     }
 
-    x = x + (Jyy * fx - Jxy * fy) / determinant;
-    y = y + (Jxx * fy - Jyx * fx) / determinant;
+    //x = x + (Jyy * fx - Jxy * fy)
+    x = x + (jacobian[1][1] * std::get<0>(dpoint) - jacobian[0][1] * std::get<1>(dpoint)) / determinant;
+    // y = y + (Jxx * fy - Jyx * fx)
+    y = y + (jacobian[0][0] * std::get<1>(dpoint) - jacobian[1][0] * std::get<0>(dpoint)) / determinant;
   }
 
-  if ( (fabs(fx) + fabs(fy)) <= tol) {
+  if ( (fabs(std::get<0>(dpoint)) + fabs(std::get<1>(dpoint))) <= tol) {
     // The method converged to a root.
     undistortedX = x;
     undistortedY = y;

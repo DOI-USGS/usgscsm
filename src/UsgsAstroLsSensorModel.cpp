@@ -1682,20 +1682,12 @@ void UsgsAstroLsSensorModel::computeDistortedFocalPlaneCoordinates(const double&
 void UsgsAstroLsSensorModel::computeUndistortedFocalPlaneCoordinates(const double &distortedFocalPlaneX, const double& distortedFocalPlaneY, double& undistortedFocalPlaneX, double& undistortedFocalPlaneY) const{
   undistortedFocalPlaneX = distortedFocalPlaneX;
   undistortedFocalPlaneY = distortedFocalPlaneY;
- if (m_opticalDistCoef[0] != 0.0 ||
-     m_opticalDistCoef[1] != 0.0 ||
-     m_opticalDistCoef[2] != 0.0)
-  {
-     double rr = distortedFocalPlaneX * distortedFocalPlaneX
-        + distortedFocalPlaneY * distortedFocalPlaneY;
-     if (rr > 1.0E-6)
-     {
-        double dr = m_opticalDistCoef[0] + (rr * (m_opticalDistCoef[1]
-           + rr * m_opticalDistCoef[2]));
-        undistortedFocalPlaneX = distortedFocalPlaneX * (1.0 - dr);
-        undistortedFocalPlaneY = distortedFocalPlaneY * (1.0 - dr);
-     }
-  }
+
+  std::tuple<double, double> dpoint;
+
+  dpoint = removeDistortion(distortedFocalPlaneX, distortedFocalPlaneY, m_opticalDistCoef);
+  undistortedFocalPlaneX = std::get<0>(dpoint);
+  undistortedFocalPlaneY = std::get<1>(dpoint);
 };
 
 
@@ -2420,20 +2412,20 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double lookScale = m_focal / adjustedLookZ;
    double focalX = adjustedLookX * lookScale;
    double focalY = adjustedLookY * lookScale;
+   std::tuple<double, double> dpoint;
 
    // Invert distortion
    // This method works by iteratively adding distortion until the new distorted
    // point, r, undistorts to within a tolerance of the original point, rp.
-   invertDistortion(focalX, focalY, focalX, focalY,
-                    m_opticalDistCoef, desiredPrecision);
+   dpoint = invertDistortion(focalX, focalY, m_opticalDistCoef, desiredPrecision);
 
    // Convert to detector line and sample
    double detectorLine = m_iTransL[0]
-                       + m_iTransL[1] * focalX
-                       + m_iTransL[2] * focalY;
+                       + m_iTransL[1] * std::get<0>(dpoint)
+                       + m_iTransL[2] * std::get<1>(dpoint);
    double detectorSample = m_iTransS[0]
-                         + m_iTransS[1] * focalX
-                         + m_iTransS[2] * focalY;
+                         + m_iTransS[1] * std::get<0>(dpoint)
+                         + m_iTransS[2] * std::get<1>(dpoint);
 
    // Convert to image sample line
    double line = detectorLine + m_detectorLineOrigin - m_detectorLineOffset
