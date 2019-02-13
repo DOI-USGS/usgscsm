@@ -58,12 +58,23 @@ TEST_F(FrameSensorModel, OffBody3) {
    EXPECT_NEAR(groundPt.z, 14.99325304, 1e-8);
 }
 
+TEST_F(FrameSensorModel, getReferencePoint) {
+  csm::EcefCoord groundPt = sensorModel->getReferencePoint();
+  EXPECT_EQ(groundPt.x, 0.0);
+  EXPECT_EQ(groundPt.y, 0.0);   
+  EXPECT_EQ(groundPt.z, 0.0);
+}
+
 TEST_F(FrameSensorModel, OffBody4) {
    csm::ImageCoord imagePt(15.0, 15.0);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
    EXPECT_NEAR(groundPt.x, 0.44979759, 1e-8);
    EXPECT_NEAR(groundPt.y, -14.99325304, 1e-8);
    EXPECT_NEAR(groundPt.z, -14.99325304, 1e-8);
+}
+
+TEST_F(FrameSensorModel, getImageIdentifier) {
+  EXPECT_EQ("simpleFramerISD", sensorModel->getImageIdentifier());
 }
 
 TEST_F(FrameSensorModel, setFocalPlane1) {

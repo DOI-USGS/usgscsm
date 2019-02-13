@@ -27,14 +27,16 @@ const std::string UsgsAstroFrameSensorModel::m_parameterName[] = {
   "v3"                      // 6
 };
 
-const int         UsgsAstroFrameSensorModel::_NUM_STATE_KEYWORDS = 32;
-
 UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
     reset();
 }
 
 void UsgsAstroFrameSensorModel::reset() {
     m_modelName = _SENSOR_MODEL_NAME;
+    m_platformName = "";
+    m_sensorName = "";
+    m_imageIdentifier = "";
+    m_collectionIdentifier = "";
     m_majorAxis = 0.0;
     m_minorAxis = 0.0;
     m_focalLength = 0.0;
@@ -68,6 +70,9 @@ void UsgsAstroFrameSensorModel::reset() {
     m_iTransL = std::vector<double>(3, 0.0);
     m_boresight = std::vector<double>(3, 0.0);
     m_parameterType = std::vector<csm::param::Type>(NUM_PARAMETERS, csm::param::REAL);
+    m_referencePointXyz.x = 0;
+    m_referencePointXyz.y = 0;
+    m_referencePointXyz.z = 0;
 }
 
 
@@ -148,9 +153,17 @@ csm::ImageCoordCovar UsgsAstroFrameSensorModel::groundToImage(const csm::EcefCoo
                                    double *achievedPrecision,
                                    csm::WarningList *warnings) const {
 
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "UsgsAstroFrameSensorModel::groundToImage");
+    csm::EcefCoord gp;
+    gp.x = groundPt.x;
+    gp.y = groundPt.y;
+    gp.z = groundPt.z;
+
+    csm::ImageCoord ip = groundToImage(                                          
+      gp, desiredPrecision, achievedPrecision, warnings);                     
+   csm::ImageCoordCovar result(ip.line, ip.samp);                                    
+   // This is a partial, incorrect implementation to test if SocetGXP needs
+   // this method implemented in order to load the sensor.
+   return result;
 }
 
 
@@ -211,9 +224,9 @@ csm::EcefCoordCovar UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoo
                                   double heightVariance, double desiredPrecision,
                                   double *achievedPrecision,
                                   csm::WarningList *warnings) const {
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "UsgsAstroFrameSensorModel::imageToGround");
+    // This is an incomplete implementation to see if SocetGXP needs this method implemented.
+    csm::EcefCoordCovar result;
+    return result;
 }
 
 
@@ -534,9 +547,8 @@ const csm::CorrelationModel& UsgsAstroFrameSensorModel::getCorrelationModel() co
 std::vector<double> UsgsAstroFrameSensorModel::getUnmodeledCrossCovariance(const csm::ImageCoord &pt1,
                                                 const csm::ImageCoord &pt2) const {
 
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getUnmodeledCrossCovariance");
+   // No unmodeled error
+   return std::vector<double>(4, 0.0);
 }
 
 
@@ -551,52 +563,38 @@ std::string UsgsAstroFrameSensorModel::getModelName() const {
 
 
 std::string UsgsAstroFrameSensorModel::getPedigree() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getPedigree");
+  return "USGS_FRAMER";
 }
 
 
 std::string UsgsAstroFrameSensorModel::getImageIdentifier() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getImageIdentifier");
+  return m_imageIdentifier;
 }
 
 
 void UsgsAstroFrameSensorModel::setImageIdentifier(const std::string& imageId,
                                             csm::WarningList* warnings) {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::setImageIdentifier");
+  m_imageIdentifier = imageId;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getSensorIdentifier() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getSensorIdentifier");
+  return m_sensorName;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getPlatformIdentifier() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getPlatformIdentifier");
+  return m_platformName;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getCollectionIdentifier() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getCollectionIdentifier");
+  return m_collectionIdentifier;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getTrajectoryIdentifier() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getTrajectoryIdentifier");
+  return "";
 }
 
 
@@ -611,15 +609,15 @@ std::string UsgsAstroFrameSensorModel::getSensorMode() const {
 
 
 std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getReferenceDateAndTime");
+  return "";
 }
 
 
 std::string UsgsAstroFrameSensorModel::getModelState() const {
     json state = {
       {"m_modelName", _SENSOR_MODEL_NAME},
+      {"m_sensorName", m_sensorName},
+      {"m_platformName", m_platformName},
       {"m_focalLength" , m_focalLength},
       {"m_iTransS", {m_iTransS[0], m_iTransS[1], m_iTransS[2]}},
       {"m_iTransL", {m_iTransL[0], m_iTransL[1], m_iTransL[2]}},
@@ -643,10 +641,8 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_samplePp", m_samplePp},
       {"m_minElevation", m_minElevation},
       {"m_maxElevation", m_maxElevation},
-      {"m_odtX", {m_odtX[0], m_odtX[1], m_odtX[2], m_odtX[3], m_odtX[4],
-                  m_odtX[5], m_odtX[6], m_odtX[7], m_odtX[8], m_odtX[9]}},
-      {"m_odtY", {m_odtY[0], m_odtY[1], m_odtY[2], m_odtY[3], m_odtY[4],
-                  m_odtY[5], m_odtY[6], m_odtY[7], m_odtY[8], m_odtY[9]}},
+      {"m_odtX", m_odtX},
+      {"m_odtY", m_odtY},
       {"m_originalHalfLines", m_originalHalfLines},
       {"m_originalHalfSamples", m_originalHalfSamples},
       {"m_spacecraftName", m_spacecraftName},
@@ -654,13 +650,14 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_ephemerisTime", m_ephemerisTime},
       {"m_nLines", m_nLines},
       {"m_nSamples", m_nSamples},
-      {"m_currentParameterValue", {m_currentParameterValue[0], m_currentParameterValue[1],
-                                   m_currentParameterValue[2], m_currentParameterValue[3],
-                                   m_currentParameterValue[4], m_currentParameterValue[5],
-                                   m_currentParameterValue[6]}},
+      {"m_currentParameterValue", m_currentParameterValue},
+      {"m_imageIdentifier", m_imageIdentifier},
+      {"m_collectionIdentifier", m_collectionIdentifier},
+      {"m_referencePointXyz", {m_referencePointXyz.x, 
+                               m_referencePointXyz.y, 
+                               m_referencePointXyz.z}},
       {"m_currentParameterCovariance", m_currentParameterCovariance}
     };
-
     return state.dump();
 }
 
@@ -738,7 +735,6 @@ bool UsgsAstroFrameSensorModel::isValidIsd(const std::string& Isd, csm::WarningL
 void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState) {
 
     json state = json::parse(stringState);
-
     // The json library's .at() will except if key is missing
     try {
         m_modelName = state.at("m_modelName").get<std::string>();
@@ -760,6 +756,16 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
         m_transY = state.at("m_transY").get<std::vector<double>>();
         m_iTransS = state.at("m_iTransS").get<std::vector<double>>();
         m_iTransL = state.at("m_iTransL").get<std::vector<double>>();
+        m_imageIdentifier = state.at("m_imageIdentifier").get<std::string>();
+        m_platformName = state.at("m_platformName").get<std::string>();
+        m_sensorName = state.at("m_sensorName").get<std::string>();
+        m_collectionIdentifier = state.at("m_collectionIdentifier").get<std::string>();
+        std::vector<double> refpt = state.at("m_referencePointXyz").get<std::vector<double>>();
+        m_referencePointXyz.x = refpt[0];
+        m_referencePointXyz.y = refpt[1];
+        m_referencePointXyz.z = refpt[2];
+        m_currentParameterCovariance = state.at("m_currentParameterCovariance").get<std::vector<double>>();
+
 
         // Leaving unused params commented out
         // m_targetName = state.at("m_targetName").get<std::string>();
@@ -810,6 +816,9 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
     try {
       state["m_modelName"] = isd.at("name_model");
+      state["m_imageIdentifier"] = isd.at("image_identifier");
+      state["m_sensorName"] = isd.at("name_sensor");
+      state["m_platformName"] = isd.at("name_platform");
       std::cerr << "Model Name Parsed!" << std::endl;
 
       state["m_startingDetectorSample"] = isd.at("starting_detector_sample");
@@ -954,6 +963,12 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
       std::cerr << "Focal To Pixel Transformation Parsed!" << std::endl;
 
+      state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
+      state["m_currentParameterCovariance"] = std::vector<double>(NUM_PARAMETERS*NUM_PARAMETERS,0.0);
+      state["m_collectionIdentifier"] = ""; 
+
+      std::cerr << "Constants Set!" << std::endl;
+
     }
     catch(std::out_of_range& e) {
       throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
@@ -972,16 +987,12 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
 
 csm::EcefCoord UsgsAstroFrameSensorModel::getReferencePoint() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getReferencePoint");
+  return m_referencePointXyz;
 }
 
 
 void UsgsAstroFrameSensorModel::setReferencePoint(const csm::EcefCoord &groundPt) {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::setReferencePoint");
+  m_referencePointXyz = groundPt;
 }
 
 
@@ -1007,28 +1018,26 @@ std::string UsgsAstroFrameSensorModel::getParameterUnits(int index) const {
 
 
 bool UsgsAstroFrameSensorModel::hasShareableParameters() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::hasShareableParameters");
+  return false;
 }
 
 
 bool UsgsAstroFrameSensorModel::isParameterShareable(int index) const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::isParameterShareable");
+  return false;
 }
 
 
 csm::SharingCriteria UsgsAstroFrameSensorModel::getParameterSharingCriteria(int index) const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getParameterSharingCriteria");
+   // Parameter sharing is not supported for this sensor,
+   // all indices are out of range
+   throw csm::Error(
+      csm::Error::INDEX_OUT_OF_RANGE,
+      "Index out of range.",
+      "UsgsAstroLsSensorModel::getParameterSharingCriteria");
 }
 
 
 double UsgsAstroFrameSensorModel::getParameterValue(int index) const {
-
   return m_currentParameterValue[index];
 
 }
@@ -1050,46 +1059,48 @@ void UsgsAstroFrameSensorModel::setParameterType(int index, csm::param::Type pTy
 
 
 double UsgsAstroFrameSensorModel::getParameterCovariance(int index1, int index2) const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getParameterCovariance");
+   int index = UsgsAstroFrameSensorModel::NUM_PARAMETERS * index1 + index2;
+   return m_currentParameterCovariance[index];
 }
 
 
 void UsgsAstroFrameSensorModel::setParameterCovariance(int index1, int index2, double covariance) {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::setParameterCovariance");
+   int index = UsgsAstroFrameSensorModel::NUM_PARAMETERS * index1 + index2;
+   m_currentParameterCovariance[index] = covariance;
 }
 
 
 int UsgsAstroFrameSensorModel::getNumGeometricCorrectionSwitches() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getNumGeometricCorrectionSwitches");
+  return 0;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getGeometricCorrectionName(int index) const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getGeometricCorrectionName");
+   // Since there are no geometric corrections, all indices are out of range
+   throw csm::Error(
+      csm::Error::INDEX_OUT_OF_RANGE,
+      "Index is out of range.",
+      "UsgsAstroLsSensorModel::getGeometricCorrectionName");
 }
 
 
 void UsgsAstroFrameSensorModel::setGeometricCorrectionSwitch(int index,
                                                       bool value,
                                                       csm::param::Type pType) {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::setGeometricCorrectionSwitch");
+   // Since there are no geometric corrections, all indices are out of range
+   throw csm::Error(
+      csm::Error::INDEX_OUT_OF_RANGE,
+      "Index is out of range.",
+      "UsgsAstroLsSensorModel::setGeometricCorrectionSwitch");
 }
 
 
 bool UsgsAstroFrameSensorModel::getGeometricCorrectionSwitch(int index) const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getGeometricCorrectionSwitch");
+   // Since there are no geometric corrections, all indices are out of range
+   throw csm::Error(
+      csm::Error::INDEX_OUT_OF_RANGE,
+      "Index is out of range.",
+      "UsgsAstroLsSensorModel::getGeometricCorrectionSwitch");
 }
 
 
@@ -1097,9 +1108,14 @@ std::vector<double> UsgsAstroFrameSensorModel::getCrossCovarianceMatrix(
     const GeometricModel &comparisonModel,
     csm::param::Set pSet,
     const GeometricModelList &otherModels) const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getCrossCovarianceMatrix");
+   
+   // No correlation between models.
+   const std::vector<int>& indices = getParameterSetIndices(pSet);
+   size_t num_rows = indices.size();
+   const std::vector<int>& indices2 = comparisonModel.getParameterSetIndices(pSet);
+   size_t num_cols = indices.size();
+
+   return std::vector<double>(num_rows * num_cols, 0.0);
 }
 
 

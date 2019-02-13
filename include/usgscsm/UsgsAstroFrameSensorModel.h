@@ -357,6 +357,10 @@ protected:
     double m_startingDetectorLine;
     std::string m_targetName;
     std::string m_modelName;
+    std::string m_sensorName;
+    std::string m_platformName;
+    std::string m_imageIdentifier;
+    std::string m_collectionIdentifier;
     double m_ifov;
     std::string m_instrumentID;
     double m_focalLengthEpsilon;
@@ -369,6 +373,8 @@ protected:
     int m_nLines;
     int m_nSamples;
     int m_nParameters;
+
+    csm::EcefCoord m_referencePointXyz; 
 
     json _state;
     static const int         _NUM_STATE_KEYWORDS;
