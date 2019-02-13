@@ -46,11 +46,11 @@ TEST(Transverse, distortMe_AlternatingOnes) {
   std::vector<double> odtY = {0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0};
 
   double dx,dy;
-  std::tuple<double, double> distortionPoint;
-  distortionPoint = distortionFunction(imagePt.samp, imagePt.line, odtX, odtY);
+  std::tuple<double, double> distortedPoint;
+  distortedPoint = distortionFunction(imagePt.samp, imagePt.line, odtX, odtY);
 
-  EXPECT_NEAR(std::get<0>(distortionPoint),908.5,1e-8 );
-  EXPECT_NEAR(std::get<1>(distortionPoint),963.75,1e-8);
+  EXPECT_NEAR(std::get<0>(distortedPoint),908.5,1e-8 );
+  EXPECT_NEAR(std::get<1>(distortedPoint),963.75,1e-8);
 }
 
 TEST(Transverse,  distortMe_AllCoefficientsOne) {
@@ -60,11 +60,11 @@ TEST(Transverse,  distortMe_AllCoefficientsOne) {
   std::vector<double> odtY = {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
 
   double dx,dy;
-  std::tuple<double, double> distortionPoint;
-  distortionPoint = distortionFunction(imagePt.samp, imagePt.line, odtX, odtY);
+  std::tuple<double, double> distortedPoint;
+  distortedPoint = distortionFunction(imagePt.samp, imagePt.line, odtX, odtY);
 
-  EXPECT_NEAR(std::get<0>(distortionPoint),1872.25,1e-8 );
-  EXPECT_NEAR(std::get<1>(distortionPoint),1872.25,1e-8);
+  EXPECT_NEAR(std::get<0>(distortedPoint),1872.25,1e-8 );
+  EXPECT_NEAR(std::get<1>(distortedPoint),1872.25,1e-8);
 }
 
 TEST(Radial, testRemoveDistortion) {
@@ -72,12 +72,12 @@ TEST(Radial, testRemoveDistortion) {
 
   double dx, dy;
   double coeffs[3] = {0, 0, 0};
-  std::tuple<double, double> distortionPoint;
+  std::tuple<double, double> undistortedPoint;
 
-  distortionPoint = removeDistortion(imagePt.samp, imagePt.line, coeffs);
+  undistortedPoint = removeDistortion(imagePt.samp, imagePt.line, coeffs);
 
-  EXPECT_NEAR(std::get<0>(distortionPoint),4,1e-8);
-  EXPECT_NEAR(std::get<1>(distortionPoint),0,1e-8);
+  EXPECT_NEAR(std::get<0>(undistortedPoint),4,1e-8);
+  EXPECT_NEAR(std::get<1>(undistortedPoint),0,1e-8);
 }
 
 // If coeffs are 0 then this will have the same result as removeDistortion
@@ -88,12 +88,12 @@ TEST(Radial, testInverseDistortion){
   double dx, dy;
   double desiredPrecision = 0.01;
   double coeffs[3] = {0, 0, 0};
-  std::tuple<double, double> distortionPoint;
+  std::tuple<double, double> undistortedPoint;
 
-  distortionPoint = invertDistortion(imagePt.samp, imagePt.line, coeffs, desiredPrecision);
+  undistortedPoint = invertDistortion(imagePt.samp, imagePt.line, coeffs, desiredPrecision);
 
-  EXPECT_NEAR(std::get<0>(distortionPoint),4,1e-8);
-  EXPECT_NEAR(std::get<1>(distortionPoint),0,1e-8);
+  EXPECT_NEAR(std::get<0>(undistortedPoint),4,1e-8);
+  EXPECT_NEAR(std::get<1>(undistortedPoint),0,1e-8);
 }
 
 TEST(Radial, testInverseOnesCoeffs){
@@ -102,10 +102,10 @@ TEST(Radial, testInverseOnesCoeffs){
   double dx, dy;
   double desiredPrecision = 0.01;
   double coeffs[3] = {1, 1, 1};
-  std::tuple<double, double> distortionPoint;
+  std::tuple<double, double> undistortedPoint;
 
-  distortionPoint = invertDistortion(imagePt.samp, imagePt.line, coeffs, desiredPrecision);
+  undistortedPoint = invertDistortion(imagePt.samp, imagePt.line, coeffs, desiredPrecision);
 
-  EXPECT_NEAR(std::get<0>(distortionPoint),4,1e-8);
-  EXPECT_NEAR(std::get<1>(distortionPoint),0,1e-8);
+  EXPECT_NEAR(std::get<0>(undistortedPoint),4,1e-8);
+  EXPECT_NEAR(std::get<1>(undistortedPoint),0,1e-8);
 }

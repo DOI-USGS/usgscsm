@@ -1794,12 +1794,12 @@ void UsgsAstroLsSensorModel::losToEcf(
    computeDistortedFocalPlaneCoordinates(fractionalLine, sampleUSGSFull, natFocalPlaneX, natFocalPlaneY);
 
    // Remove lens distortion
-   std::tuple<double, double> distortionPoint;
-   distortionPoint = removeDistortion(natFocalPlaneX, natFocalPlaneY, m_opticalDistCoef);
+   std::tuple<double, double> undistortedPoint;
+   undistortedPoint = removeDistortion(natFocalPlaneX, natFocalPlaneY, m_opticalDistCoef);
 
   // Define imaging ray (look vector) in camera space
    double cameraLook[3];
-   createCameraLookVector(std::get<0>(distortionPoint), std::get<1>(distortionPoint), adj, cameraLook);
+   createCameraLookVector(std::get<0>(undistortedPoint), std::get<1>(undistortedPoint), adj, cameraLook);
 
    // Apply attitude correction
    double attCorr[9];
@@ -2400,18 +2400,18 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double lookScale = m_focal / adjustedLookZ;
    double focalX = adjustedLookX * lookScale;
    double focalY = adjustedLookY * lookScale;
-   std::tuple<double, double> distortionPoint;
+   std::tuple<double, double> undistortedPoint;
 
    // Invert distortion
-   distortionPoint = invertDistortion(focalX, focalY, m_opticalDistCoef, desiredPrecision);
+   undistortedPoint = invertDistortion(focalX, focalY, m_opticalDistCoef, desiredPrecision);
 
    // Convert to detector line and sample
    double detectorLine = m_iTransL[0]
-                       + m_iTransL[1] * std::get<0>(distortionPoint)
-                       + m_iTransL[2] * std::get<1>(distortionPoint);
+                       + m_iTransL[1] * std::get<0>(undistortedPoint)
+                       + m_iTransL[2] * std::get<1>(undistortedPoint);
    double detectorSample = m_iTransS[0]
-                         + m_iTransS[1] * std::get<0>(distortionPoint)
-                         + m_iTransS[2] * std::get<1>(distortionPoint);
+                         + m_iTransS[1] * std::get<0>(undistortedPoint)
+                         + m_iTransS[2] * std::get<1>(undistortedPoint);
 
    // Convert to image sample line
    double line = detectorLine + m_detectorLineOrigin - m_detectorLineOffset
