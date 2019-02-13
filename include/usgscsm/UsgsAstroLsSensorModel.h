@@ -949,11 +949,6 @@ private:
        const std::vector<double>& adj,
        double attCorr[9]) const;
 
-   void reconstructSensorDistortion(
-       double& focalX,
-       double& focalY,
-       const double& desiredPrecision) const;
-
 // This method computes the imaging locus.
 // imaging locus : set of ground points associated with an image pixel.
    void losToEcf(
