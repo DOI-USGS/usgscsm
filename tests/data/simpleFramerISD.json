@@ -1,5 +1,7 @@
 {
 	"name_model" : "USGS_ASTRO_FRAME_SENSOR_MODEL",
+	"name_sensor": "SENSOR",
+	"name_platform": "CarryMe",
 	"center_ephemeris_time": 50,
 	"dt_ephemeris": 100,
   "focal2pixel_lines": [0.0, 0.0, 10.0],
