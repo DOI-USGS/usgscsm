@@ -19,6 +19,7 @@
 #define USGS_SENSOR_LIBRARY
 
 #include "UsgsAstroLsSensorModel.h"
+#include "Utilities.h"
 
 #include <algorithm>
 #include <iostream>
@@ -1657,26 +1658,6 @@ double UsgsAstroLsSensorModel::getValue(
 // Functions pulled out of losToEcf and computeViewingPixel
 // **************************************************************************
 
-// Compute distorted focalPlane coordinates in mm
-void UsgsAstroLsSensorModel::computeDistortedFocalPlaneCoordinates(const double& line, const double& sample, double& distortedLine, double& distortedSample) const{
-  double detSample = (sample - 1.0)
-      * m_detectorSampleSumming + m_startingSample;
-  double m11 = m_iTransL[1];
-  double m12 = m_iTransL[2];
-  double m21 = m_iTransS[1];
-  double m22 = m_iTransS[2];
-  double t1 = line + m_detectorLineOffset
-               - m_detectorLineOrigin - m_iTransL[0];
-  double t2 = detSample - m_detectorSampleOrigin - m_iTransS[0];
-  double determinant = m11 * m22 - m12 * m21;
-  double p11 = m11 / determinant;
-  double p12 = -m12 / determinant;
-  double p21 = -m21 / determinant;
-  double p22 = m22 / determinant;
-  distortedLine = p11 * t1 + p12 * t2;
-  distortedSample = p21 * t1 + p22 * t2;
-}
-
 // Compute un-distorted image coordinates in mm / apply lens distortion correction
 void UsgsAstroLsSensorModel::computeUndistortedFocalPlaneCoordinates(const double &distortedFocalPlaneX, const double& distortedFocalPlaneY, double& undistortedFocalPlaneX, double& undistortedFocalPlaneY) const{
   undistortedFocalPlaneX = distortedFocalPlaneX;
@@ -1711,56 +1692,16 @@ void UsgsAstroLsSensorModel::createCameraLookVector(const double& undistortedFoc
    cameraLook[2] /= magnitude;
 };
 
-
-// Given a time and a flag to indicate whether the a->b or b->a rotation should be calculated
-// uses the quaternions in the m_quaternions member to calclate a rotation matrix.
-void UsgsAstroLsSensorModel::calculateRotationMatrixFromQuaternions(const double& time, double rotationMatrix[9]) const {
+void UsgsAstroLsSensorModel::getQuaternions(const double& time, double q[4]) const{
   int nOrder = 8;
   if (m_platformFlag == 0)
      nOrder = 4;
   int nOrderQuat = nOrder;
   if (m_numQuaternions < 6 && nOrder == 8)
      nOrderQuat = 4;
-  double q[4];
   lagrangeInterp(
      m_numQuaternions, &m_quaternions[0], m_t0Quat, m_dtQuat,
      time, 4, nOrderQuat, q);
-  double norm = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
-  q[0] /= norm;
-  q[1] /= norm;
-  q[2] /= norm;
-  q[3] /= norm;
-
-  rotationMatrix[0] = q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
-  rotationMatrix[1] = 2 * (q[0] * q[1] - q[2] * q[3]);
-  rotationMatrix[2] = 2 * (q[0] * q[2] + q[1] * q[3]);
-  rotationMatrix[3] = 2 * (q[0] * q[1] + q[2] * q[3]);
-  rotationMatrix[4] = -q[0] * q[0] + q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
-  rotationMatrix[5] = 2 * (q[1] * q[2] - q[0] * q[3]);
-  rotationMatrix[6] = 2 * (q[0] * q[2] - q[1] * q[3]);
-  rotationMatrix[7] = 2 * (q[1] * q[2] + q[0] * q[3]);
-  rotationMatrix[8] = -q[0] * q[0] - q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
-};
-
-// Calculates a rotation matrix from Euler angles
-void UsgsAstroLsSensorModel::calculateRotationMatrixFromEuler(double euler[],
-                                                              double rotationMatrix[]) const {
-  double cos_a = cos(euler[0]);
-  double sin_a = sin(euler[0]);
-  double cos_b = cos(euler[1]);
-  double sin_b = sin(euler[1]);
-  double cos_c = cos(euler[2]);
-  double sin_c = sin(euler[2]);
-
-  rotationMatrix[0] = cos_b * cos_c;
-  rotationMatrix[1] = -cos_a * sin_c + sin_a * sin_b * cos_c;
-  rotationMatrix[2] = sin_a * sin_c + cos_a * sin_b * cos_c;
-  rotationMatrix[3] = cos_b * sin_c;
-  rotationMatrix[4] = cos_a * cos_c + sin_a * sin_b * sin_c;
-  rotationMatrix[5] = -sin_a * cos_c + cos_a * sin_b * sin_c;
-  rotationMatrix[6] = -sin_b;
-  rotationMatrix[7] = sin_a * cos_b;
-  rotationMatrix[8] = cos_a * cos_b;
 }
 
 void UsgsAstroLsSensorModel::calculateAttitudeCorrection(const double& time, const std::vector<double>& adj, double attCorr[9]) const {
@@ -1862,12 +1803,12 @@ void UsgsAstroLsSensorModel::losToEcf(
    double fractionalLine = line - floor(line);
 
    // Compute distorted image coordinates in mm (sample, line on image (pixels) -> focal plane
-   double natFocalPlaneX, natFocalPlaneY;
-   computeDistortedFocalPlaneCoordinates(fractionalLine, sampleUSGSFull, natFocalPlaneX, natFocalPlaneY);
+   std::tuple<double, double> natFocalPlane; //double natFocalPlaneX, natFocalPlaneY;
+   natFocalPlane = computeDistortedFocalPlaneCoordinates(fractionalLine, sampleUSGSFull, m_detectorSampleOrigin, m_detectorLineOrigin, m_detectorSampleSumming, m_startingSample, m_detectorLineOffset, m_iTransS, m_iTransL);
 
    // Remove lens distortion
    double focalPlaneX, focalPlaneY;
-   computeUndistortedFocalPlaneCoordinates(natFocalPlaneX, natFocalPlaneY, focalPlaneX, focalPlaneY);
+   computeUndistortedFocalPlaneCoordinates(std::get<0>(natFocalPlane), std::get<1>(natFocalPlane), focalPlaneX, focalPlaneY);
 
   // Define imaging ray (look vector) in camera space
    double cameraLook[3];
@@ -1889,8 +1830,10 @@ void UsgsAstroLsSensorModel::losToEcf(
                           + attCorr[8] * cameraLook[2];
 
 // Rotate the look vector into the body fixed frame from the camera reference frame by applying the rotation matrix from the sensor quaternions
+   double quaternions[4];
+   getQuaternions(time, quaternions); 
    double cameraToBody[9];
-   calculateRotationMatrixFromQuaternions(time, cameraToBody);
+   calculateRotationMatrixFromQuaternions(quaternions, cameraToBody);
 
    bodyLookX = cameraToBody[0] * correctedCameraLook[0]
              + cameraToBody[1] * correctedCameraLook[1]
@@ -2439,8 +2382,10 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double bodyLookZ = groundPoint.z - zc;
 
    // Rotate the look vector into the camera reference frame
+   double quaternions[4];
+   getQuaternions(time, quaternions); 
    double bodyToCamera[9];
-   calculateRotationMatrixFromQuaternions(time, bodyToCamera);
+   calculateRotationMatrixFromQuaternions(quaternions, bodyToCamera);
 
    // Apply transpose of matrix to rotate body->camera
    double cameraLookX = bodyToCamera[0] * bodyLookX

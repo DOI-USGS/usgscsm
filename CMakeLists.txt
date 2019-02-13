@@ -26,7 +26,8 @@ endif(BUILD_CSM)
 add_library(usgscsm SHARED
             src/UsgsAstroPlugin.cpp
             src/UsgsAstroFrameSensorModel.cpp
-            src/UsgsAstroLsSensorModel.cpp)
+            src/UsgsAstroLsSensorModel.cpp
+	    src/Utilities.cpp)
 
 set_target_properties(usgscsm PROPERTIES
     VERSION ${PROJECT_VERSION}

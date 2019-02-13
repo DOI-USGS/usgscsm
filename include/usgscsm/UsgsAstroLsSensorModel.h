@@ -31,7 +31,6 @@
 #include <SettableEllipsoid.h>
 #include <CorrelationModel.h>
 
-
 class UsgsAstroLsSensorModel : public csm::RasterGM, virtual public csm::SettableEllipsoid
 {
 public:
@@ -916,43 +915,31 @@ private:
       double* achievedPrecision = NULL,
       csm::WarningList* warnings = NULL) const;
 
-   // methods pulled out of los2ecf and computeViewingPixel
-
-   void computeDistortedFocalPlaneCoordinates(
-       const double& line,
-       const double& sample,
-       double& distortedLine,
-       double& distortedSample) const;
-
-   void computeUndistortedFocalPlaneCoordinates(
-       const double& distortedFocalPlaneX,
-       const double& distortedFocalPlaneY,
-       double& undistortedFocalPlaneX,
-       double& undistortedFocalPlaneY) const;
-
-   void calculateRotationMatrixFromQuaternions(
-       const double& time,
-       double cameraToBody[9]) const;
-
-   void calculateRotationMatrixFromEuler(
-       double euler[],
-       double rotationMatrix[]) const;
-
    void createCameraLookVector(
-       const double& undistortedFocalPlaneX,
-       const double& undistortedFocalPlaneY,
-       const std::vector<double>& adj,
-       double cameraLook[]) const;
+     const double& undistortedFocalPlaneX,
+     const double& undistortedFocalPlaneY,
+     const std::vector<double>& adj,
+     double cameraLook[]) const;
 
    void calculateAttitudeCorrection(
-       const double& time,
-       const std::vector<double>& adj,
-       double attCorr[9]) const;
+     const double& time,
+     const std::vector<double>& adj,
+     double attCorr[9]) const;
 
    void reconstructSensorDistortion(
-       double& focalX,
-       double& focalY,
-       const double& desiredPrecision) const;
+     double& focalX,
+     double& focalY,
+     const double& desiredPrecision) const;
+
+   void computeUndistortedFocalPlaneCoordinates(
+     const double& distortedFocalPlaneX,
+     const double& distortedFocalPlaneY,
+     double& undistortedFocalPlaneX,
+     double& undistortedFocalPlaneY) const;
+
+   void getQuaternions(const double& time,
+                       double quaternion[4]) const;
+
 
 // This method computes the imaging locus.
 // imaging locus : set of ground points associated with an image pixel.
