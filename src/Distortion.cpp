@@ -74,7 +74,7 @@ std::vector<std::vector<double>> distortionJacobian(double x, double y,
  * @param odtX opticalDistCoef In X
  * @param odtY opticalDistCoef In Y
  *
- * @returns dpoint Newly adjusted focal plane coordinates as an x, y tuple
+ * @returns distortionPoint Newly adjusted focal plane coordinates as an x, y tuple
  */
 std::tuple<double, double> distortionFunction(double ux, double uy,
   const std::vector<double> &odtX, const std::vector<double> &odtY) {
@@ -91,13 +91,13 @@ std::tuple<double, double> distortionFunction(double ux, double uy,
   f[8] = ux * uy * uy;
   f[9] = uy * uy * uy;
 
-  std::tuple<double, double> dpoint(0.0, 0.0);
+  std::tuple<double, double> distortionPoint(0.0, 0.0);
   for (int i = 0; i < 10; i++) {
-    dpoint = std::make_tuple(std::get<0>(dpoint) + f[i] * odtX[i],
-                             std::get<1>(dpoint) + f[i] * odtY[i]);
+    distortionPoint = std::make_tuple(std::get<0>(distortionPoint) + f[i] * odtX[i],
+                             std::get<1>(distortionPoint) + f[i] * odtY[i]);
   }
 
-  return dpoint;
+  return distortionPoint;
 }
 
 /**
@@ -110,20 +110,20 @@ std::tuple<double, double> distortionFunction(double ux, double uy,
  * @param outFocalPlaneY Undistorted y
  * @param opticalDistCoef distortion coefficients
  *
- * @returns dpoint Newly adjusted focal plane coordinates as an x, y tuple
+ * @returns distortionPoint Newly adjusted focal plane coordinates as an x, y tuple
  */
 std::tuple<double, double> removeDistortion(double inFocalPlaneX, double inFocalPlaneY,
   const double opticalDistCoef[3], double tolerance) {
   double rr = inFocalPlaneX * inFocalPlaneX + inFocalPlaneY * inFocalPlaneY;
-  std::tuple<double, double> dpoint;
+  std::tuple<double, double> distortionPoint;
 
   if (rr > tolerance)
   {
     double dr = opticalDistCoef[0] + (rr * (opticalDistCoef[1] + rr * opticalDistCoef[2]));
-    dpoint = std::make_tuple(inFocalPlaneX * (1.0 - dr), inFocalPlaneY * (1.0 - dr));
+    distortionPoint = std::make_tuple(inFocalPlaneX * (1.0 - dr), inFocalPlaneY * (1.0 - dr));
   }
 
-  return dpoint;
+  return distortionPoint;
 }
 
 /**
@@ -140,13 +140,13 @@ std::tuple<double, double> removeDistortion(double inFocalPlaneX, double inFocal
  * @param desiredPrecision Convergence precision
  * @param tolerance Tolerance of r^2
  *
- * @returns dpoint Newly adjusted focal plane coordinates as an x, y tuple
+ * @returns distortionPoint Newly adjusted focal plane coordinates as an x, y tuple
  */
 std::tuple<double, double> invertDistortion(double inFocalPlaneX, double inFocalPlaneY,
   const double opticalDistCoef[3], double desiredPrecision, double tolerance) {
   double rp2 = (inFocalPlaneX * inFocalPlaneX) +
                (inFocalPlaneY * inFocalPlaneY);
-  std::tuple<double, double> dpoint;
+  std::tuple<double, double> distortionPoint;
 
   if (rp2 > tolerance) {
     double rp = sqrt(rp2);
@@ -180,8 +180,8 @@ std::tuple<double, double> invertDistortion(double inFocalPlaneX, double inFocal
       iteration++;
     }
     while (fabs(r * (1 - drOverR) - rp) > desiredPrecision);
-    dpoint = std::make_tuple(inFocalPlaneX / (1.0 - drOverR),
+    distortionPoint = std::make_tuple(inFocalPlaneX / (1.0 - drOverR),
                              inFocalPlaneY / (1.0 - drOverR));
   }
-  return dpoint;
+  return distortionPoint;
 }

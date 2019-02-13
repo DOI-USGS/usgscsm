@@ -1683,11 +1683,11 @@ void UsgsAstroLsSensorModel::computeUndistortedFocalPlaneCoordinates(const doubl
   undistortedFocalPlaneX = distortedFocalPlaneX;
   undistortedFocalPlaneY = distortedFocalPlaneY;
 
-  std::tuple<double, double> dpoint;
+  std::tuple<double, double> distortionPoint;
 
-  dpoint = removeDistortion(distortedFocalPlaneX, distortedFocalPlaneY, m_opticalDistCoef);
-  undistortedFocalPlaneX = std::get<0>(dpoint);
-  undistortedFocalPlaneY = std::get<1>(dpoint);
+  distortionPoint = removeDistortion(distortedFocalPlaneX, distortedFocalPlaneY, m_opticalDistCoef);
+  undistortedFocalPlaneX = std::get<0>(distortionPoint);
+  undistortedFocalPlaneY = std::get<1>(distortionPoint);
 };
 
 
@@ -2412,18 +2412,18 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double lookScale = m_focal / adjustedLookZ;
    double focalX = adjustedLookX * lookScale;
    double focalY = adjustedLookY * lookScale;
-   std::tuple<double, double> dpoint;
+   std::tuple<double, double> distortionPoint;
 
    // Invert distortion
-   dpoint = invertDistortion(focalX, focalY, m_opticalDistCoef, desiredPrecision);
+   distortionPoint = invertDistortion(focalX, focalY, m_opticalDistCoef, desiredPrecision);
 
    // Convert to detector line and sample
    double detectorLine = m_iTransL[0]
-                       + m_iTransL[1] * std::get<0>(dpoint)
-                       + m_iTransL[2] * std::get<1>(dpoint);
+                       + m_iTransL[1] * std::get<0>(distortionPoint)
+                       + m_iTransL[2] * std::get<1>(distortionPoint);
    double detectorSample = m_iTransS[0]
-                         + m_iTransS[1] * std::get<0>(dpoint)
-                         + m_iTransS[2] * std::get<1>(dpoint);
+                         + m_iTransS[1] * std::get<0>(distortionPoint)
+                         + m_iTransS[2] * std::get<1>(distortionPoint);
 
    // Convert to image sample line
    double line = detectorLine + m_detectorLineOrigin - m_detectorLineOffset
