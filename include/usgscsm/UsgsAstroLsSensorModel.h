@@ -924,12 +924,6 @@ private:
        double& distortedLine,
        double& distortedSample) const;
 
-   void computeUndistortedFocalPlaneCoordinates(
-       const double& distortedFocalPlaneX,
-       const double& distortedFocalPlaneY,
-       double& undistortedFocalPlaneX,
-       double& undistortedFocalPlaneY) const;
-
    void calculateRotationMatrixFromQuaternions(
        const double& time,
        double cameraToBody[9]) const;

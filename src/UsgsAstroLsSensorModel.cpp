@@ -1678,18 +1678,6 @@ void UsgsAstroLsSensorModel::computeDistortedFocalPlaneCoordinates(const double&
   distortedSample = p21 * t1 + p22 * t2;
 }
 
-// Compute un-distorted image coordinates in mm / apply lens distortion correction
-void UsgsAstroLsSensorModel::computeUndistortedFocalPlaneCoordinates(const double &distortedFocalPlaneX, const double& distortedFocalPlaneY, double& undistortedFocalPlaneX, double& undistortedFocalPlaneY) const{
-  undistortedFocalPlaneX = distortedFocalPlaneX;
-  undistortedFocalPlaneY = distortedFocalPlaneY;
-
-  std::tuple<double, double> distortionPoint;
-
-  distortionPoint = removeDistortion(distortedFocalPlaneX, distortedFocalPlaneY, m_opticalDistCoef);
-  undistortedFocalPlaneX = std::get<0>(distortionPoint);
-  undistortedFocalPlaneY = std::get<1>(distortionPoint);
-};
-
 
 // Define imaging ray in image space (In other words, create a look vector in camera space)
 void UsgsAstroLsSensorModel::createCameraLookVector(const double& undistortedFocalPlaneX, const double& undistortedFocalPlaneY, const std::vector<double>& adj, double cameraLook[]) const{
@@ -1806,12 +1794,12 @@ void UsgsAstroLsSensorModel::losToEcf(
    computeDistortedFocalPlaneCoordinates(fractionalLine, sampleUSGSFull, natFocalPlaneX, natFocalPlaneY);
 
    // Remove lens distortion
-   double focalPlaneX, focalPlaneY;
-   computeUndistortedFocalPlaneCoordinates(natFocalPlaneX, natFocalPlaneY, focalPlaneX, focalPlaneY);
+   std::tuple<double, double> distortionPoint;
+   distortionPoint = removeDistortion(natFocalPlaneX, natFocalPlaneY, m_opticalDistCoef);
 
   // Define imaging ray (look vector) in camera space
    double cameraLook[3];
-   createCameraLookVector(focalPlaneX, focalPlaneY, adj, cameraLook);
+   createCameraLookVector(std::get<0>(distortionPoint), std::get<1>(distortionPoint), adj, cameraLook);
 
    // Apply attitude correction
    double attCorr[9];

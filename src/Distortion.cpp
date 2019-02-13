@@ -115,7 +115,7 @@ std::tuple<double, double> distortionFunction(double ux, double uy,
 std::tuple<double, double> removeDistortion(double inFocalPlaneX, double inFocalPlaneY,
   const double opticalDistCoef[3], double tolerance) {
   double rr = inFocalPlaneX * inFocalPlaneX + inFocalPlaneY * inFocalPlaneY;
-  std::tuple<double, double> distortionPoint;
+  std::tuple<double, double> distortionPoint(inFocalPlaneX, inFocalPlaneY);
 
   if (rr > tolerance)
   {
