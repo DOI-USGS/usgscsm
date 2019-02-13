@@ -177,6 +177,8 @@ std::tuple<double, double> distortionFunction(double ux, double uy,
  *
  * @param inFocalPlaneX Distorted x
  * @param inFocalPlaneY Distorted y
+ * @param outFocalPlaneX Undistorted x
+ * @param outFocalPlaneY Undistorted y
  * @param opticalDistCoef distortion coefficients
  *
  * @returns undistortedPoint Newly adjusted focal plane coordinates as an x, y tuple
@@ -203,6 +205,8 @@ std::tuple<double, double> removeDistortion(double inFocalPlaneX, double inFocal
  *
  * @param inFocalPlaneX Distorted x
  * @param inFocalPlaneY Distorted y
+ * @param outFocalPlaneX Undistorted x
+ * @param outFocalPlaneY Undistorted y
  * @param opticalDistCoef Distortion coefficients
  * @param desiredPrecision Convergence precision
  * @param tolerance Tolerance of r^2
@@ -251,90 +255,4 @@ std::tuple<double, double> invertDistortion(double inFocalPlaneX, double inFocal
                                        inFocalPlaneY / (1.0 - drOverR));
   }
   return undistortedPoint;
-}
-
-/**
- * @description Compute undistorted focal plane coordinate given a distorted
- * coordinate set and the distortion coefficients
- *
- * @param inFocalPlaneX Distorted x
- * @param inFocalPlaneY Distorted y
- * @param outFocalPlaneX Undistorted x
- * @param outFocalPlaneY Undistorted y
- * @param opticalDistCoef distortion coefficients
- *
- * @returns distortionPoint Newly adjusted focal plane coordinates as an x, y tuple
- */
-std::tuple<double, double> removeDistortion(double inFocalPlaneX, double inFocalPlaneY,
-  const double opticalDistCoef[3], double tolerance) {
-  double rr = inFocalPlaneX * inFocalPlaneX + inFocalPlaneY * inFocalPlaneY;
-  std::tuple<double, double> distortionPoint(inFocalPlaneX, inFocalPlaneY);
-
-  if (rr > tolerance)
-  {
-    double dr = opticalDistCoef[0] + (rr * (opticalDistCoef[1] + rr * opticalDistCoef[2]));
-    distortionPoint = std::make_tuple(inFocalPlaneX * (1.0 - dr), inFocalPlaneY * (1.0 - dr));
-  }
-
-  return distortionPoint;
-}
-
-/**
- * @description Compute undistorted focal plane coordinate given a distorted
- * focal plane coordinate. This method works by iteratively adding distortion
- * until the new distorted point, r, undistorts to within a tolerance of the
- * original point, rp.
- *
- * @param inFocalPlaneX Distorted x
- * @param inFocalPlaneY Distorted y
- * @param outFocalPlaneX Undistorted x
- * @param outFocalPlaneY Undistorted y
- * @param opticalDistCoef Distortion coefficients
- * @param desiredPrecision Convergence precision
- * @param tolerance Tolerance of r^2
- *
- * @returns distortionPoint Newly adjusted focal plane coordinates as an x, y tuple
- */
-std::tuple<double, double> invertDistortion(double inFocalPlaneX, double inFocalPlaneY,
-  const double opticalDistCoef[3], double desiredPrecision, double tolerance) {
-  double rp2 = (inFocalPlaneX * inFocalPlaneX) +
-               (inFocalPlaneY * inFocalPlaneY);
-  std::tuple<double, double> distortionPoint;
-
-  if (rp2 > tolerance) {
-    double rp = sqrt(rp2);
-    // Compute first fractional distortion using rp
-    double drOverR = opticalDistCoef[0]
-                  + (rp2 * (opticalDistCoef[1] + (rp2 * opticalDistCoef[2])));
-    // Compute first distorted point estimate, r
-    double r = rp + (drOverR * rp);
-    double r_prev, r2_prev;
-    int iteration = 0;
-    do {
-      // Don't get in an end-less loop.  This algorithm should
-      // converge quickly.  If not then we are probably way outside
-      // of the focal plane.  Just set the distorted position to the
-      // undistorted position. Also, make sure the focal plane is less
-      // than 1km, it is unreasonable for it to grow larger than that.
-      if (iteration >= 15 || r > 1E9) {
-        drOverR = 0.0;
-        break;
-      }
-
-      r_prev = r;
-      r2_prev = r * r;
-
-      // Compute new fractional distortion:
-      drOverR = opticalDistCoef[0]
-             + (r2_prev * (opticalDistCoef[1] + (r2_prev * opticalDistCoef[2])));
-
-      // Compute new estimate of r
-      r = rp + (drOverR * r_prev);
-      iteration++;
-    }
-    while (fabs(r * (1 - drOverR) - rp) > desiredPrecision);
-    distortionPoint = std::make_tuple(inFocalPlaneX / (1.0 - drOverR),
-                             inFocalPlaneY / (1.0 - drOverR));
-  }
-  return distortionPoint;
 }
