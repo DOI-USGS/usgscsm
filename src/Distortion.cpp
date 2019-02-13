@@ -177,8 +177,6 @@ std::tuple<double, double> distortionFunction(double ux, double uy,
  *
  * @param inFocalPlaneX Distorted x
  * @param inFocalPlaneY Distorted y
- * @param outFocalPlaneX Undistorted x
- * @param outFocalPlaneY Undistorted y
  * @param opticalDistCoef distortion coefficients
  *
  * @returns undistortedPoint Newly adjusted focal plane coordinates as an x, y tuple
@@ -205,8 +203,6 @@ std::tuple<double, double> removeDistortion(double inFocalPlaneX, double inFocal
  *
  * @param inFocalPlaneX Distorted x
  * @param inFocalPlaneY Distorted y
- * @param outFocalPlaneX Undistorted x
- * @param outFocalPlaneY Undistorted y
  * @param opticalDistCoef Distortion coefficients
  * @param desiredPrecision Convergence precision
  * @param tolerance Tolerance of r^2
