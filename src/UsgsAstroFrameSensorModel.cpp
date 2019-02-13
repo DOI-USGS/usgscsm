@@ -1258,7 +1258,7 @@ bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
 
     // fx = dx - fx;
     // fy = dy - fy;
-    distortedPoint = std::make_tuple(dx - std::get<0>(distoredPoint), dy - std::get<1>(distoredPoint));
+    distortedPoint = std::make_tuple(dx - std::get<0>(distortedPoint), dy - std::get<1>(distortedPoint));
 
     std::vector<std::vector<double>> jacobian;
 
