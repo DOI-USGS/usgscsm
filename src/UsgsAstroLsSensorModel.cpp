@@ -1678,20 +1678,6 @@ void UsgsAstroLsSensorModel::computeUndistortedFocalPlaneCoordinates(const doubl
   }
 };
 
-
-// Define imaging ray in image space (In other words, create a look vector in camera space)
-void UsgsAstroLsSensorModel::createCameraLookVector(const double& undistortedFocalPlaneX, const double& undistortedFocalPlaneY, const std::vector<double>& adj, double cameraLook[]) const{
-   cameraLook[0] = -undistortedFocalPlaneX * m_zDirection;
-   cameraLook[1] = -undistortedFocalPlaneY * m_zDirection;
-   cameraLook[2] = -m_focal * (1.0 - getValue(15, adj) / m_halfSwath);
-   double magnitude = sqrt(cameraLook[0] * cameraLook[0]
-                  + cameraLook[1] * cameraLook[1]
-                  + cameraLook[2] * cameraLook[2]);
-   cameraLook[0] /= magnitude;
-   cameraLook[1] /= magnitude;
-   cameraLook[2] /= magnitude;
-};
-
 void UsgsAstroLsSensorModel::getQuaternions(const double& time, double q[4]) const{
   int nOrder = 8;
   if (m_platformFlag == 0)
@@ -1812,7 +1798,7 @@ void UsgsAstroLsSensorModel::losToEcf(
 
   // Define imaging ray (look vector) in camera space
    double cameraLook[3];
-   createCameraLookVector(focalPlaneX, focalPlaneY, adj, cameraLook);
+   createCameraLookVector(focalPlaneX, focalPlaneY, m_zDirection, m_focal, getValue(15, adj), m_halfSwath, cameraLook);
 
    // Apply attitude correction
    double attCorr[9];
