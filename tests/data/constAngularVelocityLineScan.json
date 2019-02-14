@@ -16,8 +16,7 @@
   "focal2pixel_lines": [0.0, 10.0, 0.0],
   "focal2pixel_samples": [0.0, 0.0, 10.0],
   "focal_length_model": {
-    "focal_length": 50,
-    "focal_epsilon": 1.0
+    "focal_length": 50
   },
   "image_lines": 16,
   "image_samples": 16,
