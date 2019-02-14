@@ -915,12 +915,6 @@ private:
       double* achievedPrecision = NULL,
       csm::WarningList* warnings = NULL) const;
 
-   void createCameraLookVector(
-     const double& undistortedFocalPlaneX,
-     const double& undistortedFocalPlaneY,
-     const std::vector<double>& adj,
-     double cameraLook[]) const;
-
    void calculateAttitudeCorrection(
      const double& time,
      const std::vector<double>& adj,
