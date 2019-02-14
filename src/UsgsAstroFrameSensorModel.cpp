@@ -193,18 +193,13 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   x_camera = m_transX[0] + m_transX[1] * (lo - line_center) + m_transX[2] * (so - sample_center);
 
   // Apply the distortion model (remove distortion)
-  double undistorted_cameraX, undistorted_cameraY = 0.0;
-
-  setFocalPlane(x_camera, y_camera, undistorted_cameraX, undistorted_cameraY);
+  std::tuple<double, double> undistortedPoint;
+  undistortedPoint = removeDistortion(x_camera, y_camera, m_odtX, m_odtY);
 
   // Now back from distorted mm to pixels
-  double udx, udy; //distorted line and sample
-  udx = undistorted_cameraX;
-  udy = undistorted_cameraY;
-
-  xl = m[0][0] * udx + m[0][1] * udy - m[0][2] * -m_focalLength;
-  yl = m[1][0] * udx + m[1][1] * udy - m[1][2] * -m_focalLength;
-  zl = m[2][0] * udx + m[2][1] * udy - m[2][2] * -m_focalLength;
+  xl = m[0][0] * std::get<0>(undistortedPoint) + m[0][1] * std::get<1>(undistortedPoint) - m[0][2] * - m_focalLength;
+  yl = m[1][0] * std::get<0>(undistortedPoint) + m[1][1] * std::get<1>(undistortedPoint) - m[1][2] * - m_focalLength;
+  zl = m[2][0] * std::get<0>(undistortedPoint) + m[2][1] * std::get<1>(undistortedPoint) - m[2][2] * - m_focalLength;
 
   double x, y, z;
   double xc, yc, zc;
@@ -252,15 +247,13 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(const csm::I
   double focalPlaneY = m_transY[0] + m_transY[1] * row + m_transY[2] * col;
 
   // Distort
-  double undistortedFocalPlaneX = focalPlaneX;
-  double undistortedFocalPlaneY = focalPlaneY;
-
-  setFocalPlane(focalPlaneX, focalPlaneY, undistortedFocalPlaneX, undistortedFocalPlaneY);
+  std::tuple<double, double> undistortedPoint;
+  undistortedPoint = removeDistortion(focalPlaneX, focalPlaneY, m_odtX, m_odtY);
 
   // Get rotation matrix and transform to a body-fixed frame
   double m[3][3];
   calcRotationMatrix(m);
-  std::vector<double> lookC { undistortedFocalPlaneX, undistortedFocalPlaneY, m_focalLength };
+  std::vector<double> lookC { std::get<0>(undistortedPoint), std::get<1>(undistortedPoint), m_focalLength };
   std::vector<double> lookB {
     m[0][0] * lookC[0] + m[0][1] * lookC[1] + m[0][2] * lookC[2],
     m[1][0] * lookC[0] + m[1][1] * lookC[1] + m[1][2] * lookC[2],
@@ -1207,98 +1200,6 @@ void UsgsAstroFrameSensorModel::losEllipsoidIntersect(
    z = zc + scale * zl;
 }
 
-
-/**
- * @brief Compute undistorted focal plane x/y.
- *
- * Computes undistorted focal plane (x,y) coordinates given a distorted focal plane (x,y)
- * coordinate. The undistorted coordinates are solved for using the Newton-Raphson
- * method for root-finding if the distortionFunction method is invoked.
- *
- * @param dx distorted focal plane x in millimeters
- * @param dy distorted focal plane y in millimeters
- * @param undistortedX The undistorted x coordinate, in millimeters.
- * @param undistortedY The undistorted y coordinate, in millimeters.
- *
- * @return if the conversion was successful
- * @todo Review the tolerance and maximum iterations of the root-
- *       finding algorithm.
- * @todo Review the handling of non-convergence of the root-finding
- *       algorithm.
- * @todo Add error handling for near-zero determinant.
-*/
-bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
-                                       double &undistortedX,
-                                       double &undistortedY ) const {
-
-  // Solve the distortion equation using the Newton-Raphson method.
-  // Set the error tolerance to about one millionth of a NAC pixel.
-  const double tol = 1.4E-5;
-
-  // The maximum number of iterations of the Newton-Raphson method.
-  const int maxTries = 60;
-
-  double x;
-  double y;
-  double Jxx;
-  double Jxy;
-  double Jyx;
-  double Jyy;
-  std::tuple<double, double> distortedPoint;
-
-  // Initial guess at the root
-  x = dx;
-  y = dy;
-
-  distortedPoint = distortionFunction(x, y, m_odtX, m_odtY);
-
-  for (int count = 1; ((fabs(std::get<0>(distortedPoint)) +fabs(std::get<1>(distortedPoint))) > tol) && (count < maxTries); count++) {
-
-    distortedPoint = distortionFunction(x, y, m_odtX, m_odtY);
-
-    // fx = dx - fx;
-    // fy = dy - fy;
-    distortedPoint = std::make_tuple(dx - std::get<0>(distortedPoint), dy - std::get<1>(distortedPoint));
-
-    std::vector<std::vector<double>> jacobian;
-
-    jacobian = distortionJacobian(x, y, m_odtX, m_odtY);
-
-    // Jxx * Jyy - Jxy * Jyx
-    double determinant = jacobian[0][0] * jacobian[1][1] - jacobian[0][1] * jacobian[1][0];
-    if (fabs(determinant) < 1E-6) {
-
-      undistortedX = x;
-      undistortedY = y;
-      //
-      // Near-zero determinant. Add error handling here.
-      //
-      //-- Just break out and return with no convergence
-      return false;
-    }
-
-    //x = x + (Jyy * fx - Jxy * fy)
-    x = x + (jacobian[1][1] * std::get<0>(distortedPoint) - jacobian[0][1] * std::get<1>(distortedPoint)) / determinant;
-    // y = y + (Jxx * fy - Jyx * fx)
-    y = y + (jacobian[0][0] * std::get<1>(distortedPoint) - jacobian[1][0] * std::get<0>(distortedPoint)) / determinant;
-  }
-
-  if ( (fabs(std::get<0>(distortedPoint)) + fabs(std::get<1>(distortedPoint))) <= tol) {
-    // The method converged to a root.
-    undistortedX = x;
-    undistortedY = y;
-    return true;
-
-  }
-  else {
-    // The method did not converge to a root within the maximum
-    // number of iterations. Return with no distortion.
-    undistortedX = dx;
-    undistortedY = dy;
-    return false;
-  }
-  return true;
-}
 
 /***** Helper Functions *****/
 

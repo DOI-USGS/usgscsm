@@ -321,12 +321,6 @@ protected:
     FRIEND_TEST(FrameSensorModel, setFocalPlane_AlternatingOnes);
     FRIEND_TEST(FrameSensorModel, distortMe_AlternatingOnes);
 
-    virtual bool setFocalPlane(double dx,double dy,double &undistortedX,double &undistortedY) const;
-    // virtual void distortionFunction(double ux, double uy, double &dx, double &dy) const;
-    // virtual void distortionJacobian(double x, double y, double &Jxx,
-    //                                 double &Jxy, double &Jyx, double &Jyy) const;
-
-
 
   private:
     // Input parameters
@@ -374,7 +368,7 @@ protected:
     int m_nSamples;
     int m_nParameters;
 
-    csm::EcefCoord m_referencePointXyz; 
+    csm::EcefCoord m_referencePointXyz;
 
     json _state;
     static const int         _NUM_STATE_KEYWORDS;

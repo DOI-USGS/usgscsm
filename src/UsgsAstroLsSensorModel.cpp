@@ -1778,7 +1778,7 @@ void UsgsAstroLsSensorModel::losToEcf(
    double&       bodyLookZ) const  // output line-of-sight z coordinate
 {
    //# private_func_description
-   //  Computes image ray (look vector) in ecf coordinate system.
+   // Computes image ray (look vector) in ecf coordinate system.
    // Compute adjusted sensor position and velocity
 
    double time = getImageTime(csm::ImageCoord(line, sample));

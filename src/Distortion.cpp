@@ -1,6 +1,83 @@
 #include "Distortion.h"
 
 /**
+ * @brief Compute undistorted focal plane x/y.
+ *
+ * Computes undistorted focal plane (x,y) coordinates given a distorted focal plane (x,y)
+ * coordinate. The undistorted coordinates are solved for using the Newton-Raphson
+ * method for root-finding if the distortionFunction method is invoked.
+ *
+ * @param dx distorted focal plane x in millimeters
+ * @param dy distorted focal plane y in millimeters
+ * @param undistortedX The undistorted x coordinate, in millimeters.
+ * @param undistortedY The undistorted y coordinate, in millimeters.
+ *
+ * @return if the conversion was successful
+ * @todo Review the tolerance and maximum iterations of the root-
+ *       finding algorithm.
+ * @todo Review the handling of non-convergence of the root-finding
+ *       algorithm.
+ * @todo Add error handling for near-zero determinant.
+*/
+std::tuple<double, double> removeDistortion(double dx, double dy,
+                        const std::vector<double> &odtX, const std::vector<double> &odtY) {
+  // Solve the distortion equation using the Newton-Raphson method.
+  // Set the error tolerance to about one millionth of a NAC pixel.
+  const double tol = 1.4E-5;
+
+  // The maximum number of iterations of the Newton-Raphson method.
+  const int maxTries = 60;
+
+  double x;
+  double y;
+  std::tuple<double, double> undistortedPoint(dx, dy);
+  std::tuple<double, double> distortedPoint;
+
+  // Initial guess at the root
+  x = dx;
+  y = dy;
+
+  distortedPoint = distortionFunction(x, y, odtX, odtY);
+
+  for (int count = 1; ((fabs(std::get<0>(distortedPoint)) +fabs(std::get<1>(distortedPoint))) > tol) && (count < maxTries); count++) {
+
+    distortedPoint = distortionFunction(x, y, odtX, odtY);
+
+    // fx = dx - fx;
+    // fy = dy - fy;
+    distortedPoint = std::make_tuple(dx - std::get<0>(distortedPoint), dy - std::get<1>(distortedPoint));
+
+    std::vector<std::vector<double>> jacobian;
+
+    jacobian = distortionJacobian(x, y, odtX, odtY);
+
+    // Jxx * Jyy - Jxy * Jyx
+    double determinant = jacobian[0][0] * jacobian[1][1] - jacobian[0][1] * jacobian[1][0];
+    if (fabs(determinant) < 1E-6) {
+      undistortedPoint = std::make_tuple(x, y);
+      //
+      // Near-zero determinant. Add error handling here.
+      //
+      //-- Just break out and return with no convergence
+      return undistortedPoint;
+    }
+
+    //x = x + (Jyy * fx - Jxy * fy)
+    x = x + (jacobian[1][1] * std::get<0>(distortedPoint) - jacobian[0][1] * std::get<1>(distortedPoint)) / determinant;
+    // y = y + (Jxx * fy - Jyx * fx)
+    y = y + (jacobian[0][0] * std::get<1>(distortedPoint) - jacobian[1][0] * std::get<0>(distortedPoint)) / determinant;
+  }
+
+  if ( (fabs(std::get<0>(distortedPoint)) + fabs(std::get<1>(distortedPoint))) <= tol) {
+    // The method converged to a root.
+    undistortedPoint = std::make_tuple(x, y);
+  }
+  // Otherwise method did not converge to a root within the maximum
+  // number of iterations. Return with no distortion.
+  return undistortedPoint;
+}
+
+/**
  * @description Jacobian of the distortion function. The Jacobian was computed
  * algebraically from the function described in the distortionFunction
  * method.

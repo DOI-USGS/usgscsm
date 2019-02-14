@@ -6,6 +6,9 @@
 #include <tuple>
 
 // Transverse Distortion
+std::tuple<double, double> removeDistortion(double dx, double dy,
+                        const std::vector<double> &odtX, const std::vector<double> &odtY);
+
 std::vector<std::vector<double>> distortionJacobian(double x, double y,
                         const std::vector<double> &odtX, const std::vector<double> &odtY);
 
