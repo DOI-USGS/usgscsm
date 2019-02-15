@@ -31,7 +31,6 @@
 #include <SettableEllipsoid.h>
 #include <CorrelationModel.h>
 
-
 class UsgsAstroLsSensorModel : public csm::RasterGM, virtual public csm::SettableEllipsoid
 {
 public:
@@ -916,27 +915,13 @@ private:
       double* achievedPrecision = NULL,
       csm::WarningList* warnings = NULL) const;
 
-   // methods pulled out of los2ecf and computeViewingPixel
+   void reconstructSensorDistortion(
+     double& focalX,
+     double& focalY,
+     const double& desiredPrecision) const;
 
-   void computeDistortedFocalPlaneCoordinates(
-       const double& line,
-       const double& sample,
-       double& distortedLine,
-       double& distortedSample) const;
-
-   void calculateRotationMatrixFromQuaternions(
-       const double& time,
-       double cameraToBody[9]) const;
-
-   void calculateRotationMatrixFromEuler(
-       double euler[],
-       double rotationMatrix[]) const;
-
-   void createCameraLookVector(
-       const double& undistortedFocalPlaneX,
-       const double& undistortedFocalPlaneY,
-       const std::vector<double>& adj,
-       double cameraLook[]) const;
+   void getQuaternions(const double& time,
+                       double quaternion[4]) const;
 
    void calculateAttitudeCorrection(
        const double& time,
