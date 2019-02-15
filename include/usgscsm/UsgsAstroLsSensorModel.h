@@ -915,25 +915,18 @@ private:
       double* achievedPrecision = NULL,
       csm::WarningList* warnings = NULL) const;
 
-   void calculateAttitudeCorrection(
-     const double& time,
-     const std::vector<double>& adj,
-     double attCorr[9]) const;
-
    void reconstructSensorDistortion(
      double& focalX,
      double& focalY,
      const double& desiredPrecision) const;
 
-   void computeUndistortedFocalPlaneCoordinates(
-     const double& distortedFocalPlaneX,
-     const double& distortedFocalPlaneY,
-     double& undistortedFocalPlaneX,
-     double& undistortedFocalPlaneY) const;
-
    void getQuaternions(const double& time,
                        double quaternion[4]) const;
 
+   void calculateAttitudeCorrection(
+       const double& time,
+       const std::vector<double>& adj,
+       double attCorr[9]) const;
 
 // This method computes the imaging locus.
 // imaging locus : set of ground points associated with an image pixel.
