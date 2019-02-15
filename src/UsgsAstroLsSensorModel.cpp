@@ -2307,7 +2307,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    std::tuple<double, double> undistortedPoint;
 
    // Invert distortion
-   undistortedPoint = invertDistortion(focalX, focalY, m_opticalDistCoef, desiredPrecision);
+   undistortedPoint = invertDistortion(focalX, focalY, std::vector<double>(m_opticalDistCoef, m_opticalDistCoef+3), desiredPrecision);
 
    // Convert to detector line and sample
    double detectorLine = m_iTransL[0]

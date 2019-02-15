@@ -72,9 +72,11 @@ TEST(transverse, removeDistortion1) {
 
   std::vector<double> odtX = {0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
   std::vector<double> odtY = {0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+  std::vector<std::vector<double>> transverseDistortionCoeffs = {odtX, odtY};
+  std::vector<double> radialDistortionCoeffs(0, 0);
 
   std::tuple<double, double> undistortedPoint;
-  undistortedPoint = removeDistortion(imagePt.samp, imagePt.line, odtX, odtY);
+  undistortedPoint = removeDistortion(imagePt.samp, imagePt.line, radialDistortionCoeffs, transverseDistortionCoeffs);
 
   EXPECT_NEAR(imagePt.samp,7.5,1e-8 );
   EXPECT_NEAR(imagePt.line,7.5,1e-8);
@@ -130,7 +132,7 @@ TEST(Radial, testInverseDistortion){
 
   double dx, dy;
   double desiredPrecision = 0.01;
-  double coeffs[3] = {0, 0, 0};
+  std::vector<double> coeffs = {0, 0, 0};
   std::tuple<double, double> undistortedPoint;
 
   undistortedPoint = invertDistortion(imagePt.samp, imagePt.line, coeffs, desiredPrecision);
@@ -144,7 +146,7 @@ TEST(Radial, testInverseOnesCoeffs){
 
   double dx, dy;
   double desiredPrecision = 0.01;
-  double coeffs[3] = {1, 1, 1};
+  std::vector<double> coeffs = {1, 1, 1};
   std::tuple<double, double> undistortedPoint;
 
   undistortedPoint = invertDistortion(imagePt.samp, imagePt.line, coeffs, desiredPrecision);
