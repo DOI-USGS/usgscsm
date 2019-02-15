@@ -80,6 +80,8 @@ class ConstVelLineScanIsdTest : public ::testing::Test {
    }
 };
 
+class ImageCoordParameterizedTest : public ::testing::TestWithParam<csm::ImageCoord> {};
+
 class FramerParameterizedTest : public ::testing::TestWithParam<csm::ImageCoord> {
 
 protected:
