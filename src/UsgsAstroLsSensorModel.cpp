@@ -2213,19 +2213,6 @@ void UsgsAstroLsSensorModel::losEllipsoidIntersect(
    computeElevation(x, y, z, h, aPrec, desired_precision);
    slope = -1;
 
-   while (MKTR > ktr && fabs(height - h) > desired_precision)
-   {
-      sprev = scale;
-      scale += slope * (height - h);
-      x = xc + scale * xl;
-      y = yc + scale * yl;
-      z = zc + scale * zl;
-      hprev = h;
-      computeElevation(x, y, z, h, aPrec, desired_precision);
-      slope = (sprev - scale) / (hprev - h);
-      ktr++;
-   }
-
    achieved_precision = fabs(height - h);
 }
 
