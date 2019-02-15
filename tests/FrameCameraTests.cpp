@@ -7,34 +7,6 @@
 #include "Fixtures.h"
 
 using json = nlohmann::json;
-
-INSTANTIATE_TEST_CASE_P(JacobianTest,FramerParameterizedTest,
-                        ::testing::Values(csm::ImageCoord(2.5,2.5),csm::ImageCoord(7.5,7.5)));
-
-TEST_P(FramerParameterizedTest, JacobianTest) {
-
-   UsgsAstroFrameSensorModel* sensorModel = createModel(isd);
-   std::string modelState = sensorModel->getModelState();
-   auto state = json::parse(modelState);
-
-   state["m_odtX"] = {1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0};
-   state["m_odtY"] = {0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0};
-   sensorModel->replaceModelState(state.dump());
-
-   double Jxx,Jxy,Jyx,Jyy;
-   ASSERT_NE(sensorModel, nullptr);
-
-   csm::ImageCoord imagePt1 = GetParam();
-//   cout << "[" << imagePt1.samp << "," << imagePt1.line << "]"<< endl;
-   sensorModel->distortionJacobian(imagePt1.samp, imagePt1.line, Jxx, Jxy,Jyx,Jyy);
-
-   double determinant = fabs(Jxx*Jyy - Jxy*Jyx);
-   EXPECT_GT(determinant,1e-3);
-
-   delete sensorModel;
-   sensorModel=NULL;
-}
-
 // NOTE: The imagePt format is (Lines,Samples)
 
 TEST_F(FrameSensorModel, State) {
@@ -89,7 +61,7 @@ TEST_F(FrameSensorModel, OffBody3) {
 TEST_F(FrameSensorModel, getReferencePoint) {
   csm::EcefCoord groundPt = sensorModel->getReferencePoint();
   EXPECT_EQ(groundPt.x, 0.0);
-  EXPECT_EQ(groundPt.y, 0.0);   
+  EXPECT_EQ(groundPt.y, 0.0);
   EXPECT_EQ(groundPt.z, 0.0);
 }
 
@@ -103,135 +75,6 @@ TEST_F(FrameSensorModel, OffBody4) {
 
 TEST_F(FrameSensorModel, getImageIdentifier) {
   EXPECT_EQ("simpleFramerISD", sensorModel->getImageIdentifier());
-}
-
-TEST_F(FrameSensorModel, setFocalPlane1) {
-  csm::ImageCoord imagePt(7.5, 7.5);
-  double ux,uy;
-
-  std::string modelState = sensorModel->getModelState();
-  auto state = json::parse(modelState);
-
-  state["m_odtX"] = {0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
-  state["m_odtY"] = {0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
-  sensorModel->replaceModelState(state.dump());
-
-  ASSERT_NE(sensorModel, nullptr);
-  sensorModel->setFocalPlane(imagePt.samp, imagePt.line, ux, uy);
-  EXPECT_NEAR(imagePt.samp,7.5,1e-8 );
-  EXPECT_NEAR(imagePt.line,7.5,1e-8);
-  delete sensorModel;
-  sensorModel = NULL;
-}
-
-
-TEST_F(FrameSensorModel, Jacobian1) {
-  csm::ImageCoord imagePt(7.5, 7.5);
-
-  std::string modelState = sensorModel->getModelState();
-  auto state = json::parse(modelState);
-  state["m_odtX"] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0};
-  state["m_odtY"] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,1.0};
-  sensorModel->replaceModelState(state.dump());
-
-  double Jxx,Jxy,Jyx,Jyy;
-
-  ASSERT_NE(sensorModel, nullptr);
-  sensorModel->distortionJacobian(imagePt.samp, imagePt.line, Jxx, Jxy,Jyx,Jyy);
-
-  EXPECT_NEAR(Jxx,56.25,1e-8 );
-  EXPECT_NEAR(Jxy,112.5,1e-8);
-  EXPECT_NEAR(Jyx,56.25,1e-8);
-  EXPECT_NEAR(Jyy,281.25,1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
-}
-
-
-TEST_F(FrameSensorModel, distortMe_AllCoefficientsOne) {
-  csm::ImageCoord imagePt(7.5, 7.5);
-
-  std::string modelState = sensorModel->getModelState();
-  auto state = json::parse(modelState);
-  state["m_odtX"] = {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
-  state["m_odtY"] = {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
-  sensorModel->replaceModelState(state.dump());
-
-  double dx,dy;
-  ASSERT_NE(sensorModel, nullptr);
-  sensorModel->distortionFunction(imagePt.samp, imagePt.line,dx,dy );
-
-  EXPECT_NEAR(dx,1872.25,1e-8 );
-  EXPECT_NEAR(dy,1872.25,1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
-}
-
-TEST_F(FrameSensorModel, setFocalPlane_AllCoefficientsOne) {
-  csm::ImageCoord imagePt(1872.25, 1872.25);
-
-  std::string modelState = sensorModel->getModelState();
-  auto state = json::parse(modelState);
-  state["m_odtX"] = {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
-  state["m_odtY"] = {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
-  sensorModel->replaceModelState(state.dump());
-
-  double ux,uy;
-  ASSERT_NE(sensorModel, nullptr);
-  sensorModel->setFocalPlane(imagePt.samp, imagePt.line,ux,uy );
-
-  // The Jacobian is singular, so the setFocalPlane should break out of it's iteration and
-  // returns the same distorted coordinates that were passed in.
-  EXPECT_NEAR(ux,imagePt.samp,1e-8 );
-  EXPECT_NEAR(uy,imagePt.line,1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
-}
-
-
-TEST_F(FrameSensorModel, distortMe_AlternatingOnes) {
-  csm::ImageCoord imagePt(7.5, 7.5);
-
-  std::string modelState = sensorModel->getModelState();
-  auto state = json::parse(modelState);
-  state["m_odtX"] = {1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0};
-  state["m_odtY"] = {0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0};
-  sensorModel->replaceModelState(state.dump());
-
-  double dx,dy;
-  ASSERT_NE(sensorModel, nullptr);
-  sensorModel->distortionFunction(imagePt.samp, imagePt.line,dx,dy );
-
-  EXPECT_NEAR(dx,908.5,1e-8 );
-  EXPECT_NEAR(dy,963.75,1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
-}
-
-
-TEST_F(FrameSensorModel, setFocalPlane_AlternatingOnes) {
-  csm::ImageCoord imagePt(963.75, 908.5);
-
-  std::string modelState = sensorModel->getModelState();
-  auto state = json::parse(modelState);
-  state["m_odtX"] = {1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0};
-  state["m_odtY"] = {0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0};
-  sensorModel->replaceModelState(state.dump());
-
-  double ux,uy;
-  ASSERT_NE(sensorModel, nullptr);
-
-  sensorModel->setFocalPlane(imagePt.samp, imagePt.line,ux,uy );
-
-  EXPECT_NEAR(ux,7.5,1e-8 );
-  EXPECT_NEAR(uy,7.5,1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
 }
 
 
