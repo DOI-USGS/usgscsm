@@ -80,6 +80,8 @@ class ConstVelLineScanIsdTest : public ::testing::Test {
    }
 };
 
+class ImageCoordParameterizedTest : public ::testing::TestWithParam<csm::ImageCoord> {};
+
 class FramerParameterizedTest : public ::testing::TestWithParam<csm::ImageCoord> {
 
 protected:
@@ -153,6 +155,33 @@ class ConstVelocityLineScanSensorModel : public ::testing::Test {
          sensorModel = NULL;
 
          isd.setFilename("data/constVelocityLineScan.img");
+         UsgsAstroPlugin cameraPlugin;
+
+         csm::Model *model = cameraPlugin.constructModelFromISD(
+               isd,
+               "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL");
+         sensorModel = dynamic_cast<UsgsAstroLsSensorModel *>(model);
+
+         ASSERT_NE(sensorModel, nullptr);
+      }
+
+      void TearDown() override {
+         if (sensorModel) {
+            delete sensorModel;
+            sensorModel = NULL;
+         }
+      }
+};
+
+class ConstAngularVelocityLineScanSensorModel : public ::testing::Test {
+   protected:
+      csm::Isd isd;
+      UsgsAstroLsSensorModel *sensorModel;
+
+      void SetUp() override {
+         sensorModel = NULL;
+
+         isd.setFilename("data/constAngularVelocityLineScan.img");
          UsgsAstroPlugin cameraPlugin;
 
          csm::Model *model = cameraPlugin.constructModelFromISD(

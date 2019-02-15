@@ -18,7 +18,7 @@ else()
 			    PATH_SUFFIXES "csm"
 			    PATHS $ENV{CONDA_PREFIX}/include/)
   find_library(CSM_LIBRARY csmapi PATHS $ENV{CONDA_PREFIX}/lib)
-  
+
   message("--Found CSM Library: ${CSM_LIBRARY}")
   message("--Found CSM Include Directory: ${CSM_INCLUDE_DIR}")
 endif(BUILD_CSM)
@@ -26,7 +26,8 @@ endif(BUILD_CSM)
 add_library(usgscsm SHARED
             src/UsgsAstroPlugin.cpp
             src/UsgsAstroFrameSensorModel.cpp
-            src/UsgsAstroLsSensorModel.cpp)
+            src/UsgsAstroLsSensorModel.cpp
+            src/Distortion.cpp)
 
 set_target_properties(usgscsm PROPERTIES
     VERSION ${PROJECT_VERSION}
