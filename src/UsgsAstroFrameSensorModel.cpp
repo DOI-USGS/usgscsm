@@ -126,7 +126,7 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
 
   // Camera rotation matrix
   double m[3][3];
-  calcRotationMatrix(m,adjustments);
+  calcRotationMatrix(m, adjustments);
 
   // Sensor position
   double undistortedx, undistortedy, denom;
