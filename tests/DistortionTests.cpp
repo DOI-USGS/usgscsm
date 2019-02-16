@@ -73,10 +73,9 @@ TEST(transverse, removeDistortion1) {
   std::vector<double> odtX = {0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
   std::vector<double> odtY = {0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
   std::vector<std::vector<double>> transverseDistortionCoeffs = {odtX, odtY};
-  std::vector<double> radialDistortionCoeffs(0, 0);
 
   std::tuple<double, double> undistortedPoint;
-  undistortedPoint = removeDistortion(imagePt.samp, imagePt.line, radialDistortionCoeffs, transverseDistortionCoeffs);
+  undistortedPoint = removeTransverseDistortion(imagePt.samp, imagePt.line, transverseDistortionCoeffs);
 
   EXPECT_NEAR(imagePt.samp,7.5,1e-8 );
   EXPECT_NEAR(imagePt.line,7.5,1e-8);
@@ -89,9 +88,10 @@ TEST(transverse, removeDistortion_AllCoefficientsOne) {
 
   std::vector<double> odtX = {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
   std::vector<double> odtY = {1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
+  std::vector<std::vector<double>> transverseDistortionCoeffs = {odtX, odtY};
 
   std::tuple<double, double> undistortedPoint;
-  undistortedPoint = removeDistortion(imagePt.samp, imagePt.line, odtX, odtY);
+  undistortedPoint = removeTransverseDistortion(imagePt.samp, imagePt.line, transverseDistortionCoeffs);
 
   // The Jacobian is singular, so the setFocalPlane should break out of it's iteration and
   // returns the same distorted coordinates that were passed in.
@@ -104,9 +104,10 @@ TEST(transverse, removeDistortion_AlternatingOnes) {
 
   std::vector<double> odtX = {1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0};
   std::vector<double> odtY = {0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0};
+  std::vector<std::vector<double>> transverseDistortionCoeffs = {odtX, odtY};
 
   std::tuple<double, double> undistortedPoint;
-  undistortedPoint = removeDistortion(imagePt.samp, imagePt.line, odtX, odtY);
+  undistortedPoint = removeTransverseDistortion(imagePt.samp, imagePt.line, transverseDistortionCoeffs);
 
   EXPECT_NEAR(std::get<0>(undistortedPoint),7.5,1e-8 );
   EXPECT_NEAR(std::get<1>(undistortedPoint),7.5,1e-8);
@@ -116,10 +117,11 @@ TEST(Radial, testRemoveDistortion) {
   csm::ImageCoord imagePt(0.0, 4.0);
 
   double dx, dy;
-  double coeffs[3] = {0, 0, 0};
+  // double coeffs[3] = {0, 0, 0};
+  std::vector<double> coeffs = {0, 0, 0};
   std::tuple<double, double> undistortedPoint;
 
-  undistortedPoint = removeDistortion(imagePt.samp, imagePt.line, coeffs);
+  undistortedPoint = removeRadialDistortion(imagePt.samp, imagePt.line, coeffs);
 
   EXPECT_NEAR(std::get<0>(undistortedPoint),4,1e-8);
   EXPECT_NEAR(std::get<1>(undistortedPoint),0,1e-8);

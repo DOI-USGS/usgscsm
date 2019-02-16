@@ -198,8 +198,8 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   // Apply the distortion model (remove distortion)
   std::tuple<double, double> undistortedPoint;
   std::vector<vector<double>> transverseDistortionCoeffs = {m_odtX, m_odtY};
-  std::vector<double> radialDistortionCoeffs(0, 0);
-  undistortedPoint = removeDistortion(x_camera, y_camera, radialDistortionCoeffs, transverseDistortionCoeffs);
+  // std::vector<double> radialDistortionCoeffs(0, 0);
+  undistortedPoint = removeTransverseDistortion(x_camera, y_camera, transverseDistortionCoeffs);
 
   // Now back from distorted mm to pixels
   xl = m[0][0] * std::get<0>(undistortedPoint) + m[0][1] * std::get<1>(undistortedPoint) - m[0][2] * - m_focalLength;
@@ -253,7 +253,8 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(const csm::I
 
   // Distort
   std::tuple<double, double> undistortedPoint;
-  undistortedPoint = removeDistortion(focalPlaneX, focalPlaneY, m_odtX, m_odtY);
+  std::vector<vector<double>> transverseDistortionCoeffs = {m_odtX, m_odtY};
+  undistortedPoint = removeTransverseDistortion(focalPlaneX, focalPlaneY, transverseDistortionCoeffs);
 
   // Get rotation matrix and transform to a body-fixed frame
   double m[3][3];

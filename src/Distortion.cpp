@@ -19,7 +19,7 @@
  *       algorithm.
  * @todo Add error handling for near-zero determinant.
 */
-std::tuple<double, double> removeDistortion(double dx, double dy,
+void removeTransverseDistortion(double dx, double dy, double ux, double uy,
                         const std::vector<double> &odtX, const std::vector<double> &odtY) {
   // Solve the distortion equation using the Newton-Raphson method.
   // Set the error tolerance to about one millionth of a NAC pixel.
@@ -30,92 +30,50 @@ std::tuple<double, double> removeDistortion(double dx, double dy,
 
   double x;
   double y;
-  std::tuple<double, double> undistortedPoint(dx, dy);
-  std::tuple<double, double> distortedPoint;
+  double fx;
+  double fy;
 
   // Initial guess at the root
   x = dx;
   y = dy;
 
-  distortedPoint = distortionFunction(x, y, odtX, odtY);
+  distortionFunction(x, y, fx, fy, odtX, odtY);
 
-  for (int count = 1; ((fabs(std::get<0>(distortedPoint)) +fabs(std::get<1>(distortedPoint))) > tol) && (count < maxTries); count++) {
+  for (int count = 1; ((fabs(fx)) +fabs(fy))) > tol) && (count < maxTries); count++) {
 
-    distortedPoint = distortionFunction(x, y, odtX, odtY);
+    distortedPoint = distortionFunction(x, y, fx, fy, odtX, odtY);
 
-    // fx = dx - fx;
-    // fy = dy - fy;
-    distortedPoint = std::make_tuple(dx - std::get<0>(distortedPoint), dy - std::get<1>(distortedPoint));
+    fx = dx - fx;
+    fy = dy - fy;
 
-    std::vector<std::vector<double>> jacobian;
+    double jacobian[4];
 
-    jacobian = distortionJacobian(x, y, odtX, odtY);
+    distortionJacobian(x, y, jacobian, odtX, odtY);
 
     // Jxx * Jyy - Jxy * Jyx
-    double determinant = jacobian[0][0] * jacobian[1][1] - jacobian[0][1] * jacobian[1][0];
+    double determinant = jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2];
     if (fabs(determinant) < 1E-6) {
-      undistortedPoint = std::make_tuple(x, y);
+      ux = x;
+      uy = y;
       //
       // Near-zero determinant. Add error handling here.
       //
       //-- Just break out and return with no convergence
-      return undistortedPoint;
     }
 
-    //x = x + (Jyy * fx - Jxy * fy)
-    x = x + (jacobian[1][1] * std::get<0>(distortedPoint) - jacobian[0][1] * std::get<1>(distortedPoint)) / determinant;
-    // y = y + (Jxx * fy - Jyx * fx)
-    y = y + (jacobian[0][0] * std::get<1>(distortedPoint) - jacobian[1][0] * std::get<0>(distortedPoint)) / determinant;
+    x = x + (jacobian[3] * fx - jacobian[1] * fy) / determinant;
+    y = y + (jacobian[0] * fy - jacobian[2] * fx) / determinant;
   }
 
   if ( (fabs(std::get<0>(distortedPoint)) + fabs(std::get<1>(distortedPoint))) <= tol) {
     // The method converged to a root.
-    undistortedPoint = std::make_tuple(x, y);
+    ux = x;
+    uy = y;
   }
   // Otherwise method did not converge to a root within the maximum
   // number of iterations. Return with no distortion.
-  return undistortedPoint;
-}
-
-std::tuple<double, double> removeDistortion(double x, double y,
-                                            std::vector<double> radialDistortionCoeffs,
-                                            std::vector<std::vector<double>> transverseDistortionCoeffs) {
-  //Start the thing
-  // 112.5
-  double rr = x * x + y * y;
-
-  double radialCoeffSum = 0;
-  std::tuple<double, double> undistortedPoint;
-
-  for (int i = 1; i <= radialDistortionCoeffs.size(); i++) {
-    radialCoeffSum += radialDistortionCoeffs[i - 1] * (pow(rr, i * 2));
-  }
-
-  undistortedPoint = std::make_tuple(x + x * radialCoeffSum,
-                                     y + y * radialCoeffSum);
-  //0 * (112.5 + (2 * 7.5 ^ 2))
-  double transverseCoeffResX = transverseDistortionCoeffs[0][0] * (rr + (2 * pow(x, 2)));
-  // + 2 * 1 * 7.5 ^ 2 = 112.5
-  transverseCoeffResX += 2 * transverseDistortionCoeffs[0][1] * x * y;
-
-  //2 * 0 * 7.5 * 7.5
-  double transverseCoeffResY = 2 * transverseDistortionCoeffs[1][0] * x * y;
-  // + 1 * (112.5 + (2 * 7.5 ^ 2)) = 225
-  transverseCoeffResY += transverseDistortionCoeffs[1][1] * (rr + (2 * pow(y, 2)));
-
-  double transverseCoeffSumX = 1;
-  double transverseCoeffSumY = 1;
-
-  for (int j = 2; j < transverseDistortionCoeffs.size(); j++) {
-    transverseCoeffSumX += transverseDistortionCoeffs[0][j] * rr;
-    transverseCoeffSumY += transverseDistortionCoeffs[1][j] * rr;
-  }
-  transverseCoeffResX = transverseCoeffResX * transverseCoeffSumX;
-  transverseCoeffResY = transverseCoeffResY * transverseCoeffSumY;
-
-  undistortedPoint = std::make_tuple(std::get<0>(undistortedPoint) + transverseCoeffResX,
-                                     std::get<1>(undistortedPoint) + transverseCoeffResY);
-  return undistortedPoint;
+  ux = dx;
+  uy = dy;
 }
 
 /**
@@ -133,7 +91,7 @@ std::tuple<double, double> removeDistortion(double x, double y,
                      [1][0]: yx, [1][1]: yy
  */
 
-std::vector<std::vector<double>> distortionJacobian(double x, double y,
+void distortionJacobian(double x, double y, double &jacobian,
                         const std::vector<double> &odtX, const std::vector<double> &odtY) {
 
   double d_dx[10];
@@ -159,21 +117,17 @@ std::vector<std::vector<double>> distortionJacobian(double x, double y,
   d_dy[8] = 2 * x * y;
   d_dy[9] = 3 * y * y;
 
-  std::vector<std::vector<double>> jacobian(2, std::vector<double>(2));
-
-  jacobian[0][0] = 0;
-  jacobian[0][1] = 0;
-  jacobian[1][0] = 0;
-  jacobian[1][1] = 0;
+  jacobian[0] = 0; // 0
+  jacobian[1] = 0; // 1
+  jacobian[2] = 0; // 2
+  jacobian[3] = 0; // 3
 
   for (int i = 0; i < 10; i++) {
-    jacobian[0][0] = jacobian[0][0] + d_dx[i] * odtX[i];
-    jacobian[0][1] = jacobian[0][1] + d_dy[i] * odtX[i];
-    jacobian[1][0] = jacobian[1][0] + d_dx[i] * odtY[i];
-    jacobian[1][1] = jacobian[1][1] + d_dy[i] * odtY[i];
+    jacobian[0] = jacobian[0] + d_dx[i] * odtX[i];
+    jacobian[1] = jacobian[1] + d_dy[i] * odtX[i];
+    jacobian[2] = jacobian[2] + d_dx[i] * odtY[i];
+    jacobian[3] = jacobian[3] + d_dy[i] * odtY[i];
   }
-
-  return jacobian;
 }
 
 /**
@@ -188,7 +142,7 @@ std::vector<std::vector<double>> distortionJacobian(double x, double y,
  *
  * @returns distortedPoint Newly adjusted focal plane coordinates as an x, y tuple
  */
-std::tuple<double, double> distortionFunction(double ux, double uy,
+void distortionFunction(double ux, double uy, double dx, double dy,
   const std::vector<double> &odtX, const std::vector<double> &odtY) {
 
   double f[10];
@@ -203,13 +157,10 @@ std::tuple<double, double> distortionFunction(double ux, double uy,
   f[8] = ux * uy * uy;
   f[9] = uy * uy * uy;
 
-  std::tuple<double, double> distortedPoint(0.0, 0.0);
   for (int i = 0; i < 10; i++) {
-    distortedPoint = std::make_tuple(std::get<0>(distortedPoint) + f[i] * odtX[i],
-                                     std::get<1>(distortedPoint) + f[i] * odtY[i]);
+    x = x + f[i] * odtX[i];
+    y = y + f[i] * odtY[i]);
   }
-
-  return distortedPoint;
 }
 
 /**
@@ -222,18 +173,36 @@ std::tuple<double, double> distortionFunction(double ux, double uy,
  *
  * @returns undistortedPoint Newly adjusted focal plane coordinates as an x, y tuple
  */
-std::tuple<double, double> removeDistortion(double inFocalPlaneX, double inFocalPlaneY,
-  const double opticalDistCoef[3], double tolerance) {
+void removeRadialDistortion(double dx, double dy, double ux, double uy,
+                            std::vector<double> radialDistortionCoeffs) {
+ double rr = dx * dx + dy * dy;
+
+ double radialCoeffSum = 0;
+ std::tuple<double, double> undistortedPoint;
+
+ for (int i = 1; i <= radialDistortionCoeffs.size(); i++) {
+   radialCoeffSum += radialDistortionCoeffs[i - 1] * (pow(rr, i * 2));
+ }
+
+ ux = dx + dx * radialCoeffSum;
+ uy = dy + dy * radialCoeffSum;
+
+ return undistortedPoint;
+}
+
+void removeDistortion(double inFocalPlaneX, double inFocalPlaneY,
+                      double &outFocalPlaneX, double &outFocalPlaneY,
+                      const double opticalDistCoef[3], double tolerance) {
   double rr = inFocalPlaneX * inFocalPlaneX + inFocalPlaneY * inFocalPlaneY;
-  std::tuple<double, double> undistortedPoint(inFocalPlaneX, inFocalPlaneY);
+  double dr = 0;
 
   if (rr > tolerance)
   {
-    double dr = opticalDistCoef[0] + (rr * (opticalDistCoef[1] + rr * opticalDistCoef[2]));
-    undistortedPoint = std::make_tuple(inFocalPlaneX * (1.0 - dr), inFocalPlaneY * (1.0 - dr));
+    dr = opticalDistCoef[0] + (rr * (opticalDistCoef[1] + rr * opticalDistCoef[2]));
   }
 
-  return undistortedPoint;
+  outFocalPlaneX = inFocalPlaneX * (1.0 - dr);
+  outFocalPlaneY = inFocalPlaneY * (1.0 - dr);
 }
 
 /**
@@ -250,11 +219,11 @@ std::tuple<double, double> removeDistortion(double inFocalPlaneX, double inFocal
  *
  * @returns undistortedPoint Newly adjusted focal plane coordinates as an x, y tuple
  */
-std::tuple<double, double> invertDistortion(double inFocalPlaneX, double inFocalPlaneY,
-  const std::vector<double> opticalDistCoef, double desiredPrecision, double tolerance) {
+void invertDistortion(double inFocalPlaneX, double inFocalPlaneY,
+                      double outFocalPlaneX, double outFocalPlaneY
+                      const std::vector<double> opticalDistCoef, double desiredPrecision, double tolerance) {
   double rp2 = (inFocalPlaneX * inFocalPlaneX) +
                (inFocalPlaneY * inFocalPlaneY);
-  std::tuple<double, double> undistortedPoint;
 
   if (rp2 > tolerance) {
     double rp = sqrt(rp2);
@@ -288,8 +257,9 @@ std::tuple<double, double> invertDistortion(double inFocalPlaneX, double inFocal
       iteration++;
     }
     while (fabs(r * (1 - drOverR) - rp) > desiredPrecision);
-    undistortedPoint = std::make_tuple(inFocalPlaneX / (1.0 - drOverR),
-                                       inFocalPlaneY / (1.0 - drOverR));
+    outFocalPlaneX = inFocalPlaneX / (1.0 - drOverR);
+    outFocalPlaneY = inFocalPlaneY / (1.0 - drOverR));
   }
-  return undistortedPoint;
+  outFocalPlaneX = inFocalPlaneX;
+  outFocalPlaneY = outFocalPlaneY;
 }
