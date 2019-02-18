@@ -330,23 +330,38 @@ std::vector<double> getFocal2PixelSamples(json isd, csm::WarningList *list) {
   return transformation;
 }
 
-csm::ImageCoord getDetectorCenter(json isd, csm::WarningList *list) {
-  csm::ImageCoord center;
+double getDetectorCenterLine(json isd, csm::WarningList *list) {
+  double line;
   try {
-    json centerJson = isd.at("detector_center");
-    center.line = centerJson.at("line");
-    center.samp = centerJson.at("sample");
+    line = isd.at("detector_center").at("line");
   }
   catch (...) {
     if (list) {
       list->push_back(
         csm::Warning(
           csm::Warning::DATA_NOT_AVAILABLE,
-          "Could not parse the detector center pixel location.",
-          "Utilities::getDetectorCenter()"));
+          "Could not parse the detector center line.",
+          "Utilities::getDetectorCenterLine()"));
     }
   }
-  return center;
+  return line;
+}
+
+double getDetectorCenterSample(json isd, csm::WarningList *list) {
+  double sample;
+  try {
+    sample = isd.at("detector_center").at("sample");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the detector center sample.",
+          "Utilities::getDetectorCenterSample()"));
+    }
+  }
+  return sample;
 }
 
 double getMinHeight(json isd, csm::WarningList *list) {

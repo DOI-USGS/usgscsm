@@ -123,16 +123,22 @@ TEST(ISDParsing, Focal2PixelSamples) {
   EXPECT_EQ(coefficients, getFocal2PixelSamples(isd));
 }
 
-TEST(ISDParsing, DetectorCenter) {
+TEST(ISDParsing, DetectorCenterLine) {
   json isd = {
     {"detector_center", {
-      {"line", 2},
+      {"line", 2}}
+    }
+  };
+  EXPECT_EQ(2, getDetectorCenterLine(isd));
+}
+
+TEST(ISDParsing, DetectorCenterSample) {
+  json isd = {
+    {"detector_center", {
       {"sample", 3}}
     }
   };
-  csm::ImageCoord value = getDetectorCenter(isd);
-  EXPECT_EQ(2, value.line);
-  EXPECT_EQ(3, value.samp);
+  EXPECT_EQ(3, getDetectorCenterSample(isd));
 }
 
 TEST(ISDParsing, MinHeight) {

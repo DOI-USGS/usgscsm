@@ -1,5 +1,4 @@
 #include "UsgsAstroFrameSensorModel.h"
-#include "Distortion.h"
 
 #include <iomanip>
 #include <iostream>
@@ -9,6 +8,9 @@
 
 #include <Error.h>
 #include <Version.h>
+
+#include "Distortion.h"
+#include "Utilities.h"
 
 using json = nlohmann::json;
 using namespace std;
@@ -791,21 +793,11 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
 
 
 std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& jsonIsd, csm::WarningList* warnings) {
-    auto metric_conversion = [](double val, std::string from, std::string to="m") {
-        json typemap = {
-          {"m", 0},
-          {"km", 3}
-        };
-
-        // everything to lowercase
-        std::transform(from.begin(), from.end(), from.begin(), ::tolower);
-        std::transform(to.begin(), to.end(), to.begin(), ::tolower);
-        return val*pow(10, typemap[from].get<int>() - typemap[to].get<int>());
-    };
 
     json isd = json::parse(jsonIsd);
     json state = {};
 
+    csm::WarningList* parsingWarnings = new csm::WarningList;
 
     try {
       state["m_modelName"] = isd.at("name_model");
@@ -820,33 +812,43 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
       std::cerr << "Detector Starting Pixel Parsed!" << std::endl;
 
       // get focal length
-      {
-        json jayson = isd.at("focal_length_model");
-        json focal_length = jayson.at("focal_length");
-        json epsilon = jayson.at("focal_epsilon");
+      state["m_focalLength"] = getFocalLength(isd, parsingWarnings);
+      state["m_focalLengthEpsilon"] = getFocalLengthEpsilon(isd, parsingWarnings);
 
-        state["m_focalLength"] = focal_length;
-        state["m_focalLengthEpsilon"] = epsilon;
+      std::cerr << "Focal Length Parsed!" << std::endl;
 
-        std::cerr << "Focal Length Parsed!" << std::endl;
-      }
+      state["m_currentParameterValue"] = json();
 
       // get sensor_position
-      {
-        json jayson = isd.at("sensor_position");
-        json positions = jayson.at("positions")[0];
-        json velocities = jayson.at("velocities")[0];
-        json unit = jayson.at("unit");
-
-        unit = unit.get<std::string>();
-        state["m_currentParameterValue"] = json();
-        state["m_currentParameterValue"][0] = metric_conversion(positions[0].get<double>(), unit);
-        state["m_currentParameterValue"][1] = metric_conversion(positions[1].get<double>(), unit);
-        state["m_currentParameterValue"][2] = metric_conversion(positions[2].get<double>(), unit);
-        state["m_spacecraftVelocity"] = velocities;
-
-        std::cerr << "Sensor Location Parsed!" << std::endl;
+      std::vector<double> position = getSensorPositions(isd, parsingWarnings);
+      if (!position.empty() && position.size() != 3) {
+        parsingWarnings->push_back(
+          csm::Warning(
+            csm::Warning::DATA_NOT_AVAILABLE,
+            "Sensor position does not have 3 values.",
+            "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+        state["m_currentParameterValue"][0] = 0;
+        state["m_currentParameterValue"][1] = 0;
+        state["m_currentParameterValue"][2] = 0;
       }
+      else {
+        state["m_currentParameterValue"] = position;
+      }
+
+      // get sensor_velocity
+      std::vector<double> velocity = getSensorVelocities(isd, parsingWarnings);
+      if (!velocity.empty() && velocity.size() != 3) {
+        parsingWarnings->push_back(
+          csm::Warning(
+            csm::Warning::DATA_NOT_AVAILABLE,
+            "Sensor velocity does not have 3 values.",
+            "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+      }
+      else {
+        state["m_spacecraftVelocity"] = velocity;
+      }
+
+      std::cerr << "Sensor Location Parsed!" << std::endl;
 
       // get sun_position
       // sun position is not strictly necessary, but is required for getIlluminationDirection.
@@ -865,79 +867,53 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
       }
 
       // get sensor_orientation quaternion
-      {
-        json jayson = isd.at("sensor_orientation");
-        json quaternion = jayson.at("quaternions")[0];
-
+      std::vector<double> quaternion = getSensorOrientations(isd, parsingWarnings);
+      if (!quaternion.empty() && quaternion.size() != 4) {
+        parsingWarnings->push_back(
+          csm::Warning(
+            csm::Warning::DATA_NOT_AVAILABLE,
+            "Sensor orientation quaternion does not have 4 values.",
+            "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+      }
+      else {
         state["m_currentParameterValue"][3] = quaternion[0];
         state["m_currentParameterValue"][4] = quaternion[1];
         state["m_currentParameterValue"][5] = quaternion[2];
         state["m_currentParameterValue"][6] = quaternion[3];
-
-        std::cerr << "Sensor Orientation Parsed!" << std::endl;
       }
+
+      std::cerr << "Sensor Orientation Parsed!" << std::endl;
 
       // get optical_distortion
-      {
-        json jayson = isd.at("optical_distortion");
-        std::vector<double> xDistortion = jayson.at("transverse").at("x");
-        std::vector<double> yDistortion = jayson.at("transverse").at("y");
-        xDistortion.resize(10, 0.0);
-        yDistortion.resize(10, 0.0);
+      state["m_odtX"] = getTransverseDistortionX(isd, parsingWarnings);
+      state["m_odtY"] = getTransverseDistortionY(isd, parsingWarnings);
 
-        state["m_odtX"] = xDistortion;
-        state["m_odtY"] = yDistortion;
-
-        std::cerr << "Distortion Parsed!" << std::endl;
-      }
+      std::cerr << "Distortion Parsed!" << std::endl;
 
       // get detector_center
-      {
-        json jayson = isd.at("detector_center");
-        json sample = jayson.at("sample");
-        json line = jayson.at("line");
+      state["m_ccdCenter"][0] = getDetectorCenterLine(isd, parsingWarnings);
+      state["m_ccdCenter"][1] = getDetectorCenterSample(isd, parsingWarnings);
 
-        state["m_ccdCenter"][0] = line;
-        state["m_ccdCenter"][1] = sample;
-
-        std::cerr << "Detector Center Parsed!" << std::endl;
-      }
+      std::cerr << "Detector Center Parsed!" << std::endl;
 
       // get radii
-      {
-        json jayson = isd.at("radii");
-        json semiminor = jayson.at("semiminor");
-        json semimajor = jayson.at("semimajor");
-        json unit = jayson.at("unit");
+      state["m_minorAxis"] = getSemiMinorRadius(isd, parsingWarnings);
+      state["m_majorAxis"] = getSemiMajorRadius(isd, parsingWarnings);
 
-        unit = unit.get<std::string>();
-        state["m_minorAxis"] = metric_conversion(semiminor.get<double>(), unit);
-        state["m_majorAxis"] = metric_conversion(semimajor.get<double>(), unit);
-
-        std::cerr << "Target Radii Parsed!" << std::endl;
-      }
+      std::cerr << "Target Radii Parsed!" << std::endl;
 
       // get reference_height
-      {
-        json reference_height = isd.at("reference_height");
-        json maxheight = reference_height.at("maxheight");
-        json minheight = reference_height.at("minheight");
-        json unit = reference_height.at("unit");
+      state["m_minElevation"] = getMinHeight(isd, parsingWarnings);
+      state["m_maxElevation"] = getMaxHeight(isd, parsingWarnings);
 
-        unit = unit.get<std::string>();
-        state["m_minElevation"] = metric_conversion(minheight.get<double>(), unit);
-        state["m_maxElevation"] = metric_conversion(maxheight.get<double>(), unit);
+      std::cerr << "Reference Height Parsed!" << std::endl;
 
-        std::cerr << "Reference Height Parsed!" << std::endl;
-      }
+      state["m_ephemerisTime"] = getCenterTime(isd, parsingWarnings);
+      state["m_nLines"] = getTotalLines(isd, parsingWarnings);
+      state["m_nSamples"] = getTotalSamples(isd, parsingWarnings);
 
-      state["m_ephemerisTime"] = isd.at("center_ephemeris_time");
-      state["m_nLines"] = isd.at("image_lines");
-      state["m_nSamples"] = isd.at("image_samples");
-
-      state["m_iTransL"] = isd.at("focal2pixel_lines");
-
-      state["m_iTransS"] = isd.at("focal2pixel_samples");
+      state["m_iTransL"] = getFocal2PixelLines(isd, parsingWarnings);
+      state["m_iTransS"] = getFocal2PixelSamples(isd, parsingWarnings);
 
       // We don't pass the pixel to focal plane transformation so invert the
       // focal plane to pixel transformation
@@ -973,6 +949,20 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
                        "ISD is invalid for creating the sensor model.",
                        "UsgsAstroFrameSensorModel::constructStateFromIsd");
     }
+
+    if (!parsingWarnings->empty()) {
+      if (warnings) {
+        warnings->insert(warnings->end(), parsingWarnings->begin(), parsingWarnings->end());
+      }
+      delete parsingWarnings;
+      parsingWarnings = nullptr;
+      throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
+                       "ISD is invalid for creating the sensor model.",
+                       "UsgsAstroFrameSensorModel::constructStateFromIsd");
+    }
+
+    delete parsingWarnings;
+    parsingWarnings = nullptr;
 
     return state.dump();
 
