@@ -52,6 +52,10 @@ void createCameraLookVector(
 // Methods for checking/accessing the ISD
 
 double metric_conversion(double val, std::string from, std::string to="m");
+std::string getSensorModelName(nlohmann::json isd, csm::WarningList *list=nullptr);
+std::string getImageId(nlohmann::json isd, csm::WarningList *list=nullptr);
+std::string getSensorName(nlohmann::json isd, csm::WarningList *list=nullptr);
+std::string getPlatformName(nlohmann::json isd, csm::WarningList *list=nullptr);
 int getTotalLines(nlohmann::json isd, csm::WarningList *list=nullptr);
 int getTotalSamples(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getStartingTime(nlohmann::json isd, csm::WarningList *list=nullptr);
@@ -67,6 +71,8 @@ std::vector<double> getFocal2PixelLines(nlohmann::json isd, csm::WarningList *li
 std::vector<double> getFocal2PixelSamples(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getDetectorCenterLine(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getDetectorCenterSample(nlohmann::json isd, csm::WarningList *list=nullptr);
+double getDetectorStartingLine(nlohmann::json isd, csm::WarningList *list=nullptr);
+double getDetectorStartingSample(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getMinHeight(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getMaxHeight(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getSemiMajorRadius(nlohmann::json isd, csm::WarningList *list=nullptr);
@@ -74,6 +80,7 @@ double getSemiMinorRadius(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getTransverseDistortionX(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getTransverseDistortionY(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getRadialDistortion(nlohmann::json isd, csm::WarningList *list=nullptr);
+std::vector<double> getSunPositions(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSensorPositions(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSensorVelocities(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSensorOrientations(nlohmann::json isd, csm::WarningList *list=nullptr);

@@ -11,6 +11,34 @@ TEST(MetricConversion, DistanceConversion) {
   EXPECT_EQ(1,    metric_conversion(1, "km", "km"));
 }
 
+TEST(ISDParsing, ModelName) {
+  json isd = {
+    {"name_model", "Test"}
+  };
+  EXPECT_EQ("Test", getSensorModelName(isd));
+}
+
+TEST(ISDParsing, ImageIdentifier) {
+  json isd = {
+    {"image_identifier", "Test"}
+  };
+  EXPECT_EQ("Test", getImageId(isd));
+}
+
+TEST(ISDParsing, SensorName) {
+  json isd = {
+    {"name_sensor", "Test"}
+  };
+  EXPECT_EQ("Test", getSensorName(isd));
+}
+
+TEST(ISDParsing, PlatformName) {
+  json isd = {
+    {"name_platform", "Test"}
+  };
+  EXPECT_EQ("Test", getPlatformName(isd));
+}
+
 TEST(ISDParsing, TotalLines) {
   json isd = {
     {"image_lines", 16}
@@ -141,6 +169,20 @@ TEST(ISDParsing, DetectorCenterSample) {
   EXPECT_EQ(3, getDetectorCenterSample(isd));
 }
 
+TEST(ISDParsing, DetectorStartingLine) {
+  json isd = {
+    {"starting_detector_line", 1}
+  };
+  EXPECT_EQ(1, getDetectorStartingLine(isd));
+}
+
+TEST(ISDParsing, DetectorStartingSample) {
+  json isd = {
+    {"starting_detector_sample", 2}
+  };
+  EXPECT_EQ(2, getDetectorStartingSample(isd));
+}
+
 TEST(ISDParsing, MinHeight) {
   json isd = {
     {"reference_height", {
@@ -215,6 +257,20 @@ TEST(ISDParsing, Radial) {
   };
   std::vector<double> coefficients = {0, 1, 2};
   EXPECT_EQ(coefficients, getRadialDistortion(isd));
+}
+
+TEST(ISDParsing, SunPosition) {
+  json isd = {
+    {"sun_position", {
+      {"positions", {
+        {0, 1, 2},
+        {3, 4, 5},
+        {6, 7, 8}}},
+      {"unit", "km"}}
+    }
+  };
+  std::vector<double> positions = {0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000};
+  EXPECT_EQ(positions, getSunPositions(isd));
 }
 
 TEST(ISDParsing, SensorPosition) {

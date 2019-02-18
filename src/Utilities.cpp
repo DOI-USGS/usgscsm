@@ -103,6 +103,74 @@ double metric_conversion(double val, std::string from, std::string to) {
     return val*pow(10, typemap[from].get<int>() - typemap[to].get<int>());
 }
 
+std::string getSensorModelName(json isd, csm::WarningList *list) {
+  std::string name = "";
+  try {
+    name = isd.at("name_model");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the sensor model name.",
+          "Utilities::getSensorModelName()"));
+    }
+  }
+  return name;
+}
+
+std::string getImageId(json isd, csm::WarningList *list) {
+  std::string id = "";
+  try {
+    id = isd.at("image_identifier");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the image identifier.",
+          "Utilities::getImageId()"));
+    }
+  }
+  return id;
+}
+
+std::string getSensorName(json isd, csm::WarningList *list) {
+  std::string name = "";
+  try {
+    name = isd.at("name_sensor");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the sensor name.",
+          "Utilities::getSensorName()"));
+    }
+  }
+  return name;
+}
+
+std::string getPlatformName(json isd, csm::WarningList *list) {
+  std::string name = "";
+  try {
+    name = isd.at("name_platform");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the platform name.",
+          "Utilities::getPlatformName()"));
+    }
+  }
+  return name;
+}
+
 int getTotalLines(json isd, csm::WarningList *list) {
   int lines = 0;
   try {
@@ -364,6 +432,41 @@ double getDetectorCenterSample(json isd, csm::WarningList *list) {
   return sample;
 }
 
+
+double getDetectorStartingLine(json isd, csm::WarningList *list) {
+  double line;
+  try {
+    line = isd.at("starting_detector_line");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the detector starting line.",
+          "Utilities::getDetectorStartingLine()"));
+    }
+  }
+  return line;
+}
+
+double getDetectorStartingSample(json isd, csm::WarningList *list) {
+  double sample;
+  try {
+    sample = isd.at("starting_detector_sample");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the detector starting sample.",
+          "Utilities::getDetectorStartingSample()"));
+    }
+  }
+  return sample;
+}
+
 double getMinHeight(json isd, csm::WarningList *list) {
   double height = 0.0;
   try {
@@ -496,6 +599,30 @@ std::vector<double> getRadialDistortion(json isd, csm::WarningList *list) {
   }
   return coefficients;
 }
+
+std::vector<double> getSunPositions(json isd, csm::WarningList *list) {
+  std::vector<double> positions;
+  try {
+    json jayson = isd.at("sun_position");
+    json unit = jayson.at("unit");
+    for (auto& location : jayson.at("positions")) {
+      positions.push_back(metric_conversion(location[0].get<double>(), unit.get<std::string>()));
+      positions.push_back(metric_conversion(location[1].get<double>(), unit.get<std::string>()));
+      positions.push_back(metric_conversion(location[2].get<double>(), unit.get<std::string>()));
+    }
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the sun positions.",
+          "Utilities::getSunPositions()"));
+    }
+  }
+  return positions;
+}
+
 std::vector<double> getSensorPositions(json isd, csm::WarningList *list) {
   std::vector<double> positions;
   try {

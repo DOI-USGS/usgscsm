@@ -799,124 +799,114 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
     csm::WarningList* parsingWarnings = new csm::WarningList;
 
+    state["m_modelName"] = getSensorModelName(isd, parsingWarnings);
+    state["m_imageIdentifier"] = getImageId(isd, parsingWarnings);
+    state["m_sensorName"] = getSensorName(isd, parsingWarnings);
+    state["m_platformName"] = getPlatformName(isd, parsingWarnings);
+    std::cerr << "Model Name Parsed!" << std::endl;
+
+    state["m_startingDetectorSample"] = getDetectorStartingSample(isd, parsingWarnings);
+    state["m_startingDetectorLine"] = getDetectorStartingLine(isd, parsingWarnings);
+
+    std::cerr << "Detector Starting Pixel Parsed!" << std::endl;
+
+    // get focal length
+    state["m_focalLength"] = getFocalLength(isd, parsingWarnings);
+    state["m_focalLengthEpsilon"] = getFocalLengthEpsilon(isd, parsingWarnings);
+
+    std::cerr << "Focal Length Parsed!" << std::endl;
+
+    state["m_currentParameterValue"] = json();
+
+    // get sensor_position
+    std::vector<double> position = getSensorPositions(isd, parsingWarnings);
+    if (!position.empty() && position.size() != 3) {
+      parsingWarnings->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Sensor position does not have 3 values.",
+          "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+      state["m_currentParameterValue"][0] = 0;
+      state["m_currentParameterValue"][1] = 0;
+      state["m_currentParameterValue"][2] = 0;
+    }
+    else {
+      state["m_currentParameterValue"] = position;
+    }
+
+    // get sensor_velocity
+    std::vector<double> velocity = getSensorVelocities(isd, parsingWarnings);
+    if (!velocity.empty() && velocity.size() != 3) {
+      parsingWarnings->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Sensor velocity does not have 3 values.",
+          "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    }
+    else {
+      state["m_spacecraftVelocity"] = velocity;
+    }
+
+    std::cerr << "Sensor Location Parsed!" << std::endl;
+
+    // get sun_position
+    // sun position is not strictly necessary, but is required for getIlluminationDirection.
+    state["m_sunPosition"] = getSunPositions(isd);
+
+    std::cerr << "Sun Position Parsed!" << std::endl;
+
+    // get sensor_orientation quaternion
+    std::vector<double> quaternion = getSensorOrientations(isd, parsingWarnings);
+    if (!quaternion.empty() && quaternion.size() != 4) {
+      parsingWarnings->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Sensor orientation quaternion does not have 4 values.",
+          "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    }
+    else {
+      state["m_currentParameterValue"][3] = quaternion[0];
+      state["m_currentParameterValue"][4] = quaternion[1];
+      state["m_currentParameterValue"][5] = quaternion[2];
+      state["m_currentParameterValue"][6] = quaternion[3];
+    }
+
+    std::cerr << "Sensor Orientation Parsed!" << std::endl;
+
+    // get optical_distortion
+    state["m_odtX"] = getTransverseDistortionX(isd, parsingWarnings);
+    state["m_odtY"] = getTransverseDistortionY(isd, parsingWarnings);
+
+    std::cerr << "Distortion Parsed!" << std::endl;
+
+    // get detector_center
+    state["m_ccdCenter"][0] = getDetectorCenterLine(isd, parsingWarnings);
+    state["m_ccdCenter"][1] = getDetectorCenterSample(isd, parsingWarnings);
+
+    std::cerr << "Detector Center Parsed!" << std::endl;
+
+    // get radii
+    state["m_minorAxis"] = getSemiMinorRadius(isd, parsingWarnings);
+    state["m_majorAxis"] = getSemiMajorRadius(isd, parsingWarnings);
+
+    std::cerr << "Target Radii Parsed!" << std::endl;
+
+    // get reference_height
+    state["m_minElevation"] = getMinHeight(isd, parsingWarnings);
+    state["m_maxElevation"] = getMaxHeight(isd, parsingWarnings);
+
+    std::cerr << "Reference Height Parsed!" << std::endl;
+
+    state["m_ephemerisTime"] = getCenterTime(isd, parsingWarnings);
+    state["m_nLines"] = getTotalLines(isd, parsingWarnings);
+    state["m_nSamples"] = getTotalSamples(isd, parsingWarnings);
+
+    state["m_iTransL"] = getFocal2PixelLines(isd, parsingWarnings);
+    state["m_iTransS"] = getFocal2PixelSamples(isd, parsingWarnings);
+
+    // We don't pass the pixel to focal plane transformation so invert the
+    // focal plane to pixel transformation
     try {
-      state["m_modelName"] = isd.at("name_model");
-      state["m_imageIdentifier"] = isd.at("image_identifier");
-      state["m_sensorName"] = isd.at("name_sensor");
-      state["m_platformName"] = isd.at("name_platform");
-      std::cerr << "Model Name Parsed!" << std::endl;
-
-      state["m_startingDetectorSample"] = isd.at("starting_detector_sample");
-      state["m_startingDetectorLine"] = isd.at("starting_detector_line");
-
-      std::cerr << "Detector Starting Pixel Parsed!" << std::endl;
-
-      // get focal length
-      state["m_focalLength"] = getFocalLength(isd, parsingWarnings);
-      state["m_focalLengthEpsilon"] = getFocalLengthEpsilon(isd, parsingWarnings);
-
-      std::cerr << "Focal Length Parsed!" << std::endl;
-
-      state["m_currentParameterValue"] = json();
-
-      // get sensor_position
-      std::vector<double> position = getSensorPositions(isd, parsingWarnings);
-      if (!position.empty() && position.size() != 3) {
-        parsingWarnings->push_back(
-          csm::Warning(
-            csm::Warning::DATA_NOT_AVAILABLE,
-            "Sensor position does not have 3 values.",
-            "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
-        state["m_currentParameterValue"][0] = 0;
-        state["m_currentParameterValue"][1] = 0;
-        state["m_currentParameterValue"][2] = 0;
-      }
-      else {
-        state["m_currentParameterValue"] = position;
-      }
-
-      // get sensor_velocity
-      std::vector<double> velocity = getSensorVelocities(isd, parsingWarnings);
-      if (!velocity.empty() && velocity.size() != 3) {
-        parsingWarnings->push_back(
-          csm::Warning(
-            csm::Warning::DATA_NOT_AVAILABLE,
-            "Sensor velocity does not have 3 values.",
-            "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
-      }
-      else {
-        state["m_spacecraftVelocity"] = velocity;
-      }
-
-      std::cerr << "Sensor Location Parsed!" << std::endl;
-
-      // get sun_position
-      // sun position is not strictly necessary, but is required for getIlluminationDirection.
-      {
-        json jayson = isd.at("sun_position");
-        json positions = jayson.at("positions")[0];
-        json unit = jayson.at("unit");
-
-        unit = unit.get<std::string>();
-        state["m_sunPosition"] = json();
-        state["m_sunPosition"][0] = metric_conversion(positions[0].get<double>(), unit);
-        state["m_sunPosition"][1] = metric_conversion(positions[1].get<double>(), unit);
-        state["m_sunPosition"][2] = metric_conversion(positions[2].get<double>(), unit);
-
-        std::cerr << "Sun Position Parsed!" << std::endl;
-      }
-
-      // get sensor_orientation quaternion
-      std::vector<double> quaternion = getSensorOrientations(isd, parsingWarnings);
-      if (!quaternion.empty() && quaternion.size() != 4) {
-        parsingWarnings->push_back(
-          csm::Warning(
-            csm::Warning::DATA_NOT_AVAILABLE,
-            "Sensor orientation quaternion does not have 4 values.",
-            "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
-      }
-      else {
-        state["m_currentParameterValue"][3] = quaternion[0];
-        state["m_currentParameterValue"][4] = quaternion[1];
-        state["m_currentParameterValue"][5] = quaternion[2];
-        state["m_currentParameterValue"][6] = quaternion[3];
-      }
-
-      std::cerr << "Sensor Orientation Parsed!" << std::endl;
-
-      // get optical_distortion
-      state["m_odtX"] = getTransverseDistortionX(isd, parsingWarnings);
-      state["m_odtY"] = getTransverseDistortionY(isd, parsingWarnings);
-
-      std::cerr << "Distortion Parsed!" << std::endl;
-
-      // get detector_center
-      state["m_ccdCenter"][0] = getDetectorCenterLine(isd, parsingWarnings);
-      state["m_ccdCenter"][1] = getDetectorCenterSample(isd, parsingWarnings);
-
-      std::cerr << "Detector Center Parsed!" << std::endl;
-
-      // get radii
-      state["m_minorAxis"] = getSemiMinorRadius(isd, parsingWarnings);
-      state["m_majorAxis"] = getSemiMajorRadius(isd, parsingWarnings);
-
-      std::cerr << "Target Radii Parsed!" << std::endl;
-
-      // get reference_height
-      state["m_minElevation"] = getMinHeight(isd, parsingWarnings);
-      state["m_maxElevation"] = getMaxHeight(isd, parsingWarnings);
-
-      std::cerr << "Reference Height Parsed!" << std::endl;
-
-      state["m_ephemerisTime"] = getCenterTime(isd, parsingWarnings);
-      state["m_nLines"] = getTotalLines(isd, parsingWarnings);
-      state["m_nSamples"] = getTotalSamples(isd, parsingWarnings);
-
-      state["m_iTransL"] = getFocal2PixelLines(isd, parsingWarnings);
-      state["m_iTransS"] = getFocal2PixelSamples(isd, parsingWarnings);
-
-      // We don't pass the pixel to focal plane transformation so invert the
-      // focal plane to pixel transformation
       double determinant = state["m_iTransL"][1].get<double>() * state["m_iTransS"][2].get<double>() -
                            state["m_iTransL"][2].get<double>() * state["m_iTransS"][1].get<double>();
 
@@ -929,26 +919,22 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
       state["m_transY"][2] =  state["m_iTransS"][2].get<double>() / determinant;
       state["m_transY"][0] = -(state["m_transY"][1].get<double>() * state["m_iTransL"][0].get<double>() +
                                state["m_transY"][2].get<double>() * state["m_iTransS"][0].get<double>());
-
-      std::cerr << "Focal To Pixel Transformation Parsed!" << std::endl;
-
-      state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
-      state["m_currentParameterCovariance"] = std::vector<double>(NUM_PARAMETERS*NUM_PARAMETERS,0.0);
-      state["m_collectionIdentifier"] = "";
-
-      std::cerr << "Constants Set!" << std::endl;
-
     }
-    catch(std::out_of_range& e) {
-      throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
-                       "ISD missing necessary keywords to create sensor model: " + std::string(e.what()),
-                       "UsgsAstroFrameSensorModel::constructStateFromIsd");
+    catch (...) {
+      parsingWarnings->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not compute detector pixel to focal plane coordinate transformation.",
+          "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
     }
-    catch(...) {
-      throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
-                       "ISD is invalid for creating the sensor model.",
-                       "UsgsAstroFrameSensorModel::constructStateFromIsd");
-    }
+
+    std::cerr << "Focal To Pixel Transformation Parsed!" << std::endl;
+
+    state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
+    state["m_currentParameterCovariance"] = std::vector<double>(NUM_PARAMETERS*NUM_PARAMETERS,0.0);
+    state["m_collectionIdentifier"] = "";
+
+    std::cerr << "Constants Set!" << std::endl;
 
     if (!parsingWarnings->empty()) {
       if (warnings) {
