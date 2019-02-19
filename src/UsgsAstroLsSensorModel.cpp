@@ -252,6 +252,7 @@ std::string UsgsAstroLsSensorModel::getModelNameFromModelState(
 
 std::string UsgsAstroLsSensorModel::getModelState() const {
       json state;
+      state["m_modelName"] = _SENSOR_MODEL_NAME;
       state["m_imageIdentifier"] = m_imageIdentifier;
       state["m_sensorType"] = m_sensorType;
       state["m_totalLines"] = m_totalLines;

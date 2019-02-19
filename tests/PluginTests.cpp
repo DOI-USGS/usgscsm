@@ -82,6 +82,14 @@ TEST_F(FrameIsdTest, Constructible) {
                "USGS_ASTRO_FRAME_SENSOR_MODEL"));
 }
 
+TEST_F(FrameIsdTest, ConstructibleFromState) {
+   UsgsAstroPlugin testPlugin;
+   std::string modelState = testPlugin.getStateFromISD(isd);
+   EXPECT_TRUE(testPlugin.canModelBeConstructedFromState(
+        "USGS_ASTRO_FRAME_SENSOR_MODEL",
+        modelState));
+}
+
 TEST_F(FrameIsdTest, NotConstructible) {
    UsgsAstroPlugin testPlugin;
    isd.setFilename("data/constVelocityLineScan.img");
@@ -135,6 +143,14 @@ TEST_F(ConstVelLineScanIsdTest, Constructible) {
    EXPECT_TRUE(testPlugin.canModelBeConstructedFromISD(
                isd,
                "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL"));
+}
+
+TEST_F(ConstVelLineScanIsdTest, ConstructibleFromState) {
+   UsgsAstroPlugin testPlugin;
+   std::string modelState = testPlugin.getStateFromISD(isd);
+   EXPECT_TRUE(testPlugin.canModelBeConstructedFromState(
+         "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL",
+         modelState));
 }
 
 TEST_F(ConstVelLineScanIsdTest, NotConstructible) {
