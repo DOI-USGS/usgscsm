@@ -112,21 +112,26 @@ TEST_F(FrameIsdTest, ConstructInValidCamera) {
    UsgsAstroPlugin testPlugin;
    isd.setFilename("data/constVelocityLineScan.img");
    csm::Model *cameraModel = NULL;
+   csm::WarningList *warnings = new csm::WarningList;
    try {
       testPlugin.constructModelFromISD(
             isd,
             "USGS_ASTRO_FRAME_SENSOR_MODEL",
-            NULL);
+            warnings);
       FAIL() << "Expected an error";
    }
    catch(csm::Error &e) {
       EXPECT_EQ(e.getError(), csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE);
+      EXPECT_FALSE(warnings->empty());
    }
    catch(...) {
       FAIL() << "Expected csm SENSOR_MODEL_NOT_CONSTRUCTIBLE error";
    }
    if (cameraModel) {
       delete cameraModel;
+   }
+   if (warnings) {
+     delete warnings;
    }
 }
 
