@@ -29,7 +29,7 @@ next to the image file passed to the CSM::ISD class. We provide an OpenAPI
 server for generating these,
 [pfeffernusse](https://github.com/USGS-Astrogeology/pfeffernusse). The swagger
 specification is located on
-[swaggerhub](https://app.swaggerhub.com/apis/USGS-Astro/pfeffernusse2/0.1.4).
+[swaggerhub](https://app.swaggerhub.com/apis/USGS-Astro/pfeffernusse2/0.1.4-oas3).
 
 ---
 
@@ -43,9 +43,11 @@ This repository has all of its external c++ dependencies included in it. The
 excellent header-only JSON library
 [JSON for Modern C++](https://github.com/nlohmann/json) is included directly in
 the source code. The other two dependencies, the CSM API library, and gtest
-are included as git submodules. The library can also be compiled against an
-installed versions of the CSM API by setting the BUILD_CSM flag to OFF during
-cmake configuration.
+are included as git submodules. When you clone this library make sure you add
+the `--recursive` flag to your `git clone` command. Alaterntively, you can run
+`git submodule update --init --recursive` after cloning. The library can also be
+compiled against an installed versions of the CSM API by setting the BUILD_CSM
+flag to OFF during cmake configuration.
 
 ## Building CSM-CameraModel
 
