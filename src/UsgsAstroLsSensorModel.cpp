@@ -508,6 +508,15 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    }
    csm::EcefCoord approxIntersect = imageToGround(approxPoint, m_refElevation);
    csm::EcefCoord approxNextIntersect = imageToGround(approxNextPoint, m_refElevation);
+
+   std::cout << approxIntersect.x << std::endl;
+   std::cout << approxIntersect.y << std::endl;
+   std::cout << approxIntersect.z << std::endl;
+
+   std::cout << approxNextIntersect.x << std::endl;
+   std::cout << approxNextIntersect.y << std::endl;
+   std::cout << approxNextIntersect.z << std::endl;
+
    double lineDX = approxNextIntersect.x - approxIntersect.x;
    double lineDY = approxNextIntersect.y - approxIntersect.y;
    double lineDZ = approxNextIntersect.z - approxIntersect.z;
