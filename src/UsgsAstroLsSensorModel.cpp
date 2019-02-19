@@ -1705,7 +1705,6 @@ void UsgsAstroLsSensorModel::losToEcf(
    natFocalPlane = computeDistortedFocalPlaneCoordinates(fractionalLine, sampleUSGSFull, m_detectorSampleOrigin, m_detectorLineOrigin, m_detectorSampleSumming, m_startingSample, m_detectorLineOffset, m_iTransS, m_iTransL);
 
    // Remove lens distortion
-   std::tuple<double, double> undistortedPoint;
    double undistortedFocalPlaneX, undistortedFocalPlaneY;
    // std::vector<std::vector<double>> transverseCoeffs(2, std::vector<double>(2, 0));
    removeDistortion(natFocalPlaneX, natFocalPlaneY,
@@ -1715,7 +1714,7 @@ void UsgsAstroLsSensorModel::losToEcf(
 
   // Define imaging ray (look vector) in camera space
    double cameraLook[3];
-   createCameraLookVector(std::get<0>(undistortedPoint), std::get<1>(undistortedPoint), m_zDirection, m_focal, getValue(15, adj), m_halfSwath, cameraLook);
+   createCameraLookVector(undistortedFocalPlaneX, undistortedFocalPlaneY, adj, cameraLook);
 
    // Apply attitude correction
    double attCorr[9];

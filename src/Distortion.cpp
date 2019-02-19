@@ -107,14 +107,14 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       double rr = dx * dx + dy * dy;
       double tolerance = 1.0E-6;
 
+      ux = dx;
+      uy = dy;
+
       if (rr > tolerance)
       {
         double dr = opticalDistCoeffs[0] + (rr * (opticalDistCoeffs[1] + rr * opticalDistCoeffs[2]));
-        std::cout << dr << std::endl;
         ux = dx * (1.0 - dr);
         uy = dy * (1.0 - dr);
-        std::cout << ux << std::endl;
-        std::cout << uy << std::endl;
       }
     }
     break;
@@ -184,9 +184,13 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
     // until the new distorted point, r, undistorts to within a tolerance of the
     // original point, rp.
     case INVERSE_RADIAL: {
-      const double tol = 1.4E-5;
+      const double tol = 1.0E-6;
 
       double rp2 = (dx * dx) + (dy * dy);
+      std::cout << dx << std::endl;
+      std::cout << dy << std::endl;
+      std::cout << rp2 << std::endl;
+
 
       if (rp2 > tol) {
         double rp = sqrt(rp2);
@@ -198,6 +202,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
         double r_prev, r2_prev;
         int iteration = 0;
         do {
+          std::cout << drOverR << std::endl;
           // Don't get in an end-less loop.  This algorithm should
           // converge quickly.  If not then we are probably way outside
           // of the focal plane.  Just set the distorted position to the
