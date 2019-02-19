@@ -599,21 +599,6 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    double dz = ground_pt.z - calculatedPoint.z;
    double len = dx * dx + dy * dy + dz * dz;
 
-   // If the final correction is greater than 10 meters,
-   // the solution is not valid enough to report even with a warning
-   if (len > 100.0) {
-      std::ostringstream msg;
-      msg << "Did not converge. Ground point: (" << ground_pt.x << ", "
-          << ground_pt.y << ", " << ground_pt.z << ") Computed image point: ("
-          << calculatedPixel.line << ", " << calculatedPixel.samp
-          << ") Computed ground point: (" << calculatedPoint.x << ", "
-          << calculatedPoint.y << ", " << calculatedPoint.z << ")";
-      throw csm::Error(
-         csm::Error::ALGORITHM,
-         msg.str(),
-         "UsgsAstroLsSensorModel::groundToImage");
-   }
-
    if (achieved_precision) {
       *achieved_precision = sqrt(len);
    }
