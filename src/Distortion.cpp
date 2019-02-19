@@ -105,18 +105,19 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
     // coordinate set and the distortion coefficients
     case RADIAL: {
       double rr = dx * dx + dy * dy;
+      double tolerance = 1.0E-6;
 
-      double radialCoeffSum = 0;
-
-      for (int i = 1; i <= opticalDistCoeffs.size(); i++) {
-        radialCoeffSum += opticalDistCoeffs[i - 1] * (pow(rr, i * 2));
+      if (rr > tolerance)
+      {
+        double dr = opticalDistCoeffs[0] + (rr * (opticalDistCoeffs[1] + rr * opticalDistCoeffs[2]));
+        std::cout << dr << std::endl;
+        ux = dx * (1.0 - dr);
+        uy = dy * (1.0 - dr);
+        std::cout << ux << std::endl;
+        std::cout << uy << std::endl;
       }
-
-      ux = dx + dx * radialCoeffSum;
-      uy = dy + dy * radialCoeffSum;
-
-      break;
     }
+    break;
     // Computes undistorted focal plane (x,y) coordinates given a distorted focal plane (x,y)
     // coordinate. The undistorted coordinates are solved for using the Newton-Raphson
     // method for root-finding if the distortionFunction method is invoked.
@@ -132,6 +133,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       double y;
       double fx;
       double fy;
+      double jacobian[4];
 
       // Initial guess at the root
       x = dx;
@@ -146,13 +148,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
         fx = dx - fx;
         fy = dy - fy;
 
-        double jacobian[4];
-
         distortionJacobian(x, y, jacobian, opticalDistCoeffs);
-        std::cout << jacobian[0] << std::endl;
-        std::cout << jacobian[1] << std::endl;
-        std::cout << jacobian[2] << std::endl;
-        std::cout << jacobian[3] << std::endl;
 
         // Jxx * Jyy - Jxy * Jyx
         double determinant = jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2];
@@ -163,7 +159,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
           // Near-zero determinant. Add error handling here.
           //
           //-- Just break out and return with no convergence
-          break;
+          return;
         }
 
         x = x + (jacobian[3] * fx - jacobian[1] * fy) / determinant;
@@ -174,15 +170,15 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
         // The method converged to a root.
         ux = x;
         uy = y;
+
+        return;
       }
       // Otherwise method did not converge to a root within the maximum
       // number of iterations. Return with no distortion.
       ux = dx;
       uy = dy;
-      std::cout << ux << std::endl;
-      std::cout << uy << std::endl;
-      break;
     }
+    break;
     // Compute undistorted focal plane coordinate given a distorted
     // focal plane coordinate. This case works by iteratively adding distortion
     // until the new distorted point, r, undistorts to within a tolerance of the
@@ -227,7 +223,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
         ux = dx / (1.0 - drOverR);
         uy = dy / (1.0 - drOverR);
       }
-      break;
     }
+    break;
   }
 }
