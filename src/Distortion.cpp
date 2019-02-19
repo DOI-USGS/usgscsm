@@ -46,12 +46,10 @@ void distortionJacobian(double x, double y, double *jacobian,
   jacobian[2] = 0; // yx
   jacobian[3] = 0; // yy
 
-  int i = 0;
   int xPointer = 0;
-  std::cout << opticalDistCoeffs.size() << std::endl;
   int yPointer = opticalDistCoeffs.size() / 2;
 
-  for (; xPointer < 10; xPointer++, yPointer++, i++) {
+  for (int i = 0; i < 10; xPointer++, yPointer++, i++) {
     jacobian[0] = jacobian[0] + d_dx[i] * opticalDistCoeffs[xPointer];
     jacobian[1] = jacobian[1] + d_dy[i] * opticalDistCoeffs[xPointer];
     jacobian[2] = jacobian[2] + d_dx[i] * opticalDistCoeffs[yPointer];
@@ -85,14 +83,13 @@ void distortionFunction(double ux, double uy, double &dx, double &dy,
   f[8] = ux * uy * uy;
   f[9] = uy * uy * uy;
 
-  int i = 0;
   int xPointer = 0;
   int yPointer = opticalDistCoeffs.size() / 2;
 
   dx = 0.0;
   dy = 0.0;
 
-  for (; xPointer < 10; xPointer++, yPointer++, i++) {
+  for (int i = 0; i < 10; xPointer++, yPointer++, i++) {
     dx = dx + f[i] * opticalDistCoeffs[xPointer];
     dy = dy + f[i] * opticalDistCoeffs[yPointer];
   }
@@ -152,6 +149,10 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
         double jacobian[4];
 
         distortionJacobian(x, y, jacobian, opticalDistCoeffs);
+        std::cout << jacobian[0] << std::endl;
+        std::cout << jacobian[1] << std::endl;
+        std::cout << jacobian[2] << std::endl;
+        std::cout << jacobian[3] << std::endl;
 
         // Jxx * Jyy - Jxy * Jyx
         double determinant = jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2];
@@ -178,6 +179,8 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       // number of iterations. Return with no distortion.
       ux = dx;
       uy = dy;
+      std::cout << ux << std::endl;
+      std::cout << uy << std::endl;
       break;
     }
     // Compute undistorted focal plane coordinate given a distorted
