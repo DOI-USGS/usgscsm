@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 #include "RasterGM.h"
 #include "CorrelationModel.h"
+#include "Distortion.h"
 
 #include <json.hpp>
 using json = nlohmann::json;
@@ -320,12 +321,6 @@ protected:
     FRIEND_TEST(FrameSensorModel, setFocalPlane_AlternatingOnes);
     FRIEND_TEST(FrameSensorModel, distortMe_AlternatingOnes);
 
-    virtual bool setFocalPlane(double dx,double dy,double &undistortedX,double &undistortedY) const;
-    virtual void distortionFunction(double ux, double uy, double &dx, double &dy) const;
-    virtual void distortionJacobian(double x, double y, double &Jxx,
-                                    double &Jxy, double &Jyx, double &Jyy) const;
-
-
 
   private:
     // Input parameters
@@ -356,6 +351,10 @@ protected:
     double m_startingDetectorLine;
     std::string m_targetName;
     std::string m_modelName;
+    std::string m_sensorName;
+    std::string m_platformName;
+    std::string m_imageIdentifier;
+    std::string m_collectionIdentifier;
     double m_ifov;
     std::string m_instrumentID;
     double m_focalLengthEpsilon;
@@ -368,6 +367,8 @@ protected:
     int m_nLines;
     int m_nSamples;
     int m_nParameters;
+
+    csm::EcefCoord m_referencePointXyz;
 
     json _state;
     static const int         _NUM_STATE_KEYWORDS;
