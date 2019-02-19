@@ -1,82 +1,6 @@
 #include "Distortion.h"
 
 /**
- * @brief Compute undistorted focal plane x/y.
- *
- * Computes undistorted focal plane (x,y) coordinates given a distorted focal plane (x,y)
- * coordinate. The undistorted coordinates are solved for using the Newton-Raphson
- * method for root-finding if the distortionFunction method is invoked.
- *
- * @param dx distorted focal plane x in millimeters
- * @param dy distorted focal plane y in millimeters
- * @param undistortedX The undistorted x coordinate, in millimeters.
- * @param undistortedY The undistorted y coordinate, in millimeters.
- *
- * @return if the conversion was successful
- * @todo Review the tolerance and maximum iterations of the root-
- *       finding algorithm.
- * @todo Review the handling of non-convergence of the root-finding
- *       algorithm.
- * @todo Add error handling for near-zero determinant.
-*/
-void removeTransverseDistortion(double dx, double dy, double ux, double uy,
-                        const std::vector<double> &odtX, const std::vector<double> &odtY) {
-  // Solve the distortion equation using the Newton-Raphson method.
-  // Set the error tolerance to about one millionth of a NAC pixel.
-  const double tol = 1.4E-5;
-
-  // The maximum number of iterations of the Newton-Raphson method.
-  const int maxTries = 60;
-
-  double x;
-  double y;
-  double fx;
-  double fy;
-
-  // Initial guess at the root
-  x = dx;
-  y = dy;
-
-  distortionFunction(x, y, fx, fy, odtX, odtY);
-
-  for (int count = 1; ((fabs(fx)) +fabs(fy))) > tol) && (count < maxTries); count++) {
-
-    distortedPoint = distortionFunction(x, y, fx, fy, odtX, odtY);
-
-    fx = dx - fx;
-    fy = dy - fy;
-
-    double jacobian[4];
-
-    distortionJacobian(x, y, jacobian, odtX, odtY);
-
-    // Jxx * Jyy - Jxy * Jyx
-    double determinant = jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2];
-    if (fabs(determinant) < 1E-6) {
-      ux = x;
-      uy = y;
-      //
-      // Near-zero determinant. Add error handling here.
-      //
-      //-- Just break out and return with no convergence
-    }
-
-    x = x + (jacobian[3] * fx - jacobian[1] * fy) / determinant;
-    y = y + (jacobian[0] * fy - jacobian[2] * fx) / determinant;
-  }
-
-  if ( (fabs(std::get<0>(distortedPoint)) + fabs(std::get<1>(distortedPoint))) <= tol) {
-    // The method converged to a root.
-    ux = x;
-    uy = y;
-  }
-  // Otherwise method did not converge to a root within the maximum
-  // number of iterations. Return with no distortion.
-  ux = dx;
-  uy = dy;
-}
-
-/**
  * @description Jacobian of the distortion function. The Jacobian was computed
  * algebraically from the function described in the distortionFunction
  * method.
@@ -91,8 +15,8 @@ void removeTransverseDistortion(double dx, double dy, double ux, double uy,
                      [1][0]: yx, [1][1]: yy
  */
 
-void distortionJacobian(double x, double y, double &jacobian,
-                        const std::vector<double> &odtX, const std::vector<double> &odtY) {
+void distortionJacobian(double x, double y, double *jacobian,
+                        const std::vector<double> opticalDistCoeffs) {
 
   double d_dx[10];
   d_dx[0] = 0;
@@ -117,16 +41,21 @@ void distortionJacobian(double x, double y, double &jacobian,
   d_dy[8] = 2 * x * y;
   d_dy[9] = 3 * y * y;
 
-  jacobian[0] = 0; // 0
-  jacobian[1] = 0; // 1
-  jacobian[2] = 0; // 2
-  jacobian[3] = 0; // 3
+  jacobian[0] = 0; // xx
+  jacobian[1] = 0; // xy
+  jacobian[2] = 0; // yx
+  jacobian[3] = 0; // yy
 
-  for (int i = 0; i < 10; i++) {
-    jacobian[0] = jacobian[0] + d_dx[i] * odtX[i];
-    jacobian[1] = jacobian[1] + d_dy[i] * odtX[i];
-    jacobian[2] = jacobian[2] + d_dx[i] * odtY[i];
-    jacobian[3] = jacobian[3] + d_dy[i] * odtY[i];
+  int i = 0;
+  int xPointer = 0;
+  std::cout << opticalDistCoeffs.size() << std::endl;
+  int yPointer = opticalDistCoeffs.size() / 2;
+
+  for (; xPointer < 10; xPointer++, yPointer++, i++) {
+    jacobian[0] = jacobian[0] + d_dx[i] * opticalDistCoeffs[xPointer];
+    jacobian[1] = jacobian[1] + d_dy[i] * opticalDistCoeffs[xPointer];
+    jacobian[2] = jacobian[2] + d_dx[i] * opticalDistCoeffs[yPointer];
+    jacobian[3] = jacobian[3] + d_dy[i] * opticalDistCoeffs[yPointer];
   }
 }
 
@@ -137,13 +66,12 @@ void distortionJacobian(double x, double y, double &jacobian,
  *
  * @param ux Undistored x
  * @param uy Undistored y
- * @param odtX opticalDistCoef In X
- * @param odtY opticalDistCoef In Y
+ * @param opticalDistCoeffs For both X and Y coefficients
  *
  * @returns distortedPoint Newly adjusted focal plane coordinates as an x, y tuple
  */
-void distortionFunction(double ux, double uy, double dx, double dy,
-  const std::vector<double> &odtX, const std::vector<double> &odtY) {
+void distortionFunction(double ux, double uy, double &dx, double &dy,
+                        const std::vector<double> opticalDistCoeffs) {
 
   double f[10];
   f[0] = 1;
@@ -157,109 +85,146 @@ void distortionFunction(double ux, double uy, double dx, double dy,
   f[8] = ux * uy * uy;
   f[9] = uy * uy * uy;
 
-  for (int i = 0; i < 10; i++) {
-    x = x + f[i] * odtX[i];
-    y = y + f[i] * odtY[i]);
+  int i = 0;
+  int xPointer = 0;
+  int yPointer = opticalDistCoeffs.size() / 2;
+
+  dx = 0.0;
+  dy = 0.0;
+
+  for (; xPointer < 10; xPointer++, yPointer++, i++) {
+    dx = dx + f[i] * opticalDistCoeffs[xPointer];
+    dy = dy + f[i] * opticalDistCoeffs[yPointer];
   }
 }
 
-/**
- * @description Compute undistorted focal plane coordinate given a distorted
- * coordinate set and the distortion coefficients
- *
- * @param inFocalPlaneX Distorted x
- * @param inFocalPlaneY Distorted y
- * @param opticalDistCoef distortion coefficients
- *
- * @returns undistortedPoint Newly adjusted focal plane coordinates as an x, y tuple
- */
-void removeRadialDistortion(double dx, double dy, double ux, double uy,
-                            std::vector<double> radialDistortionCoeffs) {
- double rr = dx * dx + dy * dy;
+void removeDistortion(double dx, double dy, double &ux, double &uy,
+                      const std::vector<double> opticalDistCoeffs,
+                      DistortionType distortionType,
+                      double desiredPrecision) {
 
- double radialCoeffSum = 0;
- std::tuple<double, double> undistortedPoint;
+  switch (distortionType) {
+    // Compute undistorted focal plane coordinate given a distorted
+    // coordinate set and the distortion coefficients
+    case RADIAL: {
+      double rr = dx * dx + dy * dy;
 
- for (int i = 1; i <= radialDistortionCoeffs.size(); i++) {
-   radialCoeffSum += radialDistortionCoeffs[i - 1] * (pow(rr, i * 2));
- }
+      double radialCoeffSum = 0;
 
- ux = dx + dx * radialCoeffSum;
- uy = dy + dy * radialCoeffSum;
-
- return undistortedPoint;
-}
-
-void removeDistortion(double inFocalPlaneX, double inFocalPlaneY,
-                      double &outFocalPlaneX, double &outFocalPlaneY,
-                      const double opticalDistCoef[3], double tolerance) {
-  double rr = inFocalPlaneX * inFocalPlaneX + inFocalPlaneY * inFocalPlaneY;
-  double dr = 0;
-
-  if (rr > tolerance)
-  {
-    dr = opticalDistCoef[0] + (rr * (opticalDistCoef[1] + rr * opticalDistCoef[2]));
-  }
-
-  outFocalPlaneX = inFocalPlaneX * (1.0 - dr);
-  outFocalPlaneY = inFocalPlaneY * (1.0 - dr);
-}
-
-/**
- * @description Compute undistorted focal plane coordinate given a distorted
- * focal plane coordinate. This method works by iteratively adding distortion
- * until the new distorted point, r, undistorts to within a tolerance of the
- * original point, rp.
- *
- * @param inFocalPlaneX Distorted x
- * @param inFocalPlaneY Distorted y
- * @param opticalDistCoef Distortion coefficients
- * @param desiredPrecision Convergence precision
- * @param tolerance Tolerance of r^2
- *
- * @returns undistortedPoint Newly adjusted focal plane coordinates as an x, y tuple
- */
-void invertDistortion(double inFocalPlaneX, double inFocalPlaneY,
-                      double outFocalPlaneX, double outFocalPlaneY
-                      const std::vector<double> opticalDistCoef, double desiredPrecision, double tolerance) {
-  double rp2 = (inFocalPlaneX * inFocalPlaneX) +
-               (inFocalPlaneY * inFocalPlaneY);
-
-  if (rp2 > tolerance) {
-    double rp = sqrt(rp2);
-    // Compute first fractional distortion using rp
-    double drOverR = opticalDistCoef[0]
-                  + (rp2 * (opticalDistCoef[1] + (rp2 * opticalDistCoef[2])));
-    // Compute first distorted point estimate, r
-    double r = rp + (drOverR * rp);
-    double r_prev, r2_prev;
-    int iteration = 0;
-    do {
-      // Don't get in an end-less loop.  This algorithm should
-      // converge quickly.  If not then we are probably way outside
-      // of the focal plane.  Just set the distorted position to the
-      // undistorted position. Also, make sure the focal plane is less
-      // than 1km, it is unreasonable for it to grow larger than that.
-      if (iteration >= 15 || r > 1E9) {
-        drOverR = 0.0;
-        break;
+      for (int i = 1; i <= opticalDistCoeffs.size(); i++) {
+        radialCoeffSum += opticalDistCoeffs[i - 1] * (pow(rr, i * 2));
       }
 
-      r_prev = r;
-      r2_prev = r * r;
+      ux = dx + dx * radialCoeffSum;
+      uy = dy + dy * radialCoeffSum;
 
-      // Compute new fractional distortion:
-      drOverR = opticalDistCoef[0]
-             + (r2_prev * (opticalDistCoef[1] + (r2_prev * opticalDistCoef[2])));
-
-      // Compute new estimate of r
-      r = rp + (drOverR * r_prev);
-      iteration++;
+      break;
     }
-    while (fabs(r * (1 - drOverR) - rp) > desiredPrecision);
-    outFocalPlaneX = inFocalPlaneX / (1.0 - drOverR);
-    outFocalPlaneY = inFocalPlaneY / (1.0 - drOverR));
+    // Computes undistorted focal plane (x,y) coordinates given a distorted focal plane (x,y)
+    // coordinate. The undistorted coordinates are solved for using the Newton-Raphson
+    // method for root-finding if the distortionFunction method is invoked.
+    case TRANSVERSE: {
+      // Solve the distortion equation using the Newton-Raphson method.
+      // Set the error tolerance to about one millionth of a NAC pixel.
+      const double tol = 1.4E-5;
+
+      // The maximum number of iterations of the Newton-Raphson method.
+      const int maxTries = 60;
+
+      double x;
+      double y;
+      double fx;
+      double fy;
+
+      // Initial guess at the root
+      x = dx;
+      y = dy;
+
+      distortionFunction(x, y, fx, fy, opticalDistCoeffs);
+
+      for (int count = 1; ((fabs(fx) +fabs(fy)) > tol) && (count < maxTries); count++) {
+
+        distortionFunction(x, y, fx, fy, opticalDistCoeffs);
+
+        fx = dx - fx;
+        fy = dy - fy;
+
+        double jacobian[4];
+
+        distortionJacobian(x, y, jacobian, opticalDistCoeffs);
+
+        // Jxx * Jyy - Jxy * Jyx
+        double determinant = jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2];
+        if (fabs(determinant) < 1E-6) {
+          ux = x;
+          uy = y;
+          //
+          // Near-zero determinant. Add error handling here.
+          //
+          //-- Just break out and return with no convergence
+          break;
+        }
+
+        x = x + (jacobian[3] * fx - jacobian[1] * fy) / determinant;
+        y = y + (jacobian[0] * fy - jacobian[2] * fx) / determinant;
+      }
+
+      if ((fabs(fx) + fabs(fy)) <= tol) {
+        // The method converged to a root.
+        ux = x;
+        uy = y;
+      }
+      // Otherwise method did not converge to a root within the maximum
+      // number of iterations. Return with no distortion.
+      ux = dx;
+      uy = dy;
+      break;
+    }
+    // Compute undistorted focal plane coordinate given a distorted
+    // focal plane coordinate. This case works by iteratively adding distortion
+    // until the new distorted point, r, undistorts to within a tolerance of the
+    // original point, rp.
+    case INVERSE_RADIAL: {
+      const double tol = 1.4E-5;
+
+      double rp2 = (dx * dx) + (dy * dy);
+
+      if (rp2 > tol) {
+        double rp = sqrt(rp2);
+        // Compute first fractional distortion using rp
+        double drOverR = opticalDistCoeffs[0]
+                      + (rp2 * (opticalDistCoeffs[1] + (rp2 * opticalDistCoeffs[2])));
+        // Compute first distorted point estimate, r
+        double r = rp + (drOverR * rp);
+        double r_prev, r2_prev;
+        int iteration = 0;
+        do {
+          // Don't get in an end-less loop.  This algorithm should
+          // converge quickly.  If not then we are probably way outside
+          // of the focal plane.  Just set the distorted position to the
+          // undistorted position. Also, make sure the focal plane is less
+          // than 1km, it is unreasonable for it to grow larger than that.
+          if (iteration >= 15 || r > 1E9) {
+            drOverR = 0.0;
+            break;
+          }
+
+          r_prev = r;
+          r2_prev = r * r;
+
+          // Compute new fractional distortion:
+          drOverR = opticalDistCoeffs[0]
+                 + (r2_prev * (opticalDistCoeffs[1] + (r2_prev * opticalDistCoeffs[2])));
+
+          // Compute new estimate of r
+          r = rp + (drOverR * r_prev);
+          iteration++;
+        }
+        while (fabs(r * (1 - drOverR) - rp) > desiredPrecision);
+        ux = dx / (1.0 - drOverR);
+        uy = dy / (1.0 - drOverR);
+      }
+      break;
+    }
   }
-  outFocalPlaneX = inFocalPlaneX;
-  outFocalPlaneY = outFocalPlaneY;
 }

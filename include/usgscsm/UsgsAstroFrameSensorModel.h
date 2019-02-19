@@ -330,8 +330,7 @@ protected:
     std::vector<double> m_currentParameterCovariance;
     std::vector<csm::param::Type> m_parameterType;
     std::vector<double> m_noAdjustments;
-    std::vector<double> m_odtX;
-    std::vector<double> m_odtY;
+    std::vector<double> m_opticalDistCoeffs;
     std::vector<double> m_transX;
     std::vector<double> m_transY;
     std::vector<double> m_spacecraftVelocity;

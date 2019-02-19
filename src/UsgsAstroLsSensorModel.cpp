@@ -160,8 +160,8 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
    m_ikCode = j["m_ikCode"];
    m_focal = j["m_focal"];
    m_zDirection = j["m_zDirection"];
+   m_opticalDistCoef = j["m_opticalDistCoef"].get<std::vector<double>>();
    for (int i = 0; i < 3; i++) {
-     m_opticalDistCoef[i] = j["m_opticalDistCoef"][i];
      m_iTransS[i] = j["m_iTransS"][i];
      m_iTransL[i] = j["m_iTransL"][i];
    }
@@ -272,7 +272,7 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
       state["m_ikCode"] = m_ikCode;
       state["m_focal"] = m_focal;
       state["m_zDirection"] = m_zDirection;
-      state["m_opticalDistCoef"] = std::vector<double>(m_opticalDistCoef, m_opticalDistCoef+3);
+      state["m_opticalDistCoef"] = m_opticalDistCoef;
       state["m_iTransS"] = std::vector<double>(m_iTransS, m_iTransS+3);
       state["m_iTransL"] = std::vector<double>(m_iTransL, m_iTransL+3);
       state["m_detectorSampleOrigin"] = m_detectorSampleOrigin;
@@ -347,9 +347,7 @@ void UsgsAstroLsSensorModel::reset()
   m_ikCode = -85600;                         // 17
   m_focal = 350.0;                           // 18
   m_zDirection = 1.0;                        // 19
-  m_opticalDistCoef[0] = 0.0;                // 20
-  m_opticalDistCoef[1] = 0.0;                // 20
-  m_opticalDistCoef[2] = 0.0;                // 20
+  m_opticalDistCoef.clear();                 // 20
   m_iTransS[0] = 0.0;                        // 21
   m_iTransS[1] = 0.0;                        // 21
   m_iTransS[2] = 150.0;                      // 21
@@ -1708,7 +1706,12 @@ void UsgsAstroLsSensorModel::losToEcf(
 
    // Remove lens distortion
    std::tuple<double, double> undistortedPoint;
-   undistortedPoint = removeDistortion(std::get<0>(natFocalPlane), std::get<1>(natFocalPlane), m_opticalDistCoef);
+   double undistortedFocalPlaneX, undistortedFocalPlaneY;
+   // std::vector<std::vector<double>> transverseCoeffs(2, std::vector<double>(2, 0));
+   removeDistortion(natFocalPlaneX, natFocalPlaneY,
+                    undistortedFocalPlaneX, undistortedFocalPlaneY,
+                    m_opticalDistCoef,
+                    DistortionType::RADIAL);
 
   // Define imaging ray (look vector) in camera space
    double cameraLook[3];
@@ -2304,18 +2307,22 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double lookScale = m_focal / adjustedLookZ;
    double focalX = adjustedLookX * lookScale;
    double focalY = adjustedLookY * lookScale;
-   std::tuple<double, double> undistortedPoint;
+   double undistortedFocalX, undistortedFocalY;
 
    // Invert distortion
-   undistortedPoint = invertDistortion(focalX, focalY, std::vector<double>(m_opticalDistCoef, m_opticalDistCoef+3), desiredPrecision);
+   removeDistortion(focalX, focalY,
+                    undistortedFocalX, undistortedFocalY,
+                    m_opticalDistCoef,
+                    DistortionType::INVERSE_RADIAL,
+                    desiredPrecision);
 
    // Convert to detector line and sample
    double detectorLine = m_iTransL[0]
-                       + m_iTransL[1] * std::get<0>(undistortedPoint)
-                       + m_iTransL[2] * std::get<1>(undistortedPoint);
+                       + m_iTransL[1] * undistortedFocalX
+                       + m_iTransL[2] * undistortedFocalY;
    double detectorSample = m_iTransS[0]
-                         + m_iTransS[1] * std::get<0>(undistortedPoint)
-                         + m_iTransS[2] * std::get<1>(undistortedPoint);
+                         + m_iTransS[1] * undistortedFocalX
+                         + m_iTransS[2] * undistortedFocalY;
 
    // Convert to image sample line
    double line = detectorLine + m_detectorLineOrigin - m_detectorLineOffset
@@ -2539,7 +2546,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    state["m_ikCode"] = 0;
    state["m_focal"] = isd.at("focal_length_model").at("focal_length");
    state["m_zDirection"] = 1;
-   state["m_opticalDistCoef"] = isd.at("optical_distortion").at("radial").at("coefficients");
+   state["m_opticalDistCoef"] = isd.at("optical_distortion").at("radial").at("coefficients").get<std::vector<double>>();
    state["m_iTransS"] = isd.at("focal2pixel_samples");
    state["m_iTransL"] = isd.at("focal2pixel_lines");
 
