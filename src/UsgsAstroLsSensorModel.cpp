@@ -306,9 +306,9 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
       state["m_imageFlipFlag"] = m_imageFlipFlag;
 
       state["m_referencePointXyz"] = json();
-      state["m_referencePointXyz"]["x"] = m_referencePointXyz.x;
-      state["m_referencePointXyz"]["y"] = m_referencePointXyz.y;
-      state["m_referencePointXyz"]["z"] = m_referencePointXyz.z;
+      state["m_referencePointXyz"][0] = m_referencePointXyz.x;
+      state["m_referencePointXyz"][1] = m_referencePointXyz.y;
+      state["m_referencePointXyz"][2] = m_referencePointXyz.z;
 
       return state.dump();
  }

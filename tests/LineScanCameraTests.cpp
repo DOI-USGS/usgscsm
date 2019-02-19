@@ -15,14 +15,12 @@ using json = nlohmann::json;
 
 TEST_F(ConstVelocityLineScanSensorModel, State) {
    std::string modelState = sensorModel->getModelState();
-   // EXPECT_NO_THROW(
-   //       sensorModel->replaceModelState(modelState)
-   // );
+   sensorModel->replaceModelState(modelState);
 
    // When this is different, the output is very hard to parse
    // TODO implement JSON diff for gtest
 
-   // EXPECT_EQ(sensorModel->getModelState(), modelState);
+   EXPECT_EQ(sensorModel->getModelState(), modelState);
 }
 
 // Fly by tests
