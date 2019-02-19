@@ -2512,6 +2512,18 @@ double UsgsAstroLsSensorModel::determinant3x3(double mat[9]) const
 
 std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imageSupportData, csm::WarningList *warnings) const
 {
+  auto metric_conversion = [](double val, std::string from, std::string to="m") {
+      json typemap = {
+        {"m", 0},
+        {"km", 3}
+      };
+
+      // everything to lowercase
+      std::transform(from.begin(), from.end(), from.begin(), ::tolower);
+      std::transform(to.begin(), to.end(), to.begin(), ::tolower);
+      return val*pow(10, typemap[from].get<int>() - typemap[to].get<int>());
+  };
+
    // Instantiate UsgsAstroLineScanner sensor model
    json isd = json::parse(imageSupportData);
    json state;
@@ -2557,16 +2569,22 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    state["m_numEphem"] = isd.at("sensor_position").at("positions").size();
    state["m_numQuaternions"] = isd.at("sensor_orientation").at("quaternions").size();
 
-   for (auto& location : isd.at("sensor_position").at("positions")) {
-     state["m_ephemPts"].push_back(location[0]);
-     state["m_ephemPts"].push_back(location[1]);
-     state["m_ephemPts"].push_back(location[2]);
-   }
+   {
+     json jayson = isd.at("sensor_position");
+     json unit = jayson.at("unit");
+     unit = unit.get<std::string>();
 
-   for (auto& velocity : isd.at("sensor_position").at("velocities")) {
-     state["m_ephemRates"].push_back(velocity[0]);
-     state["m_ephemRates"].push_back(velocity[1]);
-     state["m_ephemRates"].push_back(velocity[2]);
+     for (auto& location : jayson.at("positions")) {
+       state["m_ephemPts"].push_back(metric_conversion(location[0].get<double>(), unit));
+       state["m_ephemPts"].push_back(metric_conversion(location[1].get<double>(), unit));
+       state["m_ephemPts"].push_back(metric_conversion(location[2].get<double>(), unit));
+     }
+
+     for (auto& velocity : jayson.at("velocities")) {
+       state["m_ephemRates"].push_back(metric_conversion(velocity[0].get<double>(), unit));
+       state["m_ephemRates"].push_back(metric_conversion(velocity[1].get<double>(), unit));
+       state["m_ephemRates"].push_back(metric_conversion(velocity[2].get<double>(), unit));
+     }
    }
 
    for (auto& quaternion : isd.at("sensor_orientation").at("quaternions")) {
@@ -2581,8 +2599,16 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    // state["m_parameterVals"][15] = state["m_focal"].get<double>();
 
    // Set the ellipsoid
-   state["m_semiMajorAxis"] = isd.at("radii").at("semimajor");
-   state["m_semiMinorAxis"] = isd.at("radii").at("semiminor");
+   {
+     json jayson = isd.at("radii");
+     json semiminor = jayson.at("semiminor");
+     json semimajor = jayson.at("semimajor");
+     json unit = jayson.at("unit");
+
+     unit = unit.get<std::string>();
+     state["m_semiMajorAxis"] = metric_conversion(semiminor.get<double>(), unit);
+     state["m_semiMinorAxis"] = metric_conversion(semimajor.get<double>(), unit);
+   }
 
    // Now finish setting the state data from the ISD read in
 
@@ -2594,9 +2620,18 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    state["m_collectionIdentifier"] = "UNKNOWN";
 
    // Ground elevations
-   state["m_refElevation"] = 0.0;
-   state["m_minElevation"] = isd.at("reference_height").at("minheight");
-   state["m_maxElevation"] = isd.at("reference_height").at("maxheight");
+
+   {
+     json reference_height = isd.at("reference_height");
+     json maxheight = reference_height.at("maxheight");
+     json minheight = reference_height.at("minheight");
+     json unit = reference_height.at("unit");
+
+     unit = unit.get<std::string>();
+     state["m_refElevation"] = 0.0;
+     state["m_minElevation"] = metric_conversion(minheight.get<double>(), unit);
+     state["m_maxElevation"] = metric_conversion(maxheight.get<double>(), unit);
+   }
 
    // Zero ateter values
    for (int i = 0; i < NUM_PARAMETERS; i++) {

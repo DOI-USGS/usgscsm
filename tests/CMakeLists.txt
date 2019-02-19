@@ -6,6 +6,7 @@ add_executable(runCSMCameraModelTests
                FrameCameraTests.cpp
                LineScanCameraTests.cpp
                DistortionTests.cpp
+               ISDParsingTests.cpp
                UtilitiesTests.cpp)
 if(WIN32)
   option(CMAKE_USE_WIN32_THREADS_INIT "using WIN32 threads" ON)
