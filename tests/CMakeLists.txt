@@ -5,7 +5,8 @@ add_executable(runCSMCameraModelTests
                PluginTests.cpp
                FrameCameraTests.cpp
                LineScanCameraTests.cpp
-               DistortionTests.cpp)
+               DistortionTests.cpp
+               UtilitiesTests.cpp)
 if(WIN32)
   option(CMAKE_USE_WIN32_THREADS_INIT "using WIN32 threads" ON)
   option(gtest_disable_pthreads "Disable uses of pthreads in gtest." ON)

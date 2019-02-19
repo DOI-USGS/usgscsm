@@ -127,50 +127,6 @@ TEST_F(ConstAngularVelocityLineScanSensorModel, OffBody4) {
    // EXPECT_NEAR(groundPt.z, -14.99325304, 1e-8);
 }
 
-
-
-
-TEST_F(ConstVelocityLineScanSensorModel, computeDistortedFocalPlaneCoordinates) {
-   double distortedLine, distortedSample;
-   sensorModel->computeDistortedFocalPlaneCoordinates(0, -4, distortedLine, distortedSample);
-   EXPECT_DOUBLE_EQ(distortedLine, 0);
-   EXPECT_DOUBLE_EQ(distortedSample, -0.4);
-}
-
-TEST_F(ConstVelocityLineScanSensorModel, computeUndistortedFocalPlaneCoordinate) {
-   double undistortedLine, undistortedSample;
-   sensorModel->computeUndistortedFocalPlaneCoordinates(0, -4, undistortedLine, undistortedSample);
-   EXPECT_DOUBLE_EQ(undistortedLine, 0);
-   EXPECT_DOUBLE_EQ(undistortedSample, -0.4);
-}
-
-////////////////////// Being Covered by Adam??? //////////////////////////////////////////////
-// TEST_F(ConstVelocityLineScanSensorModel, calculateRotationMatrixFromQuaternions) {
-//    csm::ImageCoord imagePt(8.5, 8.0);
-//    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-//    EXPECT_DOUBLE_EQ(groundPt.x, 10.0);
-//    EXPECT_DOUBLE_EQ(groundPt.y, 0.0);
-//    EXPECT_DOUBLE_EQ(groundPt.z, 0.0);
-// }
-//
-// TEST_F(ConstVelocityLineScanSensorModel, calculateRotationMatrixFromEuler) {
-//    csm::ImageCoord imagePt(8.5, 8.0);
-//    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-//    EXPECT_DOUBLE_EQ(groundPt.x, 10.0);
-//    EXPECT_DOUBLE_EQ(groundPt.y, 0.0);
-//    EXPECT_DOUBLE_EQ(groundPt.z, 0.0);
-// }
-
-TEST_F(ConstVelocityLineScanSensorModel, createCameraLookVector) {
-  double adj[];
-  adj.assign(15, 0.0);
-  double cameraLook[];
-  sensorModel->createCameraLookVector(0, -4, adj,cameraLook);
-  EXPECT_DOUBLE_EQ(cameraLook[0], 0);
-  EXPECT_DOUBLE_EQ(cameraLook[0], -0.4);
-  EXPECT_DOUBLE_EQ(cameraLook[0], 50);
-}
-
 // TEST_F(ConstVelocityLineScanSensorModel, calculateAttitudeCorrection) {
 //    // csm::ImageCoord imagePt(8.5, 8.0);
 //    // csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);

@@ -1718,7 +1718,7 @@ void UsgsAstroLsSensorModel::losToEcf(
 
    // Compute distorted image coordinates in mm (sample, line on image (pixels) -> focal plane
    std::tuple<double, double> natFocalPlane;
-   natFocalPlane = computeDistortedFocalPlaneCoordinates(fractionalLine, sampleUSGSFull, m_detectorSampleOrigin, m_detectorLineOrigin, m_detectorSampleSumming, m_startingSample, m_detectorLineOffset, m_iTransS, m_iTransL);
+   computeDistortedFocalPlaneCoordinates(fractionalLine, sampleUSGSFull, m_detectorSampleOrigin, m_detectorLineOrigin, m_detectorSampleSumming, m_startingSample, m_detectorLineOffset, m_iTransS, m_iTransL, natFocalPlane);
 
    // Remove lens distortion
    std::tuple<double, double> undistortedPoint;
@@ -1726,7 +1726,7 @@ void UsgsAstroLsSensorModel::losToEcf(
 
   // Define imaging ray (look vector) in camera space
    double cameraLook[3];
-   createCameraLookVector(std::get<0>(undistortedPoint), std::get<1>(undistortedPoint), m_zDirection, m_focal, getValue(15, adj), m_halfSwath, cameraLook); 
+   createCameraLookVector(std::get<0>(undistortedPoint), std::get<1>(undistortedPoint), m_zDirection, m_focal, cameraLook);
 
    // Apply attitude correction
    double attCorr[9];
@@ -1745,7 +1745,7 @@ void UsgsAstroLsSensorModel::losToEcf(
 
 // Rotate the look vector into the body fixed frame from the camera reference frame by applying the rotation matrix from the sensor quaternions
    double quaternions[4];
-   getQuaternions(time, quaternions); 
+   getQuaternions(time, quaternions);
    double cameraToBody[9];
    calculateRotationMatrixFromQuaternions(quaternions, cameraToBody);
 
@@ -2284,7 +2284,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
 
    // Rotate the look vector into the camera reference frame
    double quaternions[4];
-   getQuaternions(time, quaternions); 
+   getQuaternions(time, quaternions);
    double bodyToCamera[9];
    calculateRotationMatrixFromQuaternions(quaternions, bodyToCamera);
 

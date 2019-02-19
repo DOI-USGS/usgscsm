@@ -1,8 +1,10 @@
 #include "Utilities.h"
 
 // Calculates a rotation matrix from Euler angles
-void calculateRotationMatrixFromEuler(double euler[],
-                                      double rotationMatrix[]) {
+void calculateRotationMatrixFromEuler(
+    double euler[],
+    double rotationMatrix[])
+{
   double cos_a = cos(euler[0]);
   double sin_a = sin(euler[0]);
   double cos_b = cos(euler[1]);
@@ -23,7 +25,10 @@ void calculateRotationMatrixFromEuler(double euler[],
 
 
 // uses a quaternion to calclate a rotation matrix.
-void calculateRotationMatrixFromQuaternions(double q[4], double rotationMatrix[9]) {
+void calculateRotationMatrixFromQuaternions(
+    double q[4],
+    double rotationMatrix[9])
+{
   double norm = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
   q[0] /= norm;
   q[1] /= norm;
@@ -41,16 +46,18 @@ void calculateRotationMatrixFromQuaternions(double q[4], double rotationMatrix[9
   rotationMatrix[8] = -q[0] * q[0] - q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
 }
 
-std::tuple<double, double> computeDistortedFocalPlaneCoordinates(
-  const double& line,
-  const double& sample,
-  const double& sampleOrigin,
-  const double& lineOrigin, 
-  const double& sampleSumming,
-  const double& startingSample,
-  const double& lineOffset,
-  const double iTransS[],
-  const double iTransL[]) {
+void computeDistortedFocalPlaneCoordinates(
+    const double& line,
+    const double& sample,
+    const double& sampleOrigin,
+    const double& lineOrigin,
+    const double& sampleSumming,
+    const double& startingSample,
+    const double& lineOffset,
+    const double iTransS[],
+    const double iTransL[],
+    std::tuple<double, double>& natFocalPlane)
+{
   double detSample = (sample - 1.0) * sampleSumming + startingSample;
   double m11 = iTransL[1];
   double m12 = iTransL[2];
@@ -64,27 +71,25 @@ std::tuple<double, double> computeDistortedFocalPlaneCoordinates(
   double p21 = -m21 / determinant;
   double p22 = m22 / determinant;
 
-  double distortedLine = p11 * t1 + p12 * t2;
-  double distortedSample = p21 * t1 + p22 * t2;
-  return std::make_tuple(distortedLine, distortedSample);  
+  std::get<0>(natFocalPlane) = p11 * t1 + p12 * t2;
+  std::get<1>(natFocalPlane) = p21 * t1 + p22 * t2;
 };
 
 // Define imaging ray in image space (In other words, create a look vector in camera space)
 void createCameraLookVector(
-  const double& undistortedFocalPlaneX,
-  const double& undistortedFocalPlaneY,
-  const double& zDirection,
-  const double& focalLength,
-  const double& focalLengthBias,
-  const double& halfSwath,
-  double cameraLook[]) {
-   cameraLook[0] = -undistortedFocalPlaneX * zDirection;
-   cameraLook[1] = -undistortedFocalPlaneY * zDirection;
-   cameraLook[2] = -focalLength * (1.0 - focalLengthBias / halfSwath);
-   double magnitude = sqrt(cameraLook[0] * cameraLook[0]
-                  + cameraLook[1] * cameraLook[1]
-                  + cameraLook[2] * cameraLook[2]);
-   cameraLook[0] /= magnitude;
-   cameraLook[1] /= magnitude;
-   cameraLook[2] /= magnitude;
+    const double& undistortedFocalPlaneX,
+    const double& undistortedFocalPlaneY,
+    const double& zDirection,
+    const double& focalLength,
+    double cameraLook[])
+{
+  cameraLook[0] = -undistortedFocalPlaneX * zDirection;
+  cameraLook[1] = -undistortedFocalPlaneY * zDirection;
+  cameraLook[2] = -focalLength;
+  double magnitude = sqrt(cameraLook[0] * cameraLook[0]
+                + cameraLook[1] * cameraLook[1]
+                + cameraLook[2] * cameraLook[2]);
+  cameraLook[0] /= magnitude;
+  cameraLook[1] /= magnitude;
+  cameraLook[2] /= magnitude;
 }
