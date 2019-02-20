@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(usgscsm VERSION 0.0.1 DESCRIPTION "usgscsm library")
-  
+
 include(GoogleTest)
 include(cmake/gtest.cmake)
 include(GNUInstallDirs)
@@ -28,7 +28,7 @@ add_library(usgscsm SHARED
             src/UsgsAstroFrameSensorModel.cpp
             src/UsgsAstroLsSensorModel.cpp
             src/Distortion.cpp
-	    src/Utilities.cpp)
+            src/Utilities.cpp)
 
 set_target_properties(usgscsm PROPERTIES
     VERSION ${PROJECT_VERSION}
@@ -36,7 +36,7 @@ set_target_properties(usgscsm PROPERTIES
 )
 
 set(USGSCSM_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include/usgscsm"
-                         "${CMAKE_CURRENT_SOURCE_DIR}/include/json")
+                         "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 
 target_include_directories(usgscsm
                            PUBLIC
@@ -58,7 +58,7 @@ install(DIRECTORY ${USGSCSM_INCLUDE_DIRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR
 # Optional build or link against CSM
 option (BUILD_TESTS "Build tests" ON)
 if(BUILD_TESTS)
-  
+
   # Setup for GoogleTest
   find_package (Threads)
 

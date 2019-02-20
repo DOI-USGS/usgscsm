@@ -1,7 +1,7 @@
 #include "UsgsAstroPlugin.h"
 #include "UsgsAstroLsSensorModel.h"
 
-#include <json.hpp>
+#include <json/json.hpp>
 #include <gtest/gtest.h>
 
 #include "Fixtures.h"

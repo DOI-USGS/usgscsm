@@ -15,7 +15,7 @@
 #include <Warning.h>
 #include <Version.h>
 
-#include <json.hpp>
+#include <json/json.hpp>
 using json = nlohmann::json;
 
 #ifdef _WIN32
