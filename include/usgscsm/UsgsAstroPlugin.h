@@ -7,6 +7,9 @@
 #include <Plugin.h>
 #include <Version.h>
 
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
+
 #include <json/json.hpp>
 using json = nlohmann::json;
 
@@ -56,6 +59,7 @@ private:
     static const std::string _RELEASE_DATE;
     static const int         _N_SENSOR_MODELS;
     static const std::string _ISD_KEYWORD[];
+    static std::shared_ptr<spdlog::logger> _LOGGER;
 
     typedef csm::Model* (*sensorConstructor)(void);
     static std::map<std::string, sensorConstructor> MODELS;

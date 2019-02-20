@@ -10,8 +10,6 @@
 #include "CorrelationModel.h"
 #include "Distortion.h"
 
-#include "spdlog/spdlog.h"
-
 #include <json/json.hpp>
 using json = nlohmann::json;
 
