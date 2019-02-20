@@ -19,6 +19,7 @@
 #define USGS_SENSOR_LIBRARY
 
 #include "UsgsAstroLsSensorModel.h"
+#include "Utilities.h"
 #include "Distortion.h"
 
 #include <algorithm>
@@ -251,6 +252,7 @@ std::string UsgsAstroLsSensorModel::getModelNameFromModelState(
 
 std::string UsgsAstroLsSensorModel::getModelState() const {
       json state;
+      state["m_modelName"] = _SENSOR_MODEL_NAME;
       state["m_imageIdentifier"] = m_imageIdentifier;
       state["m_sensorType"] = m_sensorType;
       state["m_totalLines"] = m_totalLines;
@@ -305,9 +307,9 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
       state["m_imageFlipFlag"] = m_imageFlipFlag;
 
       state["m_referencePointXyz"] = json();
-      state["m_referencePointXyz"]["x"] = m_referencePointXyz.x;
-      state["m_referencePointXyz"]["y"] = m_referencePointXyz.y;
-      state["m_referencePointXyz"]["z"] = m_referencePointXyz.z;
+      state["m_referencePointXyz"][0] = m_referencePointXyz.x;
+      state["m_referencePointXyz"][1] = m_referencePointXyz.y;
+      state["m_referencePointXyz"][2] = m_referencePointXyz.z;
 
       return state.dump();
  }
@@ -597,21 +599,6 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    double dy = ground_pt.y - calculatedPoint.y;
    double dz = ground_pt.z - calculatedPoint.z;
    double len = dx * dx + dy * dy + dz * dz;
-
-   // If the final correction is greater than 10 meters,
-   // the solution is not valid enough to report even with a warning
-   if (len > 100.0) {
-      std::ostringstream msg;
-      msg << "Did not converge. Ground point: (" << ground_pt.x << ", "
-          << ground_pt.y << ", " << ground_pt.z << ") Computed image point: ("
-          << calculatedPixel.line << ", " << calculatedPixel.samp
-          << ") Computed ground point: (" << calculatedPoint.x << ", "
-          << calculatedPoint.y << ", " << calculatedPoint.z << ")";
-      throw csm::Error(
-         csm::Error::ALGORITHM,
-         msg.str(),
-         "UsgsAstroLsSensorModel::groundToImage");
-   }
 
    if (achieved_precision) {
       *achieved_precision = sqrt(len);
@@ -1658,91 +1645,17 @@ double UsgsAstroLsSensorModel::getValue(
 // Functions pulled out of losToEcf and computeViewingPixel
 // **************************************************************************
 
-// Compute distorted focalPlane coordinates in mm
-void UsgsAstroLsSensorModel::computeDistortedFocalPlaneCoordinates(const double& line, const double& sample, double& distortedLine, double& distortedSample) const{
-  double detSample = (sample - 1.0)
-      * m_detectorSampleSumming + m_startingSample;
-  double m11 = m_iTransL[1];
-  double m12 = m_iTransL[2];
-  double m21 = m_iTransS[1];
-  double m22 = m_iTransS[2];
-  double t1 = line + m_detectorLineOffset
-               - m_detectorLineOrigin - m_iTransL[0];
-  double t2 = detSample - m_detectorSampleOrigin - m_iTransS[0];
-  double determinant = m11 * m22 - m12 * m21;
-  double p11 = m11 / determinant;
-  double p12 = -m12 / determinant;
-  double p21 = -m21 / determinant;
-  double p22 = m22 / determinant;
-  distortedLine = p11 * t1 + p12 * t2;
-  distortedSample = p21 * t1 + p22 * t2;
-}
-
-
-// Define imaging ray in image space (In other words, create a look vector in camera space)
-void UsgsAstroLsSensorModel::createCameraLookVector(const double& undistortedFocalPlaneX, const double& undistortedFocalPlaneY, const std::vector<double>& adj, double cameraLook[]) const{
-   cameraLook[0] = -undistortedFocalPlaneX * m_zDirection;
-   cameraLook[1] = -undistortedFocalPlaneY * m_zDirection;
-   cameraLook[2] = -m_focal * (1.0 - getValue(15, adj) / m_halfSwath);
-   double magnitude = sqrt(cameraLook[0] * cameraLook[0]
-                  + cameraLook[1] * cameraLook[1]
-                  + cameraLook[2] * cameraLook[2]);
-   cameraLook[0] /= magnitude;
-   cameraLook[1] /= magnitude;
-   cameraLook[2] /= magnitude;
-};
-
-
-// Given a time and a flag to indicate whether the a->b or b->a rotation should be calculated
-// uses the quaternions in the m_quaternions member to calclate a rotation matrix.
-void UsgsAstroLsSensorModel::calculateRotationMatrixFromQuaternions(const double& time, double rotationMatrix[9]) const {
+void UsgsAstroLsSensorModel::getQuaternions(const double& time, double q[4]) const{
   int nOrder = 8;
   if (m_platformFlag == 0)
      nOrder = 4;
   int nOrderQuat = nOrder;
   if (m_numQuaternions < 6 && nOrder == 8)
      nOrderQuat = 4;
-  double q[4];
   lagrangeInterp(
-     m_numQuaternions, &m_quaternions[0], m_t0Quat, m_dtQuat,
-     time, 4, nOrderQuat, q);
-  double norm = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
-  q[0] /= norm;
-  q[1] /= norm;
-  q[2] /= norm;
-  q[3] /= norm;
-
-  rotationMatrix[0] = q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
-  rotationMatrix[1] = 2 * (q[0] * q[1] - q[2] * q[3]);
-  rotationMatrix[2] = 2 * (q[0] * q[2] + q[1] * q[3]);
-  rotationMatrix[3] = 2 * (q[0] * q[1] + q[2] * q[3]);
-  rotationMatrix[4] = -q[0] * q[0] + q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
-  rotationMatrix[5] = 2 * (q[1] * q[2] - q[0] * q[3]);
-  rotationMatrix[6] = 2 * (q[0] * q[2] - q[1] * q[3]);
-  rotationMatrix[7] = 2 * (q[1] * q[2] + q[0] * q[3]);
-  rotationMatrix[8] = -q[0] * q[0] - q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
-};
-
-// Calculates a rotation matrix from Euler angles
-void UsgsAstroLsSensorModel::calculateRotationMatrixFromEuler(double euler[],
-                                                              double rotationMatrix[]) const {
-  double cos_a = cos(euler[0]);
-  double sin_a = sin(euler[0]);
-  double cos_b = cos(euler[1]);
-  double sin_b = sin(euler[1]);
-  double cos_c = cos(euler[2]);
-  double sin_c = sin(euler[2]);
-
-  rotationMatrix[0] = cos_b * cos_c;
-  rotationMatrix[1] = -cos_a * sin_c + sin_a * sin_b * cos_c;
-  rotationMatrix[2] = sin_a * sin_c + cos_a * sin_b * cos_c;
-  rotationMatrix[3] = cos_b * sin_c;
-  rotationMatrix[4] = cos_a * cos_c + sin_a * sin_b * sin_c;
-  rotationMatrix[5] = -sin_a * cos_c + cos_a * sin_b * sin_c;
-  rotationMatrix[6] = -sin_b;
-  rotationMatrix[7] = sin_a * cos_b;
-  rotationMatrix[8] = cos_a * cos_b;
+     m_numQuaternions, &m_quaternions[0], m_t0Quat, m_dtQuat, time, 4, nOrderQuat, q);
 }
+
 
 void UsgsAstroLsSensorModel::calculateAttitudeCorrection(const double& time, const std::vector<double>& adj, double attCorr[9]) const {
   double aTime = time - m_t0Quat;
@@ -1790,16 +1703,16 @@ void UsgsAstroLsSensorModel::losToEcf(
    double fractionalLine = line - floor(line);
 
    // Compute distorted image coordinates in mm (sample, line on image (pixels) -> focal plane
-   double natFocalPlaneX, natFocalPlaneY;
-   computeDistortedFocalPlaneCoordinates(fractionalLine, sampleUSGSFull, natFocalPlaneX, natFocalPlaneY);
+   std::tuple<double, double> natFocalPlane;
+   natFocalPlane = computeDistortedFocalPlaneCoordinates(fractionalLine, sampleUSGSFull, m_detectorSampleOrigin, m_detectorLineOrigin, m_detectorSampleSumming, m_startingSample, m_detectorLineOffset, m_iTransS, m_iTransL);
 
    // Remove lens distortion
    std::tuple<double, double> undistortedPoint;
-   undistortedPoint = removeDistortion(natFocalPlaneX, natFocalPlaneY, m_opticalDistCoef);
+   undistortedPoint = removeDistortion(std::get<0>(natFocalPlane), std::get<1>(natFocalPlane), m_opticalDistCoef);
 
   // Define imaging ray (look vector) in camera space
    double cameraLook[3];
-   createCameraLookVector(std::get<0>(undistortedPoint), std::get<1>(undistortedPoint), adj, cameraLook);
+   createCameraLookVector(std::get<0>(undistortedPoint), std::get<1>(undistortedPoint), m_zDirection, m_focal, getValue(15, adj), m_halfSwath, cameraLook);
 
    // Apply attitude correction
    double attCorr[9];
@@ -1817,8 +1730,10 @@ void UsgsAstroLsSensorModel::losToEcf(
                           + attCorr[8] * cameraLook[2];
 
 // Rotate the look vector into the body fixed frame from the camera reference frame by applying the rotation matrix from the sensor quaternions
+   double quaternions[4];
+   getQuaternions(time, quaternions);
    double cameraToBody[9];
-   calculateRotationMatrixFromQuaternions(time, cameraToBody);
+   calculateRotationMatrixFromQuaternions(quaternions, cameraToBody);
 
    bodyLookX = cameraToBody[0] * correctedCameraLook[0]
              + cameraToBody[1] * correctedCameraLook[1]
@@ -2354,8 +2269,10 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double bodyLookZ = groundPoint.z - zc;
 
    // Rotate the look vector into the camera reference frame
+   double quaternions[4];
+   getQuaternions(time, quaternions);
    double bodyToCamera[9];
-   calculateRotationMatrixFromQuaternions(time, bodyToCamera);
+   calculateRotationMatrixFromQuaternions(quaternions, bodyToCamera);
 
    // Apply transpose of matrix to rotate body->camera
    double cameraLookX = bodyToCamera[0] * bodyLookX
@@ -2581,6 +2498,18 @@ double UsgsAstroLsSensorModel::determinant3x3(double mat[9]) const
 
 std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imageSupportData, csm::WarningList *warnings) const
 {
+  auto metric_conversion = [](double val, std::string from, std::string to="m") {
+      json typemap = {
+        {"m", 0},
+        {"km", 3}
+      };
+
+      // everything to lowercase
+      std::transform(from.begin(), from.end(), from.begin(), ::tolower);
+      std::transform(to.begin(), to.end(), to.begin(), ::tolower);
+      return val*pow(10, typemap[from].get<int>() - typemap[to].get<int>());
+  };
+
    // Instantiate UsgsAstroLineScanner sensor model
    json isd = json::parse(imageSupportData);
    json state;
@@ -2626,16 +2555,22 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    state["m_numEphem"] = isd.at("sensor_position").at("positions").size();
    state["m_numQuaternions"] = isd.at("sensor_orientation").at("quaternions").size();
 
-   for (auto& location : isd.at("sensor_position").at("positions")) {
-     state["m_ephemPts"].push_back(location[0]);
-     state["m_ephemPts"].push_back(location[1]);
-     state["m_ephemPts"].push_back(location[2]);
-   }
+   {
+     json jayson = isd.at("sensor_position");
+     json unit = jayson.at("unit");
+     unit = unit.get<std::string>();
 
-   for (auto& velocity : isd.at("sensor_position").at("velocities")) {
-     state["m_ephemRates"].push_back(velocity[0]);
-     state["m_ephemRates"].push_back(velocity[1]);
-     state["m_ephemRates"].push_back(velocity[2]);
+     for (auto& location : jayson.at("positions")) {
+       state["m_ephemPts"].push_back(metric_conversion(location[0].get<double>(), unit));
+       state["m_ephemPts"].push_back(metric_conversion(location[1].get<double>(), unit));
+       state["m_ephemPts"].push_back(metric_conversion(location[2].get<double>(), unit));
+     }
+
+     for (auto& velocity : jayson.at("velocities")) {
+       state["m_ephemRates"].push_back(metric_conversion(velocity[0].get<double>(), unit));
+       state["m_ephemRates"].push_back(metric_conversion(velocity[1].get<double>(), unit));
+       state["m_ephemRates"].push_back(metric_conversion(velocity[2].get<double>(), unit));
+     }
    }
 
    for (auto& quaternion : isd.at("sensor_orientation").at("quaternions")) {
@@ -2650,8 +2585,16 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    // state["m_parameterVals"][15] = state["m_focal"].get<double>();
 
    // Set the ellipsoid
-   state["m_semiMajorAxis"] = isd.at("radii").at("semimajor");
-   state["m_semiMinorAxis"] = isd.at("radii").at("semiminor");
+   {
+     json jayson = isd.at("radii");
+     json semiminor = jayson.at("semiminor");
+     json semimajor = jayson.at("semimajor");
+     json unit = jayson.at("unit");
+
+     unit = unit.get<std::string>();
+     state["m_semiMajorAxis"] = metric_conversion(semiminor.get<double>(), unit);
+     state["m_semiMinorAxis"] = metric_conversion(semimajor.get<double>(), unit);
+   }
 
    // Now finish setting the state data from the ISD read in
 
@@ -2663,9 +2606,18 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    state["m_collectionIdentifier"] = "UNKNOWN";
 
    // Ground elevations
-   state["m_refElevation"] = 0.0;
-   state["m_minElevation"] = isd.at("reference_height").at("minheight");
-   state["m_maxElevation"] = isd.at("reference_height").at("maxheight");
+
+   {
+     json reference_height = isd.at("reference_height");
+     json maxheight = reference_height.at("maxheight");
+     json minheight = reference_height.at("minheight");
+     json unit = reference_height.at("unit");
+
+     unit = unit.get<std::string>();
+     state["m_refElevation"] = 0.0;
+     state["m_minElevation"] = metric_conversion(minheight.get<double>(), unit);
+     state["m_maxElevation"] = metric_conversion(maxheight.get<double>(), unit);
+   }
 
    // Zero ateter values
    for (int i = 0; i < NUM_PARAMETERS; i++) {

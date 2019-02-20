@@ -82,6 +82,14 @@ TEST_F(FrameIsdTest, Constructible) {
                "USGS_ASTRO_FRAME_SENSOR_MODEL"));
 }
 
+TEST_F(FrameIsdTest, ConstructibleFromState) {
+   UsgsAstroPlugin testPlugin;
+   std::string modelState = testPlugin.getStateFromISD(isd);
+   EXPECT_TRUE(testPlugin.canModelBeConstructedFromState(
+        "USGS_ASTRO_FRAME_SENSOR_MODEL",
+        modelState));
+}
+
 TEST_F(FrameIsdTest, NotConstructible) {
    UsgsAstroPlugin testPlugin;
    isd.setFilename("data/constVelocityLineScan.img");
@@ -112,21 +120,26 @@ TEST_F(FrameIsdTest, ConstructInValidCamera) {
    UsgsAstroPlugin testPlugin;
    isd.setFilename("data/constVelocityLineScan.img");
    csm::Model *cameraModel = NULL;
+   csm::WarningList *warnings = new csm::WarningList;
    try {
       testPlugin.constructModelFromISD(
             isd,
             "USGS_ASTRO_FRAME_SENSOR_MODEL",
-            NULL);
+            warnings);
       FAIL() << "Expected an error";
    }
    catch(csm::Error &e) {
       EXPECT_EQ(e.getError(), csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE);
+      EXPECT_FALSE(warnings->empty());
    }
    catch(...) {
       FAIL() << "Expected csm SENSOR_MODEL_NOT_CONSTRUCTIBLE error";
    }
    if (cameraModel) {
       delete cameraModel;
+   }
+   if (warnings) {
+     delete warnings;
    }
 }
 
@@ -135,6 +148,14 @@ TEST_F(ConstVelLineScanIsdTest, Constructible) {
    EXPECT_TRUE(testPlugin.canModelBeConstructedFromISD(
                isd,
                "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL"));
+}
+
+TEST_F(ConstVelLineScanIsdTest, ConstructibleFromState) {
+   UsgsAstroPlugin testPlugin;
+   std::string modelState = testPlugin.getStateFromISD(isd);
+   EXPECT_TRUE(testPlugin.canModelBeConstructedFromState(
+         "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL",
+         modelState));
 }
 
 TEST_F(ConstVelLineScanIsdTest, NotConstructible) {
