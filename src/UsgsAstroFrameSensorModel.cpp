@@ -62,7 +62,7 @@ void UsgsAstroFrameSensorModel::reset() {
     m_ccdCenter = std::vector<double>(2, 0.0);
     m_spacecraftVelocity = std::vector<double>(3, 0.0);
     m_sunPosition = std::vector<double>(3, 0.0);
-    m_opticalDistCoeffs = std::vector<double>(10, 0.0);
+    m_opticalDistCoeffs.clear();
     m_transX = std::vector<double>(3, 0.0);
     m_transY = std::vector<double>(3, 0.0);
     m_iTransS = std::vector<double>(3, 0.0);
@@ -888,7 +888,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
         xDistortion.resize(10, 0.0);
         yDistortion.resize(10, 0.0);
         xDistortion.insert(xDistortion.end(), yDistortion.begin(), yDistortion.end());
-        
+
         state["m_opticalDistCoeffs"] = xDistortion;
 
         std::cerr << "Distortion Parsed!" << std::endl;

@@ -231,28 +231,18 @@ TEST(ISDParsing, SemiMinor) {
   EXPECT_EQ(1000, getSemiMinorRadius(isd));
 }
 
-TEST(ISDParsing, TransverseX) {
+TEST(ISDParsing, TransverseDistortion) {
   json isd = {
     {"optical_distortion", {
       {"transverse", {
+        {"y", {-11, 21, 24}},
         {"x", {-1, 2, 4}}}}
       }
     }
   };
-  std::vector<double> coefficients = {-1, 2, 4, 0, 0, 0, 0, 0, 0, 0};
-  EXPECT_EQ(coefficients, getTransverseDistortionX(isd));
-}
-
-TEST(ISDParsing, TransverseY) {
-  json isd = {
-    {"optical_distortion", {
-      {"transverse", {
-        {"y", {-11, 21, 24, 16, 20}}}}
-      }
-    }
-  };
-  std::vector<double> coefficients = {-11, 21, 24, 16, 20, 0, 0, 0, 0, 0};
-  EXPECT_EQ(coefficients, getTransverseDistortionY(isd));
+  std::vector<double> coefficients = {-1, 2, 4, 0, 0, 0, 0, 0, 0, 0,
+                                       -11, 21, 24, 0, 0, 0, 0, 0, 0, 0};
+  EXPECT_EQ(coefficients, getDistortionCoeffs(isd));
 }
 
 TEST(ISDParsing, Radial) {
@@ -264,7 +254,7 @@ TEST(ISDParsing, Radial) {
     }
   };
   std::vector<double> coefficients = {0, 1, 2};
-  EXPECT_EQ(coefficients, getRadialDistortion(isd));
+  EXPECT_EQ(coefficients, getDistortionCoeffs(isd));
 }
 
 TEST(ISDParsing, SunPosition) {

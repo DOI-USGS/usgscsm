@@ -82,7 +82,7 @@ public:
    int          m_ikCode;                         // 15
    double       m_focal;                          // 16
    double       m_zDirection;                     // 17
-   std::vector<double> m_opticalDistCoef;         // 18
+   std::vector<double> m_opticalDistCoeffs;         // 18
    double       m_iTransS[3];                     // 19
    double       m_iTransL[3];                     // 20
    double       m_detectorSampleOrigin;           // 21
