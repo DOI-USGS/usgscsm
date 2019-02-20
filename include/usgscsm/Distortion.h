@@ -18,7 +18,6 @@ void distortionJacobian(double x, double y, double *jacobian,
 void distortionFunction(double ux, double uy, double &dx, double &dy,
                         const std::vector<double> opticalDistCoeffs);
 
-// Radial Distortion
 void removeDistortion(double dx, double dy, double &ux, double &uy,
                       const std::vector<double> opticalDistCoeffs,
                       DistortionType distortionType,

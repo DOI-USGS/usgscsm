@@ -885,7 +885,6 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
       // get optical_distortion
       {
         state["m_distortionType"] = getDistortionModel(isd);
-        std::cout << state["m_distortionType"] << std::endl;
         state["m_opticalDistCoeffs"] = getDistortionCoeffs(isd);
 
         std::cerr << "Distortion Parsed!" << std::endl;

@@ -553,7 +553,6 @@ DistortionType getDistortionModel(json isd, csm::WarningList *list) {
   json::iterator it = distoriton_subset.begin();
 
   std::string distortion = (std::string)it.key();
-  std::cout << distortion << std::endl;
 
   if (distortion.compare("transverse") == 0) {
     return DistortionType::TRANSVERSE;
