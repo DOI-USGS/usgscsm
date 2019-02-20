@@ -53,7 +53,7 @@ std::tuple<double, double> computeDistortedFocalPlaneCoordinates(
   const double& lineOffset,
   const double iTransS[],
   const double iTransL[]) {
-  double detSample = (sample - 1.0) * sampleSumming + startingSample;
+  double detSample = sample * sampleSumming + startingSample;
   double m11 = iTransL[1];
   double m12 = iTransL[2];
   double m21 = iTransS[1];
