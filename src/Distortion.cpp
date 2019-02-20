@@ -99,6 +99,8 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
                       const std::vector<double> opticalDistCoeffs,
                       DistortionType distortionType,
                       double desiredPrecision) {
+  ux = dx;
+  uy = dy;
 
   switch (distortionType) {
     // Compute undistorted focal plane coordinate given a distorted
@@ -106,9 +108,6 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
     case RADIAL: {
       double rr = dx * dx + dy * dy;
       double tolerance = 1.0E-6;
-
-      ux = dx;
-      uy = dy;
 
       if (rr > tolerance)
       {
@@ -174,9 +173,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
         return;
       }
       // Otherwise method did not converge to a root within the maximum
-      // number of iterations. Return with no distortion.
-      ux = dx;
-      uy = dy;
+      // number of iterations
     }
     break;
     // Compute undistorted focal plane coordinate given a distorted
@@ -187,24 +184,17 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       const double tol = 1.0E-6;
 
       double rp2 = (dx * dx) + (dy * dy);
-      // std::cout << "DX " << dx << std::endl;
-      // std::cout << "DY " << dy << std::endl;
-      // std::cout << "r^2 " << rp2 << std::endl;
 
       if (rp2 > tol) {
         double rp = sqrt(rp2);
         // Compute first fractional distortion using rp
         double drOverR = opticalDistCoeffs[0]
                       + (rp2 * (opticalDistCoeffs[1] + (rp2 * opticalDistCoeffs[2])));
-        // std::cout << "coeff 1 " << opticalDistCoeffs[0] << std::endl;
-        // std::cout << "coeff 2 " << opticalDistCoeffs[1] << std::endl;
-        // std::cout << "coeff 3 " << opticalDistCoeffs[2] << std::endl;
         // Compute first distorted point estimate, r
         double r = rp + (drOverR * rp);
         double r_prev, r2_prev;
         int iteration = 0;
         do {
-          // std::cout << "DR OVER R " << drOverR << std::endl;
           // Don't get in an end-less loop.  This algorithm should
           // converge quickly.  If not then we are probably way outside
           // of the focal plane.  Just set the distorted position to the
