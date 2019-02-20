@@ -21,10 +21,10 @@ void computeTransverseDistortion(double ux, double uy, double &dx, double &dy,
 void removeDistortion(double dx, double dy, double &ux, double &uy,
                       const std::vector<double> opticalDistCoeffs,
                       DistortionType distortionType,
-                      const double desiredPrecision = 0);
+                      const double tolerance = 1.0E-6);
 
 void applyDistortion(double ux, double uy, double &dx, double &dy,
                      const std::vector<double> opticalDistCoeffs,
                      DistortionType distortionType,
-                     const double desiredPrecision = 0);
+                     const double desiredPrecision = 0, const double tolerance = 1.0E-6);
 #endif

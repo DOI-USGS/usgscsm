@@ -98,7 +98,7 @@ void computeTransverseDistortion(double ux, double uy, double &dx, double &dy,
 void removeDistortion(double dx, double dy, double &ux, double &uy,
                       const std::vector<double> opticalDistCoeffs,
                       DistortionType distortionType,
-                      const double desiredPrecision) {
+                      const double tolerance) {
   ux = dx;
   uy = dy;
 
@@ -107,7 +107,6 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
     // coordinate set and the distortion coefficients
     case RADIAL: {
       double rr = dx * dx + dy * dy;
-      double tolerance = 1.0E-6;
 
       if (rr > tolerance)
       {
@@ -123,8 +122,6 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
     case TRANSVERSE: {
       // Solve the distortion equation using the Newton-Raphson method.
       // Set the error tolerance to about one millionth of a NAC pixel.
-      const double tol = 1.4E-5;
-
       // The maximum number of iterations of the Newton-Raphson method.
       const int maxTries = 20;
 
@@ -140,7 +137,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
 
       computeTransverseDistortion(x, y, fx, fy, opticalDistCoeffs);
 
-      for (int count = 1; ((fabs(fx) +fabs(fy)) > tol) && (count < maxTries); count++) {
+      for (int count = 1; ((fabs(fx) +fabs(fy)) > tolerance) && (count < maxTries); count++) {
 
         computeTransverseDistortion(x, y, fx, fy, opticalDistCoeffs);
 
@@ -165,7 +162,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
         y = y + (jacobian[0] * fy - jacobian[2] * fx) / determinant;
       }
 
-      if ((fabs(fx) + fabs(fy)) <= tol) {
+      if ((fabs(fx) + fabs(fy)) <= tolerance) {
         // The method converged to a root.
         ux = x;
         uy = y;
@@ -182,7 +179,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
 void applyDistortion(double ux, double uy, double &dx, double &dy,
                      const std::vector<double> opticalDistCoeffs,
                      DistortionType distortionType,
-                     const double desiredPrecision)
+                     const double desiredPrecision, const double tolerance)
 {
   dx = ux;
   dy = uy;
@@ -193,11 +190,9 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
     // until the new distorted point, r, undistorts to within a tolerance of the
     // original point, rp.
     case RADIAL: {
-      const double tol = 1.0E-6;
-
       double rp2 = (ux * ux) + (uy * uy);
 
-      if (rp2 > tol) {
+      if (rp2 > tolerance) {
         double rp = sqrt(rp2);
         // Compute first fractional distortion using rp
         double drOverR = opticalDistCoeffs[0]

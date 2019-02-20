@@ -46,7 +46,7 @@ TEST(Transverse, distortMe_AlternatingOnes) {
                                                     0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0};
 
   double dx, dy;
-  distortionFunction(imagePt.samp, imagePt.line, dx, dy, transverseDistortionCoeffs);
+  computeTransverseDistortion(imagePt.samp, imagePt.line, dx, dy, transverseDistortionCoeffs);
 
   EXPECT_NEAR(dx,908.5,1e-8 );
   EXPECT_NEAR(dy,963.75,1e-8);
@@ -59,7 +59,7 @@ TEST(Transverse,  distortMe_AllCoefficientsOne) {
                                                     1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
 
   double dx, dy;
-  distortionFunction(imagePt.samp, imagePt.line, dx, dy, transverseDistortionCoeffs);
+  computeTransverseDistortion(imagePt.samp, imagePt.line, dx, dy, transverseDistortionCoeffs);
 
   EXPECT_NEAR(dx,1872.25,1e-8 );
   EXPECT_NEAR(dy,1872.25,1e-8);
