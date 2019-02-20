@@ -176,14 +176,26 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       // number of iterations
     }
     break;
+  }
+}
+
+void applyDistortion(double ux, double uy, double &dx, double &dy,
+                     const std::vector<double> opticalDistCoeffs,
+                     DistortionType distortionType,
+                     double desiredPrecision)
+{
+  dx = ux;
+  dy = uy;
+
+  switch (distortionType) {
     // Compute undistorted focal plane coordinate given a distorted
     // focal plane coordinate. This case works by iteratively adding distortion
     // until the new distorted point, r, undistorts to within a tolerance of the
     // original point, rp.
-    case INVERSE_RADIAL: {
+    case RADIAL: {
       const double tol = 1.0E-6;
 
-      double rp2 = (dx * dx) + (dy * dy);
+      double rp2 = (ux * ux) + (uy * uy);
 
       if (rp2 > tol) {
         double rp = sqrt(rp2);
@@ -217,9 +229,13 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
           iteration++;
         }
         while (fabs(r * (1 - drOverR) - rp) > desiredPrecision);
-        ux = dx / (1.0 - drOverR);
-        uy = dy / (1.0 - drOverR);
+        dx = ux / (1.0 - drOverR);
+        dy = uy / (1.0 - drOverR);
       }
+    }
+    break;
+    case TRANSVERSE: {
+      distortionFunction(ux, uy, dx, dy, opticalDistCoeffs);
     }
     break;
   }

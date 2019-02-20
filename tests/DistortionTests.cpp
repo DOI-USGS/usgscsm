@@ -129,8 +129,8 @@ TEST(Radial, testInverseDistortion){
   double desiredPrecision = 0.01;
   std::vector<double> coeffs = {0, 0, 0};
 
-  removeDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
-                   DistortionType::INVERSE_RADIAL, desiredPrecision);
+  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
+                   DistortionType::RADIAL, desiredPrecision);
 
   EXPECT_NEAR(dx,4,1e-8);
   EXPECT_NEAR(dy,0,1e-8);
@@ -143,52 +143,9 @@ TEST(Radial, testInverseOnesCoeffs){
   double desiredPrecision = 0.01;
   std::vector<double> coeffs = {1, 1, 1};
 
-  removeDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
-                   DistortionType::INVERSE_RADIAL, desiredPrecision);
+  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
+                   DistortionType::RADIAL, desiredPrecision);
 
   EXPECT_NEAR(dx,4,1e-8);
   EXPECT_NEAR(dy,0,1e-8);
-}
-
-TEST(Radial, testRemoveDistortion) {
-  csm::ImageCoord imagePt(0.0, 4.0);
-
-  double dx, dy;
-  double coeffs[3] = {0, 0, 0};
-  std::tuple<double, double> undistortedPoint;
-
-  undistortedPoint = removeDistortion(imagePt.samp, imagePt.line, coeffs);
-
-  EXPECT_NEAR(std::get<0>(undistortedPoint),4,1e-8);
-  EXPECT_NEAR(std::get<1>(undistortedPoint),0,1e-8);
-}
-
-// If coeffs are 0 then this will have the same result as removeDistortion
-// with 0 distortion coefficients
-TEST(Radial, testInverseDistortion){
-  csm::ImageCoord imagePt(0.0, 4.0);
-
-  double dx, dy;
-  double desiredPrecision = 0.01;
-  double coeffs[3] = {0, 0, 0};
-  std::tuple<double, double> undistortedPoint;
-
-  undistortedPoint = invertDistortion(imagePt.samp, imagePt.line, coeffs, desiredPrecision);
-
-  EXPECT_NEAR(std::get<0>(undistortedPoint),4,1e-8);
-  EXPECT_NEAR(std::get<1>(undistortedPoint),0,1e-8);
-}
-
-TEST(Radial, testInverseOnesCoeffs){
-  csm::ImageCoord imagePt(0.0, 4.0);
-
-  double dx, dy;
-  double desiredPrecision = 0.01;
-  double coeffs[3] = {1, 1, 1};
-  std::tuple<double, double> undistortedPoint;
-
-  undistortedPoint = invertDistortion(imagePt.samp, imagePt.line, coeffs, desiredPrecision);
-
-  EXPECT_NEAR(std::get<0>(undistortedPoint),4,1e-8);
-  EXPECT_NEAR(std::get<1>(undistortedPoint),0,1e-8);
 }

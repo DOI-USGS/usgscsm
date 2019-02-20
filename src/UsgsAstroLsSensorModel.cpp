@@ -80,6 +80,7 @@ const std::string  UsgsAstroLsSensorModel::_STATE_KEYWORD[] =
    "m_ikCode",
    "m_focal",
    "m_zDirection",
+   "m_distortionType",
    "m_opticalDistCoeffs",
    "m_iTransS",
    "m_iTransL",
@@ -160,6 +161,7 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
    m_ikCode = j["m_ikCode"];
    m_focal = j["m_focal"];
    m_zDirection = j["m_zDirection"];
+   m_distortionType = (DistortionType)j["m_distortionType"].get<int>();
    m_opticalDistCoeffs = j["m_opticalDistCoeffs"].get<std::vector<double>>();
    for (int i = 0; i < 3; i++) {
      m_iTransS[i] = j["m_iTransS"][i];
@@ -272,6 +274,7 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
       state["m_ikCode"] = m_ikCode;
       state["m_focal"] = m_focal;
       state["m_zDirection"] = m_zDirection;
+      state["m_distortionType"] = m_distortionType;
       state["m_opticalDistCoeffs"] = m_opticalDistCoeffs;
       state["m_iTransS"] = std::vector<double>(m_iTransS, m_iTransS+3);
       state["m_iTransL"] = std::vector<double>(m_iTransL, m_iTransL+3);
@@ -328,68 +331,69 @@ void UsgsAstroLsSensorModel::reset()
 
   _no_adjustment.assign(UsgsAstroLsSensorModel::NUM_PARAMETERS, 0.0);
 
-  m_imageIdentifier = "";                    // 1
-  m_sensorType    = "USGSAstroLineScanner";  // 2
-  m_totalLines    = 0;                       // 3
-  m_totalSamples  = 0;                       // 4
-  m_offsetLines   = 0.0;                     // 7
-  m_offsetSamples = 0.0;                     // 8
-  m_platformFlag  = 1;                       // 9
-  m_aberrFlag     = 0;                       // 10
-  m_atmRefFlag    = 0;                       // 11
+  m_imageIdentifier = "";
+  m_sensorType    = "USGSAstroLineScanner";
+  m_totalLines    = 0;
+  m_totalSamples  = 0;
+  m_offsetLines   = 0.0;
+  m_offsetSamples = 0.0;
+  m_platformFlag  = 1;
+  m_aberrFlag     = 0;
+  m_atmRefFlag    = 0;
   m_intTimeLines.clear();
   m_intTimeStartTimes.clear();
   m_intTimes.clear();
-  m_startingEphemerisTime = 0.0;             // 13
-  m_centerEphemerisTime = 0.0;               // 14
-  m_detectorSampleSumming = 1.0;             // 15
-  m_startingSample = 1.0;                    // 16
-  m_ikCode = -85600;                         // 17
-  m_focal = 350.0;                           // 18
-  m_zDirection = 1.0;                        // 19
-  m_opticalDistCoeffs.clear();                 // 20
-  m_iTransS[0] = 0.0;                        // 21
-  m_iTransS[1] = 0.0;                        // 21
-  m_iTransS[2] = 150.0;                      // 21
-  m_iTransL[0] = 0.0;                        // 22
-  m_iTransL[1] = 150.0;                      // 22
-  m_iTransL[2] = 0.0;                        // 22
-  m_detectorSampleOrigin = 2500.0;           // 23
-  m_detectorLineOrigin = 0.0;                // 24
-  m_detectorLineOffset = 0.0;                // 25
-  m_semiMajorAxis = 3400000.0;               // 27
-  m_semiMinorAxis = 3350000.0;               // 28
-  m_referenceDateAndTime = "";               // 30
-  m_platformIdentifier = "";                 // 31
-  m_sensorIdentifier = "";                   // 32
-  m_trajectoryIdentifier = "";               // 33
-  m_collectionIdentifier = "";               // 33
-  m_refElevation = 30;                       // 34
-  m_minElevation = -8000.0;                  // 34
-  m_maxElevation =  8000.0;                  // 35
-  m_dtEphem = 2.0;                           // 36
-  m_t0Ephem = -70.0;                         // 37
-  m_dtQuat =  0.1;                           // 38
-  m_t0Quat = -40.0;                          // 39
-  m_numEphem = 0;                            // 40
-  m_numQuaternions = 0;                      // 41
-  m_ephemPts.clear();                        // 42
-  m_ephemRates.clear();                      // 43
-  m_quaternions.clear();                     // 44
+  m_startingEphemerisTime = 0.0;
+  m_centerEphemerisTime = 0.0;
+  m_detectorSampleSumming = 1.0;
+  m_startingSample = 1.0;
+  m_ikCode = -85600;
+  m_focal = 350.0;
+  m_zDirection = 1.0;
+  m_distortionType = (DistortionType)0;
+  m_opticalDistCoeffs.clear();
+  m_iTransS[0] = 0.0;
+  m_iTransS[1] = 0.0;
+  m_iTransS[2] = 150.0;
+  m_iTransL[0] = 0.0;
+  m_iTransL[1] = 150.0;
+  m_iTransL[2] = 0.0;
+  m_detectorSampleOrigin = 2500.0;
+  m_detectorLineOrigin = 0.0;
+  m_detectorLineOffset = 0.0;
+  m_semiMajorAxis = 3400000.0;
+  m_semiMinorAxis = 3350000.0;
+  m_referenceDateAndTime = "";
+  m_platformIdentifier = "";
+  m_sensorIdentifier = "";
+  m_trajectoryIdentifier = "";
+  m_collectionIdentifier = "";
+  m_refElevation = 30;
+  m_minElevation = -8000.0;
+  m_maxElevation =  8000.0;
+  m_dtEphem = 2.0;
+  m_t0Ephem = -70.0;
+  m_dtQuat =  0.1;
+  m_t0Quat = -40.0;
+  m_numEphem = 0;
+  m_numQuaternions = 0;
+  m_ephemPts.clear();
+  m_ephemRates.clear();
+  m_quaternions.clear();
 
   m_parameterVals.assign(NUM_PARAMETERS,0.0);
   m_parameterType.assign(NUM_PARAMETERS,csm::param::REAL);
 
-  m_referencePointXyz.x = 0.0;             // 47
-  m_referencePointXyz.y = 0.0;             // 47
-  m_referencePointXyz.z = 0.0;             // 47
-  m_gsd = 1.0;                             // 48
-  m_flyingHeight = 1000.0;                 // 49
-  m_halfSwath = 1000.0;                    // 50
-  m_halfTime = 10.0;                       // 51
+  m_referencePointXyz.x = 0.0;
+  m_referencePointXyz.y = 0.0;
+  m_referencePointXyz.z = 0.0;
+  m_gsd = 1.0;
+  m_flyingHeight = 1000.0;
+  m_halfSwath = 1000.0;
+  m_halfTime = 10.0;
 
-  m_covariance = std::vector<double>(NUM_PARAMETERS * NUM_PARAMETERS,0.0); // 52
-  m_imageFlipFlag = 0;                     // 53
+  m_covariance = std::vector<double>(NUM_PARAMETERS * NUM_PARAMETERS,0.0);
+  m_imageFlipFlag = 0;
 }
 
 
@@ -1713,7 +1717,7 @@ void UsgsAstroLsSensorModel::losToEcf(
 
   // Define imaging ray (look vector) in camera space
    double cameraLook[3];
-   createCameraLookVector(undistortedFocalPlaneX, undistortedFocalPlaneY, adj, cameraLook);
+   createCameraLookVector(undistortedFocalPlaneX, undistortedFocalPlaneY, m_zDirection, m_focal, getValue(15, adj), m_halfSwath, cameraLook);
 
    // Apply attitude correction
    double attCorr[9];
@@ -2305,22 +2309,19 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double lookScale = m_focal / adjustedLookZ;
    double focalX = adjustedLookX * lookScale;
    double focalY = adjustedLookY * lookScale;
-   double undistortedFocalX, undistortedFocalY;
+   double distortedFocalX, distortedFocalY;
 
    // Invert distortion
-   removeDistortion(focalX, focalY,
-                    undistortedFocalX, undistortedFocalY,
-                    m_opticalDistCoeffs,
-                    DistortionType::INVERSE_RADIAL,
-                    desiredPrecision);
+   applyDistortion(focalX, focalY, distortedFocalX, distortedFocalY,
+                   m_opticalDistCoeffs, m_distortionType, desiredPrecision);
 
    // Convert to detector line and sample
    double detectorLine = m_iTransL[0]
-                       + m_iTransL[1] * undistortedFocalX
-                       + m_iTransL[2] * undistortedFocalY;
+                       + m_iTransL[1] * distortedFocalX
+                       + m_iTransL[2] * distortedFocalY;
    double detectorSample = m_iTransS[0]
-                         + m_iTransS[1] * undistortedFocalX
-                         + m_iTransS[2] * undistortedFocalY;
+                         + m_iTransS[1] * distortedFocalX
+                         + m_iTransS[2] * distortedFocalY;
 
    // Convert to image sample line
    double line = detectorLine + m_detectorLineOrigin - m_detectorLineOffset
@@ -2544,6 +2545,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    state["m_ikCode"] = 0;
    state["m_focal"] = isd.at("focal_length_model").at("focal_length");
    state["m_zDirection"] = 1;
+   state["m_distortionType"] = getDistortionModel(isd);
    state["m_opticalDistCoeffs"] = getDistortionCoeffs(isd);
    state["m_iTransS"] = isd.at("focal2pixel_samples");
    state["m_iTransL"] = isd.at("focal2pixel_lines");

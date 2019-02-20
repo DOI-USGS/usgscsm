@@ -9,6 +9,7 @@
 #include "RasterGM.h"
 #include "CorrelationModel.h"
 #include "Distortion.h"
+#include "Utilities.h"
 
 #include <json.hpp>
 using json = nlohmann::json;
@@ -330,6 +331,7 @@ protected:
     std::vector<double> m_currentParameterCovariance;
     std::vector<csm::param::Type> m_parameterType;
     std::vector<double> m_noAdjustments;
+    DistortionType m_distortionType;
     std::vector<double> m_opticalDistCoeffs;
     std::vector<double> m_transX;
     std::vector<double> m_transY;

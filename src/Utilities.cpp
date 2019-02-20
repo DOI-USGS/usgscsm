@@ -547,6 +547,30 @@ double getSemiMinorRadius(json isd, csm::WarningList *list) {
   return radius;
 }
 
+DistortionType getDistortionModel(json isd, csm::WarningList *list) {
+  json distoriton_subset = isd.at("optical_distortion");
+
+  json::iterator it = distoriton_subset.begin();
+
+  std::string distortion = (std::string)it.key();
+  std::cout << distortion << std::endl;
+
+  if (distortion.compare("transverse") == 0) {
+    return DistortionType::TRANSVERSE;
+  }
+  else if (distortion.compare("radial") == 0) {
+    return DistortionType::RADIAL;
+  }
+
+  if (list) {
+    list->push_back(
+      csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE,
+        "Could not parse the distortion model.",
+        "Utilities::getDistortionModel()"));
+  }
+}
+
 std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
   std::vector<double> coefficients;
   try {

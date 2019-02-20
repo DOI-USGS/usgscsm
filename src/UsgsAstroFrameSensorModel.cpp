@@ -1,5 +1,4 @@
 #include "UsgsAstroFrameSensorModel.h"
-#include "Distortion.h"
 
 #include <iomanip>
 #include <iostream>
@@ -62,6 +61,7 @@ void UsgsAstroFrameSensorModel::reset() {
     m_ccdCenter = std::vector<double>(2, 0.0);
     m_spacecraftVelocity = std::vector<double>(3, 0.0);
     m_sunPosition = std::vector<double>(3, 0.0);
+    m_distortionType = DistortionType::TRANSVERSE;
     m_opticalDistCoeffs.clear();
     m_transX = std::vector<double>(3, 0.0);
     m_transY = std::vector<double>(3, 0.0);
@@ -135,9 +135,8 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
 
   // Apply the distortion to the line/sample location and then convert back to line/sample
   double distortedX, distortedY;
-  distortionFunction(undistortedx, undistortedy,
-                     distortedX, distortedY,
-                     m_opticalDistCoeffs);
+  applyDistortion(undistortedx, undistortedy, distortedX, distortedY,
+                  m_opticalDistCoeffs, m_distortionType);
 
 
   // Convert distorted mm into line/sample
@@ -197,7 +196,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   double undistortedX, undistortedY;
   removeDistortion(x_camera, y_camera, undistortedX, undistortedY,
                    m_opticalDistCoeffs,
-                   DistortionType::TRANSVERSE);
+                   m_distortionType);
 
   // Now back from distorted mm to pixels
   xl = m[0][0] * undistortedX + m[0][1] * undistortedY - m[0][2] * - m_focalLength;
@@ -254,7 +253,7 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(const csm::I
   removeDistortion(focalPlaneX, focalPlaneY,
                    undistortedFocalPlaneX, undistortedFocalPlaneY,
                    m_opticalDistCoeffs,
-                   DistortionType::TRANSVERSE);
+                   m_distortionType);
 
   // Get rotation matrix and transform to a body-fixed frame
   double m[3][3];
@@ -640,6 +639,7 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_samplePp", m_samplePp},
       {"m_minElevation", m_minElevation},
       {"m_maxElevation", m_maxElevation},
+      {"m_distortionType", m_distortionType},
       {"m_opticalDistCoeffs", m_opticalDistCoeffs},
       {"m_originalHalfLines", m_originalHalfLines},
       {"m_originalHalfSamples", m_originalHalfSamples},
@@ -674,6 +674,7 @@ bool UsgsAstroFrameSensorModel::isValidModelState(const std::string& stringState
     "m_ccdCenter",
     "m_spacecraftVelocity",
     "m_sunPosition",
+    "m_distortionType",
     "m_opticalDistCoeffs",
     "m_transX",
     "m_transY",
@@ -747,6 +748,7 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
         m_ccdCenter = state.at("m_ccdCenter").get<std::vector<double>>();
         m_spacecraftVelocity = state.at("m_spacecraftVelocity").get<std::vector<double>>();
         m_sunPosition = state.at("m_sunPosition").get<std::vector<double>>();
+        m_distortionType = (DistortionType)state.at("m_distortionType").get<int>();
         m_opticalDistCoeffs = state.at("m_opticalDistCoeffs").get<std::vector<double>>();
         m_transX = state.at("m_transX").get<std::vector<double>>();
         m_transY = state.at("m_transY").get<std::vector<double>>();
@@ -882,6 +884,8 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
       // get optical_distortion
       {
+        state["m_distortionType"] = getDistortionModel(isd);
+        std::cout << state["m_distortionType"] << std::endl;
         state["m_opticalDistCoeffs"] = getDistortionCoeffs(isd);
 
         std::cerr << "Distortion Parsed!" << std::endl;
