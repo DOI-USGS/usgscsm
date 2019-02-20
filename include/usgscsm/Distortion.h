@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <math.h>
-#include <cmath>
 #include <tuple>
 #include <iostream>
 
