@@ -15,16 +15,16 @@ enum DistortionType {
 void distortionJacobian(double x, double y, double *jacobian,
                         const std::vector<double> opticalDistCoeffs);
 
-void distortionFunction(double ux, double uy, double &dx, double &dy,
-                        const std::vector<double> opticalDistCoeffs);
+void computeTransverseDistortion(double ux, double uy, double &dx, double &dy,
+                                 const std::vector<double> opticalDistCoeffs);
 
 void removeDistortion(double dx, double dy, double &ux, double &uy,
                       const std::vector<double> opticalDistCoeffs,
                       DistortionType distortionType,
-                      double desiredPrecision = 0);
+                      const double desiredPrecision = 0);
 
-void applyDistortion(double dx, double dy, double &ux, double &uy,
+void applyDistortion(double ux, double uy, double &dx, double &dy,
                      const std::vector<double> opticalDistCoeffs,
                      DistortionType distortionType,
-                     double desiredPrecision = 0);
+                     const double desiredPrecision = 0);
 #endif

@@ -68,8 +68,8 @@ void distortionJacobian(double x, double y, double *jacobian,
  *
  * @returns distortedPoint Newly adjusted focal plane coordinates as an x, y tuple
  */
-void distortionFunction(double ux, double uy, double &dx, double &dy,
-                        const std::vector<double> opticalDistCoeffs) {
+void computeTransverseDistortion(double ux, double uy, double &dx, double &dy,
+                                 const std::vector<double> opticalDistCoeffs) {
 
   double f[10];
   f[0] = 1;
@@ -98,7 +98,7 @@ void distortionFunction(double ux, double uy, double &dx, double &dy,
 void removeDistortion(double dx, double dy, double &ux, double &uy,
                       const std::vector<double> opticalDistCoeffs,
                       DistortionType distortionType,
-                      double desiredPrecision) {
+                      const double desiredPrecision) {
   ux = dx;
   uy = dy;
 
@@ -126,7 +126,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       const double tol = 1.4E-5;
 
       // The maximum number of iterations of the Newton-Raphson method.
-      const int maxTries = 60;
+      const int maxTries = 20;
 
       double x;
       double y;
@@ -138,11 +138,11 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       x = dx;
       y = dy;
 
-      distortionFunction(x, y, fx, fy, opticalDistCoeffs);
+      computeTransverseDistortion(x, y, fx, fy, opticalDistCoeffs);
 
       for (int count = 1; ((fabs(fx) +fabs(fy)) > tol) && (count < maxTries); count++) {
 
-        distortionFunction(x, y, fx, fy, opticalDistCoeffs);
+        computeTransverseDistortion(x, y, fx, fy, opticalDistCoeffs);
 
         fx = dx - fx;
         fy = dy - fy;
@@ -182,7 +182,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
 void applyDistortion(double ux, double uy, double &dx, double &dy,
                      const std::vector<double> opticalDistCoeffs,
                      DistortionType distortionType,
-                     double desiredPrecision)
+                     const double desiredPrecision)
 {
   dx = ux;
   dy = uy;
@@ -235,7 +235,7 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
     }
     break;
     case TRANSVERSE: {
-      distortionFunction(ux, uy, dx, dy, opticalDistCoeffs);
+      computeTransverseDistortion(ux, uy, dx, dy, opticalDistCoeffs);
     }
     break;
   }
