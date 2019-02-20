@@ -563,6 +563,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
       nextTime = getImageTime(csm::ImageCoord(closestLine, sampCtr));
 
       double nextOffset = computeViewingPixel(nextTime, ground_pt, adj, pixelPrec/2).line - 0.5;
+      std::cout << "Next Offset " << nextOffset << std::endl;
 
       // remove the farthest away node
       if (fabs(firstTime - nextTime) > fabs(lastTime - nextTime)) {
