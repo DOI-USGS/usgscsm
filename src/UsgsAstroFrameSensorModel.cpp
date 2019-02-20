@@ -882,14 +882,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
       // get optical_distortion
       {
-        json jayson = isd.at("optical_distortion");
-        std::vector<double> xDistortion = jayson.at("transverse").at("x");
-        std::vector<double> yDistortion = jayson.at("transverse").at("y");
-        xDistortion.resize(10, 0.0);
-        yDistortion.resize(10, 0.0);
-        xDistortion.insert(xDistortion.end(), yDistortion.begin(), yDistortion.end());
-
-        state["m_opticalDistCoeffs"] = xDistortion;
+        state["m_opticalDistCoeffs"] = getDistortionCoeffs(isd);
 
         std::cerr << "Distortion Parsed!" << std::endl;
       }
