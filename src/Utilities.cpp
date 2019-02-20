@@ -572,44 +572,55 @@ DistortionType getDistortionModel(json isd, csm::WarningList *list) {
 
 std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
   std::vector<double> coefficients;
-  try {
-    std::vector<double> coefficientsX, coefficientsY;
 
-    coefficientsX = isd.at("optical_distortion").at("transverse").at("x").get<std::vector<double>>();
-    coefficientsX.resize(10, 0.0);
+  DistortionType distortion = getDistortionModel(isd);
 
-    coefficientsY = isd.at("optical_distortion").at("transverse").at("y").get<std::vector<double>>();
-    coefficientsY.resize(10, 0.0);
+  switch (distortion) {
+    case DistortionType::TRANSVERSE: {
+      try {
+        std::vector<double> coefficientsX, coefficientsY;
 
-    coefficients = coefficientsX;
+        coefficientsX = isd.at("optical_distortion").at("transverse").at("x").get<std::vector<double>>();
+        coefficientsX.resize(10, 0.0);
 
-    coefficients.insert(coefficients.end(), coefficientsY.begin(), coefficientsY.end());
-    return coefficients;
-  }
-  catch (...) {
-    if (list) {
-      list->push_back(
-        csm::Warning(
-          csm::Warning::DATA_NOT_AVAILABLE,
-          "Could not parse a transverse distortion model coefficients.",
-          "Utilities::getDistortion()"));
+        coefficientsY = isd.at("optical_distortion").at("transverse").at("y").get<std::vector<double>>();
+        coefficientsY.resize(10, 0.0);
+
+        coefficients = coefficientsX;
+
+        coefficients.insert(coefficients.end(), coefficientsY.begin(), coefficientsY.end());
+        return coefficients;
+      }
+      catch (...) {
+        if (list) {
+          list->push_back(
+            csm::Warning(
+              csm::Warning::DATA_NOT_AVAILABLE,
+              "Could not parse a set of transverse distortion model coefficients.",
+              "Utilities::getDistortion()"));
+        }
+      }
     }
-  }
-  try {
-    coefficients = isd.at("optical_distortion").at("radial").at("coefficients").get<std::vector<double>>();
+    break;
+    case DistortionType::RADIAL: {
+      try {
+        coefficients = isd.at("optical_distortion").at("radial").at("coefficients").get<std::vector<double>>();
 
-    return coefficients;
-  }
-  catch (...) {
-    if (list) {
-      list->push_back(
-        csm::Warning(
-          csm::Warning::DATA_NOT_AVAILABLE,
-          "Could not parse the radial distortion model coefficients.",
-          "Utilities::getDistortion()"));
+        return coefficients;
+      }
+      catch (...) {
+        if (list) {
+          list->push_back(
+            csm::Warning(
+              csm::Warning::DATA_NOT_AVAILABLE,
+              "Could not parse the radial distortion model coefficients.",
+              "Utilities::getDistortion()"));
+        }
+      }
+      return coefficients;
     }
+    break;
   }
-  return coefficients;
 }
 
 std::vector<double> getSunPositions(json isd, csm::WarningList *list) {
