@@ -1706,8 +1706,7 @@ void UsgsAstroLsSensorModel::losToEcf(
 
    // Remove lens distortion
    double undistortedFocalPlaneX, undistortedFocalPlaneY;
-   // std::vector<std::vector<double>> transverseCoeffs(2, std::vector<double>(2, 0));
-   removeDistortion(natFocalPlaneX, natFocalPlaneY,
+   removeDistortion(std::get<0>(natFocalPlane), std::get<1>(natFocalPlane),
                     undistortedFocalPlaneX, undistortedFocalPlaneY,
                     m_opticalDistCoef,
                     DistortionType::RADIAL);

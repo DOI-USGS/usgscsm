@@ -888,7 +888,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
         xDistortion.resize(10, 0.0);
         yDistortion.resize(10, 0.0);
         xDistortion.insert(xDistortion.end(), yDistortion.begin(), yDistortion.end());
-
+        
         state["m_opticalDistCoeffs"] = xDistortion;
 
         std::cerr << "Distortion Parsed!" << std::endl;
