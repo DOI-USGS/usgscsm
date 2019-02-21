@@ -55,7 +55,6 @@ void computeDistortedFocalPlaneCoordinates(
     const double& lineOrigin,
     const double& sampleSumming,
     const double& startingSample,
-    const double& lineOffset,
     const double iTransS[],
     const double iTransL[],
     std::tuple<double, double>& natFocalPlane)
@@ -65,7 +64,7 @@ void computeDistortedFocalPlaneCoordinates(
   double m12 = iTransL[2];
   double m21 = iTransS[1];
   double m22 = iTransS[2];
-  double t1 = line + lineOffset - lineOrigin - iTransL[0];
+  double t1 = line - lineOrigin - iTransL[0];
   double t2 = detSample - sampleOrigin - iTransS[0];
   double determinant = m11 * m22 - m12 * m21;
   double p11 = m11 / determinant;

@@ -55,7 +55,7 @@ TEST(UtilitiesTests, computeDistortedFocalPlaneCoordinates) {
    double iTransS[] = {0.0, 0.0, 10.0};
    double iTransL[] = {0.0, 10.0, 0.0};
    std::tuple<double, double> natFocalPlane;
-   computeDistortedFocalPlaneCoordinates(0.5, 4, 8, 0.5, 1, 1, 0, iTransS, iTransL, natFocalPlane);
+   computeDistortedFocalPlaneCoordinates(0.5, 4, 8, 0.5, 1, 1, iTransS, iTransL, natFocalPlane);
    EXPECT_DOUBLE_EQ(std::get<0> (natFocalPlane), 0);
    EXPECT_DOUBLE_EQ(std::get<1> (natFocalPlane), -0.4);
 }

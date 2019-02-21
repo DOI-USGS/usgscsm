@@ -803,18 +803,15 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
     state["m_imageIdentifier"] = getImageId(isd, parsingWarnings);
     state["m_sensorName"] = getSensorName(isd, parsingWarnings);
     state["m_platformName"] = getPlatformName(isd, parsingWarnings);
-    std::cerr << "Model Name Parsed!" << std::endl;
 
     state["m_startingDetectorSample"] = getDetectorStartingSample(isd, parsingWarnings);
     state["m_startingDetectorLine"] = getDetectorStartingLine(isd, parsingWarnings);
 
-    std::cerr << "Detector Starting Pixel Parsed!" << std::endl;
 
     // get focal length
     state["m_focalLength"] = getFocalLength(isd, parsingWarnings);
     state["m_focalLengthEpsilon"] = getFocalLengthEpsilon(isd, parsingWarnings);
 
-    std::cerr << "Focal Length Parsed!" << std::endl;
 
     state["m_currentParameterValue"] = json();
 
@@ -847,13 +844,11 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
       state["m_spacecraftVelocity"] = velocity;
     }
 
-    std::cerr << "Sensor Location Parsed!" << std::endl;
 
     // get sun_position
     // sun position is not strictly necessary, but is required for getIlluminationDirection.
     state["m_sunPosition"] = getSunPositions(isd);
 
-    std::cerr << "Sun Position Parsed!" << std::endl;
 
     // get sensor_orientation quaternion
     std::vector<double> quaternion = getSensorOrientations(isd, parsingWarnings);
@@ -871,31 +866,26 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
       state["m_currentParameterValue"][6] = quaternion[3];
     }
 
-    std::cerr << "Sensor Orientation Parsed!" << std::endl;
 
     // get optical_distortion
     state["m_odtX"] = getTransverseDistortionX(isd, parsingWarnings);
     state["m_odtY"] = getTransverseDistortionY(isd, parsingWarnings);
 
-    std::cerr << "Distortion Parsed!" << std::endl;
 
     // get detector_center
     state["m_ccdCenter"][0] = getDetectorCenterLine(isd, parsingWarnings);
     state["m_ccdCenter"][1] = getDetectorCenterSample(isd, parsingWarnings);
 
-    std::cerr << "Detector Center Parsed!" << std::endl;
 
     // get radii
     state["m_minorAxis"] = getSemiMinorRadius(isd, parsingWarnings);
     state["m_majorAxis"] = getSemiMajorRadius(isd, parsingWarnings);
 
-    std::cerr << "Target Radii Parsed!" << std::endl;
 
     // get reference_height
     state["m_minElevation"] = getMinHeight(isd, parsingWarnings);
     state["m_maxElevation"] = getMaxHeight(isd, parsingWarnings);
 
-    std::cerr << "Reference Height Parsed!" << std::endl;
 
     state["m_ephemerisTime"] = getCenterTime(isd, parsingWarnings);
     state["m_nLines"] = getTotalLines(isd, parsingWarnings);
@@ -928,13 +918,11 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
           "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
     }
 
-    std::cerr << "Focal To Pixel Transformation Parsed!" << std::endl;
 
     state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
     state["m_currentParameterCovariance"] = std::vector<double>(NUM_PARAMETERS*NUM_PARAMETERS,0.0);
     state["m_collectionIdentifier"] = "";
 
-    std::cerr << "Constants Set!" << std::endl;
 
     if (!parsingWarnings->empty()) {
       if (warnings) {

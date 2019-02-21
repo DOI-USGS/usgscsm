@@ -132,34 +132,26 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
    auto j = json::parse(stateString);
    int num_params    = NUM_PARAMETERS;
    int num_paramsSq = num_params * num_params;
-   std::cerr << "A" << std::endl;
 
    m_imageIdentifier = j["m_imageIdentifier"].get<std::string>();
    m_sensorName = j["m_sensorName"];
    m_nLines = j["m_nLines"];
    m_nSamples = j["m_nSamples"];
    m_platformFlag = j["m_platformFlag"];
-   std::cerr << "A2" << std::endl;
 
    m_intTimeLines = j["m_intTimeLines"].get<std::vector<double>>();
    m_intTimeStartTimes = j["m_intTimeStartTimes"].get<std::vector<double>>();
    m_intTimes = j["m_intTimes"].get<std::vector<double>>();
-   std::cerr << "A3" << std::endl;
 
    m_startingEphemerisTime = j["m_startingEphemerisTime"];
-      std::cerr << m_startingEphemerisTime << std::endl;
    m_centerEphemerisTime = j["m_centerEphemerisTime"];
-         std::cerr << m_centerEphemerisTime << std::endl;
    m_detectorSampleSumming = j["m_detectorSampleSumming"];
-    std::cerr << m_detectorSampleSumming << std::endl;
    m_startingSample = j["m_startingDetectorSample"];
-   std::cerr << m_startingSample << std::endl;
    m_ikCode = j["m_ikCode"];
 
 
    m_focalLength = j["m_focalLength"];
    m_zDirection = j["m_zDirection"];
-   std::cerr << "B" << std::endl;
 
    for (int i = 0; i < 3; i++) {
      m_opticalDistCoef[i] = j["m_opticalDistCoef"][i];
@@ -179,7 +171,6 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
    m_dtQuat = j["m_dtQuat"];
    m_t0Quat = j["m_t0Quat"];
    m_numPositions = j["m_numPositions"];
-   std::cerr << "C" << std::endl;
 
    m_numQuaternions = j["m_numQuaternions"];
    m_referencePointXyz.x = j["m_referencePointXyz"][0];
@@ -191,7 +182,6 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
    m_halfTime = j["m_halfTime"];
    m_imageFlipFlag = j["m_imageFlipFlag"];
    // Vector = is overloaded so explicit get with type required.
-   std::cerr << "D" << std::endl;
 
    m_positions = j["m_positions"].get<std::vector<double>>();
    m_velocities = j["m_velocities"].get<std::vector<double>>();
@@ -199,7 +189,6 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
    m_currentParameterValue = j["m_currentParameterValue"].get<std::vector<double>>();
    m_covariance = j["m_covariance"].get<std::vector<double>>();
 
-   std::cerr << "Unpacked The State JSON" << std::endl;
    for (int i = 0; i < num_params; i++) {
      for (int k = 0; k < NUM_PARAM_TYPES; k++) {
        if (j["m_parameterType"][i] == PARAM_STRING_ALL[k]) {
@@ -408,7 +397,7 @@ void UsgsAstroLsSensorModel::updateState()
    double lineCtr = m_nLines / 2.0;
    double sampCtr = m_nSamples / 2.0;
    csm::ImageCoord ip(lineCtr, sampCtr);
-   double refHeight = 30;
+   double refHeight = 0;
    m_referencePointXyz = imageToGround(ip, refHeight);
    // Compute ground sample distance
    ip.line += 1;
@@ -1082,7 +1071,7 @@ void UsgsAstroLsSensorModel::setParameterCovariance(
 //***************************************************************************
 std::string UsgsAstroLsSensorModel::getTrajectoryIdentifier() const
 {
-   return "UKNOWN";
+   return "UNKNOWN";
 }
 
 //***************************************************************************
@@ -1673,7 +1662,7 @@ void UsgsAstroLsSensorModel::losToEcf(
 
    // Compute distorted image coordinates in mm (sample, line on image (pixels) -> focal plane
    std::tuple<double, double> natFocalPlane;
-   computeDistortedFocalPlaneCoordinates(fractionalLine, sampleUSGSFull, m_detectorSampleOrigin, m_detectorLineOrigin, m_detectorSampleSumming, m_startingSample, 0, m_iTransS, m_iTransL, natFocalPlane);
+   computeDistortedFocalPlaneCoordinates(fractionalLine, sampleUSGSFull, m_detectorSampleOrigin, m_detectorLineOrigin, m_detectorSampleSumming, m_startingSample, m_iTransS, m_iTransL, natFocalPlane);
 
    // Remove lens distortion
    std::tuple<double, double> undistortedPoint;
@@ -2471,10 +2460,8 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_imageIdentifier"] = getImageId(isd, parsingWarnings);
   state["m_sensorName"] = getSensorName(isd, parsingWarnings);
   state["m_platformName"] = getPlatformName(isd, parsingWarnings);
-  std::cerr << "Model Name Parsed!" << std::endl;
 
   state["m_focalLength"] = getFocalLength(isd, parsingWarnings);
-  std::cerr << "Focal Length Parsed!" << std::endl;
 
   state["m_nLines"] = getTotalLines(isd, parsingWarnings);
   state["m_nSamples"] = getTotalSamples(isd, parsingWarnings);
@@ -2502,7 +2489,6 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_intTimeLines"] = getIntegrationStartLines(isd, parsingWarnings);
   state["m_intTimeStartTimes"] = getIntegrationStartTimes(isd, parsingWarnings);
   state["m_intTimes"] = getIntegrationTimes(isd, parsingWarnings);
-  std::cerr << "Times Parsed!" << std::endl;
 
   state["m_detectorSampleSumming"] = getSampleSumming(isd, parsingWarnings);
   state["m_startingDetectorSample"] = getDetectorStartingSample(isd, parsingWarnings);
@@ -2510,7 +2496,6 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_opticalDistCoef"] = getRadialDistortion(isd, parsingWarnings);
   state["m_detectorSampleOrigin"] = getDetectorCenterSample(isd, parsingWarnings);
   state["m_detectorLineOrigin"] = getDetectorCenterLine(isd, parsingWarnings);
-  std::cerr << "Distortion Parsed!" << std::endl;
 
   // These are exlusive to LineScanners, leave them here for now.
   state["m_dtEphem"] = isd.at("dt_ephemeris");
@@ -2521,33 +2506,27 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   std::vector<double> positions = getSensorPositions(isd, parsingWarnings);
   state["m_positions"] = positions;
   state["m_numPositions"] = positions.size();
-  std::cerr << "Positions Parsed!" << std::endl;
 
   state["m_velocities"] = getSensorVelocities(isd, parsingWarnings);
-  std::cerr << "Velocities Parsed!" << std::endl;
 
   std::vector<double> quaternions = getSensorOrientations(isd, parsingWarnings);
   state["m_quaternions"] = quaternions;
   state["m_numQuaternions"] = quaternions.size();
-  std::cerr << "Quats Parsed!" << std::endl;
 
   state["m_currentParameterValue"] = std::vector<double>(NUM_PARAMETERS, 0.0);
 
   // get radii
   state["m_minorAxis"] = getSemiMinorRadius(isd, parsingWarnings);
   state["m_majorAxis"] = getSemiMajorRadius(isd, parsingWarnings);
-  std::cerr << "Major/Minor Axis Parsed!" << std::endl;
 
   // set identifiers
   state["m_platformIdentifier"] = getPlatformName(isd, parsingWarnings);
   state["m_sensorIdentifier"] = getSensorName(isd, parsingWarnings);
-  std::cerr << "Platform and Sensor name Parsed!" << std::endl;
 
   // get reference_height
   state["m_minElevation"] = getMinHeight(isd, parsingWarnings);
   state["m_maxElevation"] = getMaxHeight(isd, parsingWarnings);
 
-  std::cerr << "Min/Max Height Parsed!" << std::endl;
 
   // Default to identity covariance
   state["m_covariance"] =
@@ -2555,11 +2534,9 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   for (int i = 0; i < NUM_PARAMETERS; i++) {
    state["m_covariance"][i * NUM_PARAMETERS + i] = 1.0;
   }
-  std::cerr << "Covarience Parsed!" << std::endl;
 
 
    // The state data will still be updated when a sensor model is created since
    // some state data is notin the ISD and requires a SM to compute them.
-   std::cerr <<  state.dump() << std::endl;
    return state.dump();
 }
