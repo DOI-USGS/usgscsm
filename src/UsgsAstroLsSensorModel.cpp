@@ -350,8 +350,8 @@ void UsgsAstroLsSensorModel::reset()
   m_ikCode = -85600;
   m_focal = 350.0;
   m_zDirection = 1.0;
-  m_distortionType = (DistortionType)0;
-  m_opticalDistCoeffs.clear();
+  m_distortionType = DistortionType::RADIAL;
+  m_opticalDistCoeffs = std::vector<double>(3, 0.0);
   m_iTransS[0] = 0.0;
   m_iTransS[1] = 0.0;
   m_iTransS[2] = 150.0;
