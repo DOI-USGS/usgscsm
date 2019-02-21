@@ -21,7 +21,7 @@ TEST(PluginTests, ManufacturerName) {
 
 TEST(PluginTests, ReleaseDate) {
    UsgsAstroPlugin testPlugin;
-   EXPECT_EQ("20170425", testPlugin.getReleaseDate());
+   EXPECT_EQ("20190222", testPlugin.getReleaseDate());
 }
 
 TEST(PluginTests, NumModels) {
