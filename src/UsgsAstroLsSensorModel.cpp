@@ -2492,10 +2492,49 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_detectorLineOrigin"] = getDetectorCenterLine(isd, parsingWarnings);
 
   // These are exlusive to LineScanners, leave them here for now.
-  state["m_dtEphem"] = isd.at("dt_ephemeris");
-  state["m_t0Ephem"] = isd.at("t0_ephemeris");
-  state["m_dtQuat"] =  isd.at("dt_quaternion");
-  state["m_t0Quat"] =  isd.at("t0_quaternion");
+  try {
+    state["m_dtEphem"] = isd.at("dt_ephemeris");
+  }
+  catch(...) {
+    parsingWarnings->push_back(
+      csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE,
+        "dt_ephemeris not in ISD",
+        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+  }
+
+  try {
+    state["m_t0Ephem"] = isd.at("t0_ephemeris");
+  }
+  catch(...) {
+    parsingWarnings->push_back(
+      csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE,
+        "t0_ephemeris not in ISD",
+        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+  }
+
+  try{
+    state["m_dtQuat"] =  isd.at("dt_quaternion");
+  }
+  catch(...) {
+    parsingWarnings->push_back(
+      csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE,
+        "dt_quaternion not in ISD",
+        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+  }
+
+  try{
+    state["m_t0Quat"] =  isd.at("t0_quaternion");
+  }
+  catch(...) {
+    parsingWarnings->push_back(
+      csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE,
+        "t0_quaternion not in ISD",
+        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+  }
 
   std::vector<double> positions = getSensorPositions(isd, parsingWarnings);
   state["m_positions"] = positions;
