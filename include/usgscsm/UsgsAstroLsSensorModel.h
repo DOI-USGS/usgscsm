@@ -64,15 +64,11 @@ public:
   std::string constructStateFromIsd(const std::string imageSupportData, csm::WarningList *list) const;
 
    // State data elements;
-   std::string  m_imageIdentifier;                // 1
-   std::string  m_sensorType;                     // 2
-   int          m_totalLines;                     // 3
-   int          m_totalSamples;                   // 4
-   double       m_offsetLines;                    // 5
-   double       m_offsetSamples;                  // 6
-   int          m_platformFlag;                   // 7
-   int          m_aberrFlag;                      // 8
-   int          m_atmRefFlag;                     // 9
+   std::string  m_imageIdentifier;
+   std::string  m_sensorName;
+   int          m_nLines;
+   int          m_nSamples;
+   int          m_platformFlag;
    std::vector<double> m_intTimeLines;
    std::vector<double> m_intTimeStartTimes;
    std::vector<double> m_intTimes;
@@ -81,7 +77,7 @@ public:
    double       m_detectorSampleSumming;
    double       m_startingSample;
    int          m_ikCode;
-   double       m_focal;
+   double       m_focalLength;
    double       m_zDirection;
    DistortionType m_distortionType;
    std::vector<double> m_opticalDistCoeffs;
@@ -89,10 +85,9 @@ public:
    double       m_iTransL[3];
    double       m_detectorSampleOrigin;
    double       m_detectorLineOrigin;
-   double       m_detectorLineOffset;
    double       m_mountingMatrix[9];
-   double       m_semiMajorAxis;
-   double       m_semiMinorAxis;
+   double       m_majorAxis;
+   double       m_minorAxis;
    std::string  m_referenceDateAndTime;
    std::string  m_platformIdentifier;
    std::string  m_sensorIdentifier;
@@ -105,12 +100,12 @@ public:
    double       m_t0Ephem;
    double       m_dtQuat;
    double       m_t0Quat;
-   int          m_numEphem;
+   int          m_numPositions;
    int          m_numQuaternions;
-   std::vector<double> m_ephemPts;
-   std::vector<double> m_ephemRates;
+   std::vector<double> m_positions;
+   std::vector<double> m_velocities;
    std::vector<double> m_quaternions;
-   std::vector<double> m_parameterVals;
+   std::vector<double> m_currentParameterValue;
    std::vector<csm::param::Type> m_parameterType;
    csm::EcefCoord m_referencePointXyz;
    double       m_gsd;
@@ -893,6 +888,11 @@ public:
    //> This method sets the planetary ellipsoid.
    //<
 
+   void calculateAttitudeCorrection(
+       const double& time,
+       const std::vector<double>& adj,
+       double attCorr[9]) const;
+
 private:
 
    void determineSensorCovarianceInImageSpace(
@@ -924,11 +924,6 @@ private:
 
    void getQuaternions(const double& time,
                        double quaternion[4]) const;
-
-   void calculateAttitudeCorrection(
-       const double& time,
-       const std::vector<double>& adj,
-       double attCorr[9]) const;
 
 // This method computes the imaging locus.
 // imaging locus : set of ground points associated with an image pixel.
