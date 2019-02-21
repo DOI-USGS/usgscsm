@@ -886,6 +886,11 @@ public:
    //> This method sets the planetary ellipsoid.
    //<
 
+   void calculateAttitudeCorrection(
+       const double& time,
+       const std::vector<double>& adj,
+       double attCorr[9]) const;
+
 private:
 
    void determineSensorCovarianceInImageSpace(
@@ -917,11 +922,6 @@ private:
 
    void getQuaternions(const double& time,
                        double quaternion[4]) const;
-
-   void calculateAttitudeCorrection(
-       const double& time,
-       const std::vector<double>& adj,
-       double attCorr[9]) const;
 
 // This method computes the imaging locus.
 // imaging locus : set of ground points associated with an image pixel.

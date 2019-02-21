@@ -1622,7 +1622,11 @@ void UsgsAstroLsSensorModel::getQuaternions(const double& time, double q[4]) con
 }
 
 
-void UsgsAstroLsSensorModel::calculateAttitudeCorrection(const double& time, const std::vector<double>& adj, double attCorr[9]) const {
+void UsgsAstroLsSensorModel::calculateAttitudeCorrection(
+   const double& time,
+   const std::vector<double>& adj,
+   double attCorr[9]) const
+{
   double aTime = time - m_t0Quat;
   double euler[3];
   double nTime = aTime / m_halfTime;
@@ -1669,7 +1673,7 @@ void UsgsAstroLsSensorModel::losToEcf(
 
    // Compute distorted image coordinates in mm (sample, line on image (pixels) -> focal plane
    std::tuple<double, double> natFocalPlane;
-   natFocalPlane = computeDistortedFocalPlaneCoordinates(fractionalLine, sampleUSGSFull, m_detectorSampleOrigin, m_detectorLineOrigin, m_detectorSampleSumming, m_startingSample, 0, m_iTransS, m_iTransL);
+   computeDistortedFocalPlaneCoordinates(fractionalLine, sampleUSGSFull, m_detectorSampleOrigin, m_detectorLineOrigin, m_detectorSampleSumming, m_startingSample, 0, m_iTransS, m_iTransL, natFocalPlane);
 
    // Remove lens distortion
    std::tuple<double, double> undistortedPoint;
@@ -1677,7 +1681,7 @@ void UsgsAstroLsSensorModel::losToEcf(
 
   // Define imaging ray (look vector) in camera space
    double cameraLook[3];
-   createCameraLookVector(std::get<0>(undistortedPoint), std::get<1>(undistortedPoint), m_zDirection, m_focalLength, getValue(15, adj), m_halfSwath, cameraLook);
+   createCameraLookVector(std::get<0>(undistortedPoint), std::get<1>(undistortedPoint), m_zDirection, m_focalLength, cameraLook);
 
    // Apply attitude correction
    double attCorr[9];
