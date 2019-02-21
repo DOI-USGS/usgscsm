@@ -30,6 +30,7 @@
 #include <RasterGM.h>
 #include <SettableEllipsoid.h>
 #include <CorrelationModel.h>
+#include "Distortion.h"
 
 class UsgsAstroLsSensorModel : public csm::RasterGM, virtual public csm::SettableEllipsoid
 {
@@ -78,7 +79,8 @@ public:
    int          m_ikCode;
    double       m_focalLength;
    double       m_zDirection;
-   double       m_opticalDistCoef[3];
+   DistortionType m_distortionType;
+   std::vector<double> m_opticalDistCoeffs;
    double       m_iTransS[3];
    double       m_iTransL[3];
    double       m_detectorSampleOrigin;

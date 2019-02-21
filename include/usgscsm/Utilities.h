@@ -1,6 +1,8 @@
 #ifndef Utilities_h
 #define Utilities_h
 
+#include "Distortion.h"
+
 #include <vector>
 #include <math.h>
 #include <tuple>
@@ -75,8 +77,8 @@ double getMinHeight(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getMaxHeight(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getSemiMajorRadius(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getSemiMinorRadius(nlohmann::json isd, csm::WarningList *list=nullptr);
-std::vector<double> getTransverseDistortionX(nlohmann::json isd, csm::WarningList *list=nullptr);
-std::vector<double> getTransverseDistortionY(nlohmann::json isd, csm::WarningList *list=nullptr);
+DistortionType getDistortionModel(nlohmann::json isd, csm::WarningList *list=nullptr);
+std::vector<double> getDistortionCoeffs(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getRadialDistortion(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSunPositions(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSensorPositions(nlohmann::json isd, csm::WarningList *list=nullptr);

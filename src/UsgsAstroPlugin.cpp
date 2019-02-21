@@ -217,7 +217,6 @@ std::string UsgsAstroPlugin::convertISDToModelState(const csm::Isd &imageSupport
 csm::Model *UsgsAstroPlugin::constructModelFromISD(const csm::Isd &imageSupportDataOriginal,
                                               const std::string &modelName,
                                               csm::WarningList *warnings) const {
-
     std::string stringIsd = loadImageSupportData(imageSupportDataOriginal);
 
     if (modelName == UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME) {
