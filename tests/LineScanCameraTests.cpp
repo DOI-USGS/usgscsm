@@ -82,9 +82,9 @@ TEST_F(ConstVelocityLineScanSensorModel, RemoteImageLocus) {
 TEST_F(ConstAngularVelocityLineScanSensorModel, Center) {
    csm::ImageCoord imagePt(8.5, 8.0);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   // EXPECT_DOUBLE_EQ(groundPt.x, 10.0);
-   // EXPECT_DOUBLE_EQ(groundPt.y, 0.0);
-   // EXPECT_DOUBLE_EQ(groundPt.z, 0.0);
+   EXPECT_DOUBLE_EQ(groundPt.x, 10.0);
+   EXPECT_DOUBLE_EQ(groundPt.y, 0.0);
+   EXPECT_DOUBLE_EQ(groundPt.z, 0.0);
 }
 
 TEST_F(ConstAngularVelocityLineScanSensorModel, Inversion) {
@@ -92,16 +92,16 @@ TEST_F(ConstAngularVelocityLineScanSensorModel, Inversion) {
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
   csm::ImageCoord imageReprojPt = sensorModel->groundToImage(groundPt);
 
-  // EXPECT_DOUBLE_EQ(imagePt.line, imageReprojPt.line);
-  // EXPECT_DOUBLE_EQ(imagePt.samp, imageReprojPt.samp);
+  EXPECT_DOUBLE_EQ(imagePt.line, imageReprojPt.line);
+  EXPECT_DOUBLE_EQ(imagePt.samp, imageReprojPt.samp);
 }
 
 TEST_F(ConstAngularVelocityLineScanSensorModel, OffBody) {
    csm::ImageCoord imagePt(4.5, 4.0);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   // EXPECT_NEAR(groundPt.x, 0.063995905, 1e-8);
-   // EXPECT_NEAR(groundPt.y, -7.999488033, 1e-8);
-   // EXPECT_NEAR(groundPt.z, 8, 1e-8);
+   EXPECT_NEAR(groundPt.x, 4.15414478, 1e-8);
+   EXPECT_NEAR(groundPt.y, -7.98311067, 1e-8);
+   EXPECT_NEAR(groundPt.z, 63.82129588, 1e-8);
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, calculateAttitudeCorrection) {
