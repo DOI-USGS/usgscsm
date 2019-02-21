@@ -22,7 +22,6 @@ void computeDistortedFocalPlaneCoordinates(
   const double& lineOrigin,
   const double& sampleSumming,
   const double& startingSample,
-  const double& lineOffset,
   const double iTransS[],
   const double iTransL[],
   std::tuple<double, double>& natFocalPlane);
