@@ -572,6 +572,7 @@ DistortionType getDistortionModel(json isd, csm::WarningList *list) {
         "Could not parse the distortion model.",
         "Utilities::getDistortionModel()"));
   }
+  return DistortionType::TRANSVERSE;
 }
 
 std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
@@ -603,6 +604,7 @@ std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
               "Could not parse a set of transverse distortion model coefficients.",
               "Utilities::getDistortion()"));
         }
+        coefficients = std::vector<double>(20, 0.0);
       }
     }
     break;
@@ -620,11 +622,19 @@ std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
               "Could not parse the radial distortion model coefficients.",
               "Utilities::getDistortion()"));
         }
+        coefficients = std::vector<double>(3, 0.0);
       }
-      return coefficients;
     }
-    break;
   }
+  if (list) {
+    list->push_back(
+      csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE,
+        "Could not parse the distortion model coefficients.",
+        "Utilities::getDistortion()"));
+  }
+
+  return coefficients;
 }
 
 std::vector<double> getSunPositions(json isd, csm::WarningList *list) {

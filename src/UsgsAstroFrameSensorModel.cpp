@@ -852,7 +852,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
     // get sensor_orientation quaternion
     std::vector<double> quaternion = getSensorOrientations(isd, parsingWarnings);
-    if (!quaternion.empty() && quaternion.size() != 4) {
+    if (quaternion.size() != 4) {
       parsingWarnings->push_back(
         csm::Warning(
           csm::Warning::DATA_NOT_AVAILABLE,

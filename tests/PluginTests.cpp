@@ -185,7 +185,7 @@ TEST_F(ConstVelLineScanIsdTest, ConstructInValidCamera) {
       testPlugin.constructModelFromISD(
             isd,
             "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL",
-            NULL);
+            nullptr);
       FAIL() << "Expected an error";
 
    }
