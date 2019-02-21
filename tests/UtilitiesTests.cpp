@@ -18,6 +18,10 @@ TEST(UtilitiesTests, calculateRotationMatrixFromEuler) {
    euler[1] = M_PI/2;
    euler[2] = 0;
    calculateRotationMatrixFromEuler(euler, rotationMatrix);
+
+   // EXPECT_NEARs are used here instead of EXPECT_DOUBLE_EQs because index 0 and 8 of the matrix
+   // are evaluating to 6.12...e-17. This is too small to be worried about here, but
+   // EXPECT_DOUBLE_EQ is too sensitive.
    EXPECT_NEAR(rotationMatrix[0], 0, 1e-8);
    EXPECT_NEAR(rotationMatrix[1], 0, 1e-8);
    EXPECT_NEAR(rotationMatrix[2], 1, 1e-8);

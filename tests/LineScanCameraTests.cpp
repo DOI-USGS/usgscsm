@@ -1,10 +1,14 @@
+#define _USE_MATH_DEFINES
+
+#include "Fixtures.h"
 #include "UsgsAstroPlugin.h"
 #include "UsgsAstroLsSensorModel.h"
 
 #include <json.hpp>
 #include <gtest/gtest.h>
 
-#include "Fixtures.h"
+#include <math.h>
+#include <iostream>
 
 using json = nlohmann::json;
 
@@ -127,10 +131,24 @@ TEST_F(ConstAngularVelocityLineScanSensorModel, OffBody4) {
    // EXPECT_NEAR(groundPt.z, -14.99325304, 1e-8);
 }
 
-// TEST_F(ConstVelocityLineScanSensorModel, calculateAttitudeCorrection) {
-//    // csm::ImageCoord imagePt(8.5, 8.0);
-//    // csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-//    // EXPECT_DOUBLE_EQ(groundPt.x, 10.0);
-//    // EXPECT_DOUBLE_EQ(groundPt.y, 0.0);
-//    // EXPECT_DOUBLE_EQ(groundPt.z, 0.0);
-// }
+TEST_F(ConstVelocityLineScanSensorModel, calculateAttitudeCorrection) {
+  std::vector<double> adj;
+  double attCorr[9];
+  adj.resize(14, 0);
+  // Pi/2 with simply compensating for member variable m_flyingHeight in UsgsAstroLsSensorModel
+  adj[7] = (M_PI / 2) * 990.0496255790623081338708;
+  sensorModel->calculateAttitudeCorrection(999.5, adj, attCorr);
+
+  // EXPECT_NEARs are used here instead of EXPECT_DOUBLE_EQs because index 0 and 8 of the matrix
+  // are evaluating to 6.12...e-17. This is too small to be worried about here, but
+  // EXPECT_DOUBLE_EQ is too sensitive.
+  EXPECT_NEAR(attCorr[0], 0, 1e-8);
+  EXPECT_NEAR(attCorr[1], 0, 1e-8);
+  EXPECT_NEAR(attCorr[2], 1, 1e-8);
+  EXPECT_NEAR(attCorr[3], 0, 1e-8);
+  EXPECT_NEAR(attCorr[4], 1, 1e-8);
+  EXPECT_NEAR(attCorr[5], 0, 1e-8);
+  EXPECT_NEAR(attCorr[6], -1, 1e-8);
+  EXPECT_NEAR(attCorr[7], 0, 1e-8);
+  EXPECT_NEAR(attCorr[8], 0, 1e-8);
+}

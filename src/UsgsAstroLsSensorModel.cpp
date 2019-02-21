@@ -1671,7 +1671,11 @@ void UsgsAstroLsSensorModel::getQuaternions(const double& time, double q[4]) con
 }
 
 
-void UsgsAstroLsSensorModel::calculateAttitudeCorrection(const double& time, const std::vector<double>& adj, double attCorr[9]) const {
+void UsgsAstroLsSensorModel::calculateAttitudeCorrection(
+   const double& time,
+   const std::vector<double>& adj,
+   double attCorr[9]) const
+{
   double aTime = time - m_t0Quat;
   double euler[3];
   double nTime = aTime / m_halfTime;
