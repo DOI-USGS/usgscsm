@@ -105,7 +105,6 @@ const std::string  UsgsAstroLsSensorModel::_STATE_KEYWORD[] =
    "m_halfSwath",
    "m_halfTime",
    "m_covariance",
-   "m_imageFlipFlag"
 };
 
 const int UsgsAstroLsSensorModel::NUM_PARAM_TYPES = 4;
@@ -180,7 +179,6 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
    m_flyingHeight = j["m_flyingHeight"];
    m_halfSwath = j["m_halfSwath"];
    m_halfTime = j["m_halfTime"];
-   m_imageFlipFlag = j["m_imageFlipFlag"];
    // Vector = is overloaded so explicit get with type required.
 
    m_positions = j["m_positions"].get<std::vector<double>>();
@@ -287,7 +285,6 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
       state["m_halfSwath"] = m_halfSwath;
       state["m_halfTime"] = m_halfTime;
       state["m_covariance"] = m_covariance;
-      state["m_imageFlipFlag"] = m_imageFlipFlag;
 
       state["m_referencePointXyz"] = json();
       state["m_referencePointXyz"][0] = m_referencePointXyz.x;
@@ -365,7 +362,6 @@ void UsgsAstroLsSensorModel::reset()
   m_halfTime = 10.0;                       // 51
 
   m_covariance = std::vector<double>(NUM_PARAMETERS * NUM_PARAMETERS,0.0); // 52
-  m_imageFlipFlag = 0;                     // 53
 }
 
 
@@ -1365,7 +1361,6 @@ csm::ImageVector UsgsAstroLsSensorModel::getImageSize() const
 //   m_flyingHeight = j["m_flyingHeight"];
 //   m_halfSwath = j["m_halfSwath"];
 //   m_halfTime = j["m_halfTime"];
-//   m_imageFlipFlag = j["m_imageFlipFlag"];
 //   // Vector = is overloaded so explicit get with type required.
 //   m_positions = j["m_positions"].get<std::vector<double>>();
 //   m_velocities = j["m_velocities"].get<std::vector<double>>();
@@ -2481,7 +2476,6 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_flyingHeight"] = 1000.0;
   state["m_halfSwath"] = 1000.0;
   state["m_halfTime"] = 10.0;
-  state["m_imageFlipFlag"] = 0;
 
   state["m_centerEphemerisTime"] = getCenterTime(isd, parsingWarnings);
   state["m_startingEphemerisTime"] = getStartingTime(isd, parsingWarnings);
