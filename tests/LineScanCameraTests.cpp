@@ -132,7 +132,7 @@ TEST_F(ConstAngularVelocityLineScanSensorModel, OffBody4) {
 TEST_F(ConstVelocityLineScanSensorModel, calculateAttitudeCorrection) {
   std::vector<double> adj;
   double attCorr[9];
-  adj.resize(14, 0);
+  adj.resize(15, 0);
   // Pi/2 with simply compensating for member variable m_flyingHeight in UsgsAstroLsSensorModel
   adj[7] = (M_PI / 2) * 990.0496255790623081338708;
   sensorModel->calculateAttitudeCorrection(999.5, adj, attCorr);
