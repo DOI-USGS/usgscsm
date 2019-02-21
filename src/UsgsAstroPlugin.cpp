@@ -201,7 +201,7 @@ bool UsgsAstroPlugin::canISDBeConvertedToModelState(const csm::Isd &imageSupport
 std::string UsgsAstroPlugin::getStateFromISD(csm::Isd imageSupportData) const {
     std::string stringIsd = loadImageSupportData(imageSupportData);
     json jsonIsd = json::parse(stringIsd);
-    return convertISDToModelState(imageSupportData, jsonIsd.at("modelName"));
+    return convertISDToModelState(imageSupportData, jsonIsd.at("name_model"));
 }
 
 
@@ -259,7 +259,7 @@ csm::Model *UsgsAstroPlugin::constructModelFromState(const std::string& modelSta
                                                 csm::WarningList *warnings) const {
 
     json state = json::parse(modelState);
-    std::string modelName = state["modelName"];
+    std::string modelName = state["m_modelName"];
 
     if (modelName == UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME) {
          UsgsAstroFrameSensorModel* model = new UsgsAstroFrameSensorModel();

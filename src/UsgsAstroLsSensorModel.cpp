@@ -252,6 +252,7 @@ std::string UsgsAstroLsSensorModel::getModelNameFromModelState(
 
 std::string UsgsAstroLsSensorModel::getModelState() const {
       json state;
+      state["m_modelName"] = _SENSOR_MODEL_NAME;
       state["m_imageIdentifier"] = m_imageIdentifier;
       state["m_sensorType"] = m_sensorType;
       state["m_totalLines"] = m_totalLines;
@@ -306,9 +307,9 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
       state["m_imageFlipFlag"] = m_imageFlipFlag;
 
       state["m_referencePointXyz"] = json();
-      state["m_referencePointXyz"]["x"] = m_referencePointXyz.x;
-      state["m_referencePointXyz"]["y"] = m_referencePointXyz.y;
-      state["m_referencePointXyz"]["z"] = m_referencePointXyz.z;
+      state["m_referencePointXyz"][0] = m_referencePointXyz.x;
+      state["m_referencePointXyz"][1] = m_referencePointXyz.y;
+      state["m_referencePointXyz"][2] = m_referencePointXyz.z;
 
       return state.dump();
  }
@@ -598,21 +599,6 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    double dy = ground_pt.y - calculatedPoint.y;
    double dz = ground_pt.z - calculatedPoint.z;
    double len = dx * dx + dy * dy + dz * dz;
-
-   // If the final correction is greater than 10 meters,
-   // the solution is not valid enough to report even with a warning
-   if (len > 100.0) {
-      std::ostringstream msg;
-      msg << "Did not converge. Ground point: (" << ground_pt.x << ", "
-          << ground_pt.y << ", " << ground_pt.z << ") Computed image point: ("
-          << calculatedPixel.line << ", " << calculatedPixel.samp
-          << ") Computed ground point: (" << calculatedPoint.x << ", "
-          << calculatedPoint.y << ", " << calculatedPoint.z << ")";
-      throw csm::Error(
-         csm::Error::ALGORITHM,
-         msg.str(),
-         "UsgsAstroLsSensorModel::groundToImage");
-   }
 
    if (achieved_precision) {
       *achieved_precision = sqrt(len);
