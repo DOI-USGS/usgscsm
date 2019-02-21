@@ -809,7 +809,6 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
     state["m_startingDetectorSample"] = getDetectorStartingSample(isd, parsingWarnings);
     state["m_startingDetectorLine"] = getDetectorStartingLine(isd, parsingWarnings);
 
-
     // get focal length
     state["m_focalLength"] = getFocalLength(isd, parsingWarnings);
     state["m_focalLengthEpsilon"] = getFocalLengthEpsilon(isd, parsingWarnings);
@@ -851,7 +850,6 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
     // sun position is not strictly necessary, but is required for getIlluminationDirection.
     state["m_sunPosition"] = getSunPositions(isd);
 
-
     // get sensor_orientation quaternion
     std::vector<double> quaternion = getSensorOrientations(isd, parsingWarnings);
     if (!quaternion.empty() && quaternion.size() != 4) {
@@ -868,11 +866,9 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
       state["m_currentParameterValue"][6] = quaternion[3];
     }
 
-
     // get optical_distortion
     state["m_distortionType"] = getDistortionModel(isd);
     state["m_opticalDistCoeffs"] = getDistortionCoeffs(isd);
-
 
     // get detector_center
     state["m_ccdCenter"][0] = getDetectorCenterLine(isd, parsingWarnings);

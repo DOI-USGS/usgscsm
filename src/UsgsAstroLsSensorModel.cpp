@@ -2495,7 +2495,6 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_detectorSampleSumming"] = getSampleSumming(isd, parsingWarnings);
   state["m_startingDetectorSample"] = getDetectorStartingSample(isd, parsingWarnings);
   state["m_startingDetectorLine"] = getDetectorStartingLine(isd, parsingWarnings);
-  state["m_opticalDistCoef"] = getRadialDistortion(isd, parsingWarnings);
   state["m_detectorSampleOrigin"] = getDetectorCenterSample(isd, parsingWarnings);
   state["m_detectorLineOrigin"] = getDetectorCenterLine(isd, parsingWarnings);
 
