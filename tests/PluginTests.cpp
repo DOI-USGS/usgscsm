@@ -21,7 +21,7 @@ TEST(PluginTests, ManufacturerName) {
 
 TEST(PluginTests, ReleaseDate) {
    UsgsAstroPlugin testPlugin;
-   EXPECT_EQ("20170425", testPlugin.getReleaseDate());
+   EXPECT_EQ("20190222", testPlugin.getReleaseDate());
 }
 
 TEST(PluginTests, NumModels) {
@@ -82,6 +82,14 @@ TEST_F(FrameIsdTest, Constructible) {
                "USGS_ASTRO_FRAME_SENSOR_MODEL"));
 }
 
+TEST_F(FrameIsdTest, ConstructibleFromState) {
+   UsgsAstroPlugin testPlugin;
+   std::string modelState = testPlugin.getStateFromISD(isd);
+   EXPECT_TRUE(testPlugin.canModelBeConstructedFromState(
+        "USGS_ASTRO_FRAME_SENSOR_MODEL",
+        modelState));
+}
+
 TEST_F(FrameIsdTest, NotConstructible) {
    UsgsAstroPlugin testPlugin;
    isd.setFilename("data/constVelocityLineScan.img");
@@ -110,13 +118,13 @@ TEST_F(FrameIsdTest, ConstructValidCamera) {
 
 TEST_F(FrameIsdTest, ConstructInValidCamera) {
    UsgsAstroPlugin testPlugin;
-   isd.setFilename("data/constVelocityLineScan.img");
+   isd.setFilename("data/empty.img");
    csm::Model *cameraModel = NULL;
    try {
       testPlugin.constructModelFromISD(
             isd,
             "USGS_ASTRO_FRAME_SENSOR_MODEL",
-            NULL);
+            nullptr);
       FAIL() << "Expected an error";
    }
    catch(csm::Error &e) {
@@ -135,6 +143,14 @@ TEST_F(ConstVelLineScanIsdTest, Constructible) {
    EXPECT_TRUE(testPlugin.canModelBeConstructedFromISD(
                isd,
                "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL"));
+}
+
+TEST_F(ConstVelLineScanIsdTest, ConstructibleFromState) {
+   UsgsAstroPlugin testPlugin;
+   std::string modelState = testPlugin.getStateFromISD(isd);
+   EXPECT_TRUE(testPlugin.canModelBeConstructedFromState(
+         "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL",
+         modelState));
 }
 
 TEST_F(ConstVelLineScanIsdTest, NotConstructible) {
@@ -163,13 +179,13 @@ TEST_F(ConstVelLineScanIsdTest, ConstructValidCamera) {
 
 TEST_F(ConstVelLineScanIsdTest, ConstructInValidCamera) {
    UsgsAstroPlugin testPlugin;
-   isd.setFilename("data/simpleFramerISD.img");
+   isd.setFilename("data/empty.img");
    csm::Model *cameraModel = NULL;
    try {
       testPlugin.constructModelFromISD(
             isd,
             "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL",
-            NULL);
+            nullptr);
       FAIL() << "Expected an error";
 
    }

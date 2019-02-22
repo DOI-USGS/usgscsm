@@ -28,9 +28,8 @@ using json = nlohmann::json;
 // Declaration of static variables
 const std::string UsgsAstroPlugin::_PLUGIN_NAME = "UsgsAstroPluginCSM";
 const std::string UsgsAstroPlugin::_MANUFACTURER_NAME = "UsgsAstrogeology";
-const std::string UsgsAstroPlugin::_RELEASE_DATE = "20170425";
+const std::string UsgsAstroPlugin::_RELEASE_DATE = "20190222";
 const int         UsgsAstroPlugin::_N_SENSOR_MODELS = 2;
-const int         UsgsAstroPlugin::_NUM_ISD_KEYWORDS = 21;
 
 const std::string UsgsAstroPlugin::_ISD_KEYWORD[] =
 {
@@ -57,12 +56,6 @@ const std::string UsgsAstroPlugin::_ISD_KEYWORD[] =
    "starting_ephemeris_time",
    "sun_position"
 };
-
-// const json UsgsAstroPlugin::MODEL_KEYWORDS = {
-//   {UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME, UsgsAstroFrameSensorModel::_STATE_KEYWORD},
-//   {UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME, UsgsAstroLsSensorModel::_STATE_KEYWORD}
-// };
-
 
 // Static Instance of itself
 const UsgsAstroPlugin UsgsAstroPlugin::m_registeredPlugin;
@@ -154,12 +147,15 @@ std::string UsgsAstroPlugin::loadImageSupportData(const csm::Isd &imageSupportDa
   std::string imageFilename = imageSupportDataOriginal.filename();
   size_t lastIndex = imageFilename.find_last_of(".");
   std::string baseName = imageFilename.substr(0, lastIndex);
+  lastIndex = baseName.find_last_of(DIR_DELIMITER_STR);
+  std::string filename = baseName.substr(lastIndex + 1);
   std::string isdFilename = baseName.append(".json");
 
   try {
     std::ifstream isd_sidecar(isdFilename);
     json jsonisd;
     isd_sidecar >> jsonisd;
+    jsonisd["image_identifier"] = filename;
     return jsonisd.dump();
 
   } catch (...) {
@@ -205,7 +201,7 @@ bool UsgsAstroPlugin::canISDBeConvertedToModelState(const csm::Isd &imageSupport
 std::string UsgsAstroPlugin::getStateFromISD(csm::Isd imageSupportData) const {
     std::string stringIsd = loadImageSupportData(imageSupportData);
     json jsonIsd = json::parse(stringIsd);
-    return convertISDToModelState(imageSupportData, jsonIsd.at("modelName"));
+    return convertISDToModelState(imageSupportData, jsonIsd.at("name_model"));
 }
 
 
@@ -221,7 +217,6 @@ std::string UsgsAstroPlugin::convertISDToModelState(const csm::Isd &imageSupport
 csm::Model *UsgsAstroPlugin::constructModelFromISD(const csm::Isd &imageSupportDataOriginal,
                                               const std::string &modelName,
                                               csm::WarningList *warnings) const {
-
     std::string stringIsd = loadImageSupportData(imageSupportDataOriginal);
 
     if (modelName == UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME) {
@@ -263,7 +258,7 @@ csm::Model *UsgsAstroPlugin::constructModelFromState(const std::string& modelSta
                                                 csm::WarningList *warnings) const {
 
     json state = json::parse(modelState);
-    std::string modelName = state["modelName"];
+    std::string modelName = state["m_modelName"];
 
     if (modelName == UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME) {
          UsgsAstroFrameSensorModel* model = new UsgsAstroFrameSensorModel();

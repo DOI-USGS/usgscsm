@@ -26,14 +26,16 @@ const std::string UsgsAstroFrameSensorModel::m_parameterName[] = {
   "v3"                      // 6
 };
 
-const int         UsgsAstroFrameSensorModel::_NUM_STATE_KEYWORDS = 32;
-
 UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
     reset();
 }
 
 void UsgsAstroFrameSensorModel::reset() {
     m_modelName = _SENSOR_MODEL_NAME;
+    m_platformName = "";
+    m_sensorName = "";
+    m_imageIdentifier = "";
+    m_collectionIdentifier = "";
     m_majorAxis = 0.0;
     m_minorAxis = 0.0;
     m_focalLength = 0.0;
@@ -59,14 +61,17 @@ void UsgsAstroFrameSensorModel::reset() {
     m_ccdCenter = std::vector<double>(2, 0.0);
     m_spacecraftVelocity = std::vector<double>(3, 0.0);
     m_sunPosition = std::vector<double>(3, 0.0);
-    m_odtX = std::vector<double>(10, 0.0);
-    m_odtY = std::vector<double>(10, 0.0);
+    m_distortionType = DistortionType::TRANSVERSE;
+    m_opticalDistCoeffs = std::vector<double>(20, 0.0);
     m_transX = std::vector<double>(3, 0.0);
     m_transY = std::vector<double>(3, 0.0);
     m_iTransS = std::vector<double>(3, 0.0);
     m_iTransL = std::vector<double>(3, 0.0);
     m_boresight = std::vector<double>(3, 0.0);
     m_parameterType = std::vector<csm::param::Type>(NUM_PARAMETERS, csm::param::REAL);
+    m_referencePointXyz.x = 0;
+    m_referencePointXyz.y = 0;
+    m_referencePointXyz.z = 0;
 }
 
 
@@ -129,14 +134,15 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
   undistortedy = (f * (m[0][1] * xo + m[1][1] * yo + m[2][1] * zo)/denom) + m_linePp;
 
   // Apply the distortion to the line/sample location and then convert back to line/sample
-  double distortedx, distortedy;
-  distortionFunction(undistortedx, undistortedy, distortedx, distortedy);
+  double distortedX, distortedY;
+  applyDistortion(undistortedx, undistortedy, distortedX, distortedY,
+                  m_opticalDistCoeffs, m_distortionType);
 
 
   // Convert distorted mm into line/sample
   double sample, line;
-  sample = m_iTransS[0] + m_iTransS[1] * distortedx + m_iTransS[2] * distortedy + m_ccdCenter[1];
-  line =   m_iTransL[0] + m_iTransL[1] * distortedx + m_iTransL[2] * distortedy + m_ccdCenter[0];
+  sample = m_iTransS[0] + m_iTransS[1] * distortedX + m_iTransS[2] * distortedY + m_ccdCenter[1];
+  line =   m_iTransL[0] + m_iTransL[1] * distortedX + m_iTransL[2] * distortedY + m_ccdCenter[0];
 
   return csm::ImageCoord(line, sample);
 }
@@ -147,9 +153,17 @@ csm::ImageCoordCovar UsgsAstroFrameSensorModel::groundToImage(const csm::EcefCoo
                                    double *achievedPrecision,
                                    csm::WarningList *warnings) const {
 
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "UsgsAstroFrameSensorModel::groundToImage");
+    csm::EcefCoord gp;
+    gp.x = groundPt.x;
+    gp.y = groundPt.y;
+    gp.z = groundPt.z;
+
+    csm::ImageCoord ip = groundToImage(
+      gp, desiredPrecision, achievedPrecision, warnings);
+   csm::ImageCoordCovar result(ip.line, ip.samp);
+   // This is a partial, incorrect implementation to test if SocetGXP needs
+   // this method implemented in order to load the sensor.
+   return result;
 }
 
 
@@ -179,18 +193,15 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   x_camera = m_transX[0] + m_transX[1] * (lo - line_center) + m_transX[2] * (so - sample_center);
 
   // Apply the distortion model (remove distortion)
-  double undistorted_cameraX, undistorted_cameraY = 0.0;
-
-  setFocalPlane(x_camera, y_camera, undistorted_cameraX, undistorted_cameraY);
+  double undistortedX, undistortedY;
+  removeDistortion(x_camera, y_camera, undistortedX, undistortedY,
+                   m_opticalDistCoeffs,
+                   m_distortionType);
 
   // Now back from distorted mm to pixels
-  double udx, udy; //distorted line and sample
-  udx = undistorted_cameraX;
-  udy = undistorted_cameraY;
-
-  xl = m[0][0] * udx + m[0][1] * udy - m[0][2] * -m_focalLength;
-  yl = m[1][0] * udx + m[1][1] * udy - m[1][2] * -m_focalLength;
-  zl = m[2][0] * udx + m[2][1] * udy - m[2][2] * -m_focalLength;
+  xl = m[0][0] * undistortedX + m[0][1] * undistortedY - m[0][2] * - m_focalLength;
+  yl = m[1][0] * undistortedX + m[1][1] * undistortedY - m[1][2] * - m_focalLength;
+  zl = m[2][0] * undistortedX + m[2][1] * undistortedY - m[2][2] * - m_focalLength;
 
   double x, y, z;
   double xc, yc, zc;
@@ -210,9 +221,9 @@ csm::EcefCoordCovar UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoo
                                   double heightVariance, double desiredPrecision,
                                   double *achievedPrecision,
                                   csm::WarningList *warnings) const {
-    throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "UsgsAstroFrameSensorModel::imageToGround");
+    // This is an incomplete implementation to see if SocetGXP needs this method implemented.
+    csm::EcefCoordCovar result;
+    return result;
 }
 
 
@@ -238,10 +249,11 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(const csm::I
   double focalPlaneY = m_transY[0] + m_transY[1] * row + m_transY[2] * col;
 
   // Distort
-  double undistortedFocalPlaneX = focalPlaneX;
-  double undistortedFocalPlaneY = focalPlaneY;
-
-  setFocalPlane(focalPlaneX, focalPlaneY, undistortedFocalPlaneX, undistortedFocalPlaneY);
+  double undistortedFocalPlaneX, undistortedFocalPlaneY;
+  removeDistortion(focalPlaneX, focalPlaneY,
+                   undistortedFocalPlaneX, undistortedFocalPlaneY,
+                   m_opticalDistCoeffs,
+                   m_distortionType);
 
   // Get rotation matrix and transform to a body-fixed frame
   double m[3][3];
@@ -533,9 +545,8 @@ const csm::CorrelationModel& UsgsAstroFrameSensorModel::getCorrelationModel() co
 std::vector<double> UsgsAstroFrameSensorModel::getUnmodeledCrossCovariance(const csm::ImageCoord &pt1,
                                                 const csm::ImageCoord &pt2) const {
 
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getUnmodeledCrossCovariance");
+   // No unmodeled error
+   return std::vector<double>(4, 0.0);
 }
 
 
@@ -550,52 +561,38 @@ std::string UsgsAstroFrameSensorModel::getModelName() const {
 
 
 std::string UsgsAstroFrameSensorModel::getPedigree() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getPedigree");
+  return "USGS_FRAMER";
 }
 
 
 std::string UsgsAstroFrameSensorModel::getImageIdentifier() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getImageIdentifier");
+  return m_imageIdentifier;
 }
 
 
 void UsgsAstroFrameSensorModel::setImageIdentifier(const std::string& imageId,
                                             csm::WarningList* warnings) {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::setImageIdentifier");
+  m_imageIdentifier = imageId;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getSensorIdentifier() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getSensorIdentifier");
+  return m_sensorName;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getPlatformIdentifier() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getPlatformIdentifier");
+  return m_platformName;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getCollectionIdentifier() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getCollectionIdentifier");
+  return m_collectionIdentifier;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getTrajectoryIdentifier() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getTrajectoryIdentifier");
+  return "";
 }
 
 
@@ -610,15 +607,15 @@ std::string UsgsAstroFrameSensorModel::getSensorMode() const {
 
 
 std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getReferenceDateAndTime");
+  return "";
 }
 
 
 std::string UsgsAstroFrameSensorModel::getModelState() const {
     json state = {
       {"m_modelName", _SENSOR_MODEL_NAME},
+      {"m_sensorName", m_sensorName},
+      {"m_platformName", m_platformName},
       {"m_focalLength" , m_focalLength},
       {"m_iTransS", {m_iTransS[0], m_iTransS[1], m_iTransS[2]}},
       {"m_iTransL", {m_iTransL[0], m_iTransL[1], m_iTransL[2]}},
@@ -642,10 +639,8 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_samplePp", m_samplePp},
       {"m_minElevation", m_minElevation},
       {"m_maxElevation", m_maxElevation},
-      {"m_odtX", {m_odtX[0], m_odtX[1], m_odtX[2], m_odtX[3], m_odtX[4],
-                  m_odtX[5], m_odtX[6], m_odtX[7], m_odtX[8], m_odtX[9]}},
-      {"m_odtY", {m_odtY[0], m_odtY[1], m_odtY[2], m_odtY[3], m_odtY[4],
-                  m_odtY[5], m_odtY[6], m_odtY[7], m_odtY[8], m_odtY[9]}},
+      {"m_distortionType", m_distortionType},
+      {"m_opticalDistCoeffs", m_opticalDistCoeffs},
       {"m_originalHalfLines", m_originalHalfLines},
       {"m_originalHalfSamples", m_originalHalfSamples},
       {"m_spacecraftName", m_spacecraftName},
@@ -653,10 +648,12 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_ephemerisTime", m_ephemerisTime},
       {"m_nLines", m_nLines},
       {"m_nSamples", m_nSamples},
-      {"m_currentParameterValue", {m_currentParameterValue[0], m_currentParameterValue[1],
-                                   m_currentParameterValue[2], m_currentParameterValue[3],
-                                   m_currentParameterValue[4], m_currentParameterValue[5],
-                                   m_currentParameterValue[6]}},
+      {"m_currentParameterValue", m_currentParameterValue},
+      {"m_imageIdentifier", m_imageIdentifier},
+      {"m_collectionIdentifier", m_collectionIdentifier},
+      {"m_referencePointXyz", {m_referencePointXyz.x,
+                               m_referencePointXyz.y,
+                               m_referencePointXyz.z}},
       {"m_currentParameterCovariance", m_currentParameterCovariance}
     };
 
@@ -678,8 +675,8 @@ bool UsgsAstroFrameSensorModel::isValidModelState(const std::string& stringState
     "m_ccdCenter",
     "m_spacecraftVelocity",
     "m_sunPosition",
-    "m_odtX",
-    "m_odtY",
+    "m_distortionType",
+    "m_opticalDistCoeffs",
     "m_transX",
     "m_transY",
     "m_iTransS",
@@ -737,7 +734,6 @@ bool UsgsAstroFrameSensorModel::isValidIsd(const std::string& Isd, csm::WarningL
 void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState) {
 
     json state = json::parse(stringState);
-
     // The json library's .at() will except if key is missing
     try {
         m_modelName = state.at("m_modelName").get<std::string>();
@@ -753,12 +749,22 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
         m_ccdCenter = state.at("m_ccdCenter").get<std::vector<double>>();
         m_spacecraftVelocity = state.at("m_spacecraftVelocity").get<std::vector<double>>();
         m_sunPosition = state.at("m_sunPosition").get<std::vector<double>>();
-        m_odtX = state.at("m_odtX").get<std::vector<double>>();
-        m_odtY = state.at("m_odtY").get<std::vector<double>>();
+        m_distortionType = (DistortionType)state.at("m_distortionType").get<int>();
+        m_opticalDistCoeffs = state.at("m_opticalDistCoeffs").get<std::vector<double>>();
         m_transX = state.at("m_transX").get<std::vector<double>>();
         m_transY = state.at("m_transY").get<std::vector<double>>();
         m_iTransS = state.at("m_iTransS").get<std::vector<double>>();
         m_iTransL = state.at("m_iTransL").get<std::vector<double>>();
+        m_imageIdentifier = state.at("m_imageIdentifier").get<std::string>();
+        m_platformName = state.at("m_platformName").get<std::string>();
+        m_sensorName = state.at("m_sensorName").get<std::string>();
+        m_collectionIdentifier = state.at("m_collectionIdentifier").get<std::string>();
+        std::vector<double> refpt = state.at("m_referencePointXyz").get<std::vector<double>>();
+        m_referencePointXyz.x = refpt[0];
+        m_referencePointXyz.y = refpt[1];
+        m_referencePointXyz.z = refpt[2];
+        m_currentParameterCovariance = state.at("m_currentParameterCovariance").get<std::vector<double>>();
+
 
         // Leaving unused params commented out
         // m_targetName = state.at("m_targetName").get<std::string>();
@@ -791,153 +797,105 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
 
 
 std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& jsonIsd, csm::WarningList* warnings) {
-    auto metric_conversion = [](double val, std::string from, std::string to="m") {
-        json typemap = {
-          {"m", 0},
-          {"km", 3}
-        };
-
-        // everything to lowercase
-        std::transform(from.begin(), from.end(), from.begin(), ::tolower);
-        std::transform(to.begin(), to.end(), to.begin(), ::tolower);
-        return val*pow(10, typemap[from].get<int>() - typemap[to].get<int>());
-    };
-
     json isd = json::parse(jsonIsd);
     json state = {};
 
+    csm::WarningList* parsingWarnings = new csm::WarningList;
 
+    state["m_modelName"] = getSensorModelName(isd, parsingWarnings);
+    state["m_imageIdentifier"] = getImageId(isd, parsingWarnings);
+    state["m_sensorName"] = getSensorName(isd, parsingWarnings);
+    state["m_platformName"] = getPlatformName(isd, parsingWarnings);
+
+    state["m_startingDetectorSample"] = getDetectorStartingSample(isd, parsingWarnings);
+    state["m_startingDetectorLine"] = getDetectorStartingLine(isd, parsingWarnings);
+
+    // get focal length
+    state["m_focalLength"] = getFocalLength(isd, parsingWarnings);
+    state["m_focalLengthEpsilon"] = getFocalLengthEpsilon(isd, parsingWarnings);
+
+
+    state["m_currentParameterValue"] = json();
+
+    // get sensor_position
+    std::vector<double> position = getSensorPositions(isd, parsingWarnings);
+    if (!position.empty() && position.size() != 3) {
+      parsingWarnings->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Sensor position does not have 3 values.",
+          "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+      state["m_currentParameterValue"][0] = 0;
+      state["m_currentParameterValue"][1] = 0;
+      state["m_currentParameterValue"][2] = 0;
+    }
+    else {
+      state["m_currentParameterValue"] = position;
+    }
+
+    // get sensor_velocity
+    std::vector<double> velocity = getSensorVelocities(isd, parsingWarnings);
+    if (!velocity.empty() && velocity.size() != 3) {
+      parsingWarnings->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Sensor velocity does not have 3 values.",
+          "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    }
+    else {
+      state["m_spacecraftVelocity"] = velocity;
+    }
+
+
+    // get sun_position
+    // sun position is not strictly necessary, but is required for getIlluminationDirection.
+    state["m_sunPosition"] = getSunPositions(isd);
+
+    // get sensor_orientation quaternion
+    std::vector<double> quaternion = getSensorOrientations(isd, parsingWarnings);
+    if (quaternion.size() != 4) {
+      parsingWarnings->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Sensor orientation quaternion does not have 4 values.",
+          "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    }
+    else {
+      state["m_currentParameterValue"][3] = quaternion[0];
+      state["m_currentParameterValue"][4] = quaternion[1];
+      state["m_currentParameterValue"][5] = quaternion[2];
+      state["m_currentParameterValue"][6] = quaternion[3];
+    }
+
+    // get optical_distortion
+    state["m_distortionType"] = getDistortionModel(isd);
+    state["m_opticalDistCoeffs"] = getDistortionCoeffs(isd);
+
+    // get detector_center
+    state["m_ccdCenter"][0] = getDetectorCenterLine(isd, parsingWarnings);
+    state["m_ccdCenter"][1] = getDetectorCenterSample(isd, parsingWarnings);
+
+
+    // get radii
+    state["m_minorAxis"] = getSemiMinorRadius(isd, parsingWarnings);
+    state["m_majorAxis"] = getSemiMajorRadius(isd, parsingWarnings);
+
+
+    // get reference_height
+    state["m_minElevation"] = getMinHeight(isd, parsingWarnings);
+    state["m_maxElevation"] = getMaxHeight(isd, parsingWarnings);
+
+
+    state["m_ephemerisTime"] = getCenterTime(isd, parsingWarnings);
+    state["m_nLines"] = getTotalLines(isd, parsingWarnings);
+    state["m_nSamples"] = getTotalSamples(isd, parsingWarnings);
+
+    state["m_iTransL"] = getFocal2PixelLines(isd, parsingWarnings);
+    state["m_iTransS"] = getFocal2PixelSamples(isd, parsingWarnings);
+
+    // We don't pass the pixel to focal plane transformation so invert the
+    // focal plane to pixel transformation
     try {
-      state["m_modelName"] = isd.at("name_model");
-      std::cerr << "Model Name Parsed!" << std::endl;
-
-      state["m_startingDetectorSample"] = isd.at("starting_detector_sample");
-      state["m_startingDetectorLine"] = isd.at("starting_detector_line");
-
-      std::cerr << "Detector Starting Pixel Parsed!" << std::endl;
-
-      // get focal length
-      {
-        json jayson = isd.at("focal_length_model");
-        json focal_length = jayson.at("focal_length");
-        json epsilon = jayson.at("focal_epsilon");
-
-        state["m_focalLength"] = focal_length;
-        state["m_focalLengthEpsilon"] = epsilon;
-
-        std::cerr << "Focal Length Parsed!" << std::endl;
-      }
-
-      // get sensor_position
-      {
-        json jayson = isd.at("sensor_position");
-        json positions = jayson.at("positions")[0];
-        json velocities = jayson.at("velocities")[0];
-        json unit = jayson.at("unit");
-
-        unit = unit.get<std::string>();
-        state["m_currentParameterValue"] = json();
-        state["m_currentParameterValue"][0] = metric_conversion(positions[0].get<double>(), unit);
-        state["m_currentParameterValue"][1] = metric_conversion(positions[1].get<double>(), unit);
-        state["m_currentParameterValue"][2] = metric_conversion(positions[2].get<double>(), unit);
-        state["m_spacecraftVelocity"] = velocities;
-
-        std::cerr << "Sensor Location Parsed!" << std::endl;
-      }
-
-      // get sun_position
-      // sun position is not strictly necessary, but is required for getIlluminationDirection.
-      {
-        json jayson = isd.at("sun_position");
-        json positions = jayson.at("positions")[0];
-        json unit = jayson.at("unit");
-
-        unit = unit.get<std::string>();
-        state["m_sunPosition"] = json();
-        state["m_sunPosition"][0] = metric_conversion(positions[0].get<double>(), unit);
-        state["m_sunPosition"][1] = metric_conversion(positions[1].get<double>(), unit);
-        state["m_sunPosition"][2] = metric_conversion(positions[2].get<double>(), unit);
-
-        std::cerr << "Sun Position Parsed!" << std::endl;
-      }
-
-      // get sensor_orientation quaternion
-      {
-        json jayson = isd.at("sensor_orientation");
-        json quaternion = jayson.at("quaternions")[0];
-
-        state["m_currentParameterValue"][3] = quaternion[0];
-        state["m_currentParameterValue"][4] = quaternion[1];
-        state["m_currentParameterValue"][5] = quaternion[2];
-        state["m_currentParameterValue"][6] = quaternion[3];
-
-        std::cerr << "Sensor Orientation Parsed!" << std::endl;
-      }
-
-      // get optical_distortion
-      {
-        json jayson = isd.at("optical_distortion");
-        std::vector<double> xDistortion = jayson.at("transverse").at("x");
-        std::vector<double> yDistortion = jayson.at("transverse").at("y");
-        xDistortion.resize(10, 0.0);
-        yDistortion.resize(10, 0.0);
-
-        state["m_odtX"] = xDistortion;
-        state["m_odtY"] = yDistortion;
-
-        std::cerr << "Distortion Parsed!" << std::endl;
-      }
-
-      // get detector_center
-      {
-        json jayson = isd.at("detector_center");
-        json sample = jayson.at("sample");
-        json line = jayson.at("line");
-
-        state["m_ccdCenter"][0] = line;
-        state["m_ccdCenter"][1] = sample;
-
-        std::cerr << "Detector Center Parsed!" << std::endl;
-      }
-
-      // get radii
-      {
-        json jayson = isd.at("radii");
-        json semiminor = jayson.at("semiminor");
-        json semimajor = jayson.at("semimajor");
-        json unit = jayson.at("unit");
-
-        unit = unit.get<std::string>();
-        state["m_minorAxis"] = metric_conversion(semiminor.get<double>(), unit);
-        state["m_majorAxis"] = metric_conversion(semimajor.get<double>(), unit);
-
-        std::cerr << "Target Radii Parsed!" << std::endl;
-      }
-
-      // get reference_height
-      {
-        json reference_height = isd.at("reference_height");
-        json maxheight = reference_height.at("maxheight");
-        json minheight = reference_height.at("minheight");
-        json unit = reference_height.at("unit");
-
-        unit = unit.get<std::string>();
-        state["m_minElevation"] = metric_conversion(minheight.get<double>(), unit);
-        state["m_maxElevation"] = metric_conversion(maxheight.get<double>(), unit);
-
-        std::cerr << "Reference Height Parsed!" << std::endl;
-      }
-
-      state["m_ephemerisTime"] = isd.at("center_ephemeris_time");
-      state["m_nLines"] = isd.at("image_lines");
-      state["m_nSamples"] = isd.at("image_samples");
-
-      state["m_iTransL"] = isd.at("focal2pixel_lines");
-
-      state["m_iTransS"] = isd.at("focal2pixel_samples");
-
-      // We don't pass the pixel to focal plane transformation so invert the
-      // focal plane to pixel transformation
       double determinant = state["m_iTransL"][1].get<double>() * state["m_iTransS"][2].get<double>() -
                            state["m_iTransL"][2].get<double>() * state["m_iTransS"][1].get<double>();
 
@@ -950,37 +908,47 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
       state["m_transY"][2] =  state["m_iTransS"][2].get<double>() / determinant;
       state["m_transY"][0] = -(state["m_transY"][1].get<double>() * state["m_iTransL"][0].get<double>() +
                                state["m_transY"][2].get<double>() * state["m_iTransS"][0].get<double>());
-
-      std::cerr << "Focal To Pixel Transformation Parsed!" << std::endl;
-
     }
-    catch(std::out_of_range& e) {
-      throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
-                       "ISD missing necessary keywords to create sensor model: " + std::string(e.what()),
-                       "UsgsAstroFrameSensorModel::constructStateFromIsd");
+    catch (...) {
+      parsingWarnings->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not compute detector pixel to focal plane coordinate transformation.",
+          "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
     }
-    catch(...) {
+
+
+    state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
+    state["m_currentParameterCovariance"] = std::vector<double>(NUM_PARAMETERS*NUM_PARAMETERS,0.0);
+    state["m_collectionIdentifier"] = "";
+
+
+    if (!parsingWarnings->empty()) {
+      if (warnings) {
+        warnings->insert(warnings->end(), parsingWarnings->begin(), parsingWarnings->end());
+      }
+      delete parsingWarnings;
+      parsingWarnings = nullptr;
       throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
                        "ISD is invalid for creating the sensor model.",
                        "UsgsAstroFrameSensorModel::constructStateFromIsd");
     }
 
-    return state.dump();
+    delete parsingWarnings;
+    parsingWarnings = nullptr;
 
+    return state.dump();
 }
 
 
+
 csm::EcefCoord UsgsAstroFrameSensorModel::getReferencePoint() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getReferencePoint");
+  return m_referencePointXyz;
 }
 
 
 void UsgsAstroFrameSensorModel::setReferencePoint(const csm::EcefCoord &groundPt) {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::setReferencePoint");
+  m_referencePointXyz = groundPt;
 }
 
 
@@ -1006,28 +974,26 @@ std::string UsgsAstroFrameSensorModel::getParameterUnits(int index) const {
 
 
 bool UsgsAstroFrameSensorModel::hasShareableParameters() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::hasShareableParameters");
+  return false;
 }
 
 
 bool UsgsAstroFrameSensorModel::isParameterShareable(int index) const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::isParameterShareable");
+  return false;
 }
 
 
 csm::SharingCriteria UsgsAstroFrameSensorModel::getParameterSharingCriteria(int index) const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getParameterSharingCriteria");
+   // Parameter sharing is not supported for this sensor,
+   // all indices are out of range
+   throw csm::Error(
+      csm::Error::INDEX_OUT_OF_RANGE,
+      "Index out of range.",
+      "UsgsAstroLsSensorModel::getParameterSharingCriteria");
 }
 
 
 double UsgsAstroFrameSensorModel::getParameterValue(int index) const {
-
   return m_currentParameterValue[index];
 
 }
@@ -1049,46 +1015,48 @@ void UsgsAstroFrameSensorModel::setParameterType(int index, csm::param::Type pTy
 
 
 double UsgsAstroFrameSensorModel::getParameterCovariance(int index1, int index2) const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getParameterCovariance");
+   int index = UsgsAstroFrameSensorModel::NUM_PARAMETERS * index1 + index2;
+   return m_currentParameterCovariance[index];
 }
 
 
 void UsgsAstroFrameSensorModel::setParameterCovariance(int index1, int index2, double covariance) {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::setParameterCovariance");
+   int index = UsgsAstroFrameSensorModel::NUM_PARAMETERS * index1 + index2;
+   m_currentParameterCovariance[index] = covariance;
 }
 
 
 int UsgsAstroFrameSensorModel::getNumGeometricCorrectionSwitches() const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getNumGeometricCorrectionSwitches");
+  return 0;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getGeometricCorrectionName(int index) const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getGeometricCorrectionName");
+   // Since there are no geometric corrections, all indices are out of range
+   throw csm::Error(
+      csm::Error::INDEX_OUT_OF_RANGE,
+      "Index is out of range.",
+      "UsgsAstroLsSensorModel::getGeometricCorrectionName");
 }
 
 
 void UsgsAstroFrameSensorModel::setGeometricCorrectionSwitch(int index,
                                                       bool value,
                                                       csm::param::Type pType) {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::setGeometricCorrectionSwitch");
+   // Since there are no geometric corrections, all indices are out of range
+   throw csm::Error(
+      csm::Error::INDEX_OUT_OF_RANGE,
+      "Index is out of range.",
+      "UsgsAstroLsSensorModel::setGeometricCorrectionSwitch");
 }
 
 
 bool UsgsAstroFrameSensorModel::getGeometricCorrectionSwitch(int index) const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getGeometricCorrectionSwitch");
+   // Since there are no geometric corrections, all indices are out of range
+   throw csm::Error(
+      csm::Error::INDEX_OUT_OF_RANGE,
+      "Index is out of range.",
+      "UsgsAstroLsSensorModel::getGeometricCorrectionSwitch");
 }
 
 
@@ -1096,9 +1064,14 @@ std::vector<double> UsgsAstroFrameSensorModel::getCrossCovarianceMatrix(
     const GeometricModel &comparisonModel,
     csm::param::Set pSet,
     const GeometricModelList &otherModels) const {
-  throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                   "Unsupported function",
-                   "UsgsAstroFrameSensorModel::getCrossCovarianceMatrix");
+
+   // No correlation between models.
+   const std::vector<int>& indices = getParameterSetIndices(pSet);
+   size_t num_rows = indices.size();
+   const std::vector<int>& indices2 = comparisonModel.getParameterSetIndices(pSet);
+   size_t num_cols = indices.size();
+
+   return std::vector<double>(num_rows * num_cols, 0.0);
 }
 
 
@@ -1190,180 +1163,6 @@ void UsgsAstroFrameSensorModel::losEllipsoidIntersect(
    z = zc + scale * zl;
 }
 
-
-/**
- * @brief Compute undistorted focal plane x/y.
- *
- * Computes undistorted focal plane (x,y) coordinates given a distorted focal plane (x,y)
- * coordinate. The undistorted coordinates are solved for using the Newton-Raphson
- * method for root-finding if the distortionFunction method is invoked.
- *
- * @param dx distorted focal plane x in millimeters
- * @param dy distorted focal plane y in millimeters
- * @param undistortedX The undistorted x coordinate, in millimeters.
- * @param undistortedY The undistorted y coordinate, in millimeters.
- *
- * @return if the conversion was successful
- * @todo Review the tolerance and maximum iterations of the root-
- *       finding algorithm.
- * @todo Review the handling of non-convergence of the root-finding
- *       algorithm.
- * @todo Add error handling for near-zero determinant.
-*/
-bool UsgsAstroFrameSensorModel::setFocalPlane(double dx,double dy,
-                                       double &undistortedX,
-                                       double &undistortedY ) const {
-
-  // Solve the distortion equation using the Newton-Raphson method.
-  // Set the error tolerance to about one millionth of a NAC pixel.
-  const double tol = 1.4E-5;
-
-  // The maximum number of iterations of the Newton-Raphson method.
-  const int maxTries = 60;
-
-  double x;
-  double y;
-  double fx;
-  double fy;
-  double Jxx;
-  double Jxy;
-  double Jyx;
-  double Jyy;
-
-  // Initial guess at the root
-  x = dx;
-  y = dy;
-
-  distortionFunction(x, y, fx, fy);
-
-
-  for (int count = 1; ((fabs(fx) +fabs(fy)) > tol) && (count < maxTries); count++) {
-
-    this->distortionFunction(x, y, fx, fy);
-
-    fx = dx - fx;
-    fy = dy - fy;
-
-    distortionJacobian(x, y, Jxx, Jxy, Jyx, Jyy);
-
-    double determinant = Jxx * Jyy - Jxy * Jyx;
-    if (fabs(determinant) < 1E-6) {
-
-      undistortedX = x;
-      undistortedY = y;
-      //
-      // Near-zero determinant. Add error handling here.
-      //
-      //-- Just break out and return with no convergence
-      return false;
-    }
-
-    x = x + (Jyy * fx - Jxy * fy) / determinant;
-    y = y + (Jxx * fy - Jyx * fx) / determinant;
-  }
-
-  if ( (fabs(fx) + fabs(fy)) <= tol) {
-    // The method converged to a root.
-    undistortedX = x;
-    undistortedY = y;
-    return true;
-
-  }
-  else {
-    // The method did not converge to a root within the maximum
-    // number of iterations. Return with no distortion.
-    undistortedX = dx;
-    undistortedY = dy;
-    return false;
-  }
-  return true;
-}
-
-
-/**
- * @description Jacobian of the distortion function. The Jacobian was computed
- * algebraically from the function described in the distortionFunction
- * method.
- *
- * @param x
- * @param y
- * @param Jxx  Partial_xx
- * @param Jxy  Partial_xy
- * @param Jyx  Partial_yx
- * @param Jyy  Partial_yy
- */
-void UsgsAstroFrameSensorModel::distortionJacobian(double x, double y, double &Jxx, double &Jxy,
-                                            double &Jyx, double &Jyy) const {
-
-  double d_dx[10];
-  d_dx[0] = 0;
-  d_dx[1] = 1;
-  d_dx[2] = 0;
-  d_dx[3] = 2 * x;
-  d_dx[4] = y;
-  d_dx[5] = 0;
-  d_dx[6] = 3 * x * x;
-  d_dx[7] = 2 * x * y;
-  d_dx[8] = y * y;
-  d_dx[9] = 0;
-  double d_dy[10];
-  d_dy[0] = 0;
-  d_dy[1] = 0;
-  d_dy[2] = 1;
-  d_dy[3] = 0;
-  d_dy[4] = x;
-  d_dy[5] = 2 * y;
-  d_dy[6] = 0;
-  d_dy[7] = x * x;
-  d_dy[8] = 2 * x * y;
-  d_dy[9] = 3 * y * y;
-
-  Jxx = 0.0;
-  Jxy = 0.0;
-  Jyx = 0.0;
-  Jyy = 0.0;
-
-  for (int i = 0; i < 10; i++) {
-    Jxx = Jxx + d_dx[i] * m_odtX[i];
-    Jxy = Jxy + d_dy[i] * m_odtX[i];
-    Jyx = Jyx + d_dx[i] * m_odtY[i];
-    Jyy = Jyy + d_dy[i] * m_odtY[i];
-  }
-}
-
-
-
-/**
- * @description Compute distorted focal plane (dx,dy) coordinate  given an undistorted focal
- * plane (ux,uy) coordinate. This describes the third order Taylor approximation to the
- * distortion model.
- *
- * @param ux Undistored x
- * @param uy Undistored y
- * @param dx Result distorted x
- * @param dy Result distorted y
- */
-void UsgsAstroFrameSensorModel::distortionFunction(double ux, double uy, double &dx, double &dy) const {
-
-  double f[10];
-  f[0] = 1;
-  f[1] = ux;
-  f[2] = uy;
-  f[3] = ux * ux;
-  f[4] = ux * uy;
-  f[5] = uy * uy;
-  f[6] = ux * ux * ux;
-  f[7] = ux * ux * uy;
-  f[8] = ux * uy * uy;
-  f[9] = uy * uy * uy;
-
-  dx = 0.0;
-  dy = 0.0;
-  for (int i = 0; i < 10; i++) {
-    dx = dx + f[i] * m_odtX[i];
-    dy = dy + f[i] * m_odtY[i];
-  }
-}
 
 /***** Helper Functions *****/
 

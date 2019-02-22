@@ -30,7 +30,7 @@
 #include <RasterGM.h>
 #include <SettableEllipsoid.h>
 #include <CorrelationModel.h>
-
+#include "Distortion.h"
 
 class UsgsAstroLsSensorModel : public csm::RasterGM, virtual public csm::SettableEllipsoid
 {
@@ -64,60 +64,56 @@ public:
   std::string constructStateFromIsd(const std::string imageSupportData, csm::WarningList *list) const;
 
    // State data elements;
-   std::string  m_imageIdentifier;                // 1
-   std::string  m_sensorType;                     // 2
-   int          m_totalLines;                     // 3
-   int          m_totalSamples;                   // 4
-   double       m_offsetLines;                    // 5
-   double       m_offsetSamples;                  // 6
-   int          m_platformFlag;                   // 7
-   int          m_aberrFlag;                      // 8
-   int          m_atmRefFlag;                     // 9
+   std::string  m_imageIdentifier;
+   std::string  m_sensorName;
+   int          m_nLines;
+   int          m_nSamples;
+   int          m_platformFlag;
    std::vector<double> m_intTimeLines;
    std::vector<double> m_intTimeStartTimes;
    std::vector<double> m_intTimes;
-   double       m_startingEphemerisTime;          // 11
-   double       m_centerEphemerisTime;            // 12
-   double       m_detectorSampleSumming;          // 13
-   double       m_startingSample;                 // 14
-   int          m_ikCode;                         // 15
-   double       m_focal;                          // 16
-   double       m_isisZDirection;                 // 17
-   double       m_opticalDistCoef[3];             // 18
-   double       m_iTransS[3];                     // 19
-   double       m_iTransL[3];                     // 20
-   double       m_detectorSampleOrigin;           // 21
-   double       m_detectorLineOrigin;             // 22
-   double       m_detectorLineOffset;             // 23
-   double       m_mountingMatrix[9];              // 24
-   double       m_semiMajorAxis;                  // 25
-   double       m_semiMinorAxis;                  // 26
-   std::string  m_referenceDateAndTime;           // 27
-   std::string  m_platformIdentifier;             // 28
-   std::string  m_sensorIdentifier;               // 29
-   std::string  m_trajectoryIdentifier;           // 30
-   std::string  m_collectionIdentifier;           // 31
-   double       m_refElevation;                   // 32
-   double       m_minElevation;                   // 33
-   double       m_maxElevation;                   // 34
-   double       m_dtEphem;                        // 35
-   double       m_t0Ephem;                        // 36
-   double       m_dtQuat;                         // 37
-   double       m_t0Quat;                         // 38
-   int          m_numEphem;                       // 39
-   int          m_numQuaternions;                 // 40
-   std::vector<double> m_ephemPts;                // 41
-   std::vector<double> m_ephemRates;              // 42
-   std::vector<double> m_quaternions;             // 43
-   std::vector<double> m_parameterVals;           // 44
-   std::vector<csm::param::Type> m_parameterType; // 45
-   csm::EcefCoord m_referencePointXyz;            // 46
-   double       m_gsd;                            // 47
-   double       m_flyingHeight;                   // 48
-   double       m_halfSwath;                      // 49
-   double       m_halfTime;                       // 50
-   std::vector<double> m_covariance;              // 51
-   int          m_imageFlipFlag;                  // 52
+   double       m_startingEphemerisTime;
+   double       m_centerEphemerisTime;
+   double       m_detectorSampleSumming;
+   double       m_startingSample;
+   int          m_ikCode;
+   double       m_focalLength;
+   double       m_zDirection;
+   DistortionType m_distortionType;
+   std::vector<double> m_opticalDistCoeffs;
+   double       m_iTransS[3];
+   double       m_iTransL[3];
+   double       m_detectorSampleOrigin;
+   double       m_detectorLineOrigin;
+   double       m_mountingMatrix[9];
+   double       m_majorAxis;
+   double       m_minorAxis;
+   std::string  m_referenceDateAndTime;
+   std::string  m_platformIdentifier;
+   std::string  m_sensorIdentifier;
+   std::string  m_trajectoryIdentifier;
+   std::string  m_collectionIdentifier;
+   double       m_refElevation;
+   double       m_minElevation;
+   double       m_maxElevation;
+   double       m_dtEphem;
+   double       m_t0Ephem;
+   double       m_dtQuat;
+   double       m_t0Quat;
+   int          m_numPositions;
+   int          m_numQuaternions;
+   std::vector<double> m_positions;
+   std::vector<double> m_velocities;
+   std::vector<double> m_quaternions;
+   std::vector<double> m_currentParameterValue;
+   std::vector<csm::param::Type> m_parameterType;
+   csm::EcefCoord m_referencePointXyz;
+   double       m_gsd;
+   double       m_flyingHeight;
+   double       m_halfSwath;
+   double       m_halfTime;
+   std::vector<double> m_covariance;
+   int          m_imageFlipFlag;
 
    // Hardcoded
    static const std::string      _SENSOR_MODEL_NAME; // state date element 0
@@ -892,6 +888,11 @@ public:
    //> This method sets the planetary ellipsoid.
    //<
 
+   void calculateAttitudeCorrection(
+       const double& time,
+       const std::vector<double>& adj,
+       double attCorr[9]) const;
+
 private:
 
    void determineSensorCovarianceInImageSpace(
@@ -916,7 +917,16 @@ private:
       double* achievedPrecision = NULL,
       csm::WarningList* warnings = NULL) const;
 
-   // This method computes the imaging locus.
+   void reconstructSensorDistortion(
+     double& focalX,
+     double& focalY,
+     const double& desiredPrecision) const;
+
+   void getQuaternions(const double& time,
+                       double quaternion[4]) const;
+
+// This method computes the imaging locus.
+// imaging locus : set of ground points associated with an image pixel.
    void losToEcf(
       const double& line,       // CSM image convention
       const double& sample,     //    UL pixel center == (0.5, 0.5)
@@ -927,9 +937,9 @@ private:
       double&       vx,         // output sensor x velocity
       double&       vy,         // output sensor y velocity
       double&       vz,         // output sensor z cvelocity
-      double&       xl,         // output line-of-sight x coordinate
-      double&       yl,         // output line-of-sight y coordinate
-      double&       zl ) const;
+      double&       bodyFixedX, // output line-of-sight x coordinate
+      double&       bodyFixedY, // output line-of-sight y coordinate
+      double&       bodyFixedZ ) const;
 
    // Computes the LOS correction due to light aberration
    void lightAberrationCorr(
@@ -1019,7 +1029,8 @@ private:
    csm::ImageCoord computeViewingPixel(
       const double& time,   // The time to use the EO at
       const csm::EcefCoord& groundPoint,      // The ground coordinate
-      const std::vector<double>& adj // Parameter Adjustments for partials
+      const std::vector<double>& adj, // Parameter Adjustments for partials
+      const double& desiredPrecision // Desired precision for distortion inversion
    ) const;
 
    // The linear approximation for the sensor model is used as the starting point
