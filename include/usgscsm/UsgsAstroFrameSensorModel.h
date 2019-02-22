@@ -8,6 +8,12 @@
 #include <gtest/gtest.h>
 #include "RasterGM.h"
 #include "CorrelationModel.h"
+#include "Distortion.h"
+#include "Utilities.h"
+
+#include <json.hpp>
+using json = nlohmann::json;
+
 
 #include <json.hpp>
 using json = nlohmann::json;
@@ -320,12 +326,6 @@ protected:
     FRIEND_TEST(FrameSensorModel, setFocalPlane_AlternatingOnes);
     FRIEND_TEST(FrameSensorModel, distortMe_AlternatingOnes);
 
-    virtual bool setFocalPlane(double dx,double dy,double &undistortedX,double &undistortedY) const;
-    virtual void distortionFunction(double ux, double uy, double &dx, double &dy) const;
-    virtual void distortionJacobian(double x, double y, double &Jxx,
-                                    double &Jxy, double &Jyx, double &Jyy) const;
-
-
 
   private:
     // Input parameters
@@ -335,8 +335,8 @@ protected:
     std::vector<double> m_currentParameterCovariance;
     std::vector<csm::param::Type> m_parameterType;
     std::vector<double> m_noAdjustments;
-    std::vector<double> m_odtX;
-    std::vector<double> m_odtY;
+    DistortionType m_distortionType;
+    std::vector<double> m_opticalDistCoeffs;
     std::vector<double> m_transX;
     std::vector<double> m_transY;
     std::vector<double> m_spacecraftVelocity;
@@ -356,6 +356,10 @@ protected:
     double m_startingDetectorLine;
     std::string m_targetName;
     std::string m_modelName;
+    std::string m_sensorName;
+    std::string m_platformName;
+    std::string m_imageIdentifier;
+    std::string m_collectionIdentifier;
     double m_ifov;
     std::string m_instrumentID;
     double m_focalLengthEpsilon;
@@ -368,6 +372,8 @@ protected:
     int m_nLines;
     int m_nSamples;
     int m_nParameters;
+
+    csm::EcefCoord m_referencePointXyz;
 
     json _state;
     static const int         _NUM_STATE_KEYWORDS;
