@@ -12,10 +12,6 @@
 
 using json = nlohmann::json;
 
-// TODO all commented out expects are failing and need to either have updated numbers
-// for the line scanner test cases, or we need to figure out why the line scanner
-// is not honoring this functionality.
-
 
 TEST_F(ConstVelocityLineScanSensorModel, State) {
    std::string modelState = sensorModel->getModelState();
