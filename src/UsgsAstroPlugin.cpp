@@ -28,7 +28,7 @@ using json = nlohmann::json;
 // Declaration of static variables
 const std::string UsgsAstroPlugin::_PLUGIN_NAME = "UsgsAstroPluginCSM";
 const std::string UsgsAstroPlugin::_MANUFACTURER_NAME = "UsgsAstrogeology";
-const std::string UsgsAstroPlugin::_RELEASE_DATE = "20170425";
+const std::string UsgsAstroPlugin::_RELEASE_DATE = "20190222";
 const int         UsgsAstroPlugin::_N_SENSOR_MODELS = 2;
 
 const std::string UsgsAstroPlugin::_ISD_KEYWORD[] =
