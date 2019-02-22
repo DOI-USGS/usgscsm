@@ -58,9 +58,9 @@ void calculateRotationMatrixFromQuaternions(
 // in - sampleOrigin - the origin of the ccd coordinate system relative to the top left of the ccd
 // in - lineOrigin - the origin of the ccd coordinate system relative to the top left of the ccd
 // in - sampleSumming
-// in - startingSample - first ccd for the image
+// in - startingSample - first ccd sample for the image
 // in - iTransS[3] - the transformation from focal plane to ccd samples
-// in - itransL[3] - the transformation from focal plane to ccd lines
+// in - iTransL[3] - the transformation from focal plane to ccd lines
 // out - natFocalPlane
 void computeDistortedFocalPlaneCoordinates(
     const double& line,
