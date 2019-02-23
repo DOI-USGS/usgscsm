@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 project(usgscsm VERSION 0.0.1 DESCRIPTION "usgscsm library")
 
-include(GoogleTest)
-include(cmake/gtest.cmake)
 include(GNUInstallDirs)
 
 set(CMAKE_CXX_STANDARD 11)
+
+# Find GTest
+find_package(GTest REQUIRED)
 
 # Optional build or link against CSM
 option (BUILD_CSM "Build the CSM library" ON)
@@ -42,10 +43,14 @@ target_include_directories(usgscsm
                            PUBLIC
                            ${USGSCSM_INCLUDE_DIRS}
                            ${CSM_INCLUDE_DIR}
+			   ${GTEST_INCLUDE_DIRS}
 )
 
 target_link_libraries(usgscsm
-                      ${CSM_LIBRARY})
+                      ${CSM_LIBRARY}
+		      ${GTEST_LIBRARIES}
+		      ${GTEST_MAIN_LIBRARIES}
+		      pthread)
 
 if(WIN32)
   install(TARGETS usgscsm RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
@@ -63,7 +68,9 @@ if(BUILD_TESTS)
   find_package (Threads)
 
   target_link_libraries(usgscsm
-                        gtest ${CMAKE_THREAD_LIBS_INIT})
+			${GTEST_LIBRARIES}
+			${GTEST_MAIN_LIBRARIES}
+                        ${CMAKE_THREAD_LIBS_INIT})
   include(CTest)
   enable_testing()
   add_subdirectory(tests)
