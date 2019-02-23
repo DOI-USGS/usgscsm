@@ -39,7 +39,7 @@ install:
     fi
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
-  - conda install -y -c conda-forge cmake
+  - conda install -y -c conda-forge cmake gtest
 
 script:
   - mkdir build
