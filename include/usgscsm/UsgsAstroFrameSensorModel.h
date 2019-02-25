@@ -5,7 +5,6 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
-#include <gtest/gtest.h>
 #include "RasterGM.h"
 #include "CorrelationModel.h"
 #include "Distortion.h"
@@ -311,17 +310,6 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
         const GeometricModelList &otherModels = GeometricModelList()) const;
 
     static const std::string _SENSOR_MODEL_NAME;
-
-protected:
-
-    FRIEND_TEST(FramerParameterizedTest,JacobianTest);
-    FRIEND_TEST(FrameSensorModel, setFocalPlane1);
-    FRIEND_TEST(FrameSensorModel, Jacobian1);
-    FRIEND_TEST(FrameSensorModel, setFocalPlane_AllCoefficientsOne);
-    FRIEND_TEST(FrameSensorModel, distortMe_AllCoefficientsOne);
-    FRIEND_TEST(FrameSensorModel, setFocalPlane_AlternatingOnes);
-    FRIEND_TEST(FrameSensorModel, distortMe_AlternatingOnes);
-
 
   private:
     // Input parameters
