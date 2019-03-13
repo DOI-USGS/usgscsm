@@ -68,7 +68,7 @@ TEST_F(ConstVelocityLineScanSensorModel, RemoteImageLocus) {
    EXPECT_DOUBLE_EQ(locus.direction.x, -1.0);
    EXPECT_DOUBLE_EQ(locus.direction.y,  0.0);
    EXPECT_DOUBLE_EQ(locus.direction.z,  0.0);
-   EXPECT_DOUBLE_EQ(locus.point.x,     10.0);
+   EXPECT_DOUBLE_EQ(locus.point.x,      1000.0);
    EXPECT_DOUBLE_EQ(locus.point.y,      0.0);
    EXPECT_DOUBLE_EQ(locus.point.z,      0.0);
 }
