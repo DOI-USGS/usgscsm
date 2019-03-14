@@ -3,6 +3,8 @@
 using json = nlohmann::json;
 
 // Calculates a rotation matrix from Euler angles
+// in - euler[3]
+// out - rotationMatrix[9]
 void calculateRotationMatrixFromEuler(
     double euler[],
     double rotationMatrix[])
@@ -27,6 +29,8 @@ void calculateRotationMatrixFromEuler(
 
 
 // uses a quaternion to calclate a rotation matrix.
+// in - q[4]
+// out - rotationMatrix[9]
 void calculateRotationMatrixFromQuaternions(
     double q[4],
     double rotationMatrix[9])
@@ -48,6 +52,16 @@ void calculateRotationMatrixFromQuaternions(
   rotationMatrix[8] = -q[0] * q[0] - q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
 }
 
+// Compue the distorted focal plane coordinate for a given image pixel
+// in - line
+// in - sample
+// in - sampleOrigin - the origin of the ccd coordinate system relative to the top left of the ccd
+// in - lineOrigin - the origin of the ccd coordinate system relative to the top left of the ccd
+// in - sampleSumming
+// in - startingSample - first ccd sample for the image
+// in - iTransS[3] - the transformation from focal plane to ccd samples
+// in - iTransL[3] - the transformation from focal plane to ccd lines
+// out - natFocalPlane
 void computeDistortedFocalPlaneCoordinates(
     const double& line,
     const double& sample,
@@ -77,6 +91,11 @@ void computeDistortedFocalPlaneCoordinates(
 };
 
 // Define imaging ray in image space (In other words, create a look vector in camera space)
+// in - undistortedFocalPlaneX
+// in - undistortedFocalPlaneY
+// in - zDirection - Either 1 or -1. The direction of the boresight
+// in - focalLength
+// out - cameraLook[3]
 void createCameraLookVector(
     const double& undistortedFocalPlaneX,
     const double& undistortedFocalPlaneY,
@@ -95,6 +114,7 @@ void createCameraLookVector(
   cameraLook[2] /= magnitude;
 }
 
+// convert a measurement
 double metric_conversion(double val, std::string from, std::string to) {
     json typemap = {
       {"m", 0},
@@ -551,6 +571,8 @@ double getSemiMinorRadius(json isd, csm::WarningList *list) {
   return radius;
 }
 
+// Gets the type of distortion model from the isd. If none is specified defaults
+// to transverse
 DistortionType getDistortionModel(json isd, csm::WarningList *list) {
   json distoriton_subset = isd.at("optical_distortion");
 

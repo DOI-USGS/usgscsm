@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(usgscsm VERSION 0.0.1 DESCRIPTION "usgscsm library")
 
-include(GoogleTest)
-include(cmake/gtest.cmake)
 include(GNUInstallDirs)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -58,6 +56,9 @@ install(DIRECTORY ${USGSCSM_INCLUDE_DIRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR
 # Optional build or link against CSM
 option (BUILD_TESTS "Build tests" ON)
 if(BUILD_TESTS)
+
+  include(GoogleTest)
+  include(cmake/gtest.cmake)
 
   # Setup for GoogleTest
   find_package (Threads)

@@ -12,10 +12,6 @@
 
 using json = nlohmann::json;
 
-// TODO all commented out expects are failing and need to either have updated numbers
-// for the line scanner test cases, or we need to figure out why the line scanner
-// is not honoring this functionality.
-
 
 TEST_F(ConstVelocityLineScanSensorModel, State) {
    std::string modelState = sensorModel->getModelState();
@@ -72,7 +68,7 @@ TEST_F(ConstVelocityLineScanSensorModel, RemoteImageLocus) {
    EXPECT_DOUBLE_EQ(locus.direction.x, -1.0);
    EXPECT_DOUBLE_EQ(locus.direction.y,  0.0);
    EXPECT_DOUBLE_EQ(locus.direction.z,  0.0);
-   EXPECT_DOUBLE_EQ(locus.point.x,     10.0);
+   EXPECT_DOUBLE_EQ(locus.point.x,      1000.0);
    EXPECT_DOUBLE_EQ(locus.point.y,      0.0);
    EXPECT_DOUBLE_EQ(locus.point.z,      0.0);
 }

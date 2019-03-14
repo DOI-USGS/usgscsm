@@ -1,13 +1,12 @@
 
 package:
   name: usgscsm
-  version: "1.0.0"
+  version: {{ environ.get("GIT_DESCRIBE_TAG", "") }}
 
 source:
-  url: https://github.com/USGS-Astrogeology/CSM-CameraModel/archive/1.0.0.zip
-  sha256: dd0894d0a6c370db0a0376bd4c7ea510f0b172a53b8216bba699c51a28f49c76
+  git_url: https://github.com/USGS-Astrogeology/CSM-CameraModel.git
 build:
-  number: 0
+  string: {{ environ.get("GIT_DESCRIBE_HASH", "") }}
 
 requirements:
   build:
