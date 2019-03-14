@@ -882,37 +882,18 @@ csm::EcefLocus UsgsAstroLsSensorModel::imageToRemoteImagingLocus(
    double* achieved_precision,
    csm::WarningList* warnings) const
 {
-   // Object ray unit direction at exposure station
-   // Exposure station arbitrary for orthos, so set elevation to zero
-
-   // Set esposure station elevation to zero
-   double height = 0.0;
-   double GND_DELTA = m_gsd;
-   // Point on object ray at zero elevation
-   csm::EcefCoord gp1 = imageToGround(
-      image_pt, height, desired_precision, achieved_precision, warnings);
-
-   // Unit vector along object ray
-   csm::EcefCoord gp2 = imageToGround(
-      image_pt, height - GND_DELTA, desired_precision, achieved_precision, warnings);
-
-   double dx2, dy2, dz2;
-   dx2 = gp2.x - gp1.x;
-   dy2 = gp2.y - gp1.y;
-   dz2 = gp2.z - gp1.z;
-   double mag2 = sqrt(dx2 * dx2 + dy2 * dy2 + dz2 * dz2);
-   dx2 /= mag2;
-   dy2 /= mag2;
-   dz2 /= mag2;
-
-   // Locus
-   csm::EcefLocus locus;
-   locus.point = gp1;
-   locus.direction.x = dx2;
-   locus.direction.y = dy2;
-   locus.direction.z = dz2;
-
-   return locus;
+  double vx, vy, vz;
+  csm::EcefLocus locus;
+  losToEcf(
+    image_pt.line, image_pt.samp, _no_adjustment,
+    locus.point.x, locus.point.y, locus.point.z,
+    vx, vy, vz,
+    locus.direction.x, locus.direction.y, locus.direction.z);
+  // losToEcf computes the negative look vector, so negate it
+  locus.direction.x = -locus.direction.x;
+  locus.direction.y = -locus.direction.y;
+  locus.direction.z = -locus.direction.z;
+  return locus;
 }
 
 //---------------------------------------------------------------------------
@@ -1603,7 +1584,7 @@ void UsgsAstroLsSensorModel::getQuaternions(const double& time, double q[4]) con
   if (m_numQuaternions < 6 && nOrder == 8)
      nOrderQuat = 4;
   lagrangeInterp(
-     m_numQuaternions, &m_quaternions[0], m_t0Quat, m_dtQuat, time, 4, nOrderQuat, q);
+     m_numQuaternions/4, &m_quaternions[0], m_t0Quat, m_dtQuat, time, 4, nOrderQuat, q);
 }
 
 
