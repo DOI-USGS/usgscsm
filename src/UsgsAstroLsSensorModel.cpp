@@ -2111,10 +2111,10 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(
    if (m_platformFlag == 0)
       nOrder = 4;
    double sensPosNom[3];
-   lagrangeInterp(m_numPositions, &m_positions[0], m_t0Ephem, m_dtEphem,
+   lagrangeInterp(m_numPositions/3, &m_positions[0], m_t0Ephem, m_dtEphem,
       time, 3, nOrder, sensPosNom);
    double sensVelNom[3];
-   lagrangeInterp(m_numPositions, &m_velocities[0], m_t0Ephem, m_dtEphem,
+   lagrangeInterp(m_numPositions/3, &m_velocities[0], m_t0Ephem, m_dtEphem,
       time, 3, nOrder, sensVelNom);
    // Compute rotation matrix from ICR to ECF
 
