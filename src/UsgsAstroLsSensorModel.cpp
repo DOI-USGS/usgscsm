@@ -497,15 +497,6 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    double firstOffset = computeViewingPixel(firstTime, ground_pt, adj, pixelPrec/2).line - 0.5;
    double lastOffset = computeViewingPixel(lastTime, ground_pt, adj, pixelPrec/2).line - 0.5;
 
-   // Check if both offsets have the same sign.
-   // This means there is not guaranteed to be a zero.
-   if ((firstOffset > 0) != (lastOffset < 0)) {
-        throw csm::Warning(
-           csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS,
-           "The image coordinate is out of bounds of the image size.",
-           "UsgsAstroLsSensorModel::groundToImage");
-   }
-
    // Start secant method search
    for (int it = 0; it < 30; it++) {
       double nextTime = ((firstTime * lastOffset) - (lastTime * firstOffset))
