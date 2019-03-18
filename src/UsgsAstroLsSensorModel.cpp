@@ -479,8 +479,10 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    else {
       --approxNextPoint.line;
    }
-   csm::EcefCoord approxIntersect = imageToGround(approxPoint, 0);
-   csm::EcefCoord approxNextIntersect = imageToGround(approxNextPoint, 0);
+   double height, aPrec;
+   computeElevation(ground_pt.x, ground_pt.y, ground_pt.z, height, aPrec, desired_precision);
+   csm::EcefCoord approxIntersect = imageToGround(approxPoint, height);
+   csm::EcefCoord approxNextIntersect = imageToGround(approxNextPoint, height);
    double lineDX = approxNextIntersect.x - approxIntersect.x;
    double lineDY = approxNextIntersect.y - approxIntersect.y;
    double lineDZ = approxNextIntersect.z - approxIntersect.z;
@@ -565,7 +567,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    calculatedPixel.line += closestLine;
 
    // Reintersect to ensure the image point actually views the ground point.
-   csm::EcefCoord calculatedPoint = imageToGround(calculatedPixel, 0);
+   csm::EcefCoord calculatedPoint = imageToGround(calculatedPixel, height);
    double dx = ground_pt.x - calculatedPoint.x;
    double dy = ground_pt.y - calculatedPoint.y;
    double dz = ground_pt.z - calculatedPoint.z;
