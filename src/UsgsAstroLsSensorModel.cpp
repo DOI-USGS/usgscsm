@@ -479,8 +479,10 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    else {
       --approxNextPoint.line;
    }
-   csm::EcefCoord approxIntersect = imageToGround(approxPoint, 0);
-   csm::EcefCoord approxNextIntersect = imageToGround(approxNextPoint, 0);
+   double height, aPrec;
+   computeElevation(ground_pt.x, ground_pt.y, ground_pt.z, height, aPrec, desired_precision);
+   csm::EcefCoord approxIntersect = imageToGround(approxPoint, height);
+   csm::EcefCoord approxNextIntersect = imageToGround(approxNextPoint, height);
    double lineDX = approxNextIntersect.x - approxIntersect.x;
    double lineDY = approxNextIntersect.y - approxIntersect.y;
    double lineDZ = approxNextIntersect.z - approxIntersect.z;
@@ -494,15 +496,6 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    double lastTime = getImageTime(csm::ImageCoord(m_nLines, sampCtr));
    double firstOffset = computeViewingPixel(firstTime, ground_pt, adj, pixelPrec/2).line - 0.5;
    double lastOffset = computeViewingPixel(lastTime, ground_pt, adj, pixelPrec/2).line - 0.5;
-
-   // Check if both offsets have the same sign.
-   // This means there is not guaranteed to be a zero.
-   if ((firstOffset > 0) != (lastOffset < 0)) {
-        throw csm::Warning(
-           csm::Warning::IMAGE_COORD_OUT_OF_BOUNDS,
-           "The image coordinate is out of bounds of the image size.",
-           "UsgsAstroLsSensorModel::groundToImage");
-   }
 
    // Start secant method search
    for (int it = 0; it < 30; it++) {
@@ -565,7 +558,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    calculatedPixel.line += closestLine;
 
    // Reintersect to ensure the image point actually views the ground point.
-   csm::EcefCoord calculatedPoint = imageToGround(calculatedPixel, 0);
+   csm::EcefCoord calculatedPoint = imageToGround(calculatedPixel, height);
    double dx = ground_pt.x - calculatedPoint.x;
    double dy = ground_pt.y - calculatedPoint.y;
    double dz = ground_pt.z - calculatedPoint.z;
@@ -2111,10 +2104,10 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(
    if (m_platformFlag == 0)
       nOrder = 4;
    double sensPosNom[3];
-   lagrangeInterp(m_numPositions, &m_positions[0], m_t0Ephem, m_dtEphem,
+   lagrangeInterp(m_numPositions/3, &m_positions[0], m_t0Ephem, m_dtEphem,
       time, 3, nOrder, sensPosNom);
    double sensVelNom[3];
-   lagrangeInterp(m_numPositions, &m_velocities[0], m_t0Ephem, m_dtEphem,
+   lagrangeInterp(m_numPositions/3, &m_velocities[0], m_t0Ephem, m_dtEphem,
       time, 3, nOrder, sensVelNom);
    // Compute rotation matrix from ICR to ECF
 
