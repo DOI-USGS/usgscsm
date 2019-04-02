@@ -141,20 +141,6 @@ void lagrangeInterp(
   double fndex = (time - startTime) / delTime;
   int    index = int(fndex);
 
-  //Time outside range
-  //printf("%f | %i\n", fndex, index);
-  //if (index < 0 || index >= numTime - 1) {
-  //    printf("TIME ISSUE\n");
-  // double d1 = fndex / (numTime - 1);
-  // double d0 = 1.0 - d1;
-  // int indx0 = vectorLength * (numTime - 1);
-  // for (int i = 0; i < vectorLength; i++)
-  // {
-  // valueVector[i] = d0 * valueArray[i] + d1 * valueArray[indx0 + i];
-  // }
-  // return;
-  //}
-
   if (index < 0)
   {
     index = 0;
@@ -170,13 +156,13 @@ void lagrangeInterp(
   if (index >= 3 && index < numTime - 4) {
     order = 8;
   }
-  else if (index == 2 || index == numTime - 4) {
+  else if (index >= 2 && index < numTime - 3) {
     order = 6;
   }
-  else if (index == 1 || index == numTime - 3) {
+  else if (index >= 1 && index < numTime - 2) {
     order = 4;
   }
-  else if (index == 0 || index == numTime - 2) {
+  else {
     order = 2;
   }
   if (order > i_order) {
@@ -247,7 +233,7 @@ void lagrangeInterp(
        valueVector[j] += d[i] * valueArray[jndex + j];
     }
   }
-  }
+}
 
 // convert a measurement
 double metric_conversion(double val, std::string from, std::string to) {
