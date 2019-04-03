@@ -27,7 +27,7 @@
 
 #include <sstream>
 #include <Error.h>
-#include <json.hpp>
+#include <json/json.hpp>
 using json = nlohmann::json;
 
 const std::string UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME

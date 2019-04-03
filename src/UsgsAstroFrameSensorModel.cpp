@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 
-#include <json.hpp>
+#include <json/json.hpp>
 
 #include <Error.h>
 #include <Version.h>
@@ -72,6 +72,8 @@ void UsgsAstroFrameSensorModel::reset() {
     m_referencePointXyz.x = 0;
     m_referencePointXyz.y = 0;
     m_referencePointXyz.z = 0;
+    m_logFile = "";
+    m_logger.reset();
 }
 
 
@@ -654,7 +656,8 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_referencePointXyz", {m_referencePointXyz.x,
                                m_referencePointXyz.y,
                                m_referencePointXyz.z}},
-      {"m_currentParameterCovariance", m_currentParameterCovariance}
+      {"m_currentParameterCovariance", m_currentParameterCovariance},
+      {"m_logFile", m_logFile}
     };
     return state.dump();
 }
@@ -763,6 +766,13 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
         m_referencePointXyz.y = refpt[1];
         m_referencePointXyz.z = refpt[2];
         m_currentParameterCovariance = state.at("m_currentParameterCovariance").get<std::vector<double>>();
+        m_logFile = state.at("m_logFile").get<std::string>();
+        if (m_logFile.empty()) {
+          m_logger.reset();
+        }
+        else {
+          m_logger = spdlog::basic_logger_mt(m_logFile, m_logFile);
+        }
 
 
         // Leaving unused params commented out
@@ -920,6 +930,9 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
     state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
     state["m_currentParameterCovariance"] = std::vector<double>(NUM_PARAMETERS*NUM_PARAMETERS,0.0);
     state["m_collectionIdentifier"] = "";
+
+    // Get the optional logging file
+    state["m_logFile"] = getLogFile(isd);
 
 
     if (!parsingWarnings->empty()) {

@@ -10,7 +10,10 @@
 #include "Distortion.h"
 #include "Utilities.h"
 
-#include <json.hpp>
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
+
+#include <json/json.hpp>
 using json = nlohmann::json;
 
 
@@ -358,6 +361,9 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
     int m_nParameters;
 
     csm::EcefCoord m_referencePointXyz;
+
+    std::string m_logFile;
+    std::shared_ptr<spdlog::logger> m_logger;
 
     json _state;
     static const int         _NUM_STATE_KEYWORDS;
