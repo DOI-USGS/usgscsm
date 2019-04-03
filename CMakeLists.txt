@@ -34,7 +34,7 @@ set_target_properties(usgscsm PROPERTIES
 )
 
 set(USGSCSM_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include/usgscsm"
-                         "${CMAKE_CURRENT_SOURCE_DIR}/include/json")
+                         "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 
 target_include_directories(usgscsm
                            PUBLIC

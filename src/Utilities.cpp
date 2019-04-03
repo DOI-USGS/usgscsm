@@ -195,6 +195,24 @@ std::string getPlatformName(json isd, csm::WarningList *list) {
   return name;
 }
 
+
+std::string getLogFile(nlohmann::json isd, csm::WarningList *list) {
+  std::string file = "";
+  try {
+    file = isd.at("log_file");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the log filename.",
+          "Utilities::getLogFile()"));
+    }
+  }
+  return file;
+}
+
 int getTotalLines(json isd, csm::WarningList *list) {
   int lines = 0;
   try {
