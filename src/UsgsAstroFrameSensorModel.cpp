@@ -771,7 +771,7 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
           m_logger.reset();
         }
         else {
-          m_logger = spdlog::basic_logger_mt(m_logFile, m_logFile);
+          m_logger = spdlog::basic_logger_mt(_SENSOR_MODEL_NAME, m_logFile);
         }
 
 
