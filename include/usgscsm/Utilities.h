@@ -8,7 +8,7 @@
 #include <tuple>
 #include <string>
 
-#include <json.hpp>
+#include <json/json.hpp>
 
 #include <Warning.h>
 
@@ -56,6 +56,7 @@ std::string getSensorModelName(nlohmann::json isd, csm::WarningList *list=nullpt
 std::string getImageId(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::string getSensorName(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::string getPlatformName(nlohmann::json isd, csm::WarningList *list=nullptr);
+std::string getLogFile(nlohmann::json isd, csm::WarningList *list=nullptr);
 int getTotalLines(nlohmann::json isd, csm::WarningList *list=nullptr);
 int getTotalSamples(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getStartingTime(nlohmann::json isd, csm::WarningList *list=nullptr);

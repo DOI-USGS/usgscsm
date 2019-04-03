@@ -7,7 +7,7 @@
 #include <Plugin.h>
 #include <Version.h>
 
-#include <json.hpp>
+#include <json/json.hpp>
 using json = nlohmann::json;
 
 class UsgsAstroPlugin : public csm::Plugin {
