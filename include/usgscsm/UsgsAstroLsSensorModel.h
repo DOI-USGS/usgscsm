@@ -953,17 +953,6 @@ private:
       double&       dyl,
       double&       dzl) const;
 
-   // Lagrange interpolation of variable order.
-   void lagrangeInterp (
-      const int&     numTime,
-      const double*  valueArray,
-      const double&  startTime,
-      const double&  delTime,
-      const double&  time,
-      const int&     vectorLength,
-      const int&     i_order,
-      double*        valueVector ) const;
-
    // Intersects a LOS at a specified height above the ellipsoid.
    void losEllipsoidIntersect (
       const double& height,

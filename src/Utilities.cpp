@@ -1,4 +1,5 @@
 #include "Utilities.h"
+#include <Error.h>
 
 using json = nlohmann::json;
 
@@ -112,6 +113,126 @@ void createCameraLookVector(
   cameraLook[0] /= magnitude;
   cameraLook[1] /= magnitude;
   cameraLook[2] /= magnitude;
+}
+
+// Lagrange Interpolation for equally spaced data
+void lagrangeInterp(
+   const int&     numTime,
+   const double*  valueArray,
+   const double&  startTime,
+   const double&  delTime,
+   const double&  time,
+   const int&     vectorLength,
+   const int&     i_order,
+   double*        valueVector) {
+  // Lagrange interpolation for uniform post interval.
+  // Largest order possible is 8th. Points far away from
+  // data center are handled gracefully to avoid failure.
+
+  if (numTime < 2) {
+    throw csm::Error(
+      csm::Error::INDEX_OUT_OF_RANGE,
+      "At least 2 points are required to perform Lagrange interpolation.",
+      "lagrangeInterp");
+  }
+
+  // Compute index
+
+  double fndex = (time - startTime) / delTime;
+  int    index = int(fndex);
+
+  if (index < 0)
+  {
+    index = 0;
+  }
+  if (index > numTime - 2)
+  {
+    index = numTime - 2;
+  }
+
+  // Define order, max is 8
+
+  int order;
+  if (index >= 3 && index < numTime - 4) {
+    order = 8;
+  }
+  else if (index >= 2 && index < numTime - 3) {
+    order = 6;
+  }
+  else if (index >= 1 && index < numTime - 2) {
+    order = 4;
+  }
+  else {
+    order = 2;
+  }
+  if (order > i_order) {
+    order = i_order;
+  }
+
+  // Compute interpolation coefficients
+  double tp3, tp2, tp1, tm1, tm2, tm3, tm4, d[8];
+  double tau = fndex - index;
+  if (order == 2) {
+    tm1 = tau - 1;
+    d[0] = -tm1;
+    d[1] = tau;
+  }
+  else if (order == 4) {
+    tp1 = tau + 1;
+    tm1 = tau - 1;
+    tm2 = tau - 2;
+    d[0] = -tau * tm1 * tm2 / 6.0;
+    d[1] = tp1 *       tm1 * tm2 / 2.0;
+    d[2] = -tp1 * tau *       tm2 / 2.0;
+    d[3] = tp1 * tau * tm1 / 6.0;
+  }
+  else if (order == 6) {
+    tp2 = tau + 2;
+    tp1 = tau + 1;
+    tm1 = tau - 1;
+    tm2 = tau - 2;
+    tm3 = tau - 3;
+    d[0] = -tp1 * tau * tm1 * tm2 * tm3 / 120.0;
+    d[1] = tp2 *       tau * tm1 * tm2 * tm3 / 24.0;
+    d[2] = -tp2 * tp1 *       tm1 * tm2 * tm3 / 12.0;
+    d[3] = tp2 * tp1 * tau *       tm2 * tm3 / 12.0;
+    d[4] = -tp2 * tp1 * tau * tm1 *       tm3 / 24.0;
+    d[5] = tp2 * tp1 * tau * tm1 * tm2 / 120.0;
+  }
+  else if (order == 8) {
+    tp3 = tau + 3;
+    tp2 = tau + 2;
+    tp1 = tau + 1;
+    tm1 = tau - 1;
+    tm2 = tau - 2;
+    tm3 = tau - 3;
+    tm4 = tau - 4;
+    // Why are the denominators hard coded, as it should be x[0] - x[i]
+    d[0] = -tp2 * tp1 * tau * tm1 * tm2 * tm3 * tm4 / 5040.0;
+    d[1] = tp3 *       tp1 * tau * tm1 * tm2 * tm3 * tm4 / 720.0;
+    d[2] = -tp3 * tp2 *       tau * tm1 * tm2 * tm3 * tm4 / 240.0;
+    d[3] = tp3 * tp2 * tp1 *       tm1 * tm2 * tm3 * tm4 / 144.0;
+    d[4] = -tp3 * tp2 * tp1 * tau *       tm2 * tm3 * tm4 / 144.0;
+    d[5] = tp3 * tp2 * tp1 * tau * tm1 *       tm3 * tm4 / 240.0;
+    d[6] = -tp3 * tp2 * tp1 * tau * tm1 * tm2 *       tm4 / 720.0;
+    d[7] = tp3 * tp2 * tp1 * tau * tm1 * tm2 * tm3 / 5040.0;
+  }
+
+  // Compute interpolated point
+  int    indx0 = index - order / 2 + 1;
+  for (int i = 0; i < vectorLength; i++)
+  {
+    valueVector[i] = 0.0;
+  }
+
+  for (int i = 0; i < order; i++)
+  {
+    int jndex = vectorLength * (indx0 + i);
+    for (int j = 0; j < vectorLength; j++)
+    {
+       valueVector[j] += d[i] * valueArray[jndex + j];
+    }
+  }
 }
 
 // convert a measurement
