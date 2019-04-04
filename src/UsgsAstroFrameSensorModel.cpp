@@ -306,7 +306,7 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(const csm::I
 
 csm::ImageCoord UsgsAstroFrameSensorModel::getImageStart() const {
 
-  MESSAGE_LOG(this->m_logger, "Accessing Image Start line: {}, sample: {}"
+  MESSAGE_LOG(this->m_logger, "Accessing Image Start line: {}, sample: {}",
                               m_startingDetectorLine, m_startingDetectorSample);
   csm::ImageCoord start;
   start.samp = m_startingDetectorSample;
@@ -317,7 +317,7 @@ csm::ImageCoord UsgsAstroFrameSensorModel::getImageStart() const {
 
 csm::ImageVector UsgsAstroFrameSensorModel::getImageSize() const {
 
-  MESSAGE_LOG(this->m_logger, "Accessing Image Size line: {}, sample: {}"
+  MESSAGE_LOG(this->m_logger, "Accessing Image Size line: {}, sample: {}",
                               m_nLines, m_nSamples);
   csm::ImageVector size;
   size.line = m_nLines;
@@ -1034,7 +1034,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
 
 csm::EcefCoord UsgsAstroFrameSensorModel::getReferencePoint() const {
-  MESSAGE_LOG(this->m_logger, "Accessing reference point x: {}, y: {}, z: {}"
+  MESSAGE_LOG(this->m_logger, "Accessing reference point x: {}, y: {}, z: {}",
                               m_referencePointXyz.x, m_referencePointXyz.y, m_referencePointXyz.z);
   return m_referencePointXyz;
 }
