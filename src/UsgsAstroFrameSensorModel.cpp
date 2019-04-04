@@ -9,6 +9,8 @@
 #include <Error.h>
 #include <Version.h>
 
+#define MESSAGE_LOG(logger, ...) if (logger) { logger->info(__VA_ARGS__); }
+
 using json = nlohmann::json;
 using namespace std;
 
@@ -1274,4 +1276,8 @@ double UsgsAstroFrameSensorModel::getValue(
 {
    MESSAGE_LOG(this->m_logger, "Accessing value at index: {}, with adjustments", index);
    return m_currentParameterValue[index] + adjustments[index];
+}
+
+std::shared_ptr<spdlog::logger> UsgsAstroFrameSensorModel::getLogger() {
+  return m_logger;
 }
