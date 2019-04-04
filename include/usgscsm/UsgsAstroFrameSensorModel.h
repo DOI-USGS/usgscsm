@@ -15,7 +15,6 @@
 
 #include <json/json.hpp>
 
-#define MESSAGE_LOG(logger, ...) if (logger) { logger->info(__VA_ARGS__); }
 using json = nlohmann::json;
 
 
@@ -313,6 +312,7 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
         const GeometricModel &comparisonModel,
         csm::param::Set pSet = csm::param::VALID,
         const GeometricModelList &otherModels = GeometricModelList()) const;
+    virtual std::shared_ptr<spdlog::logger> getLogger();
 
     static const std::string _SENSOR_MODEL_NAME;
 
