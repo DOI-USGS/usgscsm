@@ -1080,7 +1080,7 @@ csm::SharingCriteria UsgsAstroFrameSensorModel::getParameterSharingCriteria(int 
 
 
 double UsgsAstroFrameSensorModel::getParameterValue(int index) const {
-  MESSAGE_LOG(this->m_logger, "Accessing parameter value at index: {}", index);
+  MESSAGE_LOG(this->m_logger, "Accessing parameter value {} at index: {}", m_currentParameterValue[index], index);
   return m_currentParameterValue[index];
 
 }
