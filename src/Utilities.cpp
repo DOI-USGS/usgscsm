@@ -316,6 +316,24 @@ std::string getPlatformName(json isd, csm::WarningList *list) {
   return name;
 }
 
+
+std::string getLogFile(nlohmann::json isd, csm::WarningList *list) {
+  std::string file = "";
+  try {
+    file = isd.at("log_file");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the log filename.",
+          "Utilities::getLogFile()"));
+    }
+  }
+  return file;
+}
+
 int getTotalLines(json isd, csm::WarningList *list) {
   int lines = 0;
   try {
@@ -695,27 +713,31 @@ double getSemiMinorRadius(json isd, csm::WarningList *list) {
 // Gets the type of distortion model from the isd. If none is specified defaults
 // to transverse
 DistortionType getDistortionModel(json isd, csm::WarningList *list) {
-  json distoriton_subset = isd.at("optical_distortion");
+  try {
+    json distoriton_subset = isd.at("optical_distortion");
 
-  json::iterator it = distoriton_subset.begin();
+    json::iterator it = distoriton_subset.begin();
 
-  std::string distortion = (std::string)it.key();
+    std::string distortion = (std::string)it.key();
 
-  if (distortion.compare("transverse") == 0) {
-    return DistortionType::TRANSVERSE;
+    if (distortion.compare("transverse") == 0) {
+      return DistortionType::TRANSVERSE;
+    }
+    else if (distortion.compare("radial") == 0) {
+      return DistortionType::RADIAL;
+    }
   }
-  else if (distortion.compare("radial") == 0) {
-    return DistortionType::RADIAL;
-  }
-
-  if (list) {
-    list->push_back(
-      csm::Warning(
-        csm::Warning::DATA_NOT_AVAILABLE,
-        "Could not parse the distortion model.",
-        "Utilities::getDistortionModel()"));
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the distortion model.",
+          "Utilities::getDistortionModel()"));
+    }
   }
   return DistortionType::TRANSVERSE;
+
 }
 
 std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
