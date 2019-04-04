@@ -65,7 +65,7 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
                                     double desiredPrecision=0.001, double *achievedPrecision=NULL,
                                     csm::WarningList *warnings=NULL) const;
 
-    virtual csm::EcefCoordCovar imageToGround(const csm::ImageCoordCovar &imagePt, double height = 0.0,
+    virtual csm::EcefCoordCovar imageToGround(const csm::ImageCoordCovar &imagePt, double height,
                                            double heightVariance, double desiredPrecision=0.001,
                                            double *achievedPrecision=NULL,
                                            csm::WarningList *warnings=NULL) const;
