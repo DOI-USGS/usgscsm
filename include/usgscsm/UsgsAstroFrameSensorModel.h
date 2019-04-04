@@ -14,6 +14,8 @@
 #include "spdlog/sinks/basic_file_sink.h"
 
 #include <json/json.hpp>
+
+#define MESSAGE_LOG(logger, ...) if (logger) { logger->info(__VA_ARGS__); }
 using json = nlohmann::json;
 
 
