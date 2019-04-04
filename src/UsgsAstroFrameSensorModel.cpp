@@ -192,6 +192,8 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   // Here is where we should be able to apply an adjustment to opk
   double m[3][3];
   calcRotationMatrix(m);
+  MESSAGE_LOG(this->m_logger, "Calculated rotation matrix [{}, {}, {}], [{}, {}, {}], [{}, {}, {}]",
+                m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1], m[2][2]);
 
   // Apply the principal point offset, assuming the pp is given in pixels
   double xl, yl, zl, lo, so;
@@ -210,20 +212,24 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   removeDistortion(x_camera, y_camera, undistortedX, undistortedY,
                    m_opticalDistCoeffs,
                    m_distortionType);
+  MESSAGE_LOG(this->m_logger, "Found undistortedX: {}, and undistortedY: {}",
+                               undistortedX, undistortedY);
 
   // Now back from distorted mm to pixels
   xl = m[0][0] * undistortedX + m[0][1] * undistortedY - m[0][2] * - m_focalLength;
   yl = m[1][0] * undistortedX + m[1][1] * undistortedY - m[1][2] * - m_focalLength;
   zl = m[2][0] * undistortedX + m[2][1] * undistortedY - m[2][2] * - m_focalLength;
+  MESSAGE_LOG(this->m_logger, "Compute xl, yl, zl as {}, {}, {}", xl, yl, zl);
 
-  double x, y, z;
   double xc, yc, zc;
   xc = m_currentParameterValue[0];
   yc = m_currentParameterValue[1];
   zc = m_currentParameterValue[2];
+  MESSAGE_LOG(this->m_logger, "Set xc, yc, zc to {}, {}, {}",
+                              m_currentParameterValue[0], m_currentParameterValue[1], m_currentParameterValue[2]);
 
   // Intersect with some height about the ellipsoid.
-
+  double x, y, z;
   losEllipsoidIntersect(height, xc, yc, zc, xl, yl, zl, x, y, z);
 
   return csm::EcefCoord(x, y, z);
@@ -577,6 +583,9 @@ std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::
   wpz = m[2][2];
   partials[2] = -fdw * ( upz - udw * wpz );
   partials[5] = -fdw * ( vpz - vdw * wpz );
+
+  MESSAGE_LOG(this->m_logger, "Computing ground partials result line: {}, sample: {}, wrt: {} and x: {}, y: {}, z: {}",
+                               partials[0], partials[1], partials[2], partials[3], partials[4], partials[5]);
 
   return partials;
 }
