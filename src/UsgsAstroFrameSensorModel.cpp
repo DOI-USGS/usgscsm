@@ -1105,8 +1105,8 @@ void UsgsAstroFrameSensorModel::setParameterType(int index, csm::param::Type pTy
 
 
 double UsgsAstroFrameSensorModel::getParameterCovariance(int index1, int index2) const {
-   MESSAGE_LOG(this->m_logger, "Accessing parameter covar between index1: {} and index2: {}", index1, index2);
    int index = UsgsAstroFrameSensorModel::NUM_PARAMETERS * index1 + index2;
+   MESSAGE_LOG(this->m_logger, "Accessing parameter covar: {} between index1: {} and index2: {}", m_currentParameterCovariance[index], index1, index2);
    return m_currentParameterCovariance[index];
 }
 
