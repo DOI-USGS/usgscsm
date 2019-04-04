@@ -1102,7 +1102,7 @@ void UsgsAstroFrameSensorModel::setParameterValue(int index, double value) {
 
 
 csm::param::Type UsgsAstroFrameSensorModel::getParameterType(int index) const {
-  MESSAGE_LOG(this->m_logger, "Accessing parameter type at index: {}", index);
+  MESSAGE_LOG(this->m_logger, "Accessing parameter type: {} at index: {}", m_parameterType[index], index);
   return m_parameterType[index];
 }
 
