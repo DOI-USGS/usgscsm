@@ -61,11 +61,11 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
     * @return @b vector<double> Returns the body-fixed X,Y,Z coordinates of the intersection.
     *                           If no intersection, returns a 3-element vector of 0's.
     */
-    virtual csm::EcefCoord imageToGround(const csm::ImageCoord &imagePt, double height,
+    virtual csm::EcefCoord imageToGround(const csm::ImageCoord &imagePt, double height = 0.0,
                                     double desiredPrecision=0.001, double *achievedPrecision=NULL,
                                     csm::WarningList *warnings=NULL) const;
 
-    virtual csm::EcefCoordCovar imageToGround(const csm::ImageCoordCovar &imagePt, double height,
+    virtual csm::EcefCoordCovar imageToGround(const csm::ImageCoordCovar &imagePt, double height = 0.0,
                                            double heightVariance, double desiredPrecision=0.001,
                                            double *achievedPrecision=NULL,
                                            csm::WarningList *warnings=NULL) const;
