@@ -618,7 +618,7 @@ csm::Version UsgsAstroFrameSensorModel::getVersion() const {
 
 
 std::string UsgsAstroFrameSensorModel::getModelName() const {
-  MESSAGE_LOG(this->m_logger, "Accessing CSM name");
+  MESSAGE_LOG(this->m_logger, "Accessing CSM name {}", _SENSOR_MODEL_NAME);
   return _SENSOR_MODEL_NAME;
 }
 
@@ -630,7 +630,7 @@ std::string UsgsAstroFrameSensorModel::getPedigree() const {
 
 
 std::string UsgsAstroFrameSensorModel::getImageIdentifier() const {
-  MESSAGE_LOG(this->m_logger, "Accessing image ID");
+  MESSAGE_LOG(this->m_logger, "Accessing image ID {}", m_imageIdentifier);
   return m_imageIdentifier;
 }
 
