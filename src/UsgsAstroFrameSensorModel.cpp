@@ -306,7 +306,8 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(const csm::I
 
 csm::ImageCoord UsgsAstroFrameSensorModel::getImageStart() const {
 
-  MESSAGE_LOG(this->m_logger, "Accessing Image Start");
+  MESSAGE_LOG(this->m_logger, "Accessing Image Start line: {}, sample: {}"
+                              m_startingDetectorLine, m_startingDetectorSample);
   csm::ImageCoord start;
   start.samp = m_startingDetectorSample;
   start.line = m_startingDetectorLine;
@@ -316,7 +317,8 @@ csm::ImageCoord UsgsAstroFrameSensorModel::getImageStart() const {
 
 csm::ImageVector UsgsAstroFrameSensorModel::getImageSize() const {
 
-  MESSAGE_LOG(this->m_logger, "Accessing Image Size");
+  MESSAGE_LOG(this->m_logger, "Accessing Image Size line: {}, sample: {}"
+                              m_nLines, m_nSamples);
   csm::ImageVector size;
   size.line = m_nLines;
   size.samp = m_nSamples;
@@ -333,7 +335,8 @@ std::pair<csm::ImageCoord, csm::ImageCoord> UsgsAstroFrameSensorModel::getValidI
 
 
 std::pair<double, double> UsgsAstroFrameSensorModel::getValidHeightRange() const {
-    MESSAGE_LOG(this->m_logger, "Accessing Image Height");
+    MESSAGE_LOG(this->m_logger, "Accessing Image Height min: {}, max: {}",
+                                m_minElevation, m_maxElevation);
     return std::pair<double, double>(m_minElevation, m_maxElevation);
 }
 
@@ -1031,7 +1034,8 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
 
 csm::EcefCoord UsgsAstroFrameSensorModel::getReferencePoint() const {
-  MESSAGE_LOG(this->m_logger, "Accessing reference point");
+  MESSAGE_LOG(this->m_logger, "Accessing reference point x: {}, y: {}, z: {}"
+                              m_referencePointXyz.x, m_referencePointXyz.y, m_referencePointXyz.z);
   return m_referencePointXyz;
 }
 
@@ -1044,7 +1048,7 @@ void UsgsAstroFrameSensorModel::setReferencePoint(const csm::EcefCoord &groundPt
 
 
 int UsgsAstroFrameSensorModel::getNumParameters() const {
-  MESSAGE_LOG(this->m_logger, "Accessing num parameters");
+  MESSAGE_LOG(this->m_logger, "Accessing num parameters: {}", NUM_PARAMETERS);
   return NUM_PARAMETERS;
 }
 
@@ -1283,7 +1287,7 @@ double UsgsAstroFrameSensorModel::getValue(
    int index,
    const std::vector<double> &adjustments) const
 {
-   MESSAGE_LOG(this->m_logger, "Accessing value at index: {}, with adjustments", index);
+   MESSAGE_LOG(this->m_logger, "Accessing value: {} at index: {}, with adjustments", m_currentParameterValue[index] + adjustments[index], index);
    return m_currentParameterValue[index] + adjustments[index];
 }
 
