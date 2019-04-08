@@ -67,3 +67,162 @@ TEST(UtilitiesTests, createCameraLookVector) {
   EXPECT_NEAR(cameraLook[1], 0.007999744, 1e-8);
   EXPECT_NEAR(cameraLook[2], -0.999968001, 1e-8);
 }
+
+TEST(UtilitiesTests, lagrangeInterp1Point) {
+  int numTime = 1;
+  std::vector<double> singlePoint = {1};
+  std::vector<double> interpPoint = {0};
+  double startTime = 0;
+  double delTime = 1;
+  double time = 0;
+  int vectorLength = 1;
+  int order = 8;
+
+  try {
+     lagrangeInterp(numTime, &singlePoint[0], startTime, delTime,
+                    time, vectorLength, order, &interpPoint[0]);
+     FAIL() << "Expected an error";
+  }
+  catch(csm::Error &e) {
+     EXPECT_EQ(e.getError(), csm::Error::INDEX_OUT_OF_RANGE);
+  }
+  catch(...) {
+     FAIL() << "Expected csm INDEX_OUT_OF_RANGE error";
+  }
+}
+
+TEST(UtilitiesTests, lagrangeInterp2ndOrder) {
+  int numTime = 8;
+  std::vector<double> interpValues = {1, 2, 4, 8, 16, 32, 64, 128};
+  std::vector<double> outputValue = {0};
+  double startTime = 0;
+  double delTime = 1;
+  double time = 3.5;
+  int vectorLength = 1;
+  int order = 2;
+
+  lagrangeInterp(numTime, &interpValues[0], startTime, delTime,
+                    time, vectorLength, order, &outputValue[0]);
+  EXPECT_DOUBLE_EQ(outputValue[0], 24.0 / 2.0);
+}
+
+TEST(UtilitiesTests, lagrangeInterp4thOrder) {
+  int numTime = 8;
+  std::vector<double> interpValues = {1, 2, 4, 8, 16, 32, 64, 128};
+  std::vector<double> outputValue = {0};
+  double startTime = 0;
+  double delTime = 1;
+  double time = 3.5;
+  int vectorLength = 1;
+  int order = 4;
+
+  lagrangeInterp(numTime, &interpValues[0], startTime, delTime,
+                    time, vectorLength, order, &outputValue[0]);
+  EXPECT_DOUBLE_EQ(outputValue[0], 180.0 / 16.0);
+}
+
+TEST(UtilitiesTests, lagrangeInterp6thOrder) {
+  int numTime = 8;
+  std::vector<double> interpValues = {1, 2, 4, 8, 16, 32, 64, 128};
+  std::vector<double> outputValue = {0};
+  double startTime = 0;
+  double delTime = 1;
+  double time = 3.5;
+  int vectorLength = 1;
+  int order = 6;
+
+  lagrangeInterp(numTime, &interpValues[0], startTime, delTime,
+                    time, vectorLength, order, &outputValue[0]);
+  EXPECT_DOUBLE_EQ(outputValue[0], 2898.0 / 256.0);
+}
+
+TEST(UtilitiesTests, lagrangeInterp8thOrder) {
+  int numTime = 8;
+  std::vector<double> interpValues = {1, 2, 4, 8, 16, 32, 64, 128};
+  std::vector<double> outputValue = {0};
+  double startTime = 0;
+  double delTime = 1;
+  double time = 3.5;
+  int vectorLength = 1;
+  int order = 8;
+
+  lagrangeInterp(numTime, &interpValues[0], startTime, delTime,
+                    time, vectorLength, order, &outputValue[0]);
+  EXPECT_DOUBLE_EQ(outputValue[0], 23169.0 / 2048.0);
+}
+
+TEST(UtilitiesTests, lagrangeInterpReduced2ndOrder) {
+  int numTime = 8;
+  std::vector<double> interpValues = {1, 2, 4, 8, 16, 32, 64, 128};
+  std::vector<double> outputValue = {0};
+  double startTime = 0;
+  double delTime = 1;
+  double time = 0.5;
+  int vectorLength = 1;
+  int order = 8;
+
+  lagrangeInterp(numTime, &interpValues[0], startTime, delTime,
+                    time, vectorLength, order, &outputValue[0]);
+  EXPECT_DOUBLE_EQ(outputValue[0], 3.0 / 2.0);
+
+  time = 6.5;
+  lagrangeInterp(numTime, &interpValues[0], startTime, delTime,
+                    time, vectorLength, order, &outputValue[0]);
+  EXPECT_DOUBLE_EQ(outputValue[0], 192.0 / 2.0);
+}
+
+TEST(UtilitiesTests, lagrangeInterpReduced4thOrder) {
+  int numTime = 8;
+  std::vector<double> interpValues = {1, 2, 4, 8, 16, 32, 64, 128};
+  std::vector<double> outputValue = {0};
+  double startTime = 0;
+  double delTime = 1;
+  double time = 1.5;
+  int vectorLength = 1;
+  int order = 8;
+
+  lagrangeInterp(numTime, &interpValues[0], startTime, delTime,
+                    time, vectorLength, order, &outputValue[0]);
+  EXPECT_DOUBLE_EQ(outputValue[0], 45.0 / 16.0);
+
+  time = 5.5;
+  lagrangeInterp(numTime, &interpValues[0], startTime, delTime,
+                    time, vectorLength, order, &outputValue[0]);
+  EXPECT_DOUBLE_EQ(outputValue[0], 720.0 / 16.0);
+}
+
+TEST(UtilitiesTests, lagrangeInterpReduced6thOrder) {
+  int numTime = 8;
+  std::vector<double> interpValues = {1, 2, 4, 8, 16, 32, 64, 128};
+  std::vector<double> outputValue = {0};
+  double startTime = 0;
+  double delTime = 1;
+  double time = 2.5;
+  int vectorLength = 1;
+  int order = 8;
+
+  lagrangeInterp(numTime, &interpValues[0], startTime, delTime,
+                    time, vectorLength, order, &outputValue[0]);
+  EXPECT_DOUBLE_EQ(outputValue[0], 1449.0 / 256.0);
+
+  time = 4.5;
+  lagrangeInterp(numTime, &interpValues[0], startTime, delTime,
+                    time, vectorLength, order, &outputValue[0]);
+  EXPECT_DOUBLE_EQ(outputValue[0], 5796.0 / 256.0);
+}
+
+TEST(UtilitiesTests, lagrangeInterp2D) {
+  int numTime = 2;
+  std::vector<double> interpValues = {0, 1, 1, 2};
+  std::vector<double> outputValue = {0, 0};
+  double startTime = 0;
+  double delTime = 1;
+  double time = 0.5;
+  int vectorLength = 2;
+  int order = 2;
+
+  lagrangeInterp(numTime, &interpValues[0], startTime, delTime,
+                    time, vectorLength, order, &outputValue[0]);
+  EXPECT_DOUBLE_EQ(outputValue[0], 0.5);
+  EXPECT_DOUBLE_EQ(outputValue[1], 1.5);
+}

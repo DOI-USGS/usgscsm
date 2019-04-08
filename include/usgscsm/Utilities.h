@@ -43,11 +43,15 @@ void createCameraLookVector(
   const double& focalLength,
   double cameraLook[]);
 
-//void calculateAttitudeCorrection(
-//  const double& time,
-//
-//  double attCorr[9]);
-//
+void lagrangeInterp (
+  const int&     numTime,
+  const double*  valueArray,
+  const double&  startTime,
+  const double&  delTime,
+  const double&  time,
+  const int&     vectorLength,
+  const int&     i_order,
+  double*        valueVector);
 
 // Methods for checking/accessing the ISD
 
