@@ -59,6 +59,9 @@ void UsgsAstroFrameSensorModel::reset() {
 
     m_currentParameterValue = std::vector<double>(NUM_PARAMETERS, 0.0);
     m_currentParameterCovariance = std::vector<double>(NUM_PARAMETERS*NUM_PARAMETERS,0.0);
+    for (int i = 0; i < NUM_PARAMETERS*NUM_PARAMETERS; i += NUM_PARAMETERS+1) {
+      m_currentParameterCovariance[i] = 1;
+    }
     m_noAdjustments = std::vector<double>(NUM_PARAMETERS,0.0);
     m_ccdCenter = std::vector<double>(2, 0.0);
     m_spacecraftVelocity = std::vector<double>(3, 0.0);
@@ -1008,6 +1011,9 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
     state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
     state["m_currentParameterCovariance"] = std::vector<double>(NUM_PARAMETERS*NUM_PARAMETERS,0.0);
+    for (int i = 0; i < NUM_PARAMETERS*NUM_PARAMETERS; i += NUM_PARAMETERS+1) {
+      state["m_currentParameterCovariance"][i] = 1;
+    }
     state["m_collectionIdentifier"] = "";
 
     // Get the optional logging file
