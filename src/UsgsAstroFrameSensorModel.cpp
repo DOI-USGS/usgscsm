@@ -840,7 +840,7 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
         m_sensorName = state.at("m_sensorName").get<std::string>();
         m_collectionIdentifier = state.at("m_collectionIdentifier").get<std::string>();
         // Set reference point to the center of the image
-        m_referencePointXyz = imageToGround(csm::ImageCoord(m_nLines / 2, m_nSamples / 2));
+        m_referencePointXyz = imageToGround(csm::ImageCoord(m_nLines / 2.0, m_nSamples / 2.0));
         m_currentParameterCovariance = state.at("m_currentParameterCovariance").get<std::vector<double>>();
         m_logFile = state.at("m_logFile").get<std::string>();
         if (m_logFile.empty()) {

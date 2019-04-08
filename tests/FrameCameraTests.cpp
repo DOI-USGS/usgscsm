@@ -59,10 +59,12 @@ TEST_F(FrameSensorModel, OffBody3) {
 }
 
 TEST_F(FrameSensorModel, getReferencePoint) {
-  csm::EcefCoord groundPt = sensorModel->getReferencePoint();
-  EXPECT_EQ(groundPt.x, 0.0);
-  EXPECT_EQ(groundPt.y, 0.0);
-  EXPECT_EQ(groundPt.z, 0.0);
+  csm::ImageCoord imagePt(7.5, 7.5);
+  csm::EcefCoord groundPtCenter = sensorModel->imageToGround(imagePt, 0.0);
+  csm::EcefCoord groundPtRef = sensorModel->getReferencePoint();
+  EXPECT_EQ(groundPtRef.x, groundPtCenter.x);
+  EXPECT_EQ(groundPtRef.y, groundPtCenter.y);
+  EXPECT_EQ(groundPtRef.z, groundPtCenter.z);
 }
 
 TEST_F(FrameSensorModel, OffBody4) {
