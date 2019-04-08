@@ -4,7 +4,7 @@
 #include "UsgsAstroPlugin.h"
 #include "Utilities.h"
 
-#include <json.hpp>
+#include <json/json.hpp>
 #include <gtest/gtest.h>
 
 #include <math.h>

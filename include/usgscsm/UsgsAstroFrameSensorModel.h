@@ -10,7 +10,11 @@
 #include "Distortion.h"
 #include "Utilities.h"
 
-#include <json.hpp>
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
+
+#include <json/json.hpp>
+
 using json = nlohmann::json;
 
 
@@ -57,7 +61,7 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
     * @return @b vector<double> Returns the body-fixed X,Y,Z coordinates of the intersection.
     *                           If no intersection, returns a 3-element vector of 0's.
     */
-    virtual csm::EcefCoord imageToGround(const csm::ImageCoord &imagePt, double height,
+    virtual csm::EcefCoord imageToGround(const csm::ImageCoord &imagePt, double height = 0.0,
                                     double desiredPrecision=0.001, double *achievedPrecision=NULL,
                                     csm::WarningList *warnings=NULL) const;
 
@@ -308,6 +312,7 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
         const GeometricModel &comparisonModel,
         csm::param::Set pSet = csm::param::VALID,
         const GeometricModelList &otherModels = GeometricModelList()) const;
+    virtual std::shared_ptr<spdlog::logger> getLogger();
 
     static const std::string _SENSOR_MODEL_NAME;
 
@@ -358,6 +363,9 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
     int m_nParameters;
 
     csm::EcefCoord m_referencePointXyz;
+
+    std::string m_logFile;
+    std::shared_ptr<spdlog::logger> m_logger;
 
     json _state;
     static const int         _NUM_STATE_KEYWORDS;
