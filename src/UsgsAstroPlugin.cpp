@@ -15,7 +15,7 @@
 #include <Warning.h>
 #include <Version.h>
 
-#include <json.hpp>
+#include <json/json.hpp>
 using json = nlohmann::json;
 
 #ifdef _WIN32
@@ -223,6 +223,9 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(const csm::Isd &imageSupportD
       UsgsAstroFrameSensorModel *model =  new UsgsAstroFrameSensorModel();
       try {
         model->replaceModelState(model->constructStateFromIsd(stringIsd, warnings));
+        if (model->getLogger()) {
+          model->getLogger()->info("Constructed model: {}", modelName);
+        }
       }
       catch (...) {
         csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE;

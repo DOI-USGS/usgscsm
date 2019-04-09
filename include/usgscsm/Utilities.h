@@ -8,7 +8,7 @@
 #include <tuple>
 #include <string>
 
-#include <json.hpp>
+#include <json/json.hpp>
 
 #include <Warning.h>
 
@@ -43,11 +43,15 @@ void createCameraLookVector(
   const double& focalLength,
   double cameraLook[]);
 
-//void calculateAttitudeCorrection(
-//  const double& time,
-//
-//  double attCorr[9]);
-//
+void lagrangeInterp (
+  const int&     numTime,
+  const double*  valueArray,
+  const double&  startTime,
+  const double&  delTime,
+  const double&  time,
+  const int&     vectorLength,
+  const int&     i_order,
+  double*        valueVector);
 
 // Methods for checking/accessing the ISD
 
@@ -56,6 +60,7 @@ std::string getSensorModelName(nlohmann::json isd, csm::WarningList *list=nullpt
 std::string getImageId(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::string getSensorName(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::string getPlatformName(nlohmann::json isd, csm::WarningList *list=nullptr);
+std::string getLogFile(nlohmann::json isd, csm::WarningList *list=nullptr);
 int getTotalLines(nlohmann::json isd, csm::WarningList *list=nullptr);
 int getTotalSamples(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getStartingTime(nlohmann::json isd, csm::WarningList *list=nullptr);

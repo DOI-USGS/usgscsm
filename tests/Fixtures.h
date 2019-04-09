@@ -5,7 +5,7 @@
 #include "UsgsAstroFrameSensorModel.h"
 #include "UsgsAstroLsSensorModel.h"
 
-#include <json.hpp>
+#include <json/json.hpp>
 
 #include <map>
 #include <sstream>
@@ -182,6 +182,33 @@ class ConstAngularVelocityLineScanSensorModel : public ::testing::Test {
          sensorModel = NULL;
 
          isd.setFilename("data/constAngularVelocityLineScan.img");
+         UsgsAstroPlugin cameraPlugin;
+
+         csm::Model *model = cameraPlugin.constructModelFromISD(
+               isd,
+               "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL");
+         sensorModel = dynamic_cast<UsgsAstroLsSensorModel *>(model);
+
+         ASSERT_NE(sensorModel, nullptr);
+      }
+
+      void TearDown() override {
+         if (sensorModel) {
+            delete sensorModel;
+            sensorModel = NULL;
+         }
+      }
+};
+
+class OrbitalLineScanSensorModel : public ::testing::Test {
+   protected:
+      csm::Isd isd;
+      UsgsAstroLsSensorModel *sensorModel;
+
+      void SetUp() override {
+         sensorModel = NULL;
+
+         isd.setFilename("data/orbitalLineScan.img");
          UsgsAstroPlugin cameraPlugin;
 
          csm::Model *model = cameraPlugin.constructModelFromISD(
