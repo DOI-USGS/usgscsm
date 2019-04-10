@@ -229,7 +229,7 @@ TEST_F(FrameSensorModel, Rotation_NPole_Center) {
 
 
 TEST_F(FrameSensorModel, Rotation_SPole_Center) {
-   sensorModel->setParameterValue(4, 0.0); // phi
+   sensorModel->setParameterValue(3, 0.0); // phi
    sensorModel->setParameterValue(0, 0.0); // X
    sensorModel->setParameterValue(1, 0.0); // Y
    sensorModel->setParameterValue(2, -1000.0); // Z

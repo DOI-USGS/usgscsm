@@ -1191,10 +1191,10 @@ void UsgsAstroFrameSensorModel::calcRotationMatrix(
     double m[3][3]) const {
   MESSAGE_LOG(this->m_logger, "Calculating rotation matrix");
   // Trigonometric functions for rotation matrix
-  double w = m_currentParameterValue[3];
-  double x = m_currentParameterValue[4];
-  double y = m_currentParameterValue[5];
-  double z = m_currentParameterValue[6];
+  double x = m_currentParameterValue[3];
+  double y = m_currentParameterValue[4];
+  double z = m_currentParameterValue[5];
+  double w = m_currentParameterValue[6];
 
   m[0][0] = w*w + x*x - y*y - z*z;
   m[0][1] = 2 * (x*y - w*z);
@@ -1212,10 +1212,10 @@ void UsgsAstroFrameSensorModel::calcRotationMatrix(
   double m[3][3], const std::vector<double> &adjustments) const {
   MESSAGE_LOG(this->m_logger, "Calculating rotation matrix with adjustments");
   // Trigonometric functions for rotation matrix
-  double w = getValue(3, adjustments);
-  double x = getValue(4, adjustments);
-  double y = getValue(5, adjustments);
-  double z = getValue(6, adjustments);
+  double x = getValue(3, adjustments);
+  double y = getValue(4, adjustments);
+  double z = getValue(5, adjustments);
+  double w = getValue(6, adjustments);
 
   m[0][0] = w*w + x*x - y*y - z*z;
   m[0][1] = 2 * (x*y - w*z);
