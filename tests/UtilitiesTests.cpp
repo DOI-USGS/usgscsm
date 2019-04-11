@@ -54,10 +54,91 @@ TEST(UtilitiesTests, calculateRotationMatrixFromQuaternions) {
 TEST(UtilitiesTests, computeDistortedFocalPlaneCoordinates) {
    double iTransS[] = {0.0, 0.0, 10.0};
    double iTransL[] = {0.0, 10.0, 0.0};
-   std::tuple<double, double> natFocalPlane;
-   computeDistortedFocalPlaneCoordinates(0.5, 4, 8, 0.5, 1, 0, iTransS, iTransL, natFocalPlane);
-   EXPECT_DOUBLE_EQ(std::get<0> (natFocalPlane), 0);
-   EXPECT_DOUBLE_EQ(std::get<1> (natFocalPlane), -0.4);
+   double undistortedFocalPlaneX, undistortedFocalPlaneY;
+   computeDistortedFocalPlaneCoordinates(
+         0.5, 4.0,
+         8.0, 0.5,
+         1.0, 1.0,
+         0.0, 0.0,
+         iTransS, iTransL,
+         undistortedFocalPlaneX, undistortedFocalPlaneY);
+   EXPECT_DOUBLE_EQ(undistortedFocalPlaneX, 0);
+   EXPECT_DOUBLE_EQ(undistortedFocalPlaneY, -0.4);
+}
+
+TEST(UtilitiesTests, computeDistortedFocalPlaneCoordinatesSumming) {
+   double iTransS[] = {0.0, 0.0, 10.0};
+   double iTransL[] = {0.0, 10.0, 0.0};
+   double undistortedFocalPlaneX, undistortedFocalPlaneY;
+   computeDistortedFocalPlaneCoordinates(
+         2.0, 4.0,
+         8.0, 8.0,
+         2.0, 2.0,
+         0.0, 0.0,
+         iTransS, iTransL,
+         undistortedFocalPlaneX, undistortedFocalPlaneY);
+   EXPECT_DOUBLE_EQ(undistortedFocalPlaneX, -0.4);
+   EXPECT_DOUBLE_EQ(undistortedFocalPlaneY, 0);
+}
+
+TEST(UtilitiesTests, computeDistortedFocalPlaneCoordinatesStart) {
+   double iTransS[] = {0.0, 0.0, 10.0};
+   double iTransL[] = {0.0, 10.0, 0.0};
+   double undistortedFocalPlaneX, undistortedFocalPlaneY;
+   computeDistortedFocalPlaneCoordinates(
+         2.0, 4.0,
+         8.0, 8.0,
+         1.0, 1.0,
+         2.0, 1.0,
+         iTransS, iTransL,
+         undistortedFocalPlaneX, undistortedFocalPlaneY);
+   EXPECT_DOUBLE_EQ(undistortedFocalPlaneX, -0.5);
+   EXPECT_DOUBLE_EQ(undistortedFocalPlaneY, -0.2);
+}
+
+TEST(UtilitiesTests, computePixel) {
+   double iTransS[] = {0.0, 0.0, 10.0};
+   double iTransL[] = {0.0, 10.0, 0.0};
+   double line, sample;
+   computePixel(
+         0.0, -0.4,
+         8.0, 0.5,
+         1.0, 1.0,
+         0.0, 0.0,
+         iTransS, iTransL,
+         line, sample);
+   EXPECT_DOUBLE_EQ(line, 0.5);
+   EXPECT_DOUBLE_EQ(sample, 4.0);
+}
+
+TEST(UtilitiesTests, computePixelSumming) {
+   double iTransS[] = {0.0, 0.0, 10.0};
+   double iTransL[] = {0.0, 10.0, 0.0};
+   double line, sample;
+   computePixel(
+         -0.4, 0.0,
+         8.0, 8.0,
+         2.0, 2.0,
+         0.0, 0.0,
+         iTransS, iTransL,
+         line, sample);
+   EXPECT_DOUBLE_EQ(line, 2.0);
+   EXPECT_DOUBLE_EQ(sample, 4.0);
+}
+
+TEST(UtilitiesTests, computePixelStart) {
+   double iTransS[] = {0.0, 0.0, 10.0};
+   double iTransL[] = {0.0, 10.0, 0.0};
+   double line, sample;
+   computePixel(
+         -0.5, -0.2,
+         8.0, 8.0,
+         1.0, 1.0,
+         2.0, 1.0,
+         iTransS, iTransL,
+         line, sample);
+   EXPECT_DOUBLE_EQ(line, 2.0);
+   EXPECT_DOUBLE_EQ(sample, 4.0);
 }
 
 TEST(UtilitiesTests, createCameraLookVector) {
