@@ -1235,11 +1235,9 @@ void UsgsAstroFrameSensorModel::losEllipsoidIntersect(
 {
    MESSAGE_LOG(this->m_logger, "Calculating losEllipsoidIntersect with height: {},\n\
                                 xc: {}, yc: {}, zc: {}\n\
-                                xl: {}, yl: {}, zl: {}\n\
-                                x: {}, y: {}, z{}", height,
+                                xl: {}, yl: {}, zl: {}", height,
                                 xc, yc, zc,
-                                xl, yl, zl,
-                                x, y, z);
+                                xl, yl, zl);
    // Helper function which computes the intersection of the image ray
    // with an expanded ellipsoid.  All vectors are in earth-centered-fixed
    // coordinate system with origin at the center of the earth.
@@ -1274,6 +1272,9 @@ void UsgsAstroFrameSensorModel::losEllipsoidIntersect(
    x = xc + scale * xl;
    y = yc + scale * yl;
    z = zc + scale * zl;
+
+   MESSAGE_LOG(this->m_logger, "Calculated losEllipsoidIntersect at: {},, {}, {}",
+                                x, y, z);
 }
 
 
