@@ -191,7 +191,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
                                                  double *achievedPrecision,
                                                  csm::WarningList *warnings) const {
 
-  MESSAGE_LOG(this->m_logger, "Computeing imageToGround for {}, {}, {}, with desired precision {}",
+  MESSAGE_LOG(this->m_logger, "Computing imageToGround for {}, {}, {}, with desired precision {}",
                 imagePt.line, imagePt.samp, height, desiredPrecision);
 
   double sample = imagePt.samp;
@@ -1273,7 +1273,7 @@ void UsgsAstroFrameSensorModel::losEllipsoidIntersect(
    y = yc + scale * yl;
    z = zc + scale * zl;
 
-   MESSAGE_LOG(this->m_logger, "Calculated losEllipsoidIntersect at: {},, {}, {}",
+   MESSAGE_LOG(this->m_logger, "Calculated losEllipsoidIntersect at: {}, {}, {}",
                                 x, y, z);
 }
 
