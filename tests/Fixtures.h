@@ -62,6 +62,33 @@ class FrameSensorModel : public ::testing::Test {
       }
 };
 
+class OrbitalFrameSensorModel : public ::testing::Test {
+   protected:
+      csm::Isd isd;
+      UsgsAstroFrameSensorModel *sensorModel;
+
+      void SetUp() override {
+         sensorModel = NULL;
+
+         isd.setFilename("data/orbitalFramer.img");
+         UsgsAstroPlugin frameCameraPlugin;
+
+         csm::Model *model = frameCameraPlugin.constructModelFromISD(
+               isd,
+               "USGS_ASTRO_FRAME_SENSOR_MODEL");
+         sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+
+         ASSERT_NE(sensorModel, nullptr);
+      }
+
+      void TearDown() override {
+         if (sensorModel) {
+            delete sensorModel;
+            sensorModel = NULL;
+         }
+      }
+};
+
 class FrameIsdTest : public ::testing::Test {
    protected:
       csm::Isd isd;
