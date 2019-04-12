@@ -77,6 +77,7 @@ void UsgsAstroFrameSensorModel::reset() {
     m_referencePointXyz.x = 0;
     m_referencePointXyz.y = 0;
     m_referencePointXyz.z = 0;
+    m_pixelGroundSize = 1.0;
     m_logFile = "";
     m_logger.reset();
 }
@@ -547,50 +548,25 @@ std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::
                                                                      &groundPt) const {
   MESSAGE_LOG(this->m_logger, "Computing ground partials for ground point {}, {}, {}",
                                groundPt.x, groundPt.y, groundPt.z);
-  // Partials of line, sample wrt X, Y, Z
-  // Uses collinearity equations
+  // Partial of line, sample wrt X, Y, Z
+  double x = groundPt.x;
+  double y = groundPt.y;
+  double z = groundPt.z;
+
+  csm::ImageCoord ipB = groundToImage(groundPt);
+  csm::ImageCoord ipX = groundToImage(csm::EcefCoord(x + m_pixelGroundSize, y, z));
+  csm::ImageCoord ipY = groundToImage(csm::EcefCoord(x, y + m_pixelGroundSize, z));
+  csm::ImageCoord ipZ = groundToImage(csm::EcefCoord(x, y, z + m_pixelGroundSize));
+
   std::vector<double> partials(6, 0.0);
+  partials[0] = (ipX.line - ipB.line) / m_pixelGroundSize;
+  partials[3] = (ipX.samp - ipB.samp) / m_pixelGroundSize;
+  partials[1] = (ipY.line - ipB.line) / m_pixelGroundSize;
+  partials[4] = (ipY.samp - ipB.samp) / m_pixelGroundSize;
+  partials[2] = (ipZ.line - ipB.line) / m_pixelGroundSize;
+  partials[5] = (ipZ.samp - ipB.samp) / m_pixelGroundSize;
 
-  double m[3][3];
-  calcRotationMatrix(m, m_noAdjustments);
-
-  double xo, yo, zo;
-  xo = groundPt.x - m_currentParameterValue[0];
-  yo = groundPt.y - m_currentParameterValue[1];
-  zo = groundPt.z - m_currentParameterValue[2];
-
-  double u, v, w;
-  u = m[0][0] * xo + m[0][1] * yo + m[0][2] * zo;
-  v = m[1][0] * xo + m[1][1] * yo + m[1][2] * zo;
-  w = m[2][0] * xo + m[2][1] * yo + m[2][2] * zo;
-
-  double fdw, udw, vdw;
-  fdw = m_focalLength / w;
-  udw = u / w;
-  vdw = v / w;
-
-  double upx, vpx, wpx;
-  upx = m[0][0];
-  vpx = m[1][0];
-  wpx = m[2][0];
-  partials[0] = -fdw * ( upx - udw * wpx );
-  partials[3] = -fdw * ( vpx - vdw * wpx );
-
-  double upy, vpy, wpy;
-  upy = m[0][1];
-  vpy = m[1][1];
-  wpy = m[2][1];
-  partials[1] = -fdw * ( upy - udw * wpy );
-  partials[4] = -fdw * ( vpy - vdw * wpy );
-
-  double upz, vpz, wpz;
-  upz = m[0][2];
-  vpz = m[1][2];
-  wpz = m[2][2];
-  partials[2] = -fdw * ( upz - udw * wpz );
-  partials[5] = -fdw * ( vpz - vdw * wpz );
-
-  MESSAGE_LOG(this->m_logger, "Computing ground partials result line: {}, sample: {}, wrt: {} and x: {}, y: {}, z: {}",
+  MESSAGE_LOG(this->m_logger, "Computing ground partials results:\nLine: {}, {}, {}\nSample: {}, {}, {}",
                                partials[0], partials[1], partials[2], partials[3], partials[4], partials[5]);
 
   return partials;
@@ -731,6 +707,7 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_referencePointXyz", {m_referencePointXyz.x,
                                m_referencePointXyz.y,
                                m_referencePointXyz.z}},
+      {"m_pixelGroundSize", m_pixelGroundSize},
       {"m_currentParameterCovariance", m_currentParameterCovariance},
       {"m_logFile", m_logFile}
     };
@@ -840,7 +817,13 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
         m_sensorName = state.at("m_sensorName").get<std::string>();
         m_collectionIdentifier = state.at("m_collectionIdentifier").get<std::string>();
         // Set reference point to the center of the image
-        m_referencePointXyz = imageToGround(csm::ImageCoord(m_nLines / 2.0, m_nSamples / 2.0));
+        m_referencePointXyz = imageToGround(csm::ImageCoord(m_nLines/2.0, m_nSamples/2.0));
+        // Compute the pixel ground size at the reference point
+        csm::EcefCoord nextRefPoint = imageToGround(csm::ImageCoord(m_nLines/2.0 + 1, m_nSamples/2.0 + 1));
+        double dx = nextRefPoint.x - m_referencePointXyz.x;
+        double dy = nextRefPoint.y - m_referencePointXyz.y;
+        double dz = nextRefPoint.z - m_referencePointXyz.z;
+        m_pixelGroundSize = sqrt((dx*dx + dy*dy + dz*dz) / 2.0);
         m_currentParameterCovariance = state.at("m_currentParameterCovariance").get<std::vector<double>>();
         m_logFile = state.at("m_logFile").get<std::string>();
         if (m_logFile.empty()) {

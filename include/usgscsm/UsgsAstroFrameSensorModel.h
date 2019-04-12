@@ -363,6 +363,7 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
     int m_nParameters;
 
     csm::EcefCoord m_referencePointXyz;
+    double m_pixelGroundSize;
 
     std::string m_logFile;
     std::shared_ptr<spdlog::logger> m_logger;
