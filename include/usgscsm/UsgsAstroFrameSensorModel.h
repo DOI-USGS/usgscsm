@@ -339,10 +339,10 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
     double m_focalLength;
     double m_minElevation;
     double m_maxElevation;
-    double m_linePp;
-    double m_samplePp;
     double m_startingDetectorSample;
     double m_startingDetectorLine;
+    double m_detectorSampleSumming;
+    double m_detectorLineSumming;
     std::string m_targetName;
     std::string m_modelName;
     std::string m_sensorName;

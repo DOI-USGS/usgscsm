@@ -23,10 +23,27 @@ void computeDistortedFocalPlaneCoordinates(
   const double& sampleOrigin,
   const double& lineOrigin,
   const double& sampleSumming,
+  const double& lineSumming,
   const double& startingSample,
+  const double& startingLine,
   const double iTransS[],
   const double iTransL[],
-  std::tuple<double, double>& natFocalPlane);
+  double &distortedX,
+  double &distortedY);
+
+void computePixel(
+  const double& distortedX,
+  const double& distortedY,
+  const double& sampleOrigin,
+  const double& lineOrigin,
+  const double& sampleSumming,
+  const double& lineSumming,
+  const double& startingSample,
+  const double& startingLine,
+  const double iTransS[],
+  const double iTransL[],
+  double &line,
+  double &sample);
 
 void calculateRotationMatrixFromQuaternions(
   double quaternions[4],
