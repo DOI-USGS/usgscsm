@@ -229,7 +229,7 @@ TEST_F(FrameSensorModel, Rotation_NPole_Center) {
 
 
 TEST_F(FrameSensorModel, Rotation_SPole_Center) {
-   sensorModel->setParameterValue(4, 0.0); // phi
+   sensorModel->setParameterValue(3, 0.0); // phi
    sensorModel->setParameterValue(0, 0.0); // X
    sensorModel->setParameterValue(1, 0.0); // Y
    sensorModel->setParameterValue(2, -1000.0); // Z
@@ -297,6 +297,74 @@ TEST_F(FrameStateTest, SemiMinorAxis10x_SlightlyOffCenter) {
   EXPECT_NEAR(groundPt.x, 9.99803960, 1e-8);
   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
   EXPECT_NEAR(groundPt.z, 1.98000392, 1e-8);
+
+  delete sensorModel;
+  sensorModel = NULL;
+}
+
+
+TEST_F(FrameStateTest, SampleSumming) {
+  std::string key = "m_detectorSampleSumming";
+  double newValue = 2.0;
+  UsgsAstroFrameSensorModel* sensorModel = createModifiedStateSensorModel(key, newValue);
+
+  ASSERT_NE(sensorModel, nullptr);
+   csm::ImageCoord imagePt(7.5, 3.75);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   EXPECT_NEAR(groundPt.x, 10.0, 1e-8);
+   EXPECT_NEAR(groundPt.y, 0, 1e-8);
+   EXPECT_NEAR(groundPt.z, 0, 1e-8);
+
+  delete sensorModel;
+  sensorModel = NULL;
+}
+
+
+TEST_F(FrameStateTest, LineSumming) {
+  std::string key = "m_detectorLineSumming";
+  double newValue = 2.0;
+  UsgsAstroFrameSensorModel* sensorModel = createModifiedStateSensorModel(key, newValue);
+
+  ASSERT_NE(sensorModel, nullptr);
+   csm::ImageCoord imagePt(3.75, 7.5);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   EXPECT_NEAR(groundPt.x, 10.0, 1e-8);
+   EXPECT_NEAR(groundPt.y, 0, 1e-8);
+   EXPECT_NEAR(groundPt.z, 0, 1e-8);
+
+  delete sensorModel;
+  sensorModel = NULL;
+}
+
+
+TEST_F(FrameStateTest, StartSample) {
+  std::string key = "m_startingDetectorSample";
+  double newValue = 5.0;
+  UsgsAstroFrameSensorModel* sensorModel = createModifiedStateSensorModel(key, newValue);
+
+  ASSERT_NE(sensorModel, nullptr);
+   csm::ImageCoord imagePt(7.5, 2.5);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   EXPECT_NEAR(groundPt.x, 10.0, 1e-8);
+   EXPECT_NEAR(groundPt.y, 0, 1e-8);
+   EXPECT_NEAR(groundPt.z, 0, 1e-8);
+
+  delete sensorModel;
+  sensorModel = NULL;
+}
+
+
+TEST_F(FrameStateTest, StartLine) {
+  std::string key = "m_startingDetectorLine";
+  double newValue = 5.0;
+  UsgsAstroFrameSensorModel* sensorModel = createModifiedStateSensorModel(key, newValue);
+
+  ASSERT_NE(sensorModel, nullptr);
+   csm::ImageCoord imagePt(2.5, 7.5);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   EXPECT_NEAR(groundPt.x, 10.0, 1e-8);
+   EXPECT_NEAR(groundPt.y, 0, 1e-8);
+   EXPECT_NEAR(groundPt.z, 0, 1e-8);
 
   delete sensorModel;
   sensorModel = NULL;

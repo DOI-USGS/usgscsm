@@ -1627,12 +1627,18 @@ void UsgsAstroLsSensorModel::losToEcf(
    double fractionalLine = line - floor(line);
 
    // Compute distorted image coordinates in mm (sample, line on image (pixels) -> focal plane
-   std::tuple<double, double> natFocalPlane;
-   computeDistortedFocalPlaneCoordinates(fractionalLine, sampleUSGSFull, m_detectorSampleOrigin, m_detectorLineOrigin, m_detectorSampleSumming, m_startingSample, m_iTransS, m_iTransL, natFocalPlane);
+   double distortedFocalPlaneX, distortedFocalPlaneY;
+   computeDistortedFocalPlaneCoordinates(
+         fractionalLine, sampleUSGSFull,
+         m_detectorSampleOrigin, m_detectorLineOrigin,
+         m_detectorSampleSumming, 1.0,
+         m_startingSample, 0.0,
+         m_iTransS, m_iTransL,
+         distortedFocalPlaneX, distortedFocalPlaneY);
 
    // Remove lens distortion
    double undistortedFocalPlaneX, undistortedFocalPlaneY;
-   removeDistortion(std::get<0>(natFocalPlane), std::get<1>(natFocalPlane),
+   removeDistortion(distortedFocalPlaneX, distortedFocalPlaneY,
                     undistortedFocalPlaneX, undistortedFocalPlaneY,
                     m_opticalDistCoeffs,
                     m_distortionType);
