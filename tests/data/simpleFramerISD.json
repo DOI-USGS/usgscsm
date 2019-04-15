@@ -51,6 +51,8 @@
 	},
 	"starting_detector_line": 0,
 	"starting_detector_sample": 0,
+	"detector_sample_summing": 1.0,
+	"detector_line_summing": 1.0,
 	"starting_ephemeris_time": 0,
 	"sun_position": {
 		"unit": "m",

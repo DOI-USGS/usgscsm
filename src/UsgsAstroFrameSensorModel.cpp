@@ -43,12 +43,12 @@ void UsgsAstroFrameSensorModel::reset() {
     m_focalLength = 0.0;
     m_startingDetectorSample = 0.0;
     m_startingDetectorLine = 0.0;
+    m_detectorSampleSumming = 1.0;
+    m_detectorLineSumming = 1.0;
     m_targetName = "";
     m_ifov = 0;
     m_instrumentID = "";
     m_focalLengthEpsilon = 0.0;
-    m_linePp = 0.0;
-    m_samplePp = 0.0;
     m_originalHalfLines = 0.0;
     m_spacecraftName = "";
     m_pixelPitch = 0.0;
@@ -143,8 +143,8 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
   // Sensor position
   double undistortedx, undistortedy, denom;
   denom = m[0][2] * xo + m[1][2] * yo + m[2][2] * zo;
-  undistortedx = (f * (m[0][0] * xo + m[1][0] * yo + m[2][0] * zo)/denom) + m_samplePp;  //m_samplePp like this assumes mm
-  undistortedy = (f * (m[0][1] * xo + m[1][1] * yo + m[2][1] * zo)/denom) + m_linePp;
+  undistortedx = (f * (m[0][0] * xo + m[1][0] * yo + m[2][0] * zo)/denom);
+  undistortedy = (f * (m[0][1] * xo + m[1][1] * yo + m[2][1] * zo)/denom);
 
   // Apply the distortion to the line/sample location and then convert back to line/sample
   double distortedX, distortedY;
@@ -154,8 +154,13 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
 
   // Convert distorted mm into line/sample
   double sample, line;
-  sample = m_iTransS[0] + m_iTransS[1] * distortedX + m_iTransS[2] * distortedY + m_ccdCenter[1];
-  line =   m_iTransL[0] + m_iTransL[1] * distortedX + m_iTransL[2] * distortedY + m_ccdCenter[0];
+  computePixel(
+    distortedX, distortedY,
+    m_ccdCenter[1], m_ccdCenter[0],
+    m_detectorSampleSumming, m_detectorLineSumming,
+    m_startingDetectorSample, m_startingDetectorLine,
+    &m_iTransS[0], &m_iTransL[0],
+    line, sample);
 
   return csm::ImageCoord(line, sample);
 }
@@ -187,7 +192,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
                                                  double *achievedPrecision,
                                                  csm::WarningList *warnings) const {
 
-  MESSAGE_LOG(this->m_logger, "Computeing imageToGround for {}, {}, {}, with desired precision {}",
+  MESSAGE_LOG(this->m_logger, "Computing imageToGround for {}, {}, {}, with desired precision {}",
                 imagePt.line, imagePt.samp, height, desiredPrecision);
 
   double sample = imagePt.samp;
@@ -200,16 +205,17 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
                 m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1], m[2][2]);
 
   // Apply the principal point offset, assuming the pp is given in pixels
-  double xl, yl, zl, lo, so;
-  lo = line - m_linePp;
-  so = sample - m_samplePp;
+  double xl, yl, zl;
 
   // Convert from the pixel space into the metric space
-  double line_center, sample_center, x_camera, y_camera;
-  line_center = m_ccdCenter[0];
-  sample_center = m_ccdCenter[1];
-  y_camera = m_transY[0] + m_transY[1] * (lo - line_center) + m_transY[2] * (so - sample_center);
-  x_camera = m_transX[0] + m_transX[1] * (lo - line_center) + m_transX[2] * (so - sample_center);
+  double x_camera, y_camera;
+  computeDistortedFocalPlaneCoordinates(
+        line, sample,
+        m_ccdCenter[1], m_ccdCenter[0],
+        m_detectorSampleSumming, m_detectorLineSumming,
+        m_startingDetectorSample, m_startingDetectorLine,
+        &m_iTransS[0], &m_iTransL[0],
+        x_camera, y_camera);
 
   // Apply the distortion model (remove distortion)
   double undistortedX, undistortedY;
@@ -272,11 +278,14 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(const csm::I
   MESSAGE_LOG(this->m_logger, "Computeing imageToProximateImagingLocus for {}, {}, {}, with desired precision {}",
                                imagePt.line, imagePt.samp, desiredPrecision);
   // Find the line,sample on the focal plane (mm)
-  // CSM center = 0.5, MDIS IK center = 1.0
-  double row = imagePt.line - m_ccdCenter[0];
-  double col = imagePt.samp - m_ccdCenter[1];
-  double focalPlaneX = m_transX[0] + m_transX[1] * row + m_transX[2] * col;
-  double focalPlaneY = m_transY[0] + m_transY[1] * row + m_transY[2] * col;
+  double focalPlaneX, focalPlaneY;
+  computeDistortedFocalPlaneCoordinates(
+        imagePt.line, imagePt.samp,
+        m_ccdCenter[1], m_ccdCenter[0],
+        m_detectorSampleSumming, m_detectorLineSumming,
+        m_startingDetectorSample, m_startingDetectorLine,
+        &m_iTransS[0], &m_iTransL[0],
+        focalPlaneY, focalPlaneY);
 
   // Distort
   double undistortedFocalPlaneX, undistortedFocalPlaneY;
@@ -683,13 +692,13 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_sunPosition", {m_sunPosition[0], m_sunPosition[1], m_sunPosition[2]}},
       {"m_startingDetectorSample", m_startingDetectorSample},
       {"m_startingDetectorLine", m_startingDetectorLine},
+      {"m_detectorSampleSumming", m_detectorSampleSumming},
+      {"m_detectorLineSumming", m_detectorLineSumming},
       {"m_targetName", m_targetName},
       {"m_ifov", m_ifov},
       {"m_instrumentID", m_instrumentID},
       {"m_focalLengthEpsilon", m_focalLengthEpsilon},
       {"m_ccdCenter", {m_ccdCenter[0], m_ccdCenter[1]}},
-      {"m_linePp", m_linePp},
-      {"m_samplePp", m_samplePp},
       {"m_minElevation", m_minElevation},
       {"m_maxElevation", m_maxElevation},
       {"m_distortionType", m_distortionType},
@@ -723,6 +732,8 @@ bool UsgsAstroFrameSensorModel::isValidModelState(const std::string& stringState
     "m_focalLength",
     "m_startingDetectorSample",
     "m_startingDetectorLine",
+    "m_detectorSampleSumming",
+    "m_detectorLineSumming",
     "m_focalLengthEpsilon",
     "m_nLines",
     "m_nSamples",
@@ -799,6 +810,8 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
         m_focalLength = state.at("m_focalLength").get<double>();
         m_startingDetectorSample = state.at("m_startingDetectorSample").get<double>();
         m_startingDetectorLine = state.at("m_startingDetectorLine").get<double>();
+        m_detectorSampleSumming = state.at("m_detectorSampleSumming").get<double>();
+        m_detectorLineSumming = state.at("m_detectorLineSumming").get<double>();
         m_focalLengthEpsilon = state.at("m_focalLengthEpsilon").get<double>();
         m_nLines = state.at("m_nLines").get<int>();
         m_nSamples = state.at("m_nSamples").get<int>();
@@ -835,29 +848,6 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
             m_logger = spdlog::basic_logger_mt(m_logFile, m_logFile);
           }
         }
-
-
-        // Leaving unused params commented out
-        // m_targetName = state.at("m_targetName").get<std::string>();
-        // m_ifov = state.at("m_ifov").get<double>();
-        // m_instrumentID = state.at("m_instrumentID").get<std::string>();
-        // m_currentParameterCovariance = state.at("m_currentParameterCovariance").get<std::vector<double>>();
-        // m_noAdjustments = state.at("m_noAdjustments").get<std::vector<double>>();
-        // m_linePp = state.at("m_linePp").get<double>();
-        // m_samplePp = state.at("m_samplePp").get<double>();
-        // m_originalHalfLines = state.at("m_originalHalfLines").get<double>();
-        // m_spacecraftName = state.at("m_spacecraftName").get<std::string>();
-        // m_pixelPitch = state.at("m_pixelPitch").get<double>();
-        // m_ephemerisTime = state.at("m_ephemerisTime").get<double>();
-        // m_originalHalfSamples = state.at("m_originalHalfSamples").get<double>();
-        // m_boresight = state.at("m_boresight").get<std::vector<double>>();
-
-        // Cast int vector to csm::param::Type vector by simply copying it
-        // std::vector<int> paramType = state.at("m_parameterType").get<std::vector<int>>();
-        // m_parameterType = std::vector<csm::param::Type>();
-        // for(auto &t : paramType){
-           // paramType.push_back(static_cast<csm::param::Type>(t));
-        // }
     }
     catch(std::out_of_range& e) {
       throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
@@ -881,6 +871,8 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
     state["m_startingDetectorSample"] = getDetectorStartingSample(isd, parsingWarnings);
     state["m_startingDetectorLine"] = getDetectorStartingLine(isd, parsingWarnings);
+    state["m_detectorSampleSumming"] = getSampleSumming(isd, parsingWarnings);
+    state["m_detectorLineSumming"] = getLineSumming(isd, parsingWarnings);
 
     // get focal length
     state["m_focalLength"] = getFocalLength(isd, parsingWarnings);
@@ -1226,11 +1218,9 @@ void UsgsAstroFrameSensorModel::losEllipsoidIntersect(
 {
    MESSAGE_LOG(this->m_logger, "Calculating losEllipsoidIntersect with height: {},\n\
                                 xc: {}, yc: {}, zc: {}\n\
-                                xl: {}, yl: {}, zl: {}\n\
-                                x: {}, y: {}, z{}", height,
+                                xl: {}, yl: {}, zl: {}", height,
                                 xc, yc, zc,
-                                xl, yl, zl,
-                                x, y, z);
+                                xl, yl, zl);
    // Helper function which computes the intersection of the image ray
    // with an expanded ellipsoid.  All vectors are in earth-centered-fixed
    // coordinate system with origin at the center of the earth.
@@ -1265,6 +1255,9 @@ void UsgsAstroFrameSensorModel::losEllipsoidIntersect(
    x = xc + scale * xl;
    y = yc + scale * yl;
    z = zc + scale * zl;
+
+   MESSAGE_LOG(this->m_logger, "Calculated losEllipsoidIntersect at: {}, {}, {}",
+                                x, y, z);
 }
 
 

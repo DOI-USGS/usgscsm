@@ -62,24 +62,29 @@ void calculateRotationMatrixFromQuaternions(
 // in - startingSample - first ccd sample for the image
 // in - iTransS[3] - the transformation from focal plane to ccd samples
 // in - iTransL[3] - the transformation from focal plane to ccd lines
-// out - natFocalPlane
+// out - distortedX
+// out - distortedY
 void computeDistortedFocalPlaneCoordinates(
     const double& line,
     const double& sample,
     const double& sampleOrigin,
     const double& lineOrigin,
     const double& sampleSumming,
+    const double& lineSumming,
     const double& startingSample,
+    const double& startingLine,
     const double iTransS[],
     const double iTransL[],
-    std::tuple<double, double>& natFocalPlane)
+    double &distortedX,
+    double &distortedY)
 {
   double detSample = sample * sampleSumming + startingSample;
+  double detLine = line * lineSumming + startingLine;
   double m11 = iTransL[1];
   double m12 = iTransL[2];
   double m21 = iTransS[1];
   double m22 = iTransS[2];
-  double t1 = line - lineOrigin - iTransL[0];
+  double t1 = detLine - lineOrigin - iTransL[0];
   double t2 = detSample - sampleOrigin - iTransS[0];
   double determinant = m11 * m22 - m12 * m21;
   double p11 = m11 / determinant;
@@ -87,8 +92,40 @@ void computeDistortedFocalPlaneCoordinates(
   double p21 = -m21 / determinant;
   double p22 = m22 / determinant;
 
-  std::get<0>(natFocalPlane) = p11 * t1 + p12 * t2;
-  std::get<1>(natFocalPlane) = p21 * t1 + p22 * t2;
+  distortedX = p11 * t1 + p12 * t2;
+  distortedY = p21 * t1 + p22 * t2;
+};
+
+// Compue the image pixel for a distorted focal plane coordinate
+// in - line
+// in - sample
+// in - sampleOrigin - the origin of the ccd coordinate system relative to the top left of the ccd
+// in - lineOrigin - the origin of the ccd coordinate system relative to the top left of the ccd
+// in - sampleSumming
+// in - startingSample - first ccd sample for the image
+// in - iTransS[3] - the transformation from focal plane to ccd samples
+// in - iTransL[3] - the transformation from focal plane to ccd lines
+// out - natFocalPlane
+void computePixel(
+  const double& distortedX,
+  const double& distortedY,
+  const double& sampleOrigin,
+  const double& lineOrigin,
+  const double& sampleSumming,
+  const double& lineSumming,
+  const double& startingSample,
+  const double& startingLine,
+  const double iTransS[],
+  const double iTransL[],
+  double &line,
+  double &sample)
+{
+  double centeredSample = iTransS[0] + iTransS[1] * distortedX + iTransS[2] * distortedY;
+  double centeredLine =  iTransL[0] + iTransL[1] * distortedX + iTransL[2] * distortedY;
+  double detSample = centeredSample + sampleOrigin;
+  double detLine = centeredLine + lineOrigin;
+  sample = (detSample - startingSample) / sampleSumming;
+  line = (detLine - startingLine) / lineSumming;
 };
 
 // Define imaging ray in image space (In other words, create a look vector in camera space)
