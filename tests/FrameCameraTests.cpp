@@ -79,6 +79,14 @@ TEST_F(FrameSensorModel, getImageIdentifier) {
   EXPECT_EQ("simpleFramerISD", sensorModel->getImageIdentifier());
 }
 
+TEST_F(FrameSensorModel, Inversion) {
+   csm::ImageCoord imagePt1(9.0, 9.0);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt1, 0.0);
+   csm::ImageCoord imagePt2 = sensorModel->groundToImage(groundPt);
+   EXPECT_DOUBLE_EQ(imagePt1.line, imagePt2.line);
+   EXPECT_DOUBLE_EQ(imagePt1.samp, imagePt2.samp);
+}
+
 TEST_F(OrbitalFrameSensorModel, Center) {
    csm::ImageCoord imagePt(8.0, 8.0);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);

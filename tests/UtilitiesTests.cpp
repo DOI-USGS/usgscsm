@@ -141,6 +141,21 @@ TEST(UtilitiesTests, computePixelStart) {
    EXPECT_DOUBLE_EQ(sample, 4.0);
 }
 
+TEST(UtilitiesTests, computePixelStartSumming) {
+   double iTransS[] = {0.0, 0.0, 10.0};
+   double iTransL[] = {0.0, 10.0, 0.0};
+   double line, sample;
+   computePixel(
+         -0.5, -0.2,
+         8.0, 8.0,
+         2.0, 4.0,
+         2.0, 1.0,
+         iTransS, iTransL,
+         line, sample);
+   EXPECT_DOUBLE_EQ(line, 0.5);
+   EXPECT_DOUBLE_EQ(sample, 2.0);
+}
+
 TEST(UtilitiesTests, createCameraLookVector) {
   double cameraLook[3];
   createCameraLookVector(0, -0.4, 1, 50, cameraLook);
