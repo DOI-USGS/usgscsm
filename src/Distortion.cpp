@@ -1,4 +1,5 @@
 #include "Distortion.h"
+#include <string>
 
 void distortionJacobian(double x, double y, double *jacobian,
                         const std::vector<double> opticalDistCoeffs) {
@@ -170,12 +171,12 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       //
       // Distance r from the center:
       //   r = - (n - INS<INSTID>_CENTER) * INS<INSTID>_PIXEL_SIZE.
-      //
+
       // Line-of-sight vector v is calculated as
       //   v[X] = INS<INSTID>BORESIGHT[X]
       //          +a0 +a1*r +a2*r^2 +a3*r^3 ,
       //   v[Y] = INS<INSTID>BORESIGHT[Y]
-      //          +r +a0 +a1*r +a2*r^2 +a3*r^3 ,
+      //           b0 +b1*r +b2*r^2 +b3*r^3
       //   v[Z] = INS<INSTID>BORESIGHT[Z] .
 
       // Coeffs should be [x0,x1,x2,x3,y0,y1,y2,y3]
@@ -293,8 +294,8 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
 
         // Radial distortion
         // dr is the radial distortion contribution
-        dr_x = odkx[0] + odkx[1] * r + odkx[2] * rr + odkx[3] * rrr; // why did hayabusa have a -1
-        dr_y = odky[0] + odky[1] * r + odky[2] * rr + odky[3] * rrr; // why did hayabusa have a -1
+        dr_x = odkx[0] + odkx[1] * r + odkx[2] * rr + odkx[3] * rrr;
+        dr_y = odky[0] + odky[1] * r + odky[2] * rr + odky[3] * rrr;
 
         // Distortion at the current point location
         xdistortion = dr_x;
