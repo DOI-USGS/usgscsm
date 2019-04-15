@@ -70,16 +70,6 @@ void lagrangeInterp (
   const int&     i_order,
   double*        valueVector);
 
-double pixelResolution(
-  const csm::EcefCoord& groundPt,
-  const csm::EcefCoord& sensorPos,
-  const double&         sampleOrigin,
-  const double&         lineOrigin,
-  const double&         sampleSumming,
-  const double&         startingSample,
-  const double          iTransS[],
-  const double          iTransL[]);
-
 // Methods for checking/accessing the ISD
 
 double metric_conversion(double val, std::string from, std::string to="m");
