@@ -807,6 +807,8 @@ std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
               "Utilities::getDistortion()"));
         }
         coefficients = std::vector<double>(20, 0.0);
+        coefficients[1] = 1.0;
+        coefficients[12] = 1.0;
       }
     }
     break;
