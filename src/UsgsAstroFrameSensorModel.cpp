@@ -568,6 +568,15 @@ std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::
   double dz = nextPoint.z - z;
   double pixelGroundSize = sqrt((dx*dx + dy*dy + dz*dz) / 2.0);
 
+  // If the ground size is too small, try the opposite direction
+  if (pixelGroundSize < 1e-10) {
+    nextPoint = imageToGround(csm::ImageCoord(ipB.line - 1, ipB.samp - 1));
+    dx = nextPoint.x - x;
+    dy = nextPoint.y - y;
+    dz = nextPoint.z - z;
+    pixelGroundSize = sqrt((dx*dx + dy*dy + dz*dz) / 2.0);
+  }
+
   csm::ImageCoord ipX = groundToImage(csm::EcefCoord(x + pixelGroundSize, y, z));
   csm::ImageCoord ipY = groundToImage(csm::EcefCoord(x, y + pixelGroundSize, z));
   csm::ImageCoord ipZ = groundToImage(csm::EcefCoord(x, y, z + pixelGroundSize));
