@@ -235,6 +235,26 @@ void lagrangeInterp(
   }
 }
 
+// Compute the pixel reolution at a ground point
+double pixelResolution(
+  const csm::EcefCoord& groundPt,
+  const csm::EcefCoord& sensorPos,
+  const double&         sampleOrigin,
+  const double&         lineOrigin,
+  const double&         sampleSumming,
+  const double&         startingSample,
+  const double          iTransS[],
+  const double          iTransL[]) {
+  double x1, y1, x2, y2;
+  computeDistortedFocalPlaneCoordinates(
+        0.0, 0.0,
+        sampleOrigin,
+        lineOrigin,
+        sampleSumming,
+
+  );
+}
+
 // convert a measurement
 double metric_conversion(double val, std::string from, std::string to) {
     json typemap = {
