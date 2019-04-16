@@ -1641,7 +1641,7 @@ void UsgsAstroLsSensorModel::losToEcf(
    removeDistortion(distortedFocalPlaneX, distortedFocalPlaneY,
                     undistortedFocalPlaneX, undistortedFocalPlaneY,
                     m_opticalDistCoeffs,
-                    DistortionType::RADIAL);
+                    m_distortionType);
 
   // Define imaging ray (look vector) in camera space
    double cameraLook[3];
