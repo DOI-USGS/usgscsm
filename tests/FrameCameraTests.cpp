@@ -79,6 +79,37 @@ TEST_F(FrameSensorModel, getImageIdentifier) {
   EXPECT_EQ("simpleFramerISD", sensorModel->getImageIdentifier());
 }
 
+TEST_F(FrameSensorModel, Inversion) {
+   csm::ImageCoord imagePt1(9.0, 9.0);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt1, 0.0);
+   csm::ImageCoord imagePt2 = sensorModel->groundToImage(groundPt);
+   EXPECT_DOUBLE_EQ(imagePt1.line, imagePt2.line);
+   EXPECT_DOUBLE_EQ(imagePt1.samp, imagePt2.samp);
+}
+
+TEST_F(OrbitalFrameSensorModel, Center) {
+   csm::ImageCoord imagePt(8.0, 8.0);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   EXPECT_DOUBLE_EQ(groundPt.x, 1000000.0);
+   EXPECT_DOUBLE_EQ(groundPt.y, 0);
+   EXPECT_DOUBLE_EQ(groundPt.z, 0);
+}
+
+TEST_F(OrbitalFrameSensorModel, GroundPartials) {
+   csm::EcefCoord groundPt(1000000.0, 0.0, 0.0);
+   std::vector<double> partials = sensorModel->computeGroundPartials(groundPt);
+   // Pixels are 100m
+   // lines are increasing z and samples are increasing y in body fixed
+   // lines partials should be 0 except for the z partial which should be 1/100
+   // sample partials should be 0 except for the y partial which should be 1/100
+   EXPECT_DOUBLE_EQ(partials[0], 0.0);
+   EXPECT_DOUBLE_EQ(partials[1], 0.0);
+   EXPECT_DOUBLE_EQ(partials[2], 1 / 100.0);
+   EXPECT_DOUBLE_EQ(partials[3], 0.0);
+   EXPECT_DOUBLE_EQ(partials[4], 1 / 100.0);
+   EXPECT_DOUBLE_EQ(partials[5], 0.0);
+}
+
 
 // Focal Length Tests:
 TEST_F(FrameStateTest, FL500_OffBody4) {
