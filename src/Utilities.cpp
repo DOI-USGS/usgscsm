@@ -839,7 +839,7 @@ std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
         coefficientsX = isd.at("optical_distortion").at("kaguyatc").at("x").get<std::vector<double>>();
         coefficientsY = isd.at("optical_distortion").at("kaguyatc").at("y").get<std::vector<double>>();
         coefficientsX.insert(coefficientsX.end(), coefficientsY.begin(), coefficientsY.end());
-        
+
         return coefficientsX;
       }
       catch (...) {
@@ -850,7 +850,7 @@ std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
               "Could not parse a set of transverse distortion model coefficients.",
               "Utilities::getDistortion()"));
         }
-        coefficients = std::vector<double>(20, 0.0);
+        coefficients = std::vector<double>(8, 0.0);
       }
     }
 
