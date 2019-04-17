@@ -97,7 +97,7 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(const csm::EcefCoord &g
                               double desiredPrecision,
                               double *achievedPrecision,
                               csm::WarningList *warnings) const {
-  MESSAGE_LOG(this->m_logger, "Computeing groundToImage(No adjustments) for {}, {}, {}, with desired precision {}",
+  MESSAGE_LOG(this->m_logger, "Computing groundToImage(No adjustments) for {}, {}, {}, with desired precision {}",
               groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
 
   return groundToImage(groundPt, m_noAdjustments, desiredPrecision, achievedPrecision, warnings);
@@ -121,7 +121,7 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
     double*                    achieved_precision,
     csm::WarningList*          warnings ) const {
 
-  MESSAGE_LOG(this->m_logger, "Computeing groundToImage for {}, {}, {}, with desired precision {}",
+  MESSAGE_LOG(this->m_logger, "Computing groundToImage for {}, {}, {}, with desired precision {}",
               groundPt.x, groundPt.y, groundPt.z, desired_precision);
 
   double x = groundPt.x;
@@ -171,6 +171,7 @@ csm::ImageCoordCovar UsgsAstroFrameSensorModel::groundToImage(const csm::EcefCoo
                                    csm::WarningList *warnings) const {
     MESSAGE_LOG(this->m_logger, "Computeing groundToImage(Covar) for {}, {}, {}, with desired precision {}",
                 groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
+
     csm::EcefCoord gp;
     gp.x = groundPt.x;
     gp.y = groundPt.y;
