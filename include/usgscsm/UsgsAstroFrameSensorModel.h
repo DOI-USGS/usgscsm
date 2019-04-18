@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 #include "RasterGM.h"
+#include <SettableEllipsoid.h>
 #include "CorrelationModel.h"
 #include "Distortion.h"
 #include "Utilities.h"
@@ -18,7 +19,7 @@
 using json = nlohmann::json;
 
 
-class UsgsAstroFrameSensorModel : public csm::RasterGM {
+class UsgsAstroFrameSensorModel : public csm::RasterGM, virtual public csm::SettableEllipsoid {
   // UsgsAstroFramePlugin needs to access private members
   friend class UsgsAstroFramePlugin;
 
@@ -287,6 +288,14 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
       //
       //  If the argument state string is empty, the model remains unchanged.
       //<
+
+      // Implement methods from the SettableEllipsoid class
+
+      virtual csm::Ellipsoid getEllipsoid() const;
+      //> This method returns the planetary ellipsoid.
+      //<
+
+      virtual void setEllipsoid(const csm::Ellipsoid &ellipsoid);
 
     // IMPLEMENT GEOMETRICMODEL PURE VIRTUALS
     // See GeometricModel.h for documentation

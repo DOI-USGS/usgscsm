@@ -1170,6 +1170,21 @@ std::vector<double> UsgsAstroFrameSensorModel::getCrossCovarianceMatrix(
 }
 
 
+csm::Ellipsoid UsgsAstroFrameSensorModel::getEllipsoid() const {
+   MESSAGE_LOG(this->m_logger, "Accessing ellipsoid radii {} {}",
+               m_majorAxis, m_minorAxis);
+   return csm::Ellipsoid(m_majorAxis, m_minorAxis);
+}
+
+
+void UsgsAstroFrameSensorModel::setEllipsoid(const csm::Ellipsoid &ellipsoid) {
+   MESSAGE_LOG(this->m_logger, "Setting ellipsoid radii {} {}",
+               ellipsoid.getSemiMajorRadius(), ellipsoid.getSemiMinorRadius());
+   m_majorAxis = ellipsoid.getSemiMajorRadius();
+   m_minorAxis = ellipsoid.getSemiMinorRadius();
+}
+
+
 void UsgsAstroFrameSensorModel::calcRotationMatrix(
     double m[3][3]) const {
   MESSAGE_LOG(this->m_logger, "Calculating rotation matrix");
