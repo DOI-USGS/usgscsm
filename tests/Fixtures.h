@@ -97,6 +97,8 @@ class FrameSensorModelLogging : public ::testing::Test {
             delete sensorModel;
             sensorModel = NULL;
          }
+
+         EXPECT_FALSE(oss.str().empty());
       }
 };
 

@@ -394,12 +394,275 @@ TEST_F(FrameStateTest, StartLine) {
 TEST_F(FrameSensorModelLogging, GroundToImage) {
   csm::EcefCoord groundPt(10.0, 0.0, 0.0);
   sensorModel->groundToImage(groundPt);
-  EXPECT_FALSE(oss.str().empty());
 }
 
 TEST_F(FrameSensorModelLogging, GroundToImageAdjustments) {
   csm::EcefCoord groundPt(10.0, 0.0, 0.0);
   std::vector<double> adjustments(7, 0.0);
   sensorModel->groundToImage(groundPt, adjustments);
-  EXPECT_FALSE(oss.str().empty());
+}
+
+TEST_F(FrameSensorModelLogging, GroundToImageCovariance) {
+  csm::EcefCoordCovar groundPt(10.0, 0.0, 0.0,
+                               1.0, 0.0, 0.0,
+                                    1.0, 0.0,
+                                         1.0);
+  sensorModel->groundToImage(groundPt);
+}
+
+TEST_F(FrameSensorModelLogging, ImageToGround) {
+  csm::ImageCoord imagePt(7.5, 7.5);
+  sensorModel->imageToGround(imagePt, 0.0, 1.0);
+}
+
+TEST_F(FrameSensorModelLogging, ImageToGroundCovariance) {
+  csm::ImageCoordCovar imagePt(7.5, 7.5,
+                               1.0, 0.0,
+                                    1.0);
+  sensorModel->imageToGround(imagePt, 0.0);
+}
+
+TEST_F(FrameSensorModelLogging, ImageToProximateImagingLocus) {
+  csm::ImageCoord imagePt(7.5, 7.5);
+  csm::EcefCoord groundPt(10.0, 0.0, 0.0);
+  sensorModel->imageToProximateImagingLocus(imagePt, groundPt);
+}
+
+TEST_F(FrameSensorModelLogging, ImageToRemoteImagingLocus) {
+  csm::ImageCoord imagePt(7.5, 7.5);
+  sensorModel->imageToRemoteImagingLocus(imagePt);
+}
+
+TEST_F(FrameSensorModelLogging, GetImageStart) {
+  sensorModel->getImageStart();
+}
+
+TEST_F(FrameSensorModelLogging, GetImageSize) {
+  sensorModel->getImageSize();
+}
+
+TEST_F(FrameSensorModelLogging, GetValidImageRange) {
+  sensorModel->getValidImageRange();
+}
+
+TEST_F(FrameSensorModelLogging, GetValidHeightRange) {
+  sensorModel->getValidHeightRange();
+}
+
+TEST_F(FrameSensorModelLogging, GetImageTime) {
+  csm::ImageCoord imagePt(7.5, 7.5);
+  sensorModel->getImageTime(imagePt);
+}
+
+TEST_F(FrameSensorModelLogging, GetSensorPositionPixel) {
+  csm::ImageCoord imagePt(7.5, 7.5);
+  sensorModel->getSensorPosition(imagePt);
+}
+
+TEST_F(FrameSensorModelLogging, GetSensorPositionTime) {
+  csm::ImageCoord imagePt(7.5, 7.5);
+  double time = sensorModel->getImageTime(imagePt);
+  // Dump the constents of the stream because getModelState wrote to it
+  oss.str("");
+  oss.clear();
+  sensorModel->getSensorPosition(time);
+}
+
+TEST_F(FrameSensorModelLogging, GetSensorVelocityPixel) {
+  csm::ImageCoord imagePt(7.5, 7.5);
+  sensorModel->getSensorVelocity(imagePt);
+}
+
+TEST_F(FrameSensorModelLogging, GetSensorVelocityTime) {
+  csm::ImageCoord imagePt(7.5, 7.5);
+  double time = sensorModel->getImageTime(imagePt);
+  // Dump the constents of the stream because getModelState wrote to it
+  oss.str("");
+  oss.clear();
+  sensorModel->getSensorVelocity(time);
+}
+
+TEST_F(FrameSensorModelLogging, ComputeSensorPartialsGround) {
+  csm::EcefCoord groundPt(10.0, 0.0, 0.0);
+  sensorModel->computeSensorPartials(0, groundPt);
+}
+
+TEST_F(FrameSensorModelLogging, ComputeSensorPartialsBoth) {
+  csm::ImageCoord imagePt(7.5, 7.5);
+  csm::EcefCoord groundPt(10.0, 0.0, 0.0);
+  sensorModel->computeSensorPartials(0, imagePt, groundPt);
+}
+
+TEST_F(FrameSensorModelLogging, ComputeAllSensorPartialsGround) {
+  csm::EcefCoord groundPt(10.0, 0.0, 0.0);
+  sensorModel->computeAllSensorPartials(groundPt);
+}
+
+TEST_F(FrameSensorModelLogging, ComputeAllSensorPartialsBoth) {
+  csm::ImageCoord imagePt(7.5, 7.5);
+  csm::EcefCoord groundPt(10.0, 0.0, 0.0);
+  sensorModel->computeAllSensorPartials(imagePt, groundPt);
+}
+
+TEST_F(FrameSensorModelLogging, GetCorrelationModel) {
+  sensorModel->getCorrelationModel();
+}
+
+TEST_F(FrameSensorModelLogging, GetUnmodeledCrossCovariance) {
+  csm::ImageCoord imagePt1(7.5, 7.5);
+  csm::ImageCoord imagePt2(8.5, 8.5);
+  sensorModel->getUnmodeledCrossCovariance(imagePt1, imagePt2);
+}
+
+TEST_F(FrameSensorModelLogging, GetVersion) {
+  sensorModel->getVersion();
+}
+
+TEST_F(FrameSensorModelLogging, GetModelName) {
+  sensorModel->getModelName();
+}
+
+TEST_F(FrameSensorModelLogging, GetPedigree) {
+  sensorModel->getPedigree();
+}
+
+TEST_F(FrameSensorModelLogging, GetImageIdentifier) {
+  sensorModel->getImageIdentifier();
+}
+
+TEST_F(FrameSensorModelLogging, SetImageIdentifier) {
+  sensorModel->setImageIdentifier("logging_ID");
+}
+
+TEST_F(FrameSensorModelLogging, GetSensorIdentifier) {
+  sensorModel->getSensorIdentifier();
+}
+
+TEST_F(FrameSensorModelLogging, GetPlatformIdentifier) {
+  sensorModel->getPlatformIdentifier();
+}
+
+TEST_F(FrameSensorModelLogging, GetCollectionIdentifier) {
+  sensorModel->getCollectionIdentifier();
+}
+
+TEST_F(FrameSensorModelLogging, GetTrajectoryIdentifier) {
+  sensorModel->getTrajectoryIdentifier();
+}
+
+TEST_F(FrameSensorModelLogging, GetSensorType) {
+  sensorModel->getSensorType();
+}
+
+TEST_F(FrameSensorModelLogging, GetSensorMode) {
+  sensorModel->getSensorMode();
+}
+
+TEST_F(FrameSensorModelLogging, GetReferenceDateAndTime) {
+  sensorModel->getReferenceDateAndTime();
+}
+
+TEST_F(FrameSensorModelLogging, GetModelState) {
+  sensorModel->getModelState();
+}
+
+TEST_F(FrameSensorModelLogging, replaceModelState) {
+  std::string state = sensorModel->getModelState();
+  // Dump the constents of the stream because getModelState wrote to it
+  oss.str("");
+  oss.clear();
+  sensorModel->replaceModelState(state);
+}
+
+TEST_F(FrameSensorModelLogging, GetReferencePoint) {
+  sensorModel->getReferencePoint();
+}
+
+TEST_F(FrameSensorModelLogging, SetReferencePoint) {
+  csm::EcefCoord groundPt(10.0, 0.0, 0.0);
+  sensorModel->setReferencePoint(groundPt);
+}
+
+TEST_F(FrameSensorModelLogging, GetNumParameters) {
+  sensorModel->getNumParameters();
+}
+
+TEST_F(FrameSensorModelLogging, GetParameterName) {
+  sensorModel->getParameterName(0);
+}
+
+TEST_F(FrameSensorModelLogging, GetParameterUnits) {
+  sensorModel->getParameterUnits(0);
+}
+
+TEST_F(FrameSensorModelLogging, HasShareableParameters) {
+  sensorModel->hasShareableParameters();
+}
+
+TEST_F(FrameSensorModelLogging, IsParameterShareable) {
+  sensorModel->isParameterShareable(0);
+}
+
+TEST_F(FrameSensorModelLogging, GetParameterSharingCriteria) {
+  try {
+    sensorModel->getParameterSharingCriteria(0);
+  }
+  catch (...) {
+    // Just testing logging, so do nothing, it should still log
+  }
+}
+
+TEST_F(FrameSensorModelLogging, GetParameterValue) {
+  sensorModel->getParameterValue(0);
+}
+
+TEST_F(FrameSensorModelLogging, SetParameterValue) {
+  sensorModel->setParameterValue(0, 10);
+}
+
+TEST_F(FrameSensorModelLogging, GetParameterType) {
+  sensorModel->getParameterType(0);
+}
+
+TEST_F(FrameSensorModelLogging, SetParameterType) {
+  sensorModel->setParameterType(0, csm::param::REAL);
+}
+
+TEST_F(FrameSensorModelLogging, GetParameterCovariance) {
+  sensorModel->getParameterCovariance(0, 0);
+}
+
+TEST_F(FrameSensorModelLogging, SetParameterCovariance) {
+  sensorModel->setParameterCovariance(0, 0, 1);
+}
+
+TEST_F(FrameSensorModelLogging, GetNumGeometricCorrectionSwitches) {
+  sensorModel->getNumGeometricCorrectionSwitches();
+}
+
+TEST_F(FrameSensorModelLogging, GetGeometricCorrectionName) {
+  try {
+    sensorModel->getGeometricCorrectionName(0);
+  }
+  catch (...) {
+    // Just testing logging, so do nothing, it should still log
+  }
+}
+
+TEST_F(FrameSensorModelLogging, SetGeometricCorrectionSwitch) {
+  try {
+    sensorModel->setGeometricCorrectionSwitch(0, true, csm::param::REAL);
+  }
+  catch (...) {
+    // Just testing logging, so do nothing, it should still log
+  }
+}
+
+TEST_F(FrameSensorModelLogging, GetGeometricCorrectionSwitch) {
+  try {
+    sensorModel->getGeometricCorrectionSwitch(0);
+  }
+  catch (...) {
+    // Just testing logging, so do nothing, it should still log
+  }
 }

@@ -1070,6 +1070,8 @@ bool UsgsAstroFrameSensorModel::isParameterShareable(int index) const {
 
 
 csm::SharingCriteria UsgsAstroFrameSensorModel::getParameterSharingCriteria(int index) const {
+   MESSAGE_LOG(this->m_logger, "Checking sharing criteria for parameter {}. "
+               "Sharing is not supported, throwing exception", index);
    // Parameter sharing is not supported for this sensor,
    // all indices are out of range
    throw csm::Error(
@@ -1126,6 +1128,9 @@ int UsgsAstroFrameSensorModel::getNumGeometricCorrectionSwitches() const {
 
 
 std::string UsgsAstroFrameSensorModel::getGeometricCorrectionName(int index) const {
+   MESSAGE_LOG(this->m_logger, "Accessing name of geometric correction switch {}. "
+               "Geometric correction switches are not supported, throwing exception",
+               index);
    // Since there are no geometric corrections, all indices are out of range
    throw csm::Error(
       csm::Error::INDEX_OUT_OF_RANGE,
@@ -1137,6 +1142,10 @@ std::string UsgsAstroFrameSensorModel::getGeometricCorrectionName(int index) con
 void UsgsAstroFrameSensorModel::setGeometricCorrectionSwitch(int index,
                                                       bool value,
                                                       csm::param::Type pType) {
+   MESSAGE_LOG(this->m_logger, "Setting geometric correction switch {} to {} "
+               "with parameter type {}. "
+               "Geometric correction switches are not supported, throwing exception",
+               index, value, pType);
    // Since there are no geometric corrections, all indices are out of range
    throw csm::Error(
       csm::Error::INDEX_OUT_OF_RANGE,
@@ -1146,6 +1155,9 @@ void UsgsAstroFrameSensorModel::setGeometricCorrectionSwitch(int index,
 
 
 bool UsgsAstroFrameSensorModel::getGeometricCorrectionSwitch(int index) const {
+   MESSAGE_LOG(this->m_logger, "Accessing value of geometric correction switch {}. "
+               "Geometric correction switches are not supported, throwing exception",
+               index);
    // Since there are no geometric corrections, all indices are out of range
    throw csm::Error(
       csm::Error::INDEX_OUT_OF_RANGE,
