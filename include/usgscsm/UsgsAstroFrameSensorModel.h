@@ -296,6 +296,8 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM, virtual public csm::Sett
       //<
 
       virtual void setEllipsoid(const csm::Ellipsoid &ellipsoid);
+      //> This method sets the planetary ellipsoid.
+      //<
 
     // IMPLEMENT GEOMETRICMODEL PURE VIRTUALS
     // See GeometricModel.h for documentation

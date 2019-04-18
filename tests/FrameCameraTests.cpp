@@ -95,6 +95,20 @@ TEST_F(OrbitalFrameSensorModel, Center) {
    EXPECT_DOUBLE_EQ(groundPt.z, 0);
 }
 
+TEST_F(FrameSensorModel, Radii) {
+   csm::Ellipsoid ellipsoid = sensorModel->getEllipsoid();
+   EXPECT_DOUBLE_EQ(ellipsoid.getSemiMajorRadius(), 10);
+   EXPECT_DOUBLE_EQ(ellipsoid.getSemiMinorRadius(), 10);
+}
+
+TEST_F(FrameSensorModel, SetRadii) {
+   csm::Ellipsoid ellipsoid1(1000, 1500);
+   sensorModel->setEllipsoid(ellipsoid1);
+   csm::Ellipsoid ellipsoid2 = sensorModel->getEllipsoid();
+   EXPECT_DOUBLE_EQ(ellipsoid2.getSemiMajorRadius(), 1000);
+   EXPECT_DOUBLE_EQ(ellipsoid2.getSemiMinorRadius(), 1500);
+}
+
 TEST_F(OrbitalFrameSensorModel, GroundPartials) {
    csm::EcefCoord groundPt(1000000.0, 0.0, 0.0);
    std::vector<double> partials = sensorModel->computeGroundPartials(groundPt);
