@@ -211,7 +211,6 @@ TEST_F(FrameSensorModel, X1e9_SlightlyOffCenter) {
    sensorModel = NULL;
 }
 
-
 // Angle rotations:
 TEST_F(FrameSensorModel, Rotation_omegaPi_Center) {
    sensorModel->setParameterValue(3, 1.0);
@@ -235,7 +234,6 @@ TEST_F(FrameSensorModel, Rotation_omegaPi_Center) {
    sensorModel = NULL;
 }
 
-
 TEST_F(FrameSensorModel, Rotation_NPole_Center) {
   sensorModel->setParameterValue(3, 0.0);
   sensorModel->setParameterValue(4, -1.0);
@@ -258,7 +256,6 @@ TEST_F(FrameSensorModel, Rotation_NPole_Center) {
   sensorModel = NULL;
 }
 
-
 TEST_F(FrameSensorModel, Rotation_SPole_Center) {
    sensorModel->setParameterValue(3, 0.0); // phi
    sensorModel->setParameterValue(0, 0.0); // X
@@ -275,7 +272,6 @@ TEST_F(FrameSensorModel, Rotation_SPole_Center) {
    delete sensorModel;
    sensorModel = NULL;
 }
-
 
 // Ellipsoid axis tests:
 TEST_F(FrameStateTest, SemiMajorAxis100x_Center) {
@@ -295,7 +291,6 @@ TEST_F(FrameStateTest, SemiMajorAxis100x_Center) {
   sensorModel = NULL;
 }
 
-
 TEST_F(FrameStateTest, SemiMajorAxis10x_SlightlyOffCenter) {
   std::string key = "m_majorAxis";
   double newValue = 100.0;
@@ -313,7 +308,6 @@ TEST_F(FrameStateTest, SemiMajorAxis10x_SlightlyOffCenter) {
   delete sensorModel;
   sensorModel = NULL;
 }
-
 
 // The following test is for the scenario where the semi_minor_axis is actually larger
 // than the semi_major_axis:
@@ -333,7 +327,6 @@ TEST_F(FrameStateTest, SemiMinorAxis10x_SlightlyOffCenter) {
   sensorModel = NULL;
 }
 
-
 TEST_F(FrameStateTest, SampleSumming) {
   std::string key = "m_detectorSampleSumming";
   double newValue = 2.0;
@@ -349,7 +342,6 @@ TEST_F(FrameStateTest, SampleSumming) {
   delete sensorModel;
   sensorModel = NULL;
 }
-
 
 TEST_F(FrameStateTest, LineSumming) {
   std::string key = "m_detectorLineSumming";
@@ -367,7 +359,6 @@ TEST_F(FrameStateTest, LineSumming) {
   sensorModel = NULL;
 }
 
-
 TEST_F(FrameStateTest, StartSample) {
   std::string key = "m_startingDetectorSample";
   double newValue = 5.0;
@@ -384,7 +375,6 @@ TEST_F(FrameStateTest, StartSample) {
   sensorModel = NULL;
 }
 
-
 TEST_F(FrameStateTest, StartLine) {
   std::string key = "m_startingDetectorLine";
   double newValue = 5.0;
@@ -399,4 +389,17 @@ TEST_F(FrameStateTest, StartLine) {
 
   delete sensorModel;
   sensorModel = NULL;
+}
+
+TEST_F(FrameSensorModelLogging, GroundToImage) {
+  csm::EcefCoord groundPt(10.0, 0.0, 0.0);
+  sensorModel->groundToImage(groundPt);
+  EXPECT_FALSE(oss.str().empty());
+}
+
+TEST_F(FrameSensorModelLogging, GroundToImageAdjustments) {
+  csm::EcefCoord groundPt(10.0, 0.0, 0.0);
+  std::vector<double> adjustments(7, 0.0);
+  sensorModel->groundToImage(groundPt, adjustments);
+  EXPECT_FALSE(oss.str().empty());
 }
