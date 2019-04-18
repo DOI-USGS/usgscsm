@@ -1282,3 +1282,7 @@ double UsgsAstroFrameSensorModel::getValue(
 std::shared_ptr<spdlog::logger> UsgsAstroFrameSensorModel::getLogger() {
   return m_logger;
 }
+
+void UsgsAstroFrameSensorModel::setLogger(std::shared_ptr<spdlog::logger> logger) {
+  m_logger = logger;
+}

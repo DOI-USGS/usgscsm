@@ -313,6 +313,7 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
         csm::param::Set pSet = csm::param::VALID,
         const GeometricModelList &otherModels = GeometricModelList()) const;
     virtual std::shared_ptr<spdlog::logger> getLogger();
+    virtual void setLogger(std::shared_ptr<spdlog::logger> logger);
 
     static const std::string _SENSOR_MODEL_NAME;
 
