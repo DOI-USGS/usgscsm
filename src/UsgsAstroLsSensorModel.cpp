@@ -124,10 +124,12 @@ const csm::param::Type
    csm::param::FIXED
 };
 
-
+//***************************************************************************
+// UsgsAstroLineScannerSensorModel::replaceModelState
+//***************************************************************************
 void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
 {
-   MESSAGE_LOG(this->m_logger, "Replacing modle state")
+   MESSAGE_LOG(this->m_logger, "Replacing model state")
 
    reset();
    auto j = json::parse(stateString);
@@ -225,6 +227,9 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
    }
 }
 
+//***************************************************************************
+// UsgsAstroLineScannerSensorModel::getModelNameFromModelState
+//***************************************************************************
 std::string UsgsAstroLsSensorModel::getModelNameFromModelState(
    const std::string& model_state)
 {
@@ -252,6 +257,9 @@ std::string UsgsAstroLsSensorModel::getModelNameFromModelState(
    return model_name;
 }
 
+//***************************************************************************
+// UsgsAstroLineScannerSensorModel::getModelState
+//***************************************************************************
 std::string UsgsAstroLsSensorModel::getModelState() const {
       json state;
       state["m_modelName"] = _SENSOR_MODEL_NAME;
@@ -310,6 +318,9 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
       return state.dump();
  }
 
+ //***************************************************************************
+ // UsgsAstroLineScannerSensorModel::reset
+ //***************************************************************************
 void UsgsAstroLsSensorModel::reset()
 {
   _linear = false; // default until a linear model is made
@@ -382,7 +393,6 @@ void UsgsAstroLsSensorModel::reset()
   m_logger.reset();
 }
 
-
 //*****************************************************************************
 // UsgsAstroLsSensorModel Constructor
 //*****************************************************************************
@@ -411,6 +421,9 @@ void UsgsAstroLsSensorModel::updateState()
    double lineCtr = m_nLines / 2.0;
    double sampCtr = m_nSamples / 2.0;
    csm::ImageCoord ip(lineCtr, sampCtr);
+   MESSAGE_LOG(this->m_logger, "updateState: center image coordinate set to {} {}",
+                               lineCtr, sampCtr)
+
    double refHeight = 0;
    m_referencePointXyz = imageToGround(ip, refHeight);
    // Compute ground sample distance
@@ -421,6 +434,8 @@ void UsgsAstroLsSensorModel::updateState()
    double dy = delta.y - m_referencePointXyz.y;
    double dz = delta.z - m_referencePointXyz.z;
    m_gsd = sqrt((dx*dx + dy*dy + dz*dz) / 2.0);
+   MESSAGE_LOG(this->m_logger, "updateState: ground sample distance set to {}",
+                               m_gsd)
 
    // Compute flying height
    csm::EcefCoord sensorPos = getSensorPosition(0.0);
@@ -428,14 +443,20 @@ void UsgsAstroLsSensorModel::updateState()
    dy = sensorPos.y - m_referencePointXyz.y;
    dz = sensorPos.z - m_referencePointXyz.z;
    m_flyingHeight = sqrt(dx*dx + dy*dy + dz*dz);
+   MESSAGE_LOG(this->m_logger, "updateState: flight height set to {}",
+                               m_flyingHeight)
 
    // Compute half swath
    m_halfSwath = m_gsd * m_nSamples / 2.0;
+   MESSAGE_LOG(this->m_logger, "updateState: half swath set to {}",
+                               m_halfSwath)
 
    // Compute half time duration
    double fullImageTime = m_intTimeStartTimes.back() - m_intTimeStartTimes.front()
                           + m_intTimes.back() * (m_nLines - m_intTimeLines.back());
    m_halfTime = fullImageTime / 2.0;
+   MESSAGE_LOG(this->m_logger, "updateState: half time duration set to {}",
+                               m_halfTime)
 
    // Parameter covariance, hardcoded accuracy values
    int num_params = NUM_PARAMETERS;
@@ -723,7 +744,9 @@ csm::EcefCoord UsgsAstroLsSensorModel::imageToGround(
    return csm::EcefCoord(x, y, z);
 }
 
-
+//***************************************************************************
+// UsgsAstroLineScannerSensorModel::determineSensorCovarianceInImageSpace
+//***************************************************************************
 void UsgsAstroLsSensorModel::determineSensorCovarianceInImageSpace(
    csm::EcefCoord &gp,
    double         sensor_cov[4] ) const
@@ -1472,6 +1495,10 @@ UsgsAstroLsSensorModel::getValidImageRange() const
 csm::EcefVector UsgsAstroLsSensorModel::getIlluminationDirection(
    const csm::EcefCoord& groundPt) const
 {
+  MESSAGE_LOG(this->m_logger, "Accessing illimination direction of ground point"
+              "{} {} {}."
+              "Illimination direction is not supported, throwing exception",
+              groundPt.x, groundPt.y, groundPt.z);
    throw csm::Error(
       csm::Error::UNSUPPORTED_FUNCTION,
       "Unsupported function",
@@ -1493,9 +1520,11 @@ int UsgsAstroLsSensorModel::getNumGeometricCorrectionSwitches() const
 //***************************************************************************
 // UsgsAstroLsSensorModel::getGeometricCorrectionName
 //***************************************************************************
-
 std::string UsgsAstroLsSensorModel::getGeometricCorrectionName(int index) const
 {
+  MESSAGE_LOG(this->m_logger, "Accessing name of geometric correction switch {}. "
+              "Geometric correction switches are not supported, throwing exception",
+              index);
    // Since there are no geometric corrections, all indices are out of range
    throw csm::Error(
       csm::Error::INDEX_OUT_OF_RANGE,
@@ -1512,6 +1541,10 @@ void UsgsAstroLsSensorModel::setGeometricCorrectionSwitch(
    csm::param::Type pType)
 
 {
+   MESSAGE_LOG(this->m_logger, "Setting geometric correction switch {} to {} "
+               "with parameter type {}. "
+               "Geometric correction switches are not supported, throwing exception",
+               index, value, pType);
    // Since there are no geometric corrections, all indices are out of range
    throw csm::Error(
       csm::Error::INDEX_OUT_OF_RANGE,
@@ -1524,6 +1557,9 @@ void UsgsAstroLsSensorModel::setGeometricCorrectionSwitch(
 //***************************************************************************
 bool UsgsAstroLsSensorModel::getGeometricCorrectionSwitch(int index) const
 {
+   MESSAGE_LOG(this->m_logger, "Accessing value of geometric correction switch {}. "
+               "Geometric correction switches are not supported, throwing exception",
+               index);
    // Since there are no geometric corrections, all indices are out of range
    throw csm::Error(
       csm::Error::INDEX_OUT_OF_RANGE,
@@ -1548,6 +1584,9 @@ std::vector<double> UsgsAstroLsSensorModel::getCrossCovarianceMatrix(
    return std::vector<double>(num_rows * num_cols, 0.0);
 }
 
+//***************************************************************************
+// UsgsAstroLineScannerSensorModel::getCorrelationModel
+//***************************************************************************
 const csm::CorrelationModel&
 UsgsAstroLsSensorModel::getCorrelationModel() const
 {
@@ -1599,6 +1638,8 @@ bool UsgsAstroLsSensorModel::isParameterShareable(int index) const
 csm::SharingCriteria UsgsAstroLsSensorModel::getParameterSharingCriteria(
    int index) const
 {
+  MESSAGE_LOG(this->m_logger, "Checking sharing criteria for parameter {}. "
+              "Sharing is not supported, throwing exception", index);
    // Parameter sharing is not supported for this sensor,
    // all indices are out of range
    throw csm::Error(
@@ -1631,7 +1672,9 @@ csm::Version UsgsAstroLsSensorModel::getVersion() const
    return csm::Version(1, 0, 0);
 }
 
-
+//***************************************************************************
+// UsgsAstroLineScannerSensorModel::getEllipsoid
+//***************************************************************************
 csm::Ellipsoid UsgsAstroLsSensorModel::getEllipsoid() const
 {
    return csm::Ellipsoid(m_majorAxis, m_minorAxis);
@@ -1644,8 +1687,9 @@ void UsgsAstroLsSensorModel::setEllipsoid(
    m_minorAxis = ellipsoid.getSemiMinorRadius();
 }
 
-
-
+//***************************************************************************
+// UsgsAstroLineScannerSensorModel::getValue
+//***************************************************************************
 double UsgsAstroLsSensorModel::getValue(
    int   index,
    const std::vector<double> &adjustments) const
@@ -1657,7 +1701,6 @@ double UsgsAstroLsSensorModel::getValue(
 //***************************************************************************
 // Functions pulled out of losToEcf and computeViewingPixel
 // **************************************************************************
-
 void UsgsAstroLsSensorModel::getQuaternions(const double& time, double q[4]) const{
   int nOrder = 8;
   if (m_platformFlag == 0)
@@ -1665,16 +1708,24 @@ void UsgsAstroLsSensorModel::getQuaternions(const double& time, double q[4]) con
   int nOrderQuat = nOrder;
   if (m_numQuaternions < 6 && nOrder == 8)
      nOrderQuat = 4;
+
+  MESSAGE_LOG(this->m_logger, "Calculating getQuaternions for time {} with {}"
+                              "order lagrange",
+                              time, nOrder)
   lagrangeInterp(
      m_numQuaternions/4, &m_quaternions[0], m_t0Quat, m_dtQuat, time, 4, nOrderQuat, q);
 }
 
-
+//***************************************************************************
+// UsgsAstroLineScannerSensorModel::calculateAttitudeCorrection
+//***************************************************************************
 void UsgsAstroLsSensorModel::calculateAttitudeCorrection(
    const double& time,
    const std::vector<double>& adj,
    double attCorr[9]) const
 {
+  MESSAGE_LOG(this->m_logger, "Computing calculateAttitudeCorrection (with adjustment)"
+                              "for time {}", time)
   double aTime = time - m_t0Quat;
   double euler[3];
   double nTime = aTime / m_halfTime;
@@ -1685,6 +1736,8 @@ void UsgsAstroLsSensorModel::calculateAttitudeCorrection(
     (getValue(7, adj) + getValue(10, adj)* nTime + getValue(13, adj)* nTime2) / m_flyingHeight;
   euler[2] =
     (getValue(8, adj) + getValue(11, adj)* nTime + getValue(14, adj)* nTime2) / m_halfSwath;
+  MESSAGE_LOG(this->m_logger, "calculateAttitudeCorrection: euler {} {} {}",
+                              euler[0], euler[1], euler[2])
 
   calculateRotationMatrixFromEuler(euler, attCorr);
 }
@@ -1710,6 +1763,9 @@ void UsgsAstroLsSensorModel::losToEcf(
    //# private_func_description
    // Computes image ray (look vector) in ecf coordinate system.
    // Compute adjusted sensor position and velocity
+   MESSAGE_LOG(this->m_logger, "Computing losToEcf (with adjustments) for"
+                               "line {} sample {}",
+                                line, sample)
 
    double time = getImageTime(csm::ImageCoord(line, sample));
    getAdjSensorPosVel(time, adj, xc, yc, zc, vx, vy, vz);
@@ -1754,7 +1810,9 @@ void UsgsAstroLsSensorModel::losToEcf(
    correctedCameraLook[2] = attCorr[6] * cameraLook[0]
                           + attCorr[7] * cameraLook[1]
                           + attCorr[8] * cameraLook[2];
-
+   MESSAGE_LOG(this->m_logger, "losToEcf: corrected camera look vector {} {} {}",
+                               correctedCameraLook[0], correctedCameraLook[1],
+                               correctedCameraLook[2])
 // Rotate the look vector into the body fixed frame from the camera reference frame by applying the rotation matrix from the sensor quaternions
    double quaternions[4];
    getQuaternions(time, quaternions);
@@ -1770,6 +1828,9 @@ void UsgsAstroLsSensorModel::losToEcf(
    bodyLookZ = cameraToBody[6] * correctedCameraLook[0]
              + cameraToBody[7] * correctedCameraLook[1]
              + cameraToBody[8] * correctedCameraLook[2];
+   MESSAGE_LOG(this->m_logger, "losToEcf: body look vector {} {} {}",
+                                bodyLookX, bodyLookY, bodyLookZ)
+
 }
 
 
@@ -1787,6 +1848,9 @@ void UsgsAstroLsSensorModel::lightAberrationCorr(
    double&       dyl,
    double&       dzl) const
 {
+   MESSAGE_LOG(this->m_logger, "Computing lightAberrationCorr for camera velocity"
+                               "{} {} {} and image ray {} {} {}",
+                                vx, vy, vz, xl, yl, zl)
    //# func_description
    //  Computes light aberration correction vector
 
@@ -1803,8 +1867,10 @@ void UsgsAstroLsSensorModel::lightAberrationCorr(
    if (1.0 == fabs(cosThetap))
    {
       dxl = 0.0;
-      dyl = 0.0;   MESSAGE_LOG(this->m_logger, "getImageStart")
+      dyl = 0.0;
       dzl = 0.0;
+      MESSAGE_LOG(this->m_logger, "lightAberrationCorr: image ray is parallel"
+                                  "to velocity vector")
    }
 
    // Compute the angle between the corrected image ray and spacecraft
@@ -1823,6 +1889,8 @@ void UsgsAstroLsSensorModel::lightAberrationCorr(
    dxl = cfac * vx;
    dyl = cfac * vy;
    dzl = cfac * vz;
+   MESSAGE_LOG(this->m_logger, "lightAberrationCorr: light of sight correction"
+                               "{} {} {}", dxl, dyl, dzl)
 }
 
 //***************************************************************************
@@ -1836,6 +1904,9 @@ void UsgsAstroLsSensorModel::computeElevation(
    double&       achieved_precision,
    const double& desired_precision) const
 {
+   MESSAGE_LOG(this->m_logger, "Calculating computeElevation for {} {} {}"
+                               "with desired precision {}",
+                              x, y, z, desired_precision)
    // Compute elevation given xyz
    // Requires semi-major-axis and eccentricity-square
    const int MKTR = 10;
@@ -1863,6 +1934,7 @@ void UsgsAstroLsSensorModel::computeElevation(
          tanPhi = zz / d;
          ktr++;
       } while (MKTR > ktr && fabs(h - hPrev) > desired_precision);
+      MESSAGE_LOG(this->m_logger, "computeElevation: point is near equator")
    }
 
    // Suited for points near the poles
@@ -1881,10 +1953,14 @@ void UsgsAstroLsSensorModel::computeElevation(
          cotPhi = dd / z;
          ktr++;
       } while (MKTR > ktr && fabs(h - hPrev) > desired_precision);
+      MESSAGE_LOG(this->m_logger, "computeElevation: point is near poles")
    }
 
    height = h;
    achieved_precision = fabs(h - hPrev);
+   MESSAGE_LOG(this->m_logger, "computeElevation: height {} with achieved"
+                               "precision of {}",
+                                height, achieved_precision)
 }
 
 //***************************************************************************
@@ -1904,6 +1980,10 @@ void UsgsAstroLsSensorModel::losEllipsoidIntersect(
    double&       achieved_precision,
    const double& desired_precision) const
 {
+   MESSAGE_LOG(this->m_logger, "Computing losEllipsoidIntersect for camera position"
+                               "{} {} {} looking {} {} {} with desired precision"
+                               "{}",
+                                xc, yc, zc, xl, yl, zl, desired_precision)
    // Helper function which computes the intersection of the image ray
    // with the ellipsoid.  All vectors are in earth-centered-fixed
    // coordinate system with origin at the center of the earth.
@@ -1953,6 +2033,9 @@ void UsgsAstroLsSensorModel::losEllipsoidIntersect(
    slope = -1;
 
    achieved_precision = fabs(height - h);
+   MESSAGE_LOG(this->m_logger, "losEllipsoidIntersect: found intersect at {} {} {}"
+                                "with achieved precision of {}",
+                                x, y, z, achieved_precision)
 }
 
 //***************************************************************************
@@ -1972,6 +2055,9 @@ void UsgsAstroLsSensorModel::losPlaneIntersect(
                           //         0(X), 1(Y), or 2(Z) fixed
                           // output: 0(X), 1(Y), or 2(Z) fixed
 {
+  MESSAGE_LOG(this->m_logger, "Calculating losPlaneIntersect for camera position"
+                              "{} {} {} and image ray {} {} {}",
+                              xc, yc, zc, xl, yl, zl)
    //# func_description
    //  Computes 2 of the 3 coordinates of a ground point given the 3rd
    //  coordinate.  The 3rd coordinate that is held fixed corresponds
@@ -1994,7 +2080,8 @@ void UsgsAstroLsSensorModel::losPlaneIntersect(
          mode = 2;
       }
    }
-
+   MESSAGE_LOG(this->m_logger, "losPlaneIntersect: largest/fixed image ray component"
+                                "{} (1-x, 2-y, 3-z)", mode)
    // X is the fixed or largest component
 
    if (0 == mode)
@@ -2018,6 +2105,7 @@ void UsgsAstroLsSensorModel::losPlaneIntersect(
       x = xc + (z - zc) * xl / zl;
       y = yc + (z - zc) * yl / zl;
    }
+   MESSAGE_LOG(this->m_logger, "ground coordinate {} {} {}", x, y, z)
 }
 
 //***************************************************************************
@@ -2033,6 +2121,7 @@ void UsgsAstroLsSensorModel::imageToPlane(
    double&       z,
    int&          mode) const
 {
+  MESSAGE_LOG(this->m_logger, "Computing imageToPlane")
    //# func_description
    //  Computes ground coordinates by intersecting image ray with
    //  a plane perpendicular to the coordinate axis with the largest
@@ -2064,6 +2153,9 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(
    double&       vy,
    double&       vz) const
 {
+  MESSAGE_LOG(this->m_logger, "Calculating getAdjSensorPosVel at time {}",
+                              time)
+
    // Sensor position and velocity (4th or 8th order Lagrange).
    int nOrder = 8;
    if (m_platformFlag == 0)
@@ -2074,8 +2166,10 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(
    double sensVelNom[3];
    lagrangeInterp(m_numPositions/3, &m_velocities[0], m_t0Ephem, m_dtEphem,
       time, 3, nOrder, sensVelNom);
-   // Compute rotation matrix from ICR to ECF
+   MESSAGE_LOG(this->m_logger, "getAdjSensorPosVel: using {} order Lagrange",
+                                nOrder)
 
+   // Compute rotation matrix from ICR to ECF
    double radialUnitVec[3];
    double radMag = sqrt(sensPosNom[0] * sensPosNom[0] +
       sensPosNom[1] * sensPosNom[1] +
@@ -2111,8 +2205,8 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(
    ecfFromIcr[6] = inTrackUnitVec[2];
    ecfFromIcr[7] = crossTrackUnitVec[2];
    ecfFromIcr[8] = radialUnitVec[2];
-   // Apply position and velocity corrections
 
+   // Apply position and velocity corrections
    double aTime = time - m_t0Ephem;
    double dvi = getValue(3, adj) / m_halfTime;
    double dvc = getValue(4, adj) / m_halfTime;
@@ -2132,6 +2226,10 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(
       + ecfFromIcr[3] * di + ecfFromIcr[4] * dc + ecfFromIcr[5] * dr;
    zc = sensPosNom[2]
       + ecfFromIcr[6] * di + ecfFromIcr[7] * dc + ecfFromIcr[8] * dr;
+
+   MESSAGE_LOG(this->m_logger, "getAdjSensorPosVel: postition {} {} {}"
+                                "and velocity {} {} {}",
+                              xc, yc, zc, vx, vy, vz)
 }
 
 
@@ -2144,6 +2242,10 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    const std::vector<double>& adj,
    const double& desiredPrecision) const
 {
+  MESSAGE_LOG(this->m_logger, "Computing computeViewingPixel (with adjusments)"
+                              "for ground point {} {} {} at time {} ",
+                              groundPoint.x, groundPoint.y, groundPoint.z, time)
+
   // Helper function to compute the CCD pixel that views a ground point based
   // on the exterior orientation at a given time.
 
@@ -2155,6 +2257,8 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double bodyLookX = groundPoint.x - xc;
    double bodyLookY = groundPoint.y - yc;
    double bodyLookZ = groundPoint.z - zc;
+   MESSAGE_LOG(this->m_logger, "computeViewingPixel: look vector {} {} {}",
+                                bodyLookX, bodyLookY, bodyLookZ)
 
    // Rotate the look vector into the camera reference frame
    double quaternions[4];
@@ -2172,6 +2276,9 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double cameraLookZ = bodyToCamera[2] * bodyLookX
                       + bodyToCamera[5] * bodyLookY
                       + bodyToCamera[8] * bodyLookZ;
+   MESSAGE_LOG(this->m_logger, "computeViewingPixel: look vector (camrea ref frame)"
+                               "{} {} {}",
+                                cameraLookX, cameraLookY, cameraLookZ)
 
    // Invert the attitude correction
    double attCorr[9];
@@ -2187,12 +2294,18 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double adjustedLookZ = attCorr[2] * cameraLookX
                         + attCorr[5] * cameraLookY
                         + attCorr[8] * cameraLookZ;
+   MESSAGE_LOG(this->m_logger, "computeViewingPixel: adjusted look vector"
+                               "{} {} {}",
+                                adjustedLookX, adjustedLookY, adjustedLookZ)
 
    // Convert to focal plane coordinate
    double lookScale = m_focalLength / adjustedLookZ;
    double focalX = adjustedLookX * lookScale;
    double focalY = adjustedLookY * lookScale;
    double distortedFocalX, distortedFocalY;
+   MESSAGE_LOG(this->m_logger, "computeViewingPixel: focal plane coordinates"
+                                "x:{} y:{} scale:{}",
+                                focalX, focalY, lookScale)
 
    // Invert distortion
    applyDistortion(focalX, focalY, distortedFocalX, distortedFocalY,
@@ -2210,6 +2323,8 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double line = detectorLine + m_detectorLineOrigin;
    double sample = (detectorSample + m_detectorSampleOrigin - m_startingSample)
                  / m_detectorSampleSumming;
+   MESSAGE_LOG(this->m_logger, "computeViewingPixel: image line sample {} {}",
+                                line, sample)
 
    return csm::ImageCoord(line, sample);
 }
@@ -2236,11 +2351,15 @@ void UsgsAstroLsSensorModel::computeLinearApproximation(
 
       if (ip.samp < 0.0)     ip.samp = 0.0;
       if (ip.samp > numCols) ip.samp = numCols;
+      MESSAGE_LOG(this->m_logger, "Computing computeLinearApproximation"
+                                  "with linear approximation")
    }
    else
    {
       ip.line = m_nLines / 2.0;
       ip.samp = m_nSamples / 2.0;
+      MESSAGE_LOG(this->m_logger, "Computing computeLinearApproximation"
+                                  "nonlinear approx line/2 and sample/2")
    }
 }
 
@@ -2250,124 +2369,136 @@ void UsgsAstroLsSensorModel::computeLinearApproximation(
 //***************************************************************************
 void UsgsAstroLsSensorModel::setLinearApproximation()
 {
-   double u_factors[4] = { 0.0, 0.0, 1.0, 1.0 };
-   double v_factors[4] = { 0.0, 1.0, 0.0, 1.0 };
+  MESSAGE_LOG(this->m_logger, "Calculating setLinearApproximation")
+  double u_factors[4] = { 0.0, 0.0, 1.0, 1.0 };
+  double v_factors[4] = { 0.0, 1.0, 0.0, 1.0 };
 
-   csm::EcefCoord refPt = getReferencePoint();
+  csm::EcefCoord refPt = getReferencePoint();
 
-   double height, aPrec;
-   double desired_precision = 0.01;
-   computeElevation(refPt.x, refPt.y, refPt.z, height, aPrec, desired_precision);
-   if (isnan(height))
-   {
-      _linear = false;
-      return;
-   }
+  double height, aPrec;
+  double desired_precision = 0.01;
+  computeElevation(refPt.x, refPt.y, refPt.z, height, aPrec, desired_precision);
+  if (isnan(height))
+  {
+    MESSAGE_LOG(this->m_logger, "setLinearApproximation: computeElevation of"
+                                "reference point {} {} {} with desired precision"
+                                "{} returned nan height; nonlinear",
+                                refPt.x, refPt.y, refPt.z, desired_precision)
+    _linear = false;
+    return;
+  }
+  MESSAGE_LOG(this->m_logger, "setLinearApproximation: computeElevation of"
+                              "reference point {} {} {} with desired precision"
+                              "{} returned {} height",
+                              refPt.x, refPt.y, refPt.z, desired_precision, height)
 
+  double numRows = m_nLines;
+  double numCols = m_nSamples;
 
-   double numRows = m_nLines;
-   double numCols = m_nSamples;
+  csm::ImageCoord imagePt;
+  csm::EcefCoord  gp[8];
 
-   csm::ImageCoord imagePt;
-   csm::EcefCoord  gp[8];
+  int i;
+  for (i = 0; i < 4; i++)
+  {
+    imagePt.line = u_factors[i] * numRows;
+    imagePt.samp = v_factors[i] * numCols;
+    gp[i] = imageToGround(imagePt, height);
+  }
 
-   int i;
-   for (i = 0; i < 4; i++)
-   {
-      imagePt.line = u_factors[i] * numRows;
-      imagePt.samp = v_factors[i] * numCols;
-      gp[i] = imageToGround(imagePt, height);
-   }
+  double delz = 100.0;
+  height += delz;
+  for (i = 0; i < 4; i++)
+  {
+    imagePt.line = u_factors[i] * numRows;
+    imagePt.samp = v_factors[i] * numCols;
+    gp[i + 4] = imageToGround(imagePt, height);
+  }
 
-   double delz = 100.0;
-   height += delz;
-   for (i = 0; i < 4; i++)
-   {
-      imagePt.line = u_factors[i] * numRows;
-      imagePt.samp = v_factors[i] * numCols;
-      gp[i + 4] = imageToGround(imagePt, height);
-   }
+  csm::EcefCoord d_du;
+  d_du.x = (
+    (gp[2].x + gp[3].x + gp[6].x + gp[7].x) -
+    (gp[0].x + gp[1].x + gp[4].x + gp[5].x)) / numRows / 4.0;
+  d_du.y = (
+    (gp[2].y + gp[3].y + gp[6].y + gp[7].y) -
+    (gp[0].y + gp[1].y + gp[4].y + gp[5].y)) / numRows / 4.0;
+  d_du.z = (
+    (gp[2].z + gp[3].z + gp[6].z + gp[7].z) -
+    (gp[0].z + gp[1].z + gp[4].z + gp[5].z)) / numRows / 4.0;
 
-   csm::EcefCoord d_du;
-   d_du.x = (
-      (gp[2].x + gp[3].x + gp[6].x + gp[7].x) -
-      (gp[0].x + gp[1].x + gp[4].x + gp[5].x)) / numRows / 4.0;
-   d_du.y = (
-      (gp[2].y + gp[3].y + gp[6].y + gp[7].y) -
-      (gp[0].y + gp[1].y + gp[4].y + gp[5].y)) / numRows / 4.0;
-   d_du.z = (
-      (gp[2].z + gp[3].z + gp[6].z + gp[7].z) -
-      (gp[0].z + gp[1].z + gp[4].z + gp[5].z)) / numRows / 4.0;
+  csm::EcefCoord d_dv;
+  d_dv.x = (
+    (gp[1].x + gp[3].x + gp[5].x + gp[7].x) -
+    (gp[0].x + gp[2].x + gp[4].x + gp[6].x)) / numCols / 4.0;
+  d_dv.y = (
+    (gp[1].y + gp[3].y + gp[5].y + gp[7].y) -
+    (gp[0].y + gp[2].y + gp[4].y + gp[6].y)) / numCols / 4.0;
+  d_dv.z = (
+    (gp[1].z + gp[3].z + gp[5].z + gp[7].z) -
+    (gp[0].z + gp[2].z + gp[4].z + gp[6].z)) / numCols / 4.0;
 
-   csm::EcefCoord d_dv;
-   d_dv.x = (
-      (gp[1].x + gp[3].x + gp[5].x + gp[7].x) -
-      (gp[0].x + gp[2].x + gp[4].x + gp[6].x)) / numCols / 4.0;
-   d_dv.y = (
-      (gp[1].y + gp[3].y + gp[5].y + gp[7].y) -
-      (gp[0].y + gp[2].y + gp[4].y + gp[6].y)) / numCols / 4.0;
-   d_dv.z = (
-      (gp[1].z + gp[3].z + gp[5].z + gp[7].z) -
-      (gp[0].z + gp[2].z + gp[4].z + gp[6].z)) / numCols / 4.0;
+  double mat3x3[9];
 
-   double mat3x3[9];
+  mat3x3[0] = d_du.x;
+  mat3x3[1] = d_dv.x;
+  mat3x3[2] = 1.0;
+  mat3x3[3] = d_du.y;
+  mat3x3[4] = d_dv.y;
+  mat3x3[5] = 1.0;
+  mat3x3[6] = d_du.z;
+  mat3x3[7] = d_dv.z;
+  mat3x3[8] = 1.0;
 
-   mat3x3[0] = d_du.x;
-   mat3x3[1] = d_dv.x;
-   mat3x3[2] = 1.0;
-   mat3x3[3] = d_du.y;
-   mat3x3[4] = d_dv.y;
-   mat3x3[5] = 1.0;
-   mat3x3[6] = d_du.z;
-   mat3x3[7] = d_dv.z;
-   mat3x3[8] = 1.0;
+  double denom = determinant3x3(mat3x3);
 
-   double denom = determinant3x3(mat3x3);
+  if (fabs(denom) < 1.0e-8) // can not get derivatives this way
+  {
+    MESSAGE_LOG(this->m_logger, "setLinearApproximation: determinant3x3 of"
+                                "matrix of partials is {}; nonlinear",
+                                denom)
+    _linear = false;
+    return;
+  }
 
-   if (fabs(denom) < 1.0e-8) // can not get derivatives this way
-   {
-      _linear = false;
-      return;
-   }
+  mat3x3[0] = 1.0;
+  mat3x3[3] = 0.0;
+  mat3x3[6] = 0.0;
+  _du_dx = determinant3x3(mat3x3) / denom;
 
-   mat3x3[0] = 1.0;
-   mat3x3[3] = 0.0;
-   mat3x3[6] = 0.0;
-   _du_dx = determinant3x3(mat3x3) / denom;
+  mat3x3[0] = 0.0;
+  mat3x3[3] = 1.0;
+  mat3x3[6] = 0.0;
+  _du_dy = determinant3x3(mat3x3) / denom;
 
-   mat3x3[0] = 0.0;
-   mat3x3[3] = 1.0;
-   mat3x3[6] = 0.0;
-   _du_dy = determinant3x3(mat3x3) / denom;
+  mat3x3[0] = 0.0;
+  mat3x3[3] = 0.0;
+  mat3x3[6] = 1.0;
+  _du_dz = determinant3x3(mat3x3) / denom;
 
-   mat3x3[0] = 0.0;
-   mat3x3[3] = 0.0;
-   mat3x3[6] = 1.0;
-   _du_dz = determinant3x3(mat3x3) / denom;
+  mat3x3[0] = d_du.x;
+  mat3x3[3] = d_du.y;
+  mat3x3[6] = d_du.z;
 
-   mat3x3[0] = d_du.x;
-   mat3x3[3] = d_du.y;
-   mat3x3[6] = d_du.z;
+  mat3x3[1] = 1.0;
+  mat3x3[4] = 0.0;
+  mat3x3[7] = 0.0;
+  _dv_dx = determinant3x3(mat3x3) / denom;
 
-   mat3x3[1] = 1.0;
-   mat3x3[4] = 0.0;
-   mat3x3[7] = 0.0;
-   _dv_dx = determinant3x3(mat3x3) / denom;
+  mat3x3[1] = 0.0;
+  mat3x3[4] = 1.0;
+  mat3x3[7] = 0.0;
+  _dv_dy = determinant3x3(mat3x3) / denom;
 
-   mat3x3[1] = 0.0;
-   mat3x3[4] = 1.0;
-   mat3x3[7] = 0.0;
-   _dv_dy = determinant3x3(mat3x3) / denom;
+  mat3x3[1] = 0.0;
+  mat3x3[4] = 0.0;
+  mat3x3[7] = 1.0;
+  _dv_dz = determinant3x3(mat3x3) / denom;
 
-   mat3x3[1] = 0.0;
-   mat3x3[4] = 0.0;
-   mat3x3[7] = 1.0;
-   _dv_dz = determinant3x3(mat3x3) / denom;
+  _u0 = -gp[0].x * _du_dx - gp[0].y * _du_dy - gp[0].z * _du_dz;
+  _v0 = -gp[0].x * _dv_dx - gp[0].y * _dv_dy - gp[0].z * _dv_dz;
 
-   _u0 = -gp[0].x * _du_dx - gp[0].y * _du_dy - gp[0].z * _du_dz;
-   _v0 = -gp[0].x * _dv_dx - gp[0].y * _dv_dy - gp[0].z * _dv_dz;
-
-   _linear = true;
+  _linear = true;
+  MESSAGE_LOG(this->m_logger, "Completed setLinearApproximation")
 }
 
 //***************************************************************************
@@ -2375,17 +2506,19 @@ void UsgsAstroLsSensorModel::setLinearApproximation()
 //***************************************************************************
 double UsgsAstroLsSensorModel::determinant3x3(double mat[9]) const
 {
-   return
-      mat[0] * (mat[4] * mat[8] - mat[7] * mat[5]) -
-      mat[1] * (mat[3] * mat[8] - mat[6] * mat[5]) +
-      mat[2] * (mat[3] * mat[7] - mat[6] * mat[4]);
+  return
+    mat[0] * (mat[4] * mat[8] - mat[7] * mat[5]) -
+    mat[1] * (mat[3] * mat[8] - mat[6] * mat[5]) +
+    mat[2] * (mat[3] * mat[7] - mat[6] * mat[4]);
 }
 
 
-
-
+//***************************************************************************
+// UsgsAstroLineScannerSensorModel::constructStateFromIsd
+//***************************************************************************
 std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imageSupportData, csm::WarningList *warnings) const
 {
+  MESSAGE_LOG(this->m_logger, "Constructing state from Isd")
   // Instantiate UsgsAstroLineScanner sensor model
   json isd = json::parse(imageSupportData);
   json state = {};
@@ -2398,47 +2531,95 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_imageIdentifier"] = getImageId(isd, parsingWarnings);
   state["m_sensorName"] = getSensorName(isd, parsingWarnings);
   state["m_platformName"] = getPlatformName(isd, parsingWarnings);
+  MESSAGE_LOG(this->m_logger, "m_modelName: {}"
+                              "m_imageIdentifier: {}"
+                              "m_sensorName: {}"
+                              "m_platformName: {}",
+                            state["m_modelName"], state["m_imageIdentifier"],
+                            state["m_sensorName"], state["m_platformName"])
 
   state["m_focalLength"] = getFocalLength(isd, parsingWarnings);
+  MESSAGE_LOG(this->m_logger, "m_focalLength: {}", state["m_focalLength"])
 
   state["m_nLines"] = getTotalLines(isd, parsingWarnings);
   state["m_nSamples"] = getTotalSamples(isd, parsingWarnings);
+  MESSAGE_LOG(this->m_logger, "m_nLines: {}"
+                              "m_nSamples: {}",
+                              state["m_nLines"], state["m_nSamples"])
 
   state["m_iTransS"] = getFocal2PixelSamples(isd, parsingWarnings);
   state["m_iTransL"] = getFocal2PixelLines(isd, parsingWarnings);
+  MESSAGE_LOG(this->m_logger, "m_iTransS: {}"
+                              "m_iTransL: {}",
+                            state["m_iTransS"], state["m_iTransL"])
 
   state["m_platformFlag"] = 1;
   state["m_ikCode"] = 0;
   state["m_zDirection"] = 1;
+  MESSAGE_LOG(this->m_logger, "m_platformFlag: {}"
+                              "m_ikCode: {}"
+                              "m_zDirection: {}",
+                            state["m_platformFlag"], state["m_ikCode"],
+                            state["m_zDirection"])
 
   state["m_distortionType"] = getDistortionModel(isd, parsingWarnings);
   state["m_opticalDistCoeffs"] = getDistortionCoeffs(isd, parsingWarnings);
+  MESSAGE_LOG(this->m_logger, "m_distortionType: {}"
+                              "m_opticalDistCoeffs: {}",
+                              state["m_distortionType"], state["m_opticalDistCoeffs"])
 
   // Zero computed state values
   state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
+  MESSAGE_LOG(this->m_logger, "m_referencePointXyz: {}", state["m_referencePointXyz"])
 
   // leave these be for now.
   state["m_gsd"] = 1.0;
   state["m_flyingHeight"] = 1000.0;
   state["m_halfSwath"] = 1000.0;
   state["m_halfTime"] = 10.0;
+  MESSAGE_LOG(this->m_logger, "m_gsd: {}"
+                              "m_flyingHeight: {}"
+                              "m_halfSwath: {}"
+                              "m_halfTime: {}",
+                            state["m_gsd"], state["m_flyingHeight"],
+                            state["m_halfSwath"], state["m_halfTime"])
 
   state["m_centerEphemerisTime"] = getCenterTime(isd, parsingWarnings);
   state["m_startingEphemerisTime"] = getStartingTime(isd, parsingWarnings);
+  MESSAGE_LOG(this->m_logger, "m_centerEphemerisTime: {}"
+                              "m_startingEphemerisTime: {}",
+                              state["m_centerEphemerisTime"],
+                              state["m_startingEphemerisTime"])
 
   state["m_intTimeLines"] = getIntegrationStartLines(isd, parsingWarnings);
   state["m_intTimeStartTimes"] = getIntegrationStartTimes(isd, parsingWarnings);
   state["m_intTimes"] = getIntegrationTimes(isd, parsingWarnings);
+  MESSAGE_LOG(this->m_logger, "m_intTimeLines: {}"
+                              "m_intTimeStartTimes: {}"
+                              "m_intTimes: {}",
+                              state["m_intTimeLines"], state["m_intTimeStartTimes"],
+                              state["m_intTimes"])
 
   state["m_detectorSampleSumming"] = getSampleSumming(isd, parsingWarnings);
   state["m_startingDetectorSample"] = getDetectorStartingSample(isd, parsingWarnings);
   state["m_startingDetectorLine"] = getDetectorStartingLine(isd, parsingWarnings);
   state["m_detectorSampleOrigin"] = getDetectorCenterSample(isd, parsingWarnings);
   state["m_detectorLineOrigin"] = getDetectorCenterLine(isd, parsingWarnings);
+  MESSAGE_LOG(this->m_logger, "m_detectorSampleSumming: {}"
+                              "m_startingDetectorSample: {}"
+                              "m_startingDetectorLine: {}"
+                              "m_detectorSampleOrigin: {}"
+                              "m_detectorLineOrigin: {}",
+                            state["m_detectorSampleSumming"],
+                            state["m_startingDetectorSample"],
+                            state["m_startingDetectorLine"],
+                            state["m_detectorSampleOrigin"],
+                            state["m_detectorLineOrigin"])
 
   // These are exlusive to LineScanners, leave them here for now.
   try {
     state["m_dtEphem"] = isd.at("dt_ephemeris");
+    MESSAGE_LOG(this->m_logger, "m_dtEphem: {}", state["m_dtEphem"])
   }
   catch(...) {
     parsingWarnings->push_back(
@@ -2446,10 +2627,12 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
         csm::Warning::DATA_NOT_AVAILABLE,
         "dt_ephemeris not in ISD",
         "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    MESSAGE_LOG(this->m_logger, "m_dtEphem not in ISD")
   }
 
   try {
     state["m_t0Ephem"] = isd.at("t0_ephemeris");
+    MESSAGE_LOG(this->m_logger, "t0_ephemeris: {}", state["m_t0Ephem"])
   }
   catch(...) {
     parsingWarnings->push_back(
@@ -2457,10 +2640,12 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
         csm::Warning::DATA_NOT_AVAILABLE,
         "t0_ephemeris not in ISD",
         "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    MESSAGE_LOG(this->m_logger, "t0_ephemeris not in ISD")
   }
 
   try{
     state["m_dtQuat"] =  isd.at("dt_quaternion");
+    MESSAGE_LOG(this->m_logger, "dt_quaternion: {}", state["m_dtQuat"])
   }
   catch(...) {
     parsingWarnings->push_back(
@@ -2468,10 +2653,12 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
         csm::Warning::DATA_NOT_AVAILABLE,
         "dt_quaternion not in ISD",
         "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    MESSAGE_LOG(this->m_logger, "dt_quaternion not in ISD")
   }
 
   try{
     state["m_t0Quat"] =  isd.at("t0_quaternion");
+    MESSAGE_LOG(this->m_logger, "m_t0Quat: {}", state["m_t0Quat"])
   }
   catch(...) {
     parsingWarnings->push_back(
@@ -2479,32 +2666,52 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
         csm::Warning::DATA_NOT_AVAILABLE,
         "t0_quaternion not in ISD",
         "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    MESSAGE_LOG(this->m_logger, "t0_quaternion not in ISD")
   }
 
   std::vector<double> positions = getSensorPositions(isd, parsingWarnings);
   state["m_positions"] = positions;
   state["m_numPositions"] = positions.size();
+  MESSAGE_LOG(this->m_logger, "m_positions: {}"
+                              "m_numPositions: {}",
+                              state["m_positions"],
+                              state["m_numPositions"])
 
   state["m_velocities"] = getSensorVelocities(isd, parsingWarnings);
+  MESSAGE_LOG(this->m_logger, "m_velocities: {}",
+                              state["m_velocities"])
 
   std::vector<double> quaternions = getSensorOrientations(isd, parsingWarnings);
   state["m_quaternions"] = quaternions;
   state["m_numQuaternions"] = quaternions.size();
+  MESSAGE_LOG(this->m_logger, "m_quaternions: {}"
+                              "m_numQuaternions: {}",
+                              state["m_quaternions"], state["m_numQuaternions"])
 
   state["m_currentParameterValue"] = std::vector<double>(NUM_PARAMETERS, 0.0);
+  MESSAGE_LOG(this->m_logger, "m_currentParameterValue: {}",
+                              state["m_currentParameterValue"])
 
   // get radii
   state["m_minorAxis"] = getSemiMinorRadius(isd, parsingWarnings);
   state["m_majorAxis"] = getSemiMajorRadius(isd, parsingWarnings);
+  MESSAGE_LOG(this->m_logger, "m_minorAxis: {}"
+                              "m_majorAxis: {}",
+                              state["m_minorAxis"], state["m_majorAxis"])
 
   // set identifiers
   state["m_platformIdentifier"] = getPlatformName(isd, parsingWarnings);
   state["m_sensorIdentifier"] = getSensorName(isd, parsingWarnings);
+  MESSAGE_LOG(this->m_logger, "m_platformIdentifier: {}"
+                              "m_sensorIdentifier: {}",
+                              state["m_platformIdentifier"], state["m_sensorIdentifier"])
 
   // get reference_height
   state["m_minElevation"] = getMinHeight(isd, parsingWarnings);
   state["m_maxElevation"] = getMaxHeight(isd, parsingWarnings);
-
+  MESSAGE_LOG(this->m_logger, "m_minElevation: {}"
+                              "m_maxElevation: {}",
+                              state["m_minElevation"], state["m_maxElevation"])
 
   // Default to identity covariance
   state["m_covariance"] =
@@ -2512,6 +2719,8 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   for (int i = 0; i < NUM_PARAMETERS; i++) {
    state["m_covariance"][i * NUM_PARAMETERS + i] = 1.0;
   }
+  MESSAGE_LOG(this->m_logger, "m_covariance: {} (should be identity)",
+                              state["m_covariance"])
 
   // Get the optional logging file
   state["m_logFile"] = getLogFile(isd);
@@ -2521,6 +2730,16 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    return state.dump();
 }
 
+
+//***************************************************************************
+// UsgsAstroLineScannerSensorModel::getLogger
+//***************************************************************************
 std::shared_ptr<spdlog::logger> UsgsAstroLsSensorModel::getLogger() {
+  // MESSAGE_LOG(this->m_logger, "Getting log pointer, logger is {}",
+  //                             m_logger)
   return m_logger;
+}
+
+void UsgsAstroLsSensorModel::setLogger(std::shared_ptr<spdlog::logger> logger) {
+  m_logger = logger;
 }

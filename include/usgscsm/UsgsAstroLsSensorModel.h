@@ -691,6 +691,7 @@ public:
    //<
 
    virtual std::shared_ptr<spdlog::logger> getLogger();
+   virtual void setLogger(std::shared_ptr<spdlog::logger> logger);
 
 
    //---
