@@ -147,8 +147,11 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
                                "m_nLines: {} "
                                "m_nSamples: {} "
                                "m_platformFlag: {} ",
-                               j["m_imageIdentifier"].get<std::string>(), j["m_sensorName"],
-                               j["m_nLines"], j["m_nSamples"], j["m_platformFlag"])
+                               j["m_imageIdentifier"].dump(),
+                               j["m_sensorName"].dump(),
+                               j["m_nLines"].dump(),
+                               j["m_nSamples"].dump(),
+                               j["m_platformFlag"].dump())
 
    m_intTimeLines = j["m_intTimeLines"].get<std::vector<double>>();
    m_intTimeStartTimes = j["m_intTimeStartTimes"].get<std::vector<double>>();
@@ -164,20 +167,20 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
                                "m_detectorSampleSumming: {} "
                                "m_startingSample: {} "
                                "m_ikCode: {} ",
-                               j["m_startingEphemerisTime"],
-                               j["m_centerEphemerisTime"],
-                               j["m_detectorSampleSumming"],
-                               j["m_startingSample"], j["m_ikCode"])
+                               j["m_startingEphemerisTime"].dump(),
+                               j["m_centerEphemerisTime"].dump(),
+                               j["m_detectorSampleSumming"].dump(),
+                               j["m_startingSample"], j["m_ikCode"].dump())
 
    m_focalLength = j["m_focalLength"];
    m_zDirection = j["m_zDirection"];
    m_distortionType = (DistortionType)j["m_distortionType"].get<int>();
    m_opticalDistCoeffs = j["m_opticalDistCoeffs"].get<std::vector<double>>();
    MESSAGE_LOG(m_logger, "m_focalLength: {} "
-                               "m_zDirection: {} "
-                               "m_distortionType: {} ",
-                               j["m_focalLength"], j["m_zDirection"],
-                               j["m_distortionType"].get<int>())
+                         "m_zDirection: {} "
+                         "m_distortionType: {} ",
+                         j["m_focalLength"].dump(), j["m_zDirection"].dump(),
+                         j["m_distortionType"].dump())
 
    for (int i = 0; i < 3; i++) {
      m_iTransS[i] = j["m_iTransS"][i];
@@ -192,22 +195,23 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
                                "m_detectorLineOrigin: {} "
                                "m_majorAxis: {} "
                                "m_minorAxis: {} ",
-                               j["m_detectorSampleOrigin"],
-                               j["m_detectorLineOrigin"],
-                               j["m_majorAxis"], j["m_minorAxis"])
+                               j["m_detectorSampleOrigin"].dump(),
+                               j["m_detectorLineOrigin"].dump(),
+                               j["m_majorAxis"].dump(), j["m_minorAxis"].dump())
 
    m_platformIdentifier = j["m_platformIdentifier"];
    m_sensorIdentifier = j["m_sensorIdentifier"];
    MESSAGE_LOG(m_logger, "m_platformIdentifier: {} "
-                               "m_sensorIdentifier: {} ",
-                               j["m_platformIdentifier"], j["m_sensorIdentifier"])
+                         "m_sensorIdentifier: {} ",
+                         j["m_platformIdentifier"].dump(),
+                         j["m_sensorIdentifier"].dump())
 
    m_minElevation = j["m_minElevation"];
    m_maxElevation = j["m_maxElevation"];
    MESSAGE_LOG(m_logger, "m_minElevation: {} "
                                "m_maxElevation: {} ",
-                               j["m_minElevation"],
-                               j["m_maxElevation"])
+                               j["m_minElevation"].dump(),
+                               j["m_maxElevation"].dump())
 
    m_dtEphem = j["m_dtEphem"];
    m_t0Ephem = j["m_t0Ephem"];
@@ -218,8 +222,8 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
                                "m_t0Ephem: {} "
                                "m_dtQuat: {} "
                                "m_t0Quat: {} ",
-                               j["m_dtEphem"], j["m_t0Ephem"],
-                               j["m_dtQuat"], j["m_t0Quat"])
+                               j["m_dtEphem"].dump(), j["m_t0Ephem"].dump(),
+                               j["m_dtQuat"].dump(), j["m_t0Quat"].dump())
 
    m_numQuaternions = j["m_numQuaternions"];
    m_referencePointXyz.x = j["m_referencePointXyz"][0];
@@ -229,20 +233,20 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
                                "m_referencePointX: {} "
                                "m_referencePointY: {} "
                                "m_referencePointZ: {} ",
-                               j["m_numQuaternions"], j["m_referencePointXyz"][0],
-                               j["m_referencePointXyz"][1],
-                               j["m_referencePointXyz"][2])
+                               j["m_numQuaternions"].dump(), j["m_referencePointXyz"][0].dump(),
+                               j["m_referencePointXyz"][1].dump(),
+                               j["m_referencePointXyz"][2].dump())
 
    m_gsd = j["m_gsd"];
    m_flyingHeight = j["m_flyingHeight"];
    m_halfSwath = j["m_halfSwath"];
    m_halfTime = j["m_halfTime"];
    MESSAGE_LOG(m_logger, "m_gsd: {} "
-                               "m_flyingHeight: {} "
-                               "m_halfSwath: {} "
-                               "m_halfTime: {} ",
-                               j["m_gsd"], j["m_flyingHeight"],
-                               j["m_halfSwath"], j["m_halfTime"])
+                         "m_flyingHeight: {} "
+                         "m_halfSwath: {} "
+                         "m_halfTime: {} ",
+                         j["m_gsd"].dump(), j["m_flyingHeight"].dump(),
+                         j["m_halfSwath"].dump(), j["m_halfTime"].dump())
    // Vector = is overloaded so explicit get with type required.
 
    m_positions = j["m_positions"].get<std::vector<double>>();
@@ -2664,11 +2668,11 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_sensorName"] = getSensorName(isd, parsingWarnings);
   state["m_platformName"] = getPlatformName(isd, parsingWarnings);
   MESSAGE_LOG(m_logger, "m_modelName: {} "
-                              "m_imageIdentifier: {} "
-                              "m_sensorName: {} "
-                              "m_platformName: {} ",
-                            state["m_modelName"], state["m_imageIdentifier"],
-                            state["m_sensorName"], state["m_platformName"])
+                        "m_imageIdentifier: {} "
+                        "m_sensorName: {} "
+                        "m_platformName: {} ",
+                        state["m_modelName"], state["m_imageIdentifier"],
+                        state["m_sensorName"], state["m_platformName"])
 
   state["m_focalLength"] = getFocalLength(isd, parsingWarnings);
   MESSAGE_LOG(m_logger, "m_focalLength: {} ", state["m_focalLength"])
@@ -2676,14 +2680,14 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_nLines"] = getTotalLines(isd, parsingWarnings);
   state["m_nSamples"] = getTotalSamples(isd, parsingWarnings);
   MESSAGE_LOG(m_logger, "m_nLines: {} "
-                              "m_nSamples: {} ",
-                              state["m_nLines"], state["m_nSamples"])
+                        "m_nSamples: {} ",
+                        state["m_nLines"], state["m_nSamples"])
 
   state["m_iTransS"] = getFocal2PixelSamples(isd, parsingWarnings);
   state["m_iTransL"] = getFocal2PixelLines(isd, parsingWarnings);
   MESSAGE_LOG(m_logger, "m_iTransS: {} "
-                              "m_iTransL: {} ",
-                            state["m_iTransS"], state["m_iTransL"])
+                        "m_iTransL: {} ",
+                        state["m_iTransS"], state["m_iTransL"])
 
   state["m_platformFlag"] = 1;
   state["m_ikCode"] = 0;
@@ -2697,8 +2701,8 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_distortionType"] = getDistortionModel(isd, parsingWarnings);
   state["m_opticalDistCoeffs"] = getDistortionCoeffs(isd, parsingWarnings);
   MESSAGE_LOG(m_logger, "m_distortionType: {} "
-                              "m_opticalDistCoeffs: {} ",
-                              state["m_distortionType"], state["m_opticalDistCoeffs"])
+                        "m_opticalDistCoeffs: {} ",
+                        state["m_distortionType"], state["m_opticalDistCoeffs"])
 
   // Zero computed state values
   state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
@@ -2710,27 +2714,27 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_halfSwath"] = 1000.0;
   state["m_halfTime"] = 10.0;
   MESSAGE_LOG(m_logger, "m_gsd: {} "
-                              "m_flyingHeight: {} "
-                              "m_halfSwath: {} "
-                              "m_halfTime: {} ",
-                            state["m_gsd"], state["m_flyingHeight"],
-                            state["m_halfSwath"], state["m_halfTime"])
+                        "m_flyingHeight: {} "
+                        "m_halfSwath: {} "
+                        "m_halfTime: {} ",
+                        state["m_gsd"], state["m_flyingHeight"],
+                        state["m_halfSwath"], state["m_halfTime"])
 
   state["m_centerEphemerisTime"] = getCenterTime(isd, parsingWarnings);
   state["m_startingEphemerisTime"] = getStartingTime(isd, parsingWarnings);
   MESSAGE_LOG(m_logger, "m_centerEphemerisTime: {} "
-                              "m_startingEphemerisTime: {} ",
-                              state["m_centerEphemerisTime"],
-                              state["m_startingEphemerisTime"])
+                        "m_startingEphemerisTime: {} ",
+                        state["m_centerEphemerisTime"],
+                        state["m_startingEphemerisTime"])
 
   state["m_intTimeLines"] = getIntegrationStartLines(isd, parsingWarnings);
   state["m_intTimeStartTimes"] = getIntegrationStartTimes(isd, parsingWarnings);
   state["m_intTimes"] = getIntegrationTimes(isd, parsingWarnings);
   MESSAGE_LOG(m_logger, "m_intTimeLines: {} "
-                              "m_intTimeStartTimes: {} "
-                              "m_intTimes: {} ",
-                              state["m_intTimeLines"], state["m_intTimeStartTimes"],
-                              state["m_intTimes"])
+                        "m_intTimeStartTimes: {} "
+                        "m_intTimes: {} ",
+                        state["m_intTimeLines"], state["m_intTimeStartTimes"],
+                        state["m_intTimes"])
 
   state["m_detectorSampleSumming"] = getSampleSumming(isd, parsingWarnings);
   state["m_startingDetectorSample"] = getDetectorStartingSample(isd, parsingWarnings);
@@ -2738,15 +2742,15 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_detectorSampleOrigin"] = getDetectorCenterSample(isd, parsingWarnings);
   state["m_detectorLineOrigin"] = getDetectorCenterLine(isd, parsingWarnings);
   MESSAGE_LOG(m_logger, "m_detectorSampleSumming: {} "
-                              "m_startingDetectorSample: {} "
-                              "m_startingDetectorLine: {} "
-                              "m_detectorSampleOrigin: {} "
-                              "m_detectorLineOrigin: {} ",
-                            state["m_detectorSampleSumming"],
-                            state["m_startingDetectorSample"],
-                            state["m_startingDetectorLine"],
-                            state["m_detectorSampleOrigin"],
-                            state["m_detectorLineOrigin"])
+                        "m_startingDetectorSample: {} "
+                        "m_startingDetectorLine: {} "
+                        "m_detectorSampleOrigin: {} "
+                        "m_detectorLineOrigin: {} ",
+                        state["m_detectorSampleSumming"],
+                        state["m_startingDetectorSample"],
+                        state["m_startingDetectorLine"],
+                        state["m_detectorSampleOrigin"],
+                        state["m_detectorLineOrigin"])
 
   // These are exlusive to LineScanners, leave them here for now.
   try {
@@ -2822,28 +2826,28 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
 
   state["m_currentParameterValue"] = std::vector<double>(NUM_PARAMETERS, 0.0);
   MESSAGE_LOG(m_logger, "m_currentParameterValue: {}",
-                              state["m_currentParameterValue"])
+                        state["m_currentParameterValue"])
 
   // get radii
   state["m_minorAxis"] = getSemiMinorRadius(isd, parsingWarnings);
   state["m_majorAxis"] = getSemiMajorRadius(isd, parsingWarnings);
   MESSAGE_LOG(m_logger, "m_minorAxis: {}"
-                              "m_majorAxis: {}",
-                              state["m_minorAxis"], state["m_majorAxis"])
+                        "m_majorAxis: {}",
+                        state["m_minorAxis"], state["m_majorAxis"])
 
   // set identifiers
   state["m_platformIdentifier"] = getPlatformName(isd, parsingWarnings);
   state["m_sensorIdentifier"] = getSensorName(isd, parsingWarnings);
   MESSAGE_LOG(m_logger, "m_platformIdentifier: {}"
-                              "m_sensorIdentifier: {}",
-                              state["m_platformIdentifier"], state["m_sensorIdentifier"])
+                        "m_sensorIdentifier: {}",
+                        state["m_platformIdentifier"], state["m_sensorIdentifier"])
 
   // get reference_height
   state["m_minElevation"] = getMinHeight(isd, parsingWarnings);
   state["m_maxElevation"] = getMaxHeight(isd, parsingWarnings);
   MESSAGE_LOG(m_logger, "m_minElevation: {}"
-                              "m_maxElevation: {}",
-                              state["m_minElevation"], state["m_maxElevation"])
+                        "m_maxElevation: {}",
+                        state["m_minElevation"], state["m_maxElevation"])
 
   // Default to identity covariance
   state["m_covariance"] =
@@ -2852,7 +2856,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
    state["m_covariance"][i * NUM_PARAMETERS + i] = 1.0;
   }
   MESSAGE_LOG(m_logger, "m_covariance: {} (should be identity)",
-                              state["m_covariance"])
+                        state["m_covariance"])
 
   // Get the optional logging file
   state["m_logFile"] = getLogFile(isd);
