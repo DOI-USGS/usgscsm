@@ -499,7 +499,12 @@ csm::RasterGM::SensorPartials UsgsAstroFrameSensorModel::computeSensorPartials(i
                                with point: {}, {}, index: {}, and desiredPrecision: {}",
                                groundPt.x, groundPt.y, groundPt.z, imagePt.line, imagePt.samp,
                                index, desiredPrecision);
-  const double delta = 1.0;
+  double delta = 1.0;
+  // For the rotation parameter use a better delta
+  // Rotation parameters are index 3-6
+  if (index > 2 && index < 7) {
+    delta = 0.01;
+  }
   // Update the parameter
   std::vector<double>adj(NUM_PARAMETERS, 0.0);
   adj[index] = delta;
