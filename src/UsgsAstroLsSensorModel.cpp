@@ -147,17 +147,12 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
                                "m_nLines: {} "
                                "m_nSamples: {} "
                                "m_platformFlag: {} ",
-                               j["m_imageIdentifier"], j["m_sensorName"],
+                               j["m_imageIdentifier"].get<std::string>(), j["m_sensorName"],
                                j["m_nLines"], j["m_nSamples"], j["m_platformFlag"])
 
    m_intTimeLines = j["m_intTimeLines"].get<std::vector<double>>();
    m_intTimeStartTimes = j["m_intTimeStartTimes"].get<std::vector<double>>();
    m_intTimes = j["m_intTimes"].get<std::vector<double>>();
-   MESSAGE_LOG(m_logger, "m_intTimeLines: {} "
-                               "m_intTimeStartTimes: {} "
-                               "m_intTimes: {} ",
-                               j["m_intTimeLines"], j["m_intTimeStartTimes"],
-                               j["m_intTimes"])
 
    m_startingEphemerisTime = j["m_startingEphemerisTime"];
    m_centerEphemerisTime = j["m_centerEphemerisTime"];
@@ -180,10 +175,9 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
    m_opticalDistCoeffs = j["m_opticalDistCoeffs"].get<std::vector<double>>();
    MESSAGE_LOG(m_logger, "m_focalLength: {} "
                                "m_zDirection: {} "
-                               "m_distortionType: {} "
-                               "m_opticalDistCoeffs: {} ",
+                               "m_distortionType: {} ",
                                j["m_focalLength"], j["m_zDirection"],
-                               j["m_distortionType"], j["m_opticalDistCoeffs"])
+                               j["m_distortionType"].get<int>())
 
    for (int i = 0; i < 3; i++) {
      m_iTransS[i] = j["m_iTransS"][i];
@@ -2695,10 +2689,10 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_ikCode"] = 0;
   state["m_zDirection"] = 1;
   MESSAGE_LOG(m_logger, "m_platformFlag: {} "
-                              "m_ikCode: {} "
-                              "m_zDirection: {} ",
-                            state["m_platformFlag"], state["m_ikCode"],
-                            state["m_zDirection"])
+                        "m_ikCode: {} "
+                        "m_zDirection: {} ",
+                        state["m_platformFlag"], state["m_ikCode"],
+                        state["m_zDirection"])
 
   state["m_distortionType"] = getDistortionModel(isd, parsingWarnings);
   state["m_opticalDistCoeffs"] = getDistortionCoeffs(isd, parsingWarnings);
@@ -2811,20 +2805,20 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_positions"] = positions;
   state["m_numPositions"] = positions.size();
   MESSAGE_LOG(m_logger, "m_positions: {}"
-                              "m_numPositions: {}",
-                              state["m_positions"],
-                              state["m_numPositions"])
+                        "m_numPositions: {}",
+                        state["m_positions"],
+                        state["m_numPositions"])
 
   state["m_velocities"] = getSensorVelocities(isd, parsingWarnings);
   MESSAGE_LOG(m_logger, "m_velocities: {}",
-                              state["m_velocities"])
+                        state["m_velocities"])
 
   std::vector<double> quaternions = getSensorOrientations(isd, parsingWarnings);
   state["m_quaternions"] = quaternions;
   state["m_numQuaternions"] = quaternions.size();
   MESSAGE_LOG(m_logger, "m_quaternions: {}"
-                              "m_numQuaternions: {}",
-                              state["m_quaternions"], state["m_numQuaternions"])
+                        "m_numQuaternions: {}",
+                        state["m_quaternions"], state["m_numQuaternions"])
 
   state["m_currentParameterValue"] = std::vector<double>(NUM_PARAMETERS, 0.0);
   MESSAGE_LOG(m_logger, "m_currentParameterValue: {}",
