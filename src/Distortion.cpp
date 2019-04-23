@@ -105,7 +105,6 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
     // Computes undistorted focal plane (x,y) coordinates given a distorted focal plane (x,y)
     // coordinate. The undistorted coordinates are solved for using the Newton-Raphson
     // method for root-finding if the distortionFunction method is invoked.
-    case KAGUYATC:
     case TRANSVERSE: {
       // Solve the distortion equation using the Newton-Raphson method.
       // Set the error tolerance to about one millionth of a NAC pixel.
@@ -257,7 +256,6 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
       }
     }
     break;
-    case KAGUYATC:
     case TRANSVERSE: {
       computeTransverseDistortion(ux, uy, dx, dy, opticalDistCoeffs);
     }
