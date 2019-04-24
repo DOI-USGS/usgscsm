@@ -773,7 +773,7 @@ bool UsgsAstroFrameSensorModel::isValidModelState(const std::string& stringState
     }
   }
 
-  if (!missingKeywords.empty()) {
+  if (!missingKeywords.empty() && warnings) {
     std::ostringstream oss;
     std::copy(missingKeywords.begin(), missingKeywords.end(), std::ostream_iterator<std::string>(oss, " "));
     warnings->push_back(csm::Warning(
@@ -785,7 +785,7 @@ bool UsgsAstroFrameSensorModel::isValidModelState(const std::string& stringState
 
   std::string modelName = jsonState.value<std::string>("m_modelName", "");
 
-  if (modelName != _SENSOR_MODEL_NAME) {
+  if (modelName != _SENSOR_MODEL_NAME && warnings) {
     warnings->push_back(csm::Warning(
       csm::Warning::DATA_NOT_AVAILABLE,
       "Incorrect model name in state, expected " + _SENSOR_MODEL_NAME + " but got " + modelName,
@@ -1071,6 +1071,8 @@ bool UsgsAstroFrameSensorModel::isParameterShareable(int index) const {
 
 
 csm::SharingCriteria UsgsAstroFrameSensorModel::getParameterSharingCriteria(int index) const {
+   MESSAGE_LOG(this->m_logger, "Checking sharing criteria for parameter {}. "
+               "Sharing is not supported, throwing exception", index);
    // Parameter sharing is not supported for this sensor,
    // all indices are out of range
    throw csm::Error(
@@ -1127,6 +1129,9 @@ int UsgsAstroFrameSensorModel::getNumGeometricCorrectionSwitches() const {
 
 
 std::string UsgsAstroFrameSensorModel::getGeometricCorrectionName(int index) const {
+   MESSAGE_LOG(this->m_logger, "Accessing name of geometric correction switch {}. "
+               "Geometric correction switches are not supported, throwing exception",
+               index);
    // Since there are no geometric corrections, all indices are out of range
    throw csm::Error(
       csm::Error::INDEX_OUT_OF_RANGE,
@@ -1138,6 +1143,10 @@ std::string UsgsAstroFrameSensorModel::getGeometricCorrectionName(int index) con
 void UsgsAstroFrameSensorModel::setGeometricCorrectionSwitch(int index,
                                                       bool value,
                                                       csm::param::Type pType) {
+   MESSAGE_LOG(this->m_logger, "Setting geometric correction switch {} to {} "
+               "with parameter type {}. "
+               "Geometric correction switches are not supported, throwing exception",
+               index, value, pType);
    // Since there are no geometric corrections, all indices are out of range
    throw csm::Error(
       csm::Error::INDEX_OUT_OF_RANGE,
@@ -1147,6 +1156,9 @@ void UsgsAstroFrameSensorModel::setGeometricCorrectionSwitch(int index,
 
 
 bool UsgsAstroFrameSensorModel::getGeometricCorrectionSwitch(int index) const {
+   MESSAGE_LOG(this->m_logger, "Accessing value of geometric correction switch {}. "
+               "Geometric correction switches are not supported, throwing exception",
+               index);
    // Since there are no geometric corrections, all indices are out of range
    throw csm::Error(
       csm::Error::INDEX_OUT_OF_RANGE,
@@ -1297,4 +1309,8 @@ double UsgsAstroFrameSensorModel::getValue(
 
 std::shared_ptr<spdlog::logger> UsgsAstroFrameSensorModel::getLogger() {
   return m_logger;
+}
+
+void UsgsAstroFrameSensorModel::setLogger(std::shared_ptr<spdlog::logger> logger) {
+  m_logger = logger;
 }

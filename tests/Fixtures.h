@@ -9,9 +9,12 @@
 
 #include <map>
 #include <sstream>
+#include <string>
 #include <fstream>
 
 #include <gtest/gtest.h>
+
+#include <spdlog/sinks/ostream_sink.h>
 
 using json = nlohmann::json;
 
@@ -59,6 +62,43 @@ class FrameSensorModel : public ::testing::Test {
             delete sensorModel;
             sensorModel = NULL;
          }
+      }
+};
+
+class FrameSensorModelLogging : public ::testing::Test {
+   protected:
+      csm::Isd isd;
+      UsgsAstroFrameSensorModel *sensorModel;
+      std::ostringstream oss;
+
+      void SetUp() override {
+         sensorModel = NULL;
+
+         isd.setFilename("data/simpleFramerISD.img");
+         UsgsAstroPlugin frameCameraPlugin;
+
+         csm::Model *model = frameCameraPlugin.constructModelFromISD(
+               isd,
+               "USGS_ASTRO_FRAME_SENSOR_MODEL");
+         sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+
+         ASSERT_NE(sensorModel, nullptr);
+
+         auto ostream_sink = std::make_shared<spdlog::sinks::ostream_sink_mt> (oss);
+         // We need a unique ID for the sensor model so that we don't have
+         // logger name collisions. Use the sensor model's memory addresss.
+         std::uintptr_t sensorId = reinterpret_cast<std::uintptr_t>(sensorModel);
+         auto logger = std::make_shared<spdlog::logger>(std::to_string(sensorId), ostream_sink);
+         sensorModel->setLogger(logger);
+      }
+
+      void TearDown() override {
+         if (sensorModel) {
+            delete sensorModel;
+            sensorModel = NULL;
+         }
+
+         EXPECT_FALSE(oss.str().empty());
       }
 };
 
