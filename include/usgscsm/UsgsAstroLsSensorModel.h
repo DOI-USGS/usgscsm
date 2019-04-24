@@ -32,6 +32,9 @@
 #include <CorrelationModel.h>
 #include "Distortion.h"
 
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
+
 class UsgsAstroLsSensorModel : public csm::RasterGM, virtual public csm::SettableEllipsoid
 {
 public:
@@ -114,6 +117,10 @@ public:
    double       m_halfTime;
    std::vector<double> m_covariance;
    int          m_imageFlipFlag;
+
+   // Define logging pointer and file content
+   std::string m_logFile;
+   std::shared_ptr<spdlog::logger> m_logger;
 
    // Hardcoded
    static const std::string      _SENSOR_MODEL_NAME; // state date element 0
@@ -682,6 +689,9 @@ public:
    //> This method sets the type of the adjustable parameter
    //  reference by the given index.
    //<
+
+   virtual std::shared_ptr<spdlog::logger> getLogger();
+   virtual void setLogger(std::shared_ptr<spdlog::logger> logger);
 
 
    //---
