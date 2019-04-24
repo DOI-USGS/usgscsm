@@ -314,6 +314,15 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
         const GeometricModelList &otherModels = GeometricModelList()) const;
     virtual std::shared_ptr<spdlog::logger> getLogger();
     virtual void setLogger(std::shared_ptr<spdlog::logger> logger);
+    double getValue(int index, const std::vector<double> &adjustments) const;
+    void calcRotationMatrix(double m[3][3]) const;
+    void calcRotationMatrix(double m[3][3], const std::vector<double> &adjustments) const;
+
+    void losEllipsoidIntersect (double height,double xc,
+                                double yc, double zc,
+                                double xl, double yl,
+                                double zl,
+                                double& x,double& y, double&  z) const;
 
     static const std::string _SENSOR_MODEL_NAME;
 
@@ -374,16 +383,6 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM {
     static const std::string _STATE_KEYWORD[];
 
     csm::NoCorrelationModel _no_corr_model;
-
-    double getValue(int index,const std::vector<double> &adjustments) const;
-    void calcRotationMatrix(double m[3][3]) const;
-    void calcRotationMatrix(double m[3][3], const std::vector<double> &adjustments) const;
-
-    void losEllipsoidIntersect (double height,double xc,
-                                double yc, double zc,
-                                double xl, double yl,
-                                double zl,
-                                double& x,double& y, double&  z) const;
 
 };
 
