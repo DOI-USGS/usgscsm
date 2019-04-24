@@ -2882,7 +2882,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   parsingWarnings = nullptr;
 
   // The state data will still be updated when a sensor model is created since
-  // some state data is notin the ISD and requires a SM to compute them.
+  // some state data is not in the ISD and requires a SM to compute them.
   return state.dump();
 }
 

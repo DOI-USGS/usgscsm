@@ -201,8 +201,10 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       uy = dy + dr_y;
     }
     break;
-    // The dawn distortion model is "reversed" so the remove function computes
-    // the distorted focal plane but stores it into the undistorted variables (ux, uy)
+    // The dawn distortion model is "reversed" from other distortion models so
+    // the remove function iteratively computes undistorted coordinates based on
+    // the distorted coordinates, rather than iteratively computing distorted coordinates
+    // to undistorted coordinates.
     case DAWNFC: {
       double offsetSqrd;
       int    numAttempts;
@@ -381,8 +383,9 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
       }
     }
     break;
-    // The dawn distortion model is "reversed" so the apply function computes
-    // the distorted focal plane and stores it into the distorted variables (dx, dy)
+    // The dawn distortion model is "reversed" from other distortion models so
+    // the apply function computes distorted coordinates as a
+    // fn(undistorted coordinates)
     case DAWNFC: {
       double offsetSqrd;
 
