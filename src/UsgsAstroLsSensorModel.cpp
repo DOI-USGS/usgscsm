@@ -147,7 +147,8 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
                          "m_nLines: {} "
                          "m_nSamples: {} "
                          "m_platformFlag: {} ",
-                         j["m_imageIdentifier"].dump(),                       j["m_sensorName"].dump(),
+                         j["m_imageIdentifier"].dump(),
+                         j["m_sensorName"].dump(),
                          j["m_nLines"].dump(),
                          j["m_nSamples"].dump(),
                          j["m_platformFlag"].dump())
