@@ -9,6 +9,10 @@
 using json = nlohmann::json;
 // NOTE: The imagePt format is (Lines,Samples)
 
+// ****************************************************************************
+//   Basic sensor model tests
+// ****************************************************************************
+
 TEST_F(FrameSensorModel, State) {
    std::string modelState = sensorModel->getModelState();
    EXPECT_NO_THROW(
@@ -87,6 +91,10 @@ TEST_F(FrameSensorModel, Inversion) {
    EXPECT_DOUBLE_EQ(imagePt1.samp, imagePt2.samp);
 }
 
+// ****************************************************************************
+//   Orbital sensor model tests
+// ****************************************************************************
+
 TEST_F(OrbitalFrameSensorModel, Center) {
    csm::ImageCoord imagePt(8.0, 8.0);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
@@ -110,6 +118,9 @@ TEST_F(OrbitalFrameSensorModel, GroundPartials) {
    EXPECT_DOUBLE_EQ(partials[5], 0.0);
 }
 
+// ****************************************************************************
+//   Modified sensor model tests
+// ****************************************************************************
 
 // Focal Length Tests:
 TEST_F(FrameStateTest, FL500_OffBody4) {
@@ -128,7 +139,6 @@ TEST_F(FrameStateTest, FL500_OffBody4) {
   sensorModel = NULL;
 }
 
-
 TEST_F(FrameStateTest, FL500_OffBody3) {
   std::string key = "m_focalLength";
   double newValue = 500.0;
@@ -144,7 +154,6 @@ TEST_F(FrameStateTest, FL500_OffBody3) {
   delete sensorModel;
   sensorModel = NULL;
 }
-
 
 TEST_F(FrameStateTest, FL500_Center) {
   std::string key = "m_focalLength";
@@ -162,7 +171,6 @@ TEST_F(FrameStateTest, FL500_Center) {
   sensorModel = NULL;
 }
 
-
 TEST_F(FrameStateTest, FL500_SlightlyOffCenter) {
   std::string key = "m_focalLength";
   double newValue = 500.0;
@@ -177,100 +185,6 @@ TEST_F(FrameStateTest, FL500_SlightlyOffCenter) {
 
   delete sensorModel;
   sensorModel = NULL;
-}
-
-// Observer x position:
-TEST_F(FrameSensorModel, X10_SlightlyOffCenter) {
-   double newValue = 10.0;
-   sensorModel->setParameterValue(0, newValue); // X
-
-   ASSERT_NE(sensorModel, nullptr);
-   csm::ImageCoord imagePt(7.5, 6.5);
-   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   EXPECT_NEAR(groundPt.x, 10.0, 1e-8);
-   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
-   EXPECT_NEAR(groundPt.z, 0.0, 1e-8);
-
-   delete sensorModel;
-   sensorModel = NULL;
-}
-
-TEST_F(FrameSensorModel, X1e9_SlightlyOffCenter) {
-   double newValue = 1000000000.0;
-   sensorModel->setParameterValue(0, newValue); // X
-
-   ASSERT_NE(sensorModel, nullptr);
-   csm::ImageCoord imagePt(7.5, 6.5);
-   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   // Note: In the following, the tolerance was increased due to the very large distance being tested (~6.68 AU).
-   EXPECT_NEAR(groundPt.x, 3.99998400e+03, 1e-4);
-   EXPECT_NEAR(groundPt.y, 0.0, 1e-4);
-   EXPECT_NEAR(groundPt.z, 1.99999200e+06, 1e-4);
-
-   delete sensorModel;
-   sensorModel = NULL;
-}
-
-// Angle rotations:
-TEST_F(FrameSensorModel, Rotation_omegaPi_Center) {
-   sensorModel->setParameterValue(3, 1.0);
-   sensorModel->setParameterValue(4, 1.0);
-   sensorModel->setParameterValue(5, 1.0);
-
-   sensorModel->setParameterValue(6, 1.0);
-
-   sensorModel->setParameterValue(0, 1000.0); // X
-   sensorModel->setParameterValue(1, 0.0); // Y
-   sensorModel->setParameterValue(2, 0.0); // Z
-
-   ASSERT_NE(sensorModel, nullptr);
-   csm::ImageCoord imagePt(7.5, 7.5);
-   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   EXPECT_NEAR(groundPt.x, -10.0, 1e-8);
-   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
-   EXPECT_NEAR(groundPt.z, 0.0, 1e-8);
-
-   delete sensorModel;
-   sensorModel = NULL;
-}
-
-TEST_F(FrameSensorModel, Rotation_NPole_Center) {
-  sensorModel->setParameterValue(3, 0.0);
-  sensorModel->setParameterValue(4, -1.0);
-  sensorModel->setParameterValue(5, 0.0);
-
-  sensorModel->setParameterValue(6, 0.0);
-
-  sensorModel->setParameterValue(0, 0.0); // X
-  sensorModel->setParameterValue(1, 0.0); // Y
-  sensorModel->setParameterValue(2, 1000.0); // Z
-
-  ASSERT_NE(sensorModel, nullptr);
-  csm::ImageCoord imagePt(7.5, 7.5);
-  csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-  EXPECT_NEAR(groundPt.x, 0.0, 1e-8);
-  EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
-  EXPECT_NEAR(groundPt.z, 10.0, 1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
-}
-
-TEST_F(FrameSensorModel, Rotation_SPole_Center) {
-   sensorModel->setParameterValue(3, 0.0); // phi
-   sensorModel->setParameterValue(0, 0.0); // X
-   sensorModel->setParameterValue(1, 0.0); // Y
-   sensorModel->setParameterValue(2, -1000.0); // Z
-
-   ASSERT_NE(sensorModel, nullptr);
-   csm::ImageCoord imagePt(7.5, 7.5);
-   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   EXPECT_NEAR(groundPt.x, 0.0, 1e-8);
-   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
-   EXPECT_NEAR(groundPt.z, -10.0, 1e-8);
-
-   delete sensorModel;
-   sensorModel = NULL;
 }
 
 // Ellipsoid axis tests:
@@ -390,6 +304,108 @@ TEST_F(FrameStateTest, StartLine) {
   delete sensorModel;
   sensorModel = NULL;
 }
+
+// ****************************************************************************
+//   Adjustable parameter tests
+// ****************************************************************************
+
+// Observer x position:
+TEST_F(FrameSensorModel, X10_SlightlyOffCenter) {
+   double newValue = 10.0;
+   sensorModel->setParameterValue(0, newValue); // X
+
+   ASSERT_NE(sensorModel, nullptr);
+   csm::ImageCoord imagePt(7.5, 6.5);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   EXPECT_NEAR(groundPt.x, 10.0, 1e-8);
+   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
+   EXPECT_NEAR(groundPt.z, 0.0, 1e-8);
+
+   delete sensorModel;
+   sensorModel = NULL;
+}
+
+TEST_F(FrameSensorModel, X1e9_SlightlyOffCenter) {
+   double newValue = 1000000000.0;
+   sensorModel->setParameterValue(0, newValue); // X
+
+   ASSERT_NE(sensorModel, nullptr);
+   csm::ImageCoord imagePt(7.5, 6.5);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   // Note: In the following, the tolerance was increased due to the very large distance being tested (~6.68 AU).
+   EXPECT_NEAR(groundPt.x, 3.99998400e+03, 1e-4);
+   EXPECT_NEAR(groundPt.y, 0.0, 1e-4);
+   EXPECT_NEAR(groundPt.z, 1.99999200e+06, 1e-4);
+
+   delete sensorModel;
+   sensorModel = NULL;
+}
+
+// Angle rotations:
+TEST_F(FrameSensorModel, Rotation_omegaPi_Center) {
+   sensorModel->setParameterValue(3, 1.0);
+   sensorModel->setParameterValue(4, 1.0);
+   sensorModel->setParameterValue(5, 1.0);
+
+   sensorModel->setParameterValue(6, 1.0);
+
+   sensorModel->setParameterValue(0, 1000.0); // X
+   sensorModel->setParameterValue(1, 0.0); // Y
+   sensorModel->setParameterValue(2, 0.0); // Z
+
+   ASSERT_NE(sensorModel, nullptr);
+   csm::ImageCoord imagePt(7.5, 7.5);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   EXPECT_NEAR(groundPt.x, -10.0, 1e-8);
+   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
+   EXPECT_NEAR(groundPt.z, 0.0, 1e-8);
+
+   delete sensorModel;
+   sensorModel = NULL;
+}
+
+TEST_F(FrameSensorModel, Rotation_NPole_Center) {
+  sensorModel->setParameterValue(3, 0.0);
+  sensorModel->setParameterValue(4, -1.0);
+  sensorModel->setParameterValue(5, 0.0);
+
+  sensorModel->setParameterValue(6, 0.0);
+
+  sensorModel->setParameterValue(0, 0.0); // X
+  sensorModel->setParameterValue(1, 0.0); // Y
+  sensorModel->setParameterValue(2, 1000.0); // Z
+
+  ASSERT_NE(sensorModel, nullptr);
+  csm::ImageCoord imagePt(7.5, 7.5);
+  csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+  EXPECT_NEAR(groundPt.x, 0.0, 1e-8);
+  EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
+  EXPECT_NEAR(groundPt.z, 10.0, 1e-8);
+
+  delete sensorModel;
+  sensorModel = NULL;
+}
+
+TEST_F(FrameSensorModel, Rotation_SPole_Center) {
+   sensorModel->setParameterValue(3, 0.0); // phi
+   sensorModel->setParameterValue(0, 0.0); // X
+   sensorModel->setParameterValue(1, 0.0); // Y
+   sensorModel->setParameterValue(2, -1000.0); // Z
+
+   ASSERT_NE(sensorModel, nullptr);
+   csm::ImageCoord imagePt(7.5, 7.5);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   EXPECT_NEAR(groundPt.x, 0.0, 1e-8);
+   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
+   EXPECT_NEAR(groundPt.z, -10.0, 1e-8);
+
+   delete sensorModel;
+   sensorModel = NULL;
+}
+
+// ****************************************************************************
+//   Logging tests
+// ****************************************************************************
 
 TEST_F(FrameSensorModelLogging, GroundToImage) {
   csm::EcefCoord groundPt(10.0, 0.0, 0.0);
@@ -675,4 +691,53 @@ TEST_F(FrameSensorModelLogging, GetIlluminationDirection) {
 TEST_F(FrameSensorModelLogging, ComputeGroundPartials) {
   csm::EcefCoord groundPt(10.0, 0.0, 0.0);
   sensorModel->computeGroundPartials(groundPt);
+}
+
+TEST_F(FrameSensorModelLogging, IsValidModelState) {
+  sensorModel->isValidModelState("{\"test_key\" : \"test_string\"}", nullptr);
+}
+
+TEST_F(FrameSensorModelLogging, IsValidIsd) {
+  sensorModel->isValidIsd("{\"test_key\" : \"test_string\"}", nullptr);
+}
+
+TEST_F(FrameSensorModelLogging, ConstructStateFromIsd) {
+  try {
+    sensorModel->constructStateFromIsd("{\"test_key\" : \"test_string\"}", nullptr);
+  }
+  catch (...) {
+    // Just testing logging, so do nothing, it should still log
+  }
+}
+
+TEST_F(FrameSensorModelLogging, GetValue) {
+  std::vector<double> adjustments(7, 0.0);
+  sensorModel->getValue(0, adjustments);
+}
+
+TEST_F(FrameSensorModelLogging, CalcRotationMatrix) {
+  double m[3][3];
+  sensorModel->calcRotationMatrix(m);
+}
+
+TEST_F(FrameSensorModelLogging, CalcRotationMatrixAdjusted) {
+  std::vector<double> adjustments(7, 0.0);
+  double m[3][3];
+  sensorModel->calcRotationMatrix(m, adjustments);
+}
+
+TEST_F(FrameSensorModelLogging, losEllipsoidIntersect) {
+  double height, xc, yc, zc, xl, yl, zl, x, y, z;
+  height = 0.0;
+  xc = 1000;
+  yc = 0.0;
+  zc = 0.0;
+  xl = -1.0;
+  yl = 0.0;
+  zl = 0.0;
+  sensorModel->losEllipsoidIntersect(
+        height,
+        xc, yc, zc,
+        xl, yl, zl,
+        x, y, z);
 }
