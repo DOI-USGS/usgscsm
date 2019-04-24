@@ -772,7 +772,7 @@ bool UsgsAstroFrameSensorModel::isValidModelState(const std::string& stringState
     }
   }
 
-  if (!missingKeywords.empty()) {
+  if (!missingKeywords.empty() && warnings) {
     std::ostringstream oss;
     std::copy(missingKeywords.begin(), missingKeywords.end(), std::ostream_iterator<std::string>(oss, " "));
     warnings->push_back(csm::Warning(
@@ -784,7 +784,7 @@ bool UsgsAstroFrameSensorModel::isValidModelState(const std::string& stringState
 
   std::string modelName = jsonState.value<std::string>("m_modelName", "");
 
-  if (modelName != _SENSOR_MODEL_NAME) {
+  if (modelName != _SENSOR_MODEL_NAME && warnings) {
     warnings->push_back(csm::Warning(
       csm::Warning::DATA_NOT_AVAILABLE,
       "Incorrect model name in state, expected " + _SENSOR_MODEL_NAME + " but got " + modelName,
