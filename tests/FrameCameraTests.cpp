@@ -666,3 +666,13 @@ TEST_F(FrameSensorModelLogging, GetGeometricCorrectionSwitch) {
     // Just testing logging, so do nothing, it should still log
   }
 }
+
+TEST_F(FrameSensorModelLogging, GetIlluminationDirection) {
+  csm::EcefCoord groundPt(10.0, 0.0, 0.0);
+  sensorModel->getIlluminationDirection(groundPt);
+}
+
+TEST_F(FrameSensorModelLogging, ComputeGroundPartials) {
+  csm::EcefCoord groundPt(10.0, 0.0, 0.0);
+  sensorModel->computeGroundPartials(groundPt);
+}
