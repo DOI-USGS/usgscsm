@@ -200,6 +200,62 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       ux = dx + dr_x;
       uy = dy + dr_y;
     }
+    break;
+    // The dawn distortion model is "reversed" so the remove function computes
+    // the distorted focal plane but stores it into the undistorted variables (ux, uy)
+    case DAWNFC: {
+      double offsetSqrd;
+      int    numAttempts;
+      double delta;
+      bool    done;
+
+      /****************************************************************************
+      * Pre-loop intializations
+      ****************************************************************************/
+
+      numAttempts = 1;
+      delta = 0.00001;
+
+      offsetSqrd = dy * dy + dx * dx;
+      double guess_dx, guess_dy;
+      double guess_ux, guess_uy;
+
+      /****************************************************************************
+      * Loop ...
+      ****************************************************************************/
+      do {
+        guess_ux = dx / (1.0 + opticalDistCoeffs[0] * offsetSqrd);
+        guess_uy = dy / (1.0 + opticalDistCoeffs[0] * offsetSqrd);
+
+        offsetSqrd = guess_uy * guess_uy + guess_ux * guess_ux;
+
+        guess_dx = guess_ux * (1.0 + opticalDistCoeffs[0] * offsetSqrd);
+        guess_dy = guess_uy * (1.0 + opticalDistCoeffs[0] * offsetSqrd);
+
+        done = true;
+        if(abs(guess_dy - dy) > delta) {
+          done = false;
+        }
+
+        if(abs(guess_dx - dx) > delta) {
+          done = false;
+        }
+
+        /* Not converging so bomb */
+        numAttempts++;
+        if(numAttempts > 20) {
+          return;
+        }
+      }
+      while(!done);
+
+      /****************************************************************************
+      * Sucess ...
+      ****************************************************************************/
+
+      ux = guess_ux;
+      uy = guess_uy;
+    }
   }
 }
 
@@ -323,6 +379,17 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
         dx = xdistorted;
         dy = ydistorted;
       }
+    }
+    break;
+    // The dawn distortion model is "reversed" so the apply function computes
+    // the distorted focal plane and stores it into the distorted variables (dx, dy)
+    case DAWNFC: {
+      double offsetSqrd;
+
+      offsetSqrd = ux * ux + uy * uy;
+
+      dx = ux * (1.0 + opticalDistCoeffs[0] * offsetSqrd);
+      dy = uy * (1.0 + opticalDistCoeffs[0] * offsetSqrd);
     }
   }
 }

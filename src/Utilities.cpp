@@ -766,6 +766,9 @@ DistortionType getDistortionModel(json isd, csm::WarningList *list) {
     else if (distortion.compare("kaguyatc") == 0) {
       return DistortionType::KAGUYATC;
     }
+    else if (distortion.compare("dawnfc") == 0) {
+      return DistortionType::DAWNFC;
+    }
   }
   catch (...) {
     if (list) {
@@ -855,7 +858,25 @@ std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
         coefficients = std::vector<double>(8, 0.0);
       }
     }
+    break;
+    case DistortionType::DAWNFC: {
+      try {
+        coefficients = isd.at("optical_distortion").at("dawnfc").at("coefficients").get<std::vector<double>>();
 
+        return coefficients;
+      }
+      catch (...) {
+        if (list) {
+          list->push_back(
+            csm::Warning(
+              csm::Warning::DATA_NOT_AVAILABLE,
+              "Could not parse the dawn radial distortion model coefficients.",
+              "Utilities::getDistortion()"));
+        }
+        coefficients = std::vector<double>(1, 0.0);
+      }
+    }
+    break;
   }
   if (list) {
     list->push_back(

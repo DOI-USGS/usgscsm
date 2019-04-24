@@ -9,7 +9,8 @@
 enum DistortionType {
   RADIAL,
   TRANSVERSE,
-  KAGUYATC
+  KAGUYATC,
+  DAWNFC
 };
 
 // Transverse Distortion
