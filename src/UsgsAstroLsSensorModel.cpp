@@ -675,9 +675,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    double firstTime = getImageTime(csm::ImageCoord(0.0, sampCtr));
    double lastTime = getImageTime(csm::ImageCoord(m_nLines, sampCtr));
    double firstOffset = computeViewingPixel(firstTime, ground_pt, adj, pixelPrec/2).line - 0.5;
-   std::cout << "First Offset " << firstOffset << std::endl;
    double lastOffset = computeViewingPixel(lastTime, ground_pt, adj, pixelPrec/2).line - 0.5;
-   std::cout << "Last Offset " << lastOffset << std::endl;
 
    // Start secant method search
    for (int it = 0; it < 30; it++) {
@@ -702,7 +700,6 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
       nextTime = getImageTime(csm::ImageCoord(closestLine, sampCtr));
 
       double nextOffset = computeViewingPixel(nextTime, ground_pt, adj, pixelPrec/2).line - 0.5;
-      std::cout << "Next Offset " << nextOffset << std::endl;
 
       // remove the farthest away node
       if (fabs(firstTime - nextTime) > fabs(lastTime - nextTime)) {
