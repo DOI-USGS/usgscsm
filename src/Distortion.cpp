@@ -206,7 +206,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
     // the distorted coordinates, rather than iteratively computing distorted coordinates
     // to undistorted coordinates.
     case DAWNFC: {
-      double offsetSqrd;
+      double r2;
       int    numAttempts;
       double delta;
       bool    done;
@@ -218,7 +218,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       numAttempts = 1;
       delta = 0.00001;
 
-      offsetSqrd = dy * dy + dx * dx;
+      r2 = dy * dy + dx * dx;
       double guess_dx, guess_dy;
       double guess_ux, guess_uy;
 
@@ -226,21 +226,18 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       * Loop ...
       ****************************************************************************/
       do {
-        guess_ux = dx / (1.0 + opticalDistCoeffs[0] * offsetSqrd);
-        guess_uy = dy / (1.0 + opticalDistCoeffs[0] * offsetSqrd);
+        guess_ux = dx / (1.0 + opticalDistCoeffs[0] * r2);
+        guess_uy = dy / (1.0 + opticalDistCoeffs[0] * r2);
 
-        offsetSqrd = guess_uy * guess_uy + guess_ux * guess_ux;
+        r2 = guess_uy * guess_uy + guess_ux * guess_ux;
 
-        guess_dx = guess_ux * (1.0 + opticalDistCoeffs[0] * offsetSqrd);
-        guess_dy = guess_uy * (1.0 + opticalDistCoeffs[0] * offsetSqrd);
+        guess_dx = guess_ux * (1.0 + opticalDistCoeffs[0] * r2);
+        guess_dy = guess_uy * (1.0 + opticalDistCoeffs[0] * r2);
 
-        done = true;
-        if(abs(guess_dy - dy) > delta) {
-          done = false;
-        }
+        done = false;
 
-        if(abs(guess_dx - dx) > delta) {
-          done = false;
+        if (abs(guess_dx - dx) < delta && abs(guess_dy - dy) < delta) {
+          done = true
         }
 
         /* Not converging so bomb */
