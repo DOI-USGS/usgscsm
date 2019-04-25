@@ -207,16 +207,12 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
     // to undistorted coordinates.
     case DAWNFC: {
       double r2;
-      int    numAttempts;
-      double delta;
+      int    numAttempts = 1;
       bool    done;
 
       /****************************************************************************
       * Pre-loop intializations
       ****************************************************************************/
-
-      numAttempts = 1;
-      delta = 0.00001;
 
       r2 = dy * dy + dx * dx;
       double guess_dx, guess_dy;
@@ -236,13 +232,14 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
 
         done = false;
 
-        if (abs(guess_dx - dx) < delta && abs(guess_dy - dy) < delta) {
-          done = true
+        if (abs(guess_dx - dx) < tolerance && abs(guess_dy - dy) < tolerance) {
+          done = true;
         }
 
         /* Not converging so bomb */
         numAttempts++;
         if(numAttempts > 20) {
+          std::cout << "Didn't converge" << std::endl;
           return;
         }
       }
@@ -384,12 +381,12 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
     // the apply function computes distorted coordinates as a
     // fn(undistorted coordinates)
     case DAWNFC: {
-      double offsetSqrd;
+      double r2;
 
-      offsetSqrd = ux * ux + uy * uy;
+      r2 = ux * ux + uy * uy;
 
-      dx = ux * (1.0 + opticalDistCoeffs[0] * offsetSqrd);
-      dy = uy * (1.0 + opticalDistCoeffs[0] * offsetSqrd);
+      dx = ux * (1.0 + opticalDistCoeffs[0] * r2);
+      dy = uy * (1.0 + opticalDistCoeffs[0] * r2);
     }
   }
 }

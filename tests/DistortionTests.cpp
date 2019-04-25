@@ -149,3 +149,31 @@ TEST(Radial, testInverseOnesCoeffs){
   EXPECT_NEAR(dx,4,1e-8);
   EXPECT_NEAR(dy,0,1e-8);
 }
+
+TEST(DawnFc, testApply) {
+  csm::ImageCoord imagePt(10.0, 10.0);
+
+  double dx, dy;
+  double desiredPrecision = 0.0000001;
+  std::vector<double> coeffs = {8.4e-06};
+
+  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
+                  DistortionType::DAWNFC, desiredPrecision);
+
+  EXPECT_NEAR(dx, 10.0168, 1e-8);
+  EXPECT_NEAR(dy, 10.0168, 1e-8);
+}
+
+TEST(DawnFc, testRemove) {
+  csm::ImageCoord imagePt(10.0168, 10.0168);
+
+  double ux, uy;
+  double desiredPrecision = 0.0000001;
+  std::vector<double> coeffs = {8.4e-06};
+
+  removeDistortion(imagePt.samp, imagePt.line, ux, uy, coeffs,
+                  DistortionType::DAWNFC, desiredPrecision);
+
+  EXPECT_NEAR(ux,10.0,1e-8);
+  EXPECT_NEAR(uy,10.0,1e-8);
+}
