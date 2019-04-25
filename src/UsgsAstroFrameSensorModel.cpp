@@ -593,9 +593,6 @@ std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::
   MESSAGE_LOG(this->m_logger, "Computing ground partials results:\nLine: {}, {}, {}\nSample: {}, {}, {}",
                                partials[0], partials[1], partials[2], partials[3], partials[4], partials[5]);
 
-  MESSAGE_LOG(this->m_logger, "Computing ground partials result line: {}, sample: {}, wrt: {} and x: {}, y: {}, z: {}",
-                               partials[0], partials[1], partials[2], partials[3], partials[4], partials[5]);
-
   return partials;
 }
 
