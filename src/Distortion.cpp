@@ -200,6 +200,58 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       ux = dx + dr_x;
       uy = dy + dr_y;
     }
+    break;
+    // The dawn distortion model is "reversed" from other distortion models so
+    // the remove function iteratively computes undistorted coordinates based on
+    // the distorted coordinates, rather than iteratively computing distorted coordinates
+    // to undistorted coordinates.
+    case DAWNFC: {
+      double r2;
+      int    numAttempts = 1;
+      bool    done;
+
+      /****************************************************************************
+      * Pre-loop intializations
+      ****************************************************************************/
+
+      r2 = dy * dy + dx * dx;
+      double guess_dx, guess_dy;
+      double guess_ux, guess_uy;
+
+      /****************************************************************************
+      * Loop ...
+      ****************************************************************************/
+      do {
+        guess_ux = dx / (1.0 + opticalDistCoeffs[0] * r2);
+        guess_uy = dy / (1.0 + opticalDistCoeffs[0] * r2);
+
+        r2 = guess_uy * guess_uy + guess_ux * guess_ux;
+
+        guess_dx = guess_ux * (1.0 + opticalDistCoeffs[0] * r2);
+        guess_dy = guess_uy * (1.0 + opticalDistCoeffs[0] * r2);
+
+        done = false;
+
+        if (abs(guess_dx - dx) < tolerance && abs(guess_dy - dy) < tolerance) {
+          done = true;
+        }
+
+        /* Not converging so bomb */
+        numAttempts++;
+        if(numAttempts > 20) {
+          std::cout << "Didn't converge" << std::endl;
+          return;
+        }
+      }
+      while(!done);
+
+      /****************************************************************************
+      * Sucess ...
+      ****************************************************************************/
+
+      ux = guess_ux;
+      uy = guess_uy;
+    }
   }
 }
 
@@ -323,6 +375,18 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
         dx = xdistorted;
         dy = ydistorted;
       }
+    }
+    break;
+    // The dawn distortion model is "reversed" from other distortion models so
+    // the apply function computes distorted coordinates as a
+    // fn(undistorted coordinates)
+    case DAWNFC: {
+      double r2;
+
+      r2 = ux * ux + uy * uy;
+
+      dx = ux * (1.0 + opticalDistCoeffs[0] * r2);
+      dy = uy * (1.0 + opticalDistCoeffs[0] * r2);
     }
   }
 }
