@@ -169,6 +169,7 @@ TEST(DawnFc, testRemove) {
 
   double ux, uy;
   double desiredPrecision = 0.0000001;
+  // Coeffs obtained from file FC21A0039691_15231053805F1E.IMG
   std::vector<double> coeffs = {8.4e-06};
 
   removeDistortion(imagePt.samp, imagePt.line, ux, uy, coeffs,
@@ -233,6 +234,7 @@ TEST(KaguyaTc, testCoeffs) {
 
   double ux, uy, dx, dy;
   double desiredPrecision = 0.0000001;
+  // Coeffs obtained from file TC1W2B0_01_05211N095E3380.img
   std::vector<double> coeffs = {-0.0009649900000000001, 0.00098441, 8.5773e-06, -3.7438e-06,
                                 -0.0013796, 1.3502e-05, 2.7251e-06, -6.193800000000001e-06};
 
