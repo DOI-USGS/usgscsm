@@ -199,34 +199,19 @@ TEST(DawnFc, testZeroCoeffs) {
   EXPECT_NEAR(uy,10.0,1e-8);
 }
 
-TEST(KaguyaTc, testApply) {
-  csm::ImageCoord imagePt(2.0, 2.0);
-
-  double dx, dy;
-  double desiredPrecision = 0.0000001;
-  std::vector<double> distortionCoeffs = {1, 0, 0, 0,
-                                          1, 0, 0, 0};
-
-  applyDistortion(imagePt.samp, imagePt.line, dx, dy, distortionCoeffs,
-                  DistortionType::KAGUYATC, desiredPrecision);
-
-  EXPECT_NEAR(dx, 1, 1e-8);
-  EXPECT_NEAR(dy, 1, 1e-8);
-}
-
-TEST(KaguyaTc, testRemove) {
+TEST(KaguyaTc, testRemoveCoeffs) {
   csm::ImageCoord imagePt(1.0, 1.0);
 
   double ux, uy;
   double desiredPrecision = 0.0000001;
-  std::vector<double> distortionCoeffs = {1, 0, 0, 0,
-                                          1, 0, 0, 0};
+  std::vector<double> distortionCoeffs = {1, 2, 3, 4,
+                                          1, 2, 3, 4};
 
   removeDistortion(imagePt.samp, imagePt.line, ux, uy, distortionCoeffs,
                   DistortionType::KAGUYATC, desiredPrecision);
 
-  EXPECT_NEAR(ux, 2, 1e-8);
-  EXPECT_NEAR(uy, 2, 1e-8);
+  EXPECT_NEAR(ux, 1 + 1 + 2.828427125 + 6 + 11.313708496, 1e-8);
+  EXPECT_NEAR(uy, 1 + 1 + 2.828427125 + 6 + 11.313708496, 1e-8);
 }
 
 TEST(KaguyaTc, testCoeffs) {
@@ -244,6 +229,8 @@ TEST(KaguyaTc, testCoeffs) {
   removeDistortion(dx, dy, ux, uy, coeffs,
                   DistortionType::KAGUYATC, desiredPrecision);
 
+  EXPECT_NEAR(dx, 0.999566, 1e-6);
+  EXPECT_NEAR(dy, 1.00137, 1e-5);
   EXPECT_NEAR(ux,1.0,1e-8);
   EXPECT_NEAR(uy,1.0,1e-8);
 }
