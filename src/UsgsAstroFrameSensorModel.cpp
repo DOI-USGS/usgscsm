@@ -500,8 +500,9 @@ csm::RasterGM::SensorPartials UsgsAstroFrameSensorModel::computeSensorPartials(i
                                groundPt.x, groundPt.y, groundPt.z, imagePt.line, imagePt.samp,
                                index, desiredPrecision);
   double delta = 1.0;
-  // For the rotation parameter use a better delta
-  // Rotation parameters are index 3-6
+  // The rotation parameters will usually be small (<1),
+  // so a delta of 1.0 is too small.
+  // Rotation parameters are indices 3-6
   if (index > 2 && index < 7) {
     delta = 0.01;
   }
