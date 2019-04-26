@@ -160,8 +160,8 @@ TEST(DawnFc, testApply) {
   applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
                   DistortionType::DAWNFC, desiredPrecision);
 
-  EXPECT_NEAR(dx, 10.0168, 1e-8);
-  EXPECT_NEAR(dy, 10.0168, 1e-8);
+  ASSERT_DOUBLE_EQ(dx, 10.0168);
+  ASSERT_DOUBLE_EQ(dy, 10.0168);
 }
 
 TEST(DawnFc, testRemove) {
@@ -175,8 +175,8 @@ TEST(DawnFc, testRemove) {
   removeDistortion(imagePt.samp, imagePt.line, ux, uy, coeffs,
                   DistortionType::DAWNFC, desiredPrecision);
 
-  EXPECT_NEAR(ux,10.0,1e-8);
-  EXPECT_NEAR(uy,10.0,1e-8);
+  EXPECT_NEAR(ux, 10.0, 1e-8);
+  EXPECT_NEAR(uy, 10.0, 1e-8);
 }
 
 TEST(DawnFc, testZeroCoeffs) {
@@ -193,10 +193,10 @@ TEST(DawnFc, testZeroCoeffs) {
                   DistortionType::DAWNFC, desiredPrecision);
 
 
-  EXPECT_NEAR(dx,10.0,1e-8);
-  EXPECT_NEAR(dy,10.0,1e-8);
-  EXPECT_NEAR(ux,10.0,1e-8);
-  EXPECT_NEAR(uy,10.0,1e-8);
+  ASSERT_DOUBLE_EQ(dx, 10.0);
+  ASSERT_DOUBLE_EQ(dy, 10.0);
+  ASSERT_DOUBLE_EQ(ux, 10.0);
+  ASSERT_DOUBLE_EQ(uy, 10.0);
 }
 
 TEST(KaguyaTc, testRemoveCoeffs) {
@@ -210,8 +210,8 @@ TEST(KaguyaTc, testRemoveCoeffs) {
   removeDistortion(imagePt.samp, imagePt.line, ux, uy, distortionCoeffs,
                   DistortionType::KAGUYATC, desiredPrecision);
 
-  EXPECT_NEAR(ux, 1 + 1 + 2.828427125 + 6 + 11.313708496, 1e-8);
-  EXPECT_NEAR(uy, 1 + 1 + 2.828427125 + 6 + 11.313708496, 1e-8);
+  EXPECT_NEAR(ux, 1 + 1 + 2.828427125 + 6 + 11.313708499, 1e-8);
+  EXPECT_NEAR(uy, 1 + 1 + 2.828427125 + 6 + 11.313708499, 1e-8);
 }
 
 TEST(KaguyaTc, testCoeffs) {
@@ -231,8 +231,8 @@ TEST(KaguyaTc, testCoeffs) {
 
   EXPECT_NEAR(dx, 0.999566, 1e-6);
   EXPECT_NEAR(dy, 1.00137, 1e-5);
-  EXPECT_NEAR(ux,1.0,1e-8);
-  EXPECT_NEAR(uy,1.0,1e-8);
+  EXPECT_NEAR(ux, 1.0, 1e-8);
+  EXPECT_NEAR(uy, 1.0, 1e-8);
 }
 
 TEST(KaguyaTc, testZeroCoeffs) {
@@ -249,8 +249,8 @@ TEST(KaguyaTc, testZeroCoeffs) {
   removeDistortion(dx, dy, ux, uy, coeffs,
                   DistortionType::KAGUYATC, desiredPrecision);
 
-  EXPECT_NEAR(dx,1.0,1e-8);
-  EXPECT_NEAR(dy,1.0,1e-8);
-  EXPECT_NEAR(ux,1.0,1e-8);
-  EXPECT_NEAR(uy,1.0,1e-8);
+  ASSERT_DOUBLE_EQ(dx, 1.0);
+  ASSERT_DOUBLE_EQ(dy, 1.0);
+  ASSERT_DOUBLE_EQ(ux, 1.0);
+  ASSERT_DOUBLE_EQ(uy, 1.0);
 }
