@@ -10,8 +10,10 @@ enum DistortionType {
   RADIAL,
   TRANSVERSE,
   KAGUYATC,
-  DAWNFC
+  DAWNFC,
+  LROLROCNAC
 };
+
 
 // Transverse Distortion
 void distortionJacobian(double x, double y, double *jacobian,

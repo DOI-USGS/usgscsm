@@ -43,6 +43,7 @@ void distortionJacobian(double x, double y, double *jacobian,
   }
 }
 
+
 /**
  * @description Compute distorted focal plane (dx,dy) coordinate  given an undistorted focal
  * plane (ux,uy) coordinate. This uses the third order Taylor approximation to the
@@ -81,6 +82,7 @@ void computeTransverseDistortion(double ux, double uy, double &dx, double &dy,
   }
 }
 
+
 void removeDistortion(double dx, double dy, double &ux, double &uy,
                       const std::vector<double> opticalDistCoeffs,
                       DistortionType distortionType,
@@ -89,6 +91,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
   uy = dy;
 
   switch (distortionType) {
+
     // Compute undistorted focal plane coordinate given a distorted
     // coordinate set and the distortion coefficients
     case RADIAL: {
@@ -102,6 +105,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       }
     }
     break;
+
     // Computes undistorted focal plane (x,y) coordinates given a distorted focal plane (x,y)
     // coordinate. The undistorted coordinates are solved for using the Newton-Raphson
     // method for root-finding if the distortionFunction method is invoked.
@@ -159,6 +163,8 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       // number of iterations
     }
     break;
+
+    // KaguyaTC
     case KAGUYATC: {
       // Apply distortion correction
       // see: SEL_TC_V01.TI
@@ -201,6 +207,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       uy = dy + dr_y;
     }
     break;
+
     // The dawn distortion model is "reversed" from other distortion models so
     // the remove function iteratively computes undistorted coordinates based on
     // the distorted coordinates, rather than iteratively computing distorted coordinates
@@ -243,7 +250,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
           return;
         }
       }
-      while(!done);
+      while(!done); 
 
       /****************************************************************************
       * Sucess ...
@@ -252,18 +259,41 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       ux = guess_ux;
       uy = guess_uy;
     }
+    break;
+
+    // LROLROCNAC
+    case LROLROCNAC: {
+
+      if (opticalDistCoeffs.size() != 1) {
+        throw "Distortion coefficients for LRO LROC NAC must be of size 1, current size: " +  std::to_string(opticalDistCoeffs.size());
+      }
+
+      double dk1 = opticalDistCoeffs[0];
+
+      double den = 1 + dk1 * dy * dy;     // r = dy*dy = distance from the focal plane center
+      if (den == 0.0) {
+        throw "Unable to remove distortion for LRO LROC NAC. Focal plane position " + std::to_string(dy);
+      }
+
+      ux = dx;
+      uy = dy / den;
+
+      return;
+    }
+    break;
   }
 }
+
 
 void applyDistortion(double ux, double uy, double &dx, double &dy,
                      const std::vector<double> opticalDistCoeffs,
                      DistortionType distortionType,
-                     const double desiredPrecision, const double tolerance)
-{
+                     const double desiredPrecision, const double tolerance) {
   dx = ux;
   dy = uy;
 
   switch (distortionType) {
+
     // Compute undistorted focal plane coordinate given a distorted
     // focal plane coordinate. This case works by iteratively adding distortion
     // until the new distorted point, r, undistorts to within a tolerance of the
@@ -312,6 +342,8 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
       computeTransverseDistortion(ux, uy, dx, dy, opticalDistCoeffs);
     }
     break;
+
+    // KaguyaTC
     case KAGUYATC: {
       if (opticalDistCoeffs.size() != 8) {
         throw "Distortion coefficients for Kaguya TC must be of size 8, got: " +  std::to_string(opticalDistCoeffs.size());
@@ -377,6 +409,7 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
       }
     }
     break;
+
     // The dawn distortion model is "reversed" from other distortion models so
     // the apply function computes distorted coordinates as a
     // fn(undistorted coordinates)
@@ -388,5 +421,73 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
       dx = ux * (1.0 + opticalDistCoeffs[0] * r2);
       dy = uy * (1.0 + opticalDistCoeffs[0] * r2);
     }
+    break;
+
+    // The LRO LROC NAC distortion model uses an iterative approach to go from 
+    // undistorted x,y to distorted x,y
+    // Algorithum adapted from ISIS3 LRONarrowAngleDistortionMap.cpp
+    case LROLROCNAC: {
+
+      double yt = uy;
+
+      double rr, dr;
+      double ydistorted;
+      double yprevious = 1000000.0;
+      double tolerance = 1.0e-10;
+
+      bool bConverged = false;
+
+      if (opticalDistCoeffs.size() != 1) {
+        throw "Distortion coefficients for LRO LROC NAC must be of size 1, current size: " +  std::to_string(opticalDistCoeffs.size());
+      }
+
+      double dk1 = opticalDistCoeffs[0];
+
+      // Owing to the odd distotion model employed in this senser if |y| is > 116.881145553046
+      // then there is no root to find.  Further, the greatest y that any measure on the sensor
+      // will acutally distort to is less than 20.  Thus, if any distorted measure is greater
+      // that that skip the iterations.  The points isn't in the cube, and exactly how far outside
+      // the cube is irrelevant.  Just let the camera model know its not in the cube....
+      if (fabs(uy) > 40) {  //if the point is way off the image.....
+        dx = ux;
+        dy = uy;
+        return;
+      }
+
+      // iterating to introduce distortion (in sample only)...
+      // we stop when the difference between distorted coordinate
+      // in successive iterations is at or below the given tolerance
+      for(int i = 0; i < 50; i++) {
+        rr = yt * yt;
+
+        //  dr is the radial distortion contribution
+        dr = 1.0 + dk1 * rr;
+
+        // distortion at the current sample location
+        yt = uy * dr;
+
+        // distorted sample
+        ydistorted = yt;
+
+        if (yt < -1e121)  //debug
+          break;  //debug
+
+        // check for convergence
+        if(fabs(yt - yprevious) <= tolerance) {
+          bConverged = true;
+          break;
+        }
+
+        yprevious = yt;
+      }
+      
+      if(bConverged) {
+        dx = ux;
+        dy = ydistorted;
+      }
+
+      return;
+    }
+    break;
   }
 }

@@ -727,6 +727,7 @@ double getSemiMajorRadius(json isd, csm::WarningList *list) {
   return radius;
 }
 
+
 double getSemiMinorRadius(json isd, csm::WarningList *list) {
   double radius = 0.0;
   try {
@@ -747,8 +748,9 @@ double getSemiMinorRadius(json isd, csm::WarningList *list) {
   return radius;
 }
 
-// Gets the type of distortion model from the isd. If none is specified defaults
-// to transverse
+
+// Converts the distortion model name from the ISD (string) to the enumeration
+// type. Defaults to transverse
 DistortionType getDistortionModel(json isd, csm::WarningList *list) {
   try {
     json distoriton_subset = isd.at("optical_distortion");
@@ -768,6 +770,9 @@ DistortionType getDistortionModel(json isd, csm::WarningList *list) {
     }
     else if (distortion.compare("dawnfc") == 0) {
       return DistortionType::DAWNFC;
+    }
+    else if (distortion.compare("lrolrocnac") == 0) {
+      return DistortionType::LROLROCNAC;
     }
   }
   catch (...) {
@@ -871,6 +876,23 @@ std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
             csm::Warning(
               csm::Warning::DATA_NOT_AVAILABLE,
               "Could not parse the dawn radial distortion model coefficients.",
+              "Utilities::getDistortion()"));
+        }
+        coefficients = std::vector<double>(1, 0.0);
+      }
+    }
+    break;
+    case DistortionType::LROLROCNAC: {
+      try {
+        coefficients = isd.at("optical_distortion").at("lrolrocnac").at("coefficients").get<std::vector<double>>();
+        return coefficients;
+      }
+      catch (...) {
+        if (list) {
+          list->push_back(
+            csm::Warning(
+              csm::Warning::DATA_NOT_AVAILABLE,
+              "Could not parse the lrolrocnac distortion model coefficients.",
               "Utilities::getDistortion()"));
         }
         coefficients = std::vector<double>(1, 0.0);
