@@ -2514,7 +2514,7 @@ void UsgsAstroLsSensorModel::setLinearApproximation()
   double height, aPrec;
   double desired_precision = 0.01;
   computeElevation(refPt.x, refPt.y, refPt.z, height, aPrec, desired_precision);
-  if (isnan(height))
+  if (std::isnan(height))
   {
     MESSAGE_LOG(m_logger, "setLinearApproximation: computeElevation of"
                                 "reference point {} {} {} with desired precision"
