@@ -94,11 +94,6 @@ void computeDistortedFocalPlaneCoordinates(
 
   distortedX = p11 * t1 + p12 * t2;
   distortedY = p21 * t1 + p22 * t2;
-
-  std::cout << t1 << ", " << t2 << std::endl;
-  std::cout << p11 << ", " << p12 << std::endl;
-  std::cout << p21 << ", " << p22 << std::endl;
-
 };
 
 // Compue the image pixel for a distorted focal plane coordinate
