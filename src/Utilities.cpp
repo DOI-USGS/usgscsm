@@ -87,10 +87,10 @@ void computeDistortedFocalPlaneCoordinates(
   double t1 = detLine - lineOrigin - iTransL[0];
   double t2 = detSample - sampleOrigin - iTransS[0];
   double determinant = m11 * m22 - m12 * m21;
-  double p11 = m11 / determinant;
+  double p11 = m22 / determinant;
   double p12 = -m12 / determinant;
   double p21 = -m21 / determinant;
-  double p22 = m22 / determinant;
+  double p22 = m11 / determinant;
 
   distortedX = p11 * t1 + p12 * t2;
   distortedY = p21 * t1 + p22 * t2;

@@ -81,6 +81,22 @@ TEST(UtilitiesTests, computeDistortedFocalPlaneCoordinatesSumming) {
    EXPECT_DOUBLE_EQ(undistortedFocalPlaneY, 0);
 }
 
+TEST(UtilitiesTests, computeDistortedFocalPlaneCoordinatesAffine) {
+   double iTransS[] = {-10.0, 0.0, 0.1};
+   double iTransL[] = {10.0, -0.1, 0.0};
+   double undistortedFocalPlaneX, undistortedFocalPlaneY;
+   computeDistortedFocalPlaneCoordinates(
+         11.0, -9.0,
+         0.0, 0.0,
+         1.0, 1.0,
+         0.0, 0.0,
+         iTransS, iTransL,
+         undistortedFocalPlaneX, undistortedFocalPlaneY);
+   EXPECT_NEAR(undistortedFocalPlaneX, -10.0, 1e-12);
+   EXPECT_NEAR(undistortedFocalPlaneY, 10.0, 1e-12);
+}
+
+
 TEST(UtilitiesTests, computeDistortedFocalPlaneCoordinatesStart) {
    double iTransS[] = {0.0, 0.0, 10.0};
    double iTransL[] = {0.0, 10.0, 0.0};
