@@ -369,18 +369,7 @@ csm::EcefVector UsgsAstroFrameSensorModel::getIlluminationDirection(const csm::E
 double UsgsAstroFrameSensorModel::getImageTime(const csm::ImageCoord &imagePt) const {
   MESSAGE_LOG(this->m_logger, "Accessing image time for image point {}, {}",
               imagePt.line, imagePt.samp);
-  // check if the image point is in range
-  if (imagePt.samp >= m_startingDetectorSample &&
-      imagePt.samp <= (m_startingDetectorSample + m_nSamples) &&
-      imagePt.line >= m_startingDetectorSample &&
-      imagePt.line <= (m_startingDetectorLine + m_nLines)) {
     return m_ephemerisTime;
-  }
-  else {
-    throw csm::Error(csm::Error::BOUNDS,
-                     "Image Coordinate out of Bounds",
-                     "UsgsAstroFrameSensorModel::getImageTime");
-  }
 }
 
 
