@@ -843,11 +843,11 @@ std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
     break;
     case DistortionType::KAGUYATC: {
       try {
-        std::vector<double> coefficientsX(4,0);
-        std::vector<double> coefficientsY(4,0);
 
-        coefficientsX = isd.at("optical_distortion").at("kaguyatc").at("x").get<std::vector<double>>();
-        coefficientsY = isd.at("optical_distortion").at("kaguyatc").at("y").get<std::vector<double>>();
+        std::vector<double> coefficientsX = isd.at("optical_distortion").at("kaguyatc").at("x").get<std::vector<double>>();
+        coefficientsX.resize(4, 0.0);
+        std::vector<double> coefficientsY = isd.at("optical_distortion").at("kaguyatc").at("y").get<std::vector<double>>();
+        coefficientsY.resize(4, 0.0);
         coefficientsX.insert(coefficientsX.end(), coefficientsY.begin(), coefficientsY.end());
 
         return coefficientsX;
