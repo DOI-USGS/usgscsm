@@ -30,5 +30,5 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
 void applyDistortion(double ux, double uy, double &dx, double &dy,
                      const std::vector<double> opticalDistCoeffs,
                      DistortionType distortionType,
-                     const double desiredPrecision = 1.0E-2, const double tolerance = 1.0E-6);
+                     const double desiredPrecision = 1.0E-6, const double tolerance = 1.0E-6);
 #endif
