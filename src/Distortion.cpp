@@ -93,7 +93,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
   switch (distortionType) {
 
     // Compute undistorted focal plane coordinate given a distorted
-    // co
+    // coordinate set and the distortion coefficients
     case RADIAL: {
       double rr = dx * dx + dy * dy;
 
