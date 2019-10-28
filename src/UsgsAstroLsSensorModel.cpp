@@ -1920,6 +1920,8 @@ void UsgsAstroLsSensorModel::losToEcf(
          m_startingSample, 0.0,
          m_iTransS, m_iTransL,
          distortedFocalPlaneX, distortedFocalPlaneY);
+   MESSAGE_LOG(m_logger, "losToEcf: distorted focal plane coordinate {} {}",
+                         distortedFocalPlaneX, distortedFocalPlaneY)
 
    // Remove lens
    double undistortedFocalPlaneX, undistortedFocalPlaneY;
@@ -1927,10 +1929,14 @@ void UsgsAstroLsSensorModel::losToEcf(
                     undistortedFocalPlaneX, undistortedFocalPlaneY,
                     m_opticalDistCoeffs,
                     m_distortionType);
+   MESSAGE_LOG(m_logger, "losToEcf: undistorted focal plane coordinate {} {}",
+                         undistortedFocalPlaneX, undistortedFocalPlaneY)
 
   // Define imaging ray (look vector) in camera space
    double cameraLook[3];
    createCameraLookVector(undistortedFocalPlaneX, undistortedFocalPlaneY, m_zDirection, m_focalLength, cameraLook);
+   MESSAGE_LOG(m_logger, "losToEcf: uncorrected camera look vector {} {} {}",
+                         cameraLook[0], cameraLook[1], cameraLook[2])
 
    // Apply attitude correction
    double attCorr[9];
