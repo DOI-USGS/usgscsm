@@ -1,4 +1,6 @@
 #include "Distortion.h"
+
+#include <Error.h>
 #include <string>
 
 void distortionJacobian(double x, double y, double *jacobian,
@@ -186,7 +188,10 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
 
       // Coeffs should be [boresightX,x0,x1,x2,x3,boresightY,y0,y1,y2,y3]
       if (opticalDistCoeffs.size() != 10) {
-        throw "Distortion coefficients for Kaguya LISM must be of size 10, got: " +  std::to_string(opticalDistCoeffs.size());
+        csm::Error::ErrorType errorType = csm::Error::INDEX_OUT_OF_RANGE;
+        std::string message = "Distortion coefficients for Kaguya LISM must be of size 10, got: " +  std::to_string(opticalDistCoeffs.size());
+        std::string function = "removeDistortion";
+        throw csm::Error(errorType, message, function);
       }
 
       double boresightX = opticalDistCoeffs[0];
@@ -266,14 +271,20 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
     case LROLROCNAC: {
 
       if (opticalDistCoeffs.size() != 1) {
-        throw "Distortion coefficients for LRO LROC NAC must be of size 1, current size: " +  std::to_string(opticalDistCoeffs.size());
+        csm::Error::ErrorType errorType = csm::Error::INDEX_OUT_OF_RANGE;
+        std::string message = "Distortion coefficients for LRO LROC NAC must be of size 1, current size: " +  std::to_string(opticalDistCoeffs.size());
+        std::string function = "removeDistortion";
+        throw csm::Error(errorType, message, function);
       }
 
       double dk1 = opticalDistCoeffs[0];
 
       double den = 1 + dk1 * dy * dy;     // r = dy*dy = distance from the focal plane center
       if (den == 0.0) {
-        throw "Unable to remove distortion for LRO LROC NAC. Focal plane position " + std::to_string(dy);
+        csm::Error::ErrorType errorType = csm::Error::ALGORITHM;
+        std::string message = "Unable to remove distortion for LRO LROC NAC. Focal plane position " + std::to_string(dy);
+        std::string function = "removeDistortion";
+        throw csm::Error(errorType, message, function);
       }
 
       ux = dx;
@@ -349,7 +360,10 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
 
     case KAGUYALISM: {
       if (opticalDistCoeffs.size() != 10) {
-        throw "Distortion coefficients for Kaguya LISM must be of size 10, got: " +  std::to_string(opticalDistCoeffs.size());
+          csm::Error::ErrorType errorType = csm::Error::INDEX_OUT_OF_RANGE;
+          std::string message = "Distortion coefficients for Kaguya LISM must be of size 10, got: " +  std::to_string(opticalDistCoeffs.size());
+          std::string function = "applyDistortion";
+          throw csm::Error(errorType, message, function);
       }
 
       double boresightX = opticalDistCoeffs[0];
@@ -443,7 +457,10 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
       bool bConverged = false;
 
       if (opticalDistCoeffs.size() != 1) {
-        throw "Distortion coefficients for LRO LROC NAC must be of size 1, current size: " +  std::to_string(opticalDistCoeffs.size());
+        csm::Error::ErrorType errorType = csm::Error::INDEX_OUT_OF_RANGE;
+        std::string message = "Distortion coefficients for LRO LROC NAC must be of size 1, current size: " +  std::to_string(opticalDistCoeffs.size());
+        std::string function = "applyDistortion";
+        throw csm::Error(errorType, message, function);
       }
 
       double dk1 = opticalDistCoeffs[0];
