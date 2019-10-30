@@ -9,7 +9,6 @@
 enum DistortionType {
   RADIAL,
   TRANSVERSE,
-  KAGUYATC,
   KAGUYALISM,
   DAWNFC,
   LROLROCNAC

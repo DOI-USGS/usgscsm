@@ -765,9 +765,6 @@ DistortionType getDistortionModel(json isd, csm::WarningList *list) {
     else if (distortion.compare("radial") == 0) {
       return DistortionType::RADIAL;
     }
-    else if (distortion.compare("kaguyatc") == 0) {
-      return DistortionType::KAGUYATC;
-    }
     else if (distortion.compare("kaguyalism") == 0) {
       return DistortionType::KAGUYALISM;
     }
@@ -844,28 +841,6 @@ std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
       }
     }
     break;
-    case DistortionType::KAGUYATC: {
-      try {
-
-        std::vector<double> coefficientsX = isd.at("optical_distortion").at("kaguyatc").at("x").get<std::vector<double>>();
-        coefficientsX.resize(4, 0.0);
-        std::vector<double> coefficientsY = isd.at("optical_distortion").at("kaguyatc").at("y").get<std::vector<double>>();
-        coefficientsY.resize(4, 0.0);
-        coefficientsX.insert(coefficientsX.end(), coefficientsY.begin(), coefficientsY.end());
-
-        return coefficientsX;
-      }
-      catch (...) {
-        if (list) {
-          list->push_back(
-            csm::Warning(
-              csm::Warning::DATA_NOT_AVAILABLE,
-              "Could not parse a set of transverse distortion model coefficients.",
-              "Utilities::getDistortion()"));
-        }
-        coefficients = std::vector<double>(8, 0.0);
-      }
-    }
     case DistortionType::KAGUYALISM: {
       try {
 
