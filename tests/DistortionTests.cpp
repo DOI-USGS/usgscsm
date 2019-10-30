@@ -257,6 +257,65 @@ TEST(KaguyaTc, testZeroCoeffs) {
   ASSERT_DOUBLE_EQ(uy, 1.0);
 }
 
+TEST(KaguyaLism, testRemoveCoeffs) {
+  csm::ImageCoord imagePt(1.0, 1.0);
+
+  double ux, uy;
+  double desiredPrecision = 0.0000001;
+  std::vector<double> distortionCoeffs = {0.5, 1, 2, 3, 4,
+                                          0.5, 1, 2, 3, 4};
+
+  removeDistortion(imagePt.samp, imagePt.line, ux, uy, distortionCoeffs,
+                  DistortionType::KAGUYALISM, desiredPrecision);
+
+  EXPECT_NEAR(ux, 1 + 1 + 2.828427125 + 6 + 11.313708499 + 0.5, 1e-8);
+  EXPECT_NEAR(uy, 1 + 1 + 2.828427125 + 6 + 11.313708499 + 0.5, 1e-8);
+}
+
+
+TEST(KaguyaLism, testCoeffs) {
+  csm::ImageCoord imagePt(1.0, 1.0);
+
+  double ux, uy, dx, dy;
+  double desiredPrecision = 0.0000001;
+  // Coeffs obtained from file TC1W2B0_01_05211N095E3380.img
+  std::vector<double> coeffs = {-0.0725, -0.0009649900000000001, 0.00098441, 8.5773e-06, -3.7438e-06,
+                                0.0214, -0.0013796, 1.3502e-05, 2.7251e-06, -6.193800000000001e-06};
+
+  removeDistortion(imagePt.samp, imagePt.line, ux, uy, coeffs,
+                  DistortionType::KAGUYALISM, desiredPrecision);
+  applyDistortion(ux, uy, dx, dy, coeffs,
+                  DistortionType::KAGUYALISM, desiredPrecision);
+
+
+
+  EXPECT_NEAR(ux, 0.9279337415074662, 1e-6);
+  EXPECT_NEAR(uy, 1.0200274261995939, 1e-5);
+  EXPECT_NEAR(dx, 1.0, 1e-8);
+  EXPECT_NEAR(dy, 1.0, 1e-8);
+}
+
+
+TEST(KaguyaLism, testZeroCoeffs) {
+  csm::ImageCoord imagePt(1.0, 1.0);
+
+  double ux, uy, dx, dy;
+  double desiredPrecision = 0.0000001;
+  std::vector<double> coeffs = {0, 0, 0, 0, 0,
+                                0, 0, 0, 0, 0};
+
+  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
+                  DistortionType::KAGUYALISM, desiredPrecision);
+
+  removeDistortion(dx, dy, ux, uy, coeffs,
+                  DistortionType::KAGUYALISM, desiredPrecision);
+
+  ASSERT_DOUBLE_EQ(dx, 1.0);
+  ASSERT_DOUBLE_EQ(dy, 1.0);
+  ASSERT_DOUBLE_EQ(ux, 1.0);
+  ASSERT_DOUBLE_EQ(uy, 1.0);
+}
+
 
 // Test for LRO LROC NAC
 TEST(LroLrocNac, testLastDetectorSample) {
@@ -314,4 +373,3 @@ TEST(LroLrocNac, testZeroCoeffs) {
   ASSERT_DOUBLE_EQ(ux, 0.0);
   ASSERT_DOUBLE_EQ(uy, 0.0);
 }
-

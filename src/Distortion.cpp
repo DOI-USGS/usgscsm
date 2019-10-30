@@ -99,7 +99,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
 
       if (rr > tolerance) {
         double dr = opticalDistCoeffs[0] + (rr * (opticalDistCoeffs[1] + rr * opticalDistCoeffs[2]));
-        
+
         ux = dx * (1.0 - dr);
         uy = dy * (1.0 - dr);
       }
@@ -208,6 +208,52 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
     }
     break;
 
+    // KaguyaTC
+    case KAGUYALISM: {
+      // Apply distortion correction
+      // see: SEL_TC_V01.TI and SEL_MI_V01.TI
+      // r2 = x^2 + y^2
+      //   Line-of-sight vector of pixel no. n can be expressed as below.
+
+      //  Distortion coefficients information:
+      //   INS<INSTID>_DISTORTION_COEF_X  = ( a0, a1, a2, a3)
+      //   INS<INSTID>_DISTORTION_COEF_Y  = ( b0, b1, b2, b3),
+      //
+      // Distance r from the center:
+      //   r = - (n - INS<INSTID>_CENTER) * INS<INSTID>_PIXEL_SIZE.
+
+      // Line-of-sight vector v is calculated as
+      //   v[X] = INS<INSTID>BORESIGHT[X]
+      //          +a0 +a1*r +a2*r^2 +a3*r^3 ,
+      //   v[Y] = INS<INSTID>BORESIGHT[Y]
+      //           b0 +b1*r +b2*r^2 +b3*r^3
+      //   v[Z] = INS<INSTID>BORESIGHT[Z] .
+
+      // Coeffs should be [boresightX,x0,x1,x2,x3,boresightY,y0,y1,y2,y3]
+      if (opticalDistCoeffs.size() != 10) {
+        throw "Distortion coefficients for Kaguya LISM must be of size 10, got: " +  std::to_string(opticalDistCoeffs.size());
+      }
+
+      double boresightX = opticalDistCoeffs[0];
+      std::vector<double> odkx(opticalDistCoeffs.begin()+1, opticalDistCoeffs.begin()+5);
+      double boresightY = opticalDistCoeffs[5];
+      std::vector<double> odky(opticalDistCoeffs.begin()+6, opticalDistCoeffs.begin()+10);
+
+      double r2 = dx*dx + dy*dy;
+      double r = sqrt(r2);
+      double r3 = r2 * r;
+
+      int xPointer = 0;
+      int yPointer = 5;
+
+      double dr_x = odkx[0] + odkx[1] * r + odkx[2] * r2 + odkx[3] * r3;
+      double dr_y = odky[0] + odky[1] * r + odky[2] * r2 + odky[3] * r3;
+
+      ux = dx + dr_x + boresightX;
+      uy = dy + dr_y + boresightY;
+    }
+    break;
+
     // The dawn distortion model is "reversed" from other distortion models so
     // the remove function iteratively computes undistorted coordinates based on
     // the distorted coordinates, rather than iteratively computing distorted coordinates
@@ -250,7 +296,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
           return;
         }
       }
-      while(!done); 
+      while(!done);
 
       /****************************************************************************
       * Sucess ...
@@ -306,12 +352,12 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
         // Compute first fractional distortion using rp
         double drOverR = opticalDistCoeffs[0]
                       + (rp2 * (opticalDistCoeffs[1] + (rp2 * opticalDistCoeffs[2])));
-        
+
         // Compute first distorted point estimate, r
         double r = rp + (drOverR * rp);
         double r_prev, r2_prev;
         int iteration = 0;
-        
+
         do {
           // Don't get in an end-less loop.  This algorithm should
           // converge quickly.  If not then we are probably way outside
@@ -335,7 +381,7 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
           iteration++;
         }
         while (fabs(r - r_prev) > desiredPrecision);
-        
+
         dx = ux / (1.0 - drOverR);
         dy = uy / (1.0 - drOverR);
       }
@@ -413,6 +459,74 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
     }
     break;
 
+    case KAGUYALISM: {
+      if (opticalDistCoeffs.size() != 10) {
+        throw "Distortion coefficients for Kaguya LISM must be of size 10, got: " +  std::to_string(opticalDistCoeffs.size());
+      }
+
+      double boresightX = opticalDistCoeffs[0];
+      std::vector<double> odkx(opticalDistCoeffs.begin()+1, opticalDistCoeffs.begin()+5);
+      double boresightY = opticalDistCoeffs[5];
+      std::vector<double> odky(opticalDistCoeffs.begin()+6, opticalDistCoeffs.begin()+10);
+
+      double xt = ux - boresightX;
+      double yt = uy - boresightY;
+
+      double xx, yy, r, rr, rrr, dr_x, dr_y;
+      double xdistortion, ydistortion;
+      double xdistorted, ydistorted;
+      double xprevious, yprevious;
+
+      xprevious = 1000000.0;
+      yprevious = 1000000.0;
+
+      double tolerance = 0.000001;
+      bool bConverged = false;
+
+      // Iterating to introduce distortion...
+      // We stop when the difference between distorted coordinates
+      // in successive iterations is below the given tolerance
+      for (int i = 0; i < 50; i++) {
+        xx = xt * xt;
+        yy = yt * yt;
+        rr = xx + yy;
+        r = sqrt(rr);
+        rrr = rr * r;
+
+        // Radial distortion
+        // dr is the radial distortion contribution
+        dr_x = odkx[0] + odkx[1] * r + odkx[2] * rr + odkx[3] * rrr;
+        dr_y = odky[0] + odky[1] * r + odky[2] * rr + odky[3] * rrr;
+
+        // Distortion at the current point location
+        xdistortion = dr_x;
+        ydistortion = dr_y;
+
+        // updated image coordinates
+        xt = ux - xdistortion - boresightX;
+        yt = uy - ydistortion - boresightY;
+
+        // distorted point corrected for principal point
+        xdistorted = xt;
+        ydistorted = yt;
+
+        // check for convergence
+        if ((fabs(xt - xprevious) < tolerance) && (fabs(yt - yprevious) < tolerance)) {
+          bConverged = true;
+          break;
+        }
+
+        xprevious = xt;
+        yprevious = yt;
+      }
+
+      if (bConverged) {
+        dx = xdistorted;
+        dy = ydistorted;
+      }
+    }
+    break;
+
     // The dawn distortion model is "reversed" from other distortion models so
     // the apply function computes distorted coordinates as a
     // fn(undistorted coordinates)
@@ -426,7 +540,7 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
     }
     break;
 
-    // The LRO LROC NAC distortion model uses an iterative approach to go from 
+    // The LRO LROC NAC distortion model uses an iterative approach to go from
     // undistorted x,y to distorted x,y
     // Algorithum adapted from ISIS3 LRONarrowAngleDistortionMap.cpp
     case LROLROCNAC: {
@@ -483,7 +597,7 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
 
         yprevious = yt;
       }
-      
+
       if(bConverged) {
         dx = ux;
         dy = ydistorted;
