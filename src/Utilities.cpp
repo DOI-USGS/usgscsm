@@ -765,8 +765,8 @@ DistortionType getDistortionModel(json isd, csm::WarningList *list) {
     else if (distortion.compare("radial") == 0) {
       return DistortionType::RADIAL;
     }
-    else if (distortion.compare("kaguyatc") == 0) {
-      return DistortionType::KAGUYATC;
+    else if (distortion.compare("kaguyalism") == 0) {
+      return DistortionType::KAGUYALISM;
     }
     else if (distortion.compare("dawnfc") == 0) {
       return DistortionType::DAWNFC;
@@ -841,13 +841,18 @@ std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
       }
     }
     break;
-    case DistortionType::KAGUYATC: {
+    case DistortionType::KAGUYALISM: {
       try {
 
-        std::vector<double> coefficientsX = isd.at("optical_distortion").at("kaguyatc").at("x").get<std::vector<double>>();
+        std::vector<double> coefficientsX = isd.at("optical_distortion").at("kaguyalism").at("x").get<std::vector<double>>();
+        std::vector<double> coefficientsY = isd.at("optical_distortion").at("kaguyalism").at("y").get<std::vector<double>>();
+        double boresightX = isd.at("optical_distortion").at("kaguyalism").at("boresight_x").get<double>();
+        double boresightY = isd.at("optical_distortion").at("kaguyalism").at("boresight_y").get<double>();
+
         coefficientsX.resize(4, 0.0);
-        std::vector<double> coefficientsY = isd.at("optical_distortion").at("kaguyatc").at("y").get<std::vector<double>>();
         coefficientsY.resize(4, 0.0);
+        coefficientsX.insert(coefficientsX.begin(), boresightX);
+        coefficientsY.insert(coefficientsY.begin(), boresightY);
         coefficientsX.insert(coefficientsX.end(), coefficientsY.begin(), coefficientsY.end());
 
         return coefficientsX;
@@ -857,7 +862,7 @@ std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
           list->push_back(
             csm::Warning(
               csm::Warning::DATA_NOT_AVAILABLE,
-              "Could not parse a set of transverse distortion model coefficients.",
+              "Could not parse a set of Kaguya LISM distortion model coefficients.",
               "Utilities::getDistortion()"));
         }
         coefficients = std::vector<double>(8, 0.0);
