@@ -24,6 +24,7 @@
 #include <iostream>
 #include <sstream>
 #include <math.h>
+#include <float.h>
 
 #include <sstream>
 #include <Error.h>
@@ -680,6 +681,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    // See comment above for why (- 0.5)
    double firstOffset = computeViewingPixel(firstTime, ground_pt, adj, pixelPrec/2).line - 0.5;
    double lastOffset = computeViewingPixel(lastTime, ground_pt, adj, pixelPrec/2).line - 0.5;
+   MESSAGE_LOG(m_logger, "groundToImage: Initial firstOffset {}, lastOffset {}", firstOffset, lastOffset)
 
    double closestLine;
    csm::ImageCoord detectorCoord;
@@ -700,7 +702,10 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
       if (referenceTimeIt != m_intTimeStartTimes.begin()) {
          --referenceTimeIt;
       }
+
       size_t referenceIndex = std::distance(m_intTimeStartTimes.begin(), referenceTimeIt);
+      MESSAGE_LOG(m_logger, "groundToImage: Find reference time, line number {}, start time {}, duration {} ",
+                  m_intTimeLines[referenceIndex], m_intTimeStartTimes[referenceIndex], m_intTimes[referenceIndex])
       double computedLine = (nextTime - m_intTimeStartTimes[referenceIndex]) / m_intTimes[referenceIndex]
                           + m_intTimeLines[referenceIndex];
       // Remove -0.5 once ISIS linescanrate is fixed
@@ -719,8 +724,12 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
         lastTime = nextTime;
         lastOffset = nextOffset;
       }
+      MESSAGE_LOG(m_logger, "groundToImage: Loop firstOffset {}, firstTime {}, lastOffset {}, lastTime {}, nextOffset {}, nextTime {}",
+                  firstOffset, firstTime, lastOffset, lastTime, nextOffset, nextTime)
+
       if (fabs(lastOffset - firstOffset) < pixelPrec) {
-         break;
+        MESSAGE_LOG(m_logger, "groundToImage: Final firstOffset {}, lastOffset {}, pixelPre {}", firstOffset, lastOffset, pixelPrec)
+        break;
       }
    }
 
@@ -740,14 +749,15 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
 
    double preSquare = desired_precision * desired_precision;
    if (warnings && (desired_precision > 0.0) && (preSquare < len)) {
-      std::stringstream msg;
-      msg << "Desired precision not achieved. ";
-      msg << len << "  " << preSquare << "\n";
-      warnings->push_back(
-         csm::Warning(csm::Warning::PRECISION_NOT_MET,
-         msg.str().c_str(),
-         "UsgsAstroLsSensorModel::groundToImage()"));
+     MESSAGE_LOG(m_logger, "groundToImage: Desired precision not achieve {}", preSquare)
+     std::stringstream msg;
+     msg << "Desired precision not achieved. ";
+     msg << len << "  " << preSquare << "\n";
+     warnings->push_back(csm::Warning(csm::Warning::PRECISION_NOT_MET,
+                         msg.str().c_str(),
+                         "UsgsAstroLsSensorModel::groundToImage()"));
    }
+   MESSAGE_LOG(m_logger, "groundToImage: Final pixel line {}, sample {}", calculatedPixel.line, calculatedPixel.samp)
 
    return calculatedPixel;
 }
