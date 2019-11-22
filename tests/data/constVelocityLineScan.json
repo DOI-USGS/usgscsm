@@ -13,7 +13,7 @@
   "dt_ephemeris": 0.2,
   "t0_quaternion": -0.8,
   "dt_quaternion": 0.2,
-  "focal2pixel_lines": [0.0, 10.0, 0.0],
+  "focal2pixel_lines": [0.0, -10.0, 0.0],
   "focal2pixel_samples": [0.0, 0.0, 10.0],
   "focal_length_model": {
     "focal_length": 50
