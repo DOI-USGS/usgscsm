@@ -649,7 +649,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    // This method uses an iterative secant method to search for the image
    // line. Since this is looking for a zero we subtract 0.5 each time the offsets
    // are calculated. This allows it to converge on the center of the pixel where
-   // there is only one correct answer instead of the top or bottom of the pixel 
+   // there is only one correct answer instead of the top or bottom of the pixel
    // where there are two correct answers.
 
    // Convert the ground precision to pixel precision so we can
@@ -748,8 +748,8 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    }
 
    double preSquare = desired_precision * desired_precision;
+   MESSAGE_LOG(m_logger, "groundToImage: Desired precision not achieved {}", preSquare)
    if (warnings && (desired_precision > 0.0) && (preSquare < len)) {
-     MESSAGE_LOG(m_logger, "groundToImage: Desired precision not achieve {}", preSquare)
      std::stringstream msg;
      msg << "Desired precision not achieved. ";
      msg << len << "  " << preSquare << "\n";
@@ -1306,6 +1306,7 @@ double UsgsAstroLsSensorModel::getImageTime(
    }
    size_t referenceIndex = std::distance(m_intTimeLines.begin(), referenceLineIt);
 
+   // Adding 0.5 to the line results in center exposure time for a given line
    double time = m_intTimeStartTimes[referenceIndex]
       + m_intTimes[referenceIndex] * (lineFull - m_intTimeLines[referenceIndex] + 0.5);
 

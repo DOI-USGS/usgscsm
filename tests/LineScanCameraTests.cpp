@@ -131,7 +131,7 @@ TEST_F(OrbitalLineScanSensorModel, Center) {
 }
 
 TEST_F(OrbitalLineScanSensorModel, Inversion) {
-  for (double line = 0.5; line < 1.1; line+=0.5) {
+  for (double line = 0.5; line < 16; line+=0.5) {
     csm::ImageCoord imagePt(line, 8);
     csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
     csm::ImageCoord imageReprojPt = sensorModel->groundToImage(groundPt);
