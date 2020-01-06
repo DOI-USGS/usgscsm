@@ -131,15 +131,15 @@ TEST_F(OrbitalLineScanSensorModel, Center) {
 }
 
 TEST_F(OrbitalLineScanSensorModel, Inversion) {
-  for (double line = 0.5; line < 16; line+=0.5) {
+  for (double line = 0.5; line < 16; line++) {
     csm::ImageCoord imagePt(line, 8);
     csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
     csm::ImageCoord imageReprojPt = sensorModel->groundToImage(groundPt);
 
     // groundToImage has a default precision of 0.001m and each pixel is 100m
     // so we should be within 0.1 pixels
-    EXPECT_NEAR(imagePt.line, imageReprojPt.line, 0.00001);
-    EXPECT_NEAR(imagePt.samp, imageReprojPt.samp, 0.00001);
+    EXPECT_NEAR(imagePt.line, imageReprojPt.line, 0.1);
+    EXPECT_NEAR(imagePt.samp, imageReprojPt.samp, 0.1);
   }
 }
 
