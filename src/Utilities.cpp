@@ -1,7 +1,60 @@
 #include "Utilities.h"
+#include <cmath>
 #include <Error.h>
 
 using json = nlohmann::json;
+
+// Calculate the distance from a 2D point to a line given in standard form
+//
+// --NOTE-- This function assumes that the coefficients of the line have been reduced
+//          so that sqrt(a^2 + b^2) = 1
+double distanceToLine(double x, double y,
+                      double a, double b, double c) {
+  return std::abs(a*x + b*y + c);
+}
+
+// Calculate the distance from a 3D point to a plane given in standard form
+//
+// --NOTE-- This function assumes that the coefficients of the plane have been reduced
+//          so that sqrt(a^2 + b^2 + c^2) = 1
+double distanceToPlane(double x, double y, double z,
+                       double a, double b, double c, double d) {
+  return std::abs(a*x + b*y + c*z + d);
+}
+
+// Calculate the standard form coefficients of a line that passes through two points
+//
+// --NOTE-- The coefficients have been reduced such that sqrt(a^2 + b^2) = 1
+void line(double x1, double y1, double x2, double y2,
+          double &a, double &b, double &c) {
+  a = y1 - y2;
+  b = x2 - x1;
+  c = x1*y2 - x2*y1;
+  double scale = sqrt(a*a + b*b);
+  a /= scale;
+  b /= scale;
+  c /= scale;
+}
+
+// Calculate the standard form coefficients of a plane that passes through a point
+// and contains two vectors.
+//
+// --NOTE-- The coefficients have been reduced such that sqrt(a^2 + b^2 + c^2) = 1
+void plane(double x0, double y0, double z0,
+           double v1x, double v1y, double v1z,
+           double v2x, double v2y, double v2z,
+           double &a, double &b, double &c, double &d) {
+  // Compute normal vector and scale
+  a = v1y*v2z - v1z*v2y;
+  b = v1z*v2x - v1x*v2z;
+  c = v1x*v2y - v1y*v2x;
+  double scale = sqrt(a*a + b*b + c*c);
+  a /= scale;
+  b /= scale;
+  c /= scale;
+  // Shift to point
+  d = - (a*x0 + b*y0 + c*z0);
+}
 
 // Calculates a rotation matrix from Euler angles
 // in - euler[3]

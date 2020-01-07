@@ -12,6 +12,20 @@
 
 #include <Warning.h>
 
+double distanceToLine(double x, double y,
+                      double a, double b, double c);
+
+double distanceToPlane(double x, double y, double z,
+                       double a, double b, double c, double d);
+
+void line(double x1, double y1, double x2, double y2,
+          double &a, double &b, double &c);
+
+void plane(double x0, double y0, double z0,
+           double v1x, double v1y, double v1z,
+           double v2x, double v2y, double v2z,
+           double &a, double &b, double &c, double &d);
+
 // methods pulled out of los2ecf and computeViewingPixel
 
 // for now, put everything in here.
