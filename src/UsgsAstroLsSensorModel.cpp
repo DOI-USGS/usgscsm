@@ -748,8 +748,8 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    }
 
    double preSquare = desired_precision * desired_precision;
-   MESSAGE_LOG(m_logger, "groundToImage: Desired precision not achieved {}", preSquare)
    if (warnings && (desired_precision > 0.0) && (preSquare < len)) {
+     MESSAGE_LOG(m_logger, "groundToImage: Desired precision not achieved {}", preSquare)
      std::stringstream msg;
      msg << "Desired precision not achieved. ";
      msg << len << "  " << preSquare << "\n";
