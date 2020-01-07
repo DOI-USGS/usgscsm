@@ -2863,7 +2863,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   }
 
   // Get the optional logging file
-  state["m_logFile"] = getLogFile(isd, warnings);
+  state["m_logFile"] = getLogFile(isd);
 
   if (!parsingWarnings->empty()) {
     if (warnings) {
