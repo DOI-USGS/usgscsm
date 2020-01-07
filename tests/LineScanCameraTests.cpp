@@ -178,3 +178,9 @@ TEST_F(OrbitalLineScanSensorModel, InversionReallyHigh) {
     EXPECT_NEAR(imagePt.samp, imageReprojPt.samp, 0.002);
   }
 }
+
+TEST_F(OrbitalLineScanSensorModel, ReferenceDateTime) {
+  csm::EcefCoord groundPoint = csm::EcefCoord(1e+05, 0, -750);
+  sensorModel->setReferencePoint(groundPoint);
+  sensorModel->getReferenceDateAndTime();
+}
