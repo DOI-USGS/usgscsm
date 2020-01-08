@@ -26,11 +26,9 @@ void plane(double x0, double y0, double z0,
            double v2x, double v2y, double v2z,
            double &a, double &b, double &c, double &d);
 
-void fitLinearApproximation(const std::vector<double> &x,
-                            const std::vector<double> &y,
-                            double tolerance,
-                            std::vector<double> &nodesX,
-                            std::vector<double> &nodesY);
+std::vector<int> fitLinearApproximation(const std::vector<double> &x,
+                                        const std::vector<double> &y,
+                                        double tolerance);
 
 // methods pulled out of los2ecf and computeViewingPixel
 

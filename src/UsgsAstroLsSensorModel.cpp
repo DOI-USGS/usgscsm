@@ -506,7 +506,10 @@ void UsgsAstroLsSensorModel::reset()
   m_positions.clear();                        // 42
   m_velocities.clear();                      // 43
   m_quaternions.clear();                     // 44
-  m_detectorCoordinates.clear();
+  m_detectorNodes.clear();
+  m_detectorXCoords.clear();
+  m_detectorYCoords.clear();
+  m_averageDetectorSize = 0.0;
 
   m_currentParameterValue.assign(NUM_PARAMETERS,0.0);
   m_parameterType.assign(NUM_PARAMETERS,csm::param::REAL);
@@ -596,8 +599,29 @@ void UsgsAstroLsSensorModel::updateState()
    MESSAGE_LOG(m_logger, "updateState: half time duration set to {}",
                                m_halfTime)
 
-   // compute CPPSs
-   m_detectorCoordinates.clear();
+   // compute linearized detector coordinates
+   m_detectorXCoords.resize(m_nSamples);
+   m_detectorYCoords.resize(m_nSamples);
+
+   for (int i = 0; i < m_nSamples; i++) {
+     computeDistortedFocalPlaneCoordinates(
+          0.5, i,
+          m_detectorSampleOrigin, m_detectorLineOrigin,
+          m_detectorSampleSumming, 1.0,
+          m_startingSample, 0.0,
+          m_iTransS, m_iTransL,
+          m_detectorXCoords[i], m_detectorYCoords[i]
+     );
+   }
+   m_averageDetectorSize = 0;
+   for (int i = 1; i < m_nSamples; i++) {
+     double xDist = m_detectorXCoords[i] - m_detectorXCoords[i-1];
+     double yDist = m_detectorYCoords[i] - m_detectorYCoords[i-1];
+     m_averageDetectorSize += sqrt(xDist*xDist + yDist*yDist);
+   }
+   m_averageDetectorSize /= (m_nSamples-1);
+   m_detectorNodes = fitLinearApproximation(m_detectorXCoords, m_detectorYCoords,
+                                            m_averageDetectorSize);
 
    // Parameter covariance, hardcoded accuracy values
    int num_params = NUM_PARAMETERS;

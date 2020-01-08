@@ -63,16 +63,12 @@ void plane(double x0, double y0, double z0,
 
 // Fit a piecewise-linear approximations to 2D data within a tolerance
 //
-// Thise method uses a bisection approach
-void fitLinearApproximation(const std::vector<double> &x,
-                            const std::vector<double> &y,
-                            double tolerance,
-                            std::vector<double> &nodesX,
-                            std::vector<double> &nodesY) {
-  nodesX.clear();
-  nodesY.clear();
-  nodesX.push_back(x.front());
-  nodesY.push_back(y.front());
+// Returns a vector of node indices
+std::vector<int> fitLinearApproximation(const std::vector<double> &x,
+                                        const std::vector<double> &y,
+                                        double tolerance) {
+  std::vector<int> nodes;
+  nodes.push_back(0);
 
   std::stack<std::pair<int, int>> workStack;
   workStack.push(std::make_pair(0, x.size() - 1));
@@ -100,10 +96,11 @@ void fitLinearApproximation(const std::vector<double> &x,
     }
     else {
       // segment is good so append last point to nodes
-      nodesX.push_back(x[range.second]);
-      nodesY.push_back(y[range.second]);
+      nodes.push_back(range.second);
     }
   }
+
+  return nodes;
 }
 
 // Calculates a rotation matrix from Euler angles

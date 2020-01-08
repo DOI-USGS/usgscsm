@@ -74,26 +74,16 @@ TEST(UtilitiesTests, plane) {
 TEST(UtilitiesTests, fitLinearApproximation) {
   std::vector<double> x = {0, 1, 2, 3,  4, 5, 6, 7, 8, 9, 10};
   std::vector<double> y = {1, 0, 5, 7, -2, 1, 2, 2, 1, 0,  1};
-  std::vector<double> nodesX;
-  std::vector<double> nodesY;
 
-  fitLinearApproximation(x, y, 1.0, nodesX, nodesY);
-  ASSERT_EQ(nodesX.size(), 7);
-  EXPECT_EQ(nodesX[0],  0);
-  EXPECT_EQ(nodesX[1],  1);
-  EXPECT_EQ(nodesX[2],  3);
-  EXPECT_EQ(nodesX[3],  4);
-  EXPECT_EQ(nodesX[4],  6);
-  EXPECT_EQ(nodesX[5],  9);
-  EXPECT_EQ(nodesX[6], 10);
-  ASSERT_EQ(nodesY.size(), 7);
-  EXPECT_EQ(nodesY[0],  1);
-  EXPECT_EQ(nodesY[1],  0);
-  EXPECT_EQ(nodesY[2],  7);
-  EXPECT_EQ(nodesY[3], -2);
-  EXPECT_EQ(nodesY[4],  2);
-  EXPECT_EQ(nodesY[5],  0);
-  EXPECT_EQ(nodesY[6],  1);
+  std::vector<int> nodes = fitLinearApproximation(x, y, 1.0);
+  ASSERT_EQ(nodes.size(), 7);
+  EXPECT_EQ(nodes[0],  0);
+  EXPECT_EQ(nodes[1],  1);
+  EXPECT_EQ(nodes[2],  3);
+  EXPECT_EQ(nodes[3],  4);
+  EXPECT_EQ(nodes[4],  6);
+  EXPECT_EQ(nodes[5],  9);
+  EXPECT_EQ(nodes[6], 10);
 }
 
 

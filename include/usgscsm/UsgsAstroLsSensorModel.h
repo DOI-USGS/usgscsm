@@ -108,7 +108,10 @@ public:
    std::vector<double> m_positions;
    std::vector<double> m_velocities;
    std::vector<double> m_quaternions;
-   std::vector<double> m_detectorCoordinates;
+   std::vector<int> m_detectorNodes;
+   std::vector<double> m_detectorXCoords;
+   std::vector<double> m_detectorYCoords;
+   double m_averageDetectorSize;
    std::vector<double> m_currentParameterValue;
    std::vector<csm::param::Type> m_parameterType;
    csm::EcefCoord m_referencePointXyz;
