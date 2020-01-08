@@ -180,7 +180,6 @@ TEST_F(OrbitalLineScanSensorModel, InversionReallyHigh) {
 }
 
 TEST_F(OrbitalLineScanSensorModel, ReferenceDateTime) {
-  csm::EcefCoord groundPoint = csm::EcefCoord(1e+05, 0, -750);
-  sensorModel->setReferencePoint(groundPoint);
-  sensorModel->getReferenceDateAndTime();
+  std::string date = sensorModel->getReferenceDateAndTime();
+  EXPECT_EQ(date, "20000101T001639");
 }
