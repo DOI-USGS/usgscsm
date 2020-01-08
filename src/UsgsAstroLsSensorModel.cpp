@@ -1284,19 +1284,19 @@ std::string UsgsAstroLsSensorModel::getTrajectoryIdentifier() const
 std::string UsgsAstroLsSensorModel::getReferenceDateAndTime() const
 {
     csm::EcefCoord referencePointGround = UsgsAstroLsSensorModel::getReferencePoint();
-    std::cout << "Ground point is " << referencePointGround.x << " " << referencePointGround.y << " " << referencePointGround.z << '\n';
     csm::ImageCoord referencePointImage = UsgsAstroLsSensorModel::groundToImage(referencePointGround);
-    std::cout << "Image point is " << referencePointImage.line << " " << referencePointImage.samp << '\n';
     double relativeTime = UsgsAstroLsSensorModel::getImageTime(referencePointImage);
-    double time = m_centerEphemerisTime + relativeTime;
-    printf("Reference Time is %f8\n", time);
+    time_t ephemTime = m_centerEphemerisTime + relativeTime;
+    struct tm t = {0};  // Initalize to all 0's
+    t.tm_year = 100;  // This is year-1900, so 100 = 2000
+    t.tm_mday = 1;
+    time_t timeSinceEpoch = mktime(&t);
+    time_t finalTime = ephemTime + timeSinceEpoch;
+    char buffer [16];
+    strftime(buffer, 16, "%Y%m%dT%H%M%S", localtime(&finalTime));
+    buffer[15] = '\0';
 
-    return "";
-
-    // throw csm::Error(
-    //    csm::Error::UNSUPPORTED_FUNCTION,
-    //    "Unsupported function",
-    //    "UsgsAstroLsSensorModel::getReferenceDateAndTime");
+    return buffer;
 }
 
 //***************************************************************************
@@ -1324,16 +1324,14 @@ double UsgsAstroLsSensorModel::getImageTime(
       --referenceLineIt;
    }
    size_t referenceIndex = std::distance(m_intTimeLines.begin(), referenceLineIt);
-   std::cout << "getImageTime for image line " << image_pt.line << " is " << time << '\n';
 
    double time = m_intTimeStartTimes[referenceIndex]
       + m_intTimes[referenceIndex] * (lineUSGSFull - m_intTimeLines[referenceIndex]);
 
-  MESSAGE_LOG(m_logger, "getImageTime for image line {} is {}",
-                                image_pt.line, time)
+   MESSAGE_LOG(m_logger, "getImageTime for image line {} is {}",
+                         image_pt.line, time)
 
    return time;
-
 }
 
 //***************************************************************************

@@ -678,7 +678,20 @@ std::string UsgsAstroFrameSensorModel::getSensorMode() const {
 
 std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
   MESSAGE_LOG(this->m_logger, "Accessing reference data and time");
-  return "";
+  csm::EcefCoord referencePointGround = UsgsAstroFrameSensorModel::getReferencePoint();
+  csm::ImageCoord referencePointImage = UsgsAstroFrameSensorModel::groundToImage(referencePointGround);
+  double relativeTime = UsgsAstroFrameSensorModel::getImageTime(referencePointImage);
+  time_t ephemTime = m_ephemerisTime + relativeTime;
+  struct tm t = {0};  // Initalize to all 0's
+  t.tm_year = 100;  // This is year-1900, so 100 = 2000
+  t.tm_mday = 1;
+  time_t timeSinceEpoch = mktime(&t);
+  time_t finalTime = ephemTime + timeSinceEpoch;
+  char buffer [16];
+  strftime(buffer, 16, "%Y%m%dT%H%M%S", localtime(&finalTime));
+  buffer[15] = '\0';
+
+  return buffer;
 }
 
 
