@@ -680,8 +680,7 @@ std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
   MESSAGE_LOG(this->m_logger, "Accessing reference data and time");
   csm::EcefCoord referencePointGround = UsgsAstroFrameSensorModel::getReferencePoint();
   csm::ImageCoord referencePointImage = UsgsAstroFrameSensorModel::groundToImage(referencePointGround);
-  double relativeTime = UsgsAstroFrameSensorModel::getImageTime(referencePointImage);
-  time_t ephemTime = m_ephemerisTime + relativeTime;
+  time_t ephemTime = UsgsAstroFrameSensorModel::getImageTime(referencePointImage);
   struct tm t = {0};  // Initalize to all 0's
   t.tm_year = 100;  // This is year-1900, so 100 = 2000
   t.tm_mday = 1;
@@ -838,6 +837,7 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
         m_focalLengthEpsilon = state.at("m_focalLengthEpsilon").get<double>();
         m_nLines = state.at("m_nLines").get<int>();
         m_nSamples = state.at("m_nSamples").get<int>();
+        m_ephemerisTime = state.at("m_ephemerisTime").get<int>();
         m_currentParameterValue = state.at("m_currentParameterValue").get<std::vector<double>>();
         m_ccdCenter = state.at("m_ccdCenter").get<std::vector<double>>();
         m_spacecraftVelocity = state.at("m_spacecraftVelocity").get<std::vector<double>>();
