@@ -1,6 +1,9 @@
 #include "Utilities.h"
+
 #include <cmath>
 #include <Error.h>
+#include <stack>
+#include <utility>
 
 using json = nlohmann::json;
 
@@ -54,6 +57,53 @@ void plane(double x0, double y0, double z0,
   c /= scale;
   // Shift to point
   d = - (a*x0 + b*y0 + c*z0);
+}
+
+
+
+// Fit a piecewise-linear approximations to 2D data within a tolerance
+//
+// Thise method uses a bisection approach
+void fitLinearApproximation(const std::vector<double> &x,
+                            const std::vector<double> &y,
+                            double tolerance,
+                            std::vector<double> &nodesX,
+                            std::vector<double> &nodesY) {
+  nodesX.clear();
+  nodesY.clear();
+  nodesX.push_back(x.front());
+  nodesY.push_back(y.front());
+
+  std::stack<std::pair<int, int>> workStack;
+  workStack.push(std::make_pair(0, x.size() - 1));
+  while (!workStack.empty()) {
+    std::pair<int, int> range = workStack.top();
+    workStack.pop();
+    double a, b, c;
+    line(x[range.first], y[range.first], x[range.second], y[range.second], a, b, c);
+    double maxError = 0;
+    int maxIndex = (range.second + range.first) / 2;
+    for (int i = range.first + 1; i < range.second; i++) {
+      double error = distanceToLine(x[i], y[i], a, b, c);
+      if (error > maxError) {
+        maxError = error;
+        maxIndex = i;
+      }
+    }
+    // If the max error is greater than the tolerance, split at the largest error
+    // Do not split if the range only contains two nodes
+    if (maxError > tolerance && range.second - range.first > 1) {
+      // Append the second range and then the first range
+      // so that nodes are added in the same order they came in
+      workStack.push(std::make_pair(maxIndex, range.second));
+      workStack.push(std::make_pair(range.first, maxIndex));
+    }
+    else {
+      // segment is good so append last point to nodes
+      nodesX.push_back(x[range.second]);
+      nodesY.push_back(y[range.second]);
+    }
+  }
 }
 
 // Calculates a rotation matrix from Euler angles

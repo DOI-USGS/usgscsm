@@ -506,6 +506,8 @@ void UsgsAstroLsSensorModel::reset()
   m_positions.clear();                        // 42
   m_velocities.clear();                      // 43
   m_quaternions.clear();                     // 44
+  m_cppsCoefficients.clear();
+  m_currentParameterValue.clear();
 
   m_currentParameterValue.assign(NUM_PARAMETERS,0.0);
   m_parameterType.assign(NUM_PARAMETERS,csm::param::REAL);
@@ -594,6 +596,9 @@ void UsgsAstroLsSensorModel::updateState()
    m_halfTime = fullImageTime / 2.0;
    MESSAGE_LOG(m_logger, "updateState: half time duration set to {}",
                                m_halfTime)
+
+   // compute CPPSs
+   m_detectorCoordinates.clear();
 
    // Parameter covariance, hardcoded accuracy values
    int num_params = NUM_PARAMETERS;
