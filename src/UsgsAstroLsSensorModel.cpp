@@ -506,8 +506,7 @@ void UsgsAstroLsSensorModel::reset()
   m_positions.clear();                        // 42
   m_velocities.clear();                      // 43
   m_quaternions.clear();                     // 44
-  m_cppsCoefficients.clear();
-  m_currentParameterValue.clear();
+  m_detectorCoordinates.clear();
 
   m_currentParameterValue.assign(NUM_PARAMETERS,0.0);
   m_parameterType.assign(NUM_PARAMETERS,csm::param::REAL);
