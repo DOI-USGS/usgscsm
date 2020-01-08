@@ -111,6 +111,7 @@ public:
    std::vector<int> m_detectorNodes;
    std::vector<double> m_detectorXCoords;
    std::vector<double> m_detectorYCoords;
+   std::vector<double> m_detectorLineCoeffs;
    double m_averageDetectorSize;
    std::vector<double> m_currentParameterValue;
    std::vector<csm::param::Type> m_parameterType;

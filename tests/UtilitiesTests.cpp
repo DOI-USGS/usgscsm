@@ -21,7 +21,7 @@ TEST(UtilitiesTests, distanceToLine) {
   // Point above line
   EXPECT_DOUBLE_EQ(distanceToLine(1.0, 4.0, a, b, c), sqrt(5));
   // Point below line
-  EXPECT_DOUBLE_EQ(distanceToLine(4.5, 2.0, a, b, c), sqrt(5) / 2.0);
+  EXPECT_DOUBLE_EQ(distanceToLine(4.5, 2.0, a, b, c), -sqrt(5) / 2.0);
 }
 
 TEST(UtilitiesTests, line) {

@@ -509,6 +509,7 @@ void UsgsAstroLsSensorModel::reset()
   m_detectorNodes.clear();
   m_detectorXCoords.clear();
   m_detectorYCoords.clear();
+  m_detectorLineCoeffs.clear();
   m_averageDetectorSize = 0.0;
 
   m_currentParameterValue.assign(NUM_PARAMETERS,0.0);
@@ -622,6 +623,13 @@ void UsgsAstroLsSensorModel::updateState()
    m_averageDetectorSize /= (m_nSamples-1);
    m_detectorNodes = fitLinearApproximation(m_detectorXCoords, m_detectorYCoords,
                                             m_averageDetectorSize);
+
+   m_detectorLineCoeffs.resize(3 * (m_detectorNodes.size() - 1));
+   for (size_t i = 0; i + 1 < m_detectorNodes.size(); i++) {
+     line(m_detectorXCoords[m_detectorNodes[i]], m_detectorYCoords[m_detectorNodes[i]],
+          m_detectorXCoords[m_detectorNodes[i+1]], m_detectorYCoords[m_detectorNodes[i+1]],
+          m_detectorLineCoeffs[3*i], m_detectorLineCoeffs[3*i+1], m_detectorLineCoeffs[3*i+2]);
+   }
 
    // Parameter covariance, hardcoded accuracy values
    int num_params = NUM_PARAMETERS;

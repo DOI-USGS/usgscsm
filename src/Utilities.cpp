@@ -7,13 +7,13 @@
 
 using json = nlohmann::json;
 
-// Calculate the distance from a 2D point to a line given in standard form
+// Calculate the signed distance from a 2D point to a line given in standard form
 //
 // --NOTE-- This function assumes that the coefficients of the line have been reduced
 //          so that sqrt(a^2 + b^2) = 1
 double distanceToLine(double x, double y,
                       double a, double b, double c) {
-  return std::abs(a*x + b*y + c);
+  return a*x + b*y + c;
 }
 
 // Calculate the distance from a 3D point to a plane given in standard form
@@ -80,7 +80,7 @@ std::vector<int> fitLinearApproximation(const std::vector<double> &x,
     double maxError = 0;
     int maxIndex = (range.second + range.first) / 2;
     for (int i = range.first + 1; i < range.second; i++) {
-      double error = distanceToLine(x[i], y[i], a, b, c);
+      double error = std::abs(distanceToLine(x[i], y[i], a, b, c));
       if (error > maxError) {
         maxError = error;
         maxIndex = i;
