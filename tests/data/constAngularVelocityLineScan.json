@@ -5,7 +5,7 @@
   "center_ephemeris_time": 1000.0,
   "starting_ephemeris_time": 999.2,
   "line_scan_rate": [
-    [0.5, -0.8, 0.1]
+    [0.5, -0.85, 0.1]
   ],
   "detector_sample_summing": 1,
   "detector_line_summing": 1,

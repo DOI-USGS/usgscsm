@@ -28,9 +28,9 @@ TEST_F(ConstVelocityLineScanSensorModel, State) {
 TEST_F(ConstVelocityLineScanSensorModel, Center) {
    csm::ImageCoord imagePt(8.5, 8.0);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   EXPECT_DOUBLE_EQ(groundPt.x, 10.0);
-   EXPECT_DOUBLE_EQ(groundPt.y, 0.0);
-   EXPECT_DOUBLE_EQ(groundPt.z, 0.0);
+   EXPECT_NEAR(groundPt.x, 10.0, 1e-12);
+   EXPECT_NEAR(groundPt.y, 0.0, 1e-12);
+   EXPECT_NEAR(groundPt.z, 0.0, 1e-12);
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, Inversion) {
@@ -54,23 +54,23 @@ TEST_F(ConstVelocityLineScanSensorModel, ProximateImageLocus) {
    csm::ImageCoord imagePt(8.5, 8.0);
    csm::EcefCoord groundPt(5, 5, 5);
    csm::EcefLocus locus = sensorModel->imageToProximateImagingLocus(imagePt, groundPt);
-   EXPECT_DOUBLE_EQ(locus.direction.x, -1.0);
-   EXPECT_DOUBLE_EQ(locus.direction.y,  0.0);
-   EXPECT_DOUBLE_EQ(locus.direction.z,  0.0);
-   EXPECT_DOUBLE_EQ(locus.point.x,      5.0);
-   EXPECT_DOUBLE_EQ(locus.point.y,      0.0);
-   EXPECT_DOUBLE_EQ(locus.point.z,      0.0);
+   EXPECT_NEAR(locus.direction.x, -1.0, 1e-12);
+   EXPECT_NEAR(locus.direction.y,  0.0, 1e-12);
+   EXPECT_NEAR(locus.direction.z,  0.0, 1e-12);
+   EXPECT_NEAR(locus.point.x,      5.0, 1e-12);
+   EXPECT_NEAR(locus.point.y,      0.0, 1e-12);
+   EXPECT_NEAR(locus.point.z,      0.0, 1e-12);
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, RemoteImageLocus) {
    csm::ImageCoord imagePt(8.5, 8.0);
    csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(imagePt);
-   EXPECT_DOUBLE_EQ(locus.direction.x, -1.0);
-   EXPECT_DOUBLE_EQ(locus.direction.y,  0.0);
-   EXPECT_DOUBLE_EQ(locus.direction.z,  0.0);
-   EXPECT_DOUBLE_EQ(locus.point.x,      1000.0);
-   EXPECT_DOUBLE_EQ(locus.point.y,      0.0);
-   EXPECT_DOUBLE_EQ(locus.point.z,      0.0);
+   EXPECT_NEAR(locus.direction.x, -1.0, 1e-12);
+   EXPECT_NEAR(locus.direction.y,  0.0, 1e-12);
+   EXPECT_NEAR(locus.direction.z,  0.0, 1e-12);
+   EXPECT_NEAR(locus.point.x,      1000.0, 1e-12);
+   EXPECT_NEAR(locus.point.y,      0.0, 1e-12);
+   EXPECT_NEAR(locus.point.z,      0.0, 1e-12);
 }
 
 // Pan tests
