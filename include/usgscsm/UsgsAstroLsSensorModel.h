@@ -1025,7 +1025,7 @@ private:
 
    // Computes the imaging locus that would view a ground point at a specific
    // time. Computationally, this is the opposite of losToEcf.
-   csm::ImageCoord computeViewingPixel(
+   std::vector<double> computeDetectorView(
       const double& time,   // The time to use the EO at
       const csm::EcefCoord& groundPoint,      // The ground coordinate
       const std::vector<double>& adj, // Parameter Adjustments for partials
