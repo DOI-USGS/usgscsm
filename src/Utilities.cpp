@@ -939,6 +939,30 @@ std::vector<double> getSunPositions(json isd, csm::WarningList *list) {
   return positions;
 }
 
+std::vector<double> getSunVelocities(json isd, csm::WarningList *list) {
+  std::vector<double> velocities;
+  try {
+    json jayson = isd.at("sun_position");
+    json unit = jayson.at("unit");
+    for (auto& location : jayson.at("velocities")) {
+      velocities.push_back(metric_conversion(location[0].get<double>(), unit.get<std::string>()));
+      velocities.push_back(metric_conversion(location[1].get<double>(), unit.get<std::string>()));
+      velocities.push_back(metric_conversion(location[2].get<double>(), unit.get<std::string>()));
+    }
+  }
+  catch (...) {
+    std::cout<<"Could not parse sun velocity"<<std::endl;
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the sun velocities.",
+          "Utilities::getSunVelocities()"));
+    }
+  }
+  return velocities;
+}
+
 std::vector<double> getSensorPositions(json isd, csm::WarningList *list) {
   std::vector<double> positions;
   try {

@@ -103,6 +103,7 @@ DistortionType getDistortionModel(nlohmann::json isd, csm::WarningList *list=nul
 std::vector<double> getDistortionCoeffs(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getRadialDistortion(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSunPositions(nlohmann::json isd, csm::WarningList *list=nullptr);
+std::vector<double> getSunVelocities(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSensorPositions(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSensorVelocities(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSensorOrientations(nlohmann::json isd, csm::WarningList *list=nullptr);
