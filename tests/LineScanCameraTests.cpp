@@ -178,3 +178,8 @@ TEST_F(OrbitalLineScanSensorModel, InversionReallyHigh) {
     EXPECT_NEAR(imagePt.samp, imageReprojPt.samp, 0.002);
   }
 }
+
+TEST_F(OrbitalLineScanSensorModel, ReferenceDateTime) {
+  std::string date = sensorModel->getReferenceDateAndTime();
+  EXPECT_EQ(date, "20000101T001639");
+}

@@ -1283,10 +1283,20 @@ std::string UsgsAstroLsSensorModel::getTrajectoryIdentifier() const
 //***************************************************************************
 std::string UsgsAstroLsSensorModel::getReferenceDateAndTime() const
 {
-    throw csm::Error(
-       csm::Error::UNSUPPORTED_FUNCTION,
-       "Unsupported function",
-       "UsgsAstroLsSensorModel::getReferenceDateAndTime");
+    csm::EcefCoord referencePointGround = UsgsAstroLsSensorModel::getReferencePoint();
+    csm::ImageCoord referencePointImage = UsgsAstroLsSensorModel::groundToImage(referencePointGround);
+    double relativeTime = UsgsAstroLsSensorModel::getImageTime(referencePointImage);
+    time_t ephemTime = m_centerEphemerisTime + relativeTime;
+    struct tm t = {0};  // Initalize to all 0's
+    t.tm_year = 100;  // This is year-1900, so 100 = 2000
+    t.tm_mday = 1;
+    time_t timeSinceEpoch = mktime(&t);
+    time_t finalTime = ephemTime + timeSinceEpoch;
+    char buffer [16];
+    strftime(buffer, 16, "%Y%m%dT%H%M%S", localtime(&finalTime));
+    buffer[15] = '\0';
+
+    return buffer;
 }
 
 //***************************************************************************
@@ -1310,11 +1320,10 @@ double UsgsAstroLsSensorModel::getImageTime(
    double time = m_intTimeStartTimes[referenceIndex]
       + m_intTimes[referenceIndex] * (lineFull - m_intTimeLines[referenceIndex] + 0.5);
 
-  MESSAGE_LOG(m_logger, "getImageTime for image line {} is {}",
-                                image_pt.line, time)
+   MESSAGE_LOG(m_logger, "getImageTime for image line {} is {}",
+                         image_pt.line, time)
 
    return time;
-
 }
 
 //***************************************************************************
