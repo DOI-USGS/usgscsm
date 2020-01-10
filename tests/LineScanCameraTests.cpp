@@ -178,3 +178,24 @@ TEST_F(OrbitalLineScanSensorModel, InversionReallyHigh) {
     EXPECT_NEAR(imagePt.samp, imageReprojPt.samp, 0.002);
   }
 }
+
+TEST_F(LROCSensorModels, GroundPartials) {
+  csm::ImageCoord imagePt(26114.9, 2532.07);
+  csm::EcefCoord groundPt = sensorModel1->imageToGround(imagePt, 0.292189);
+  csm::EcefCoord groundPt2 = sensorModel2->imageToGround(imagePt, 0.292189);
+  std::vector<double> partials1 = sensorModel1->computeGroundPartials(groundPt);
+  std::vector<double> partials2 = sensorModel2->computeGroundPartials(groundPt);
+  std::cerr << "Image point: " << imagePt.line << ", " << imagePt.samp << " elevation: " << 0.292189 << std::endl;
+  std::cerr << "Ground point 1: " << groundPt.x << ", " << groundPt.y << ", " << groundPt.z << std::endl;
+  std::cerr << "Ground point 2: " << groundPt2.x << ", " << groundPt2.y << ", " << groundPt2.z << std::endl;
+  std::cerr << "M1121188383LE Ground Partials: ";
+  for (double partial : partials1) {
+    std::cerr << partial << " ";
+  }
+  std::cerr << std::endl;
+  std::cerr << "M1121202582LE Ground Partials: ";
+  for (double partial : partials2) {
+    std::cerr << partial << " ";
+  }
+  std::cerr << std::endl;
+}

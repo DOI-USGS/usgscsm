@@ -294,6 +294,46 @@ class OrbitalLineScanSensorModel : public ::testing::Test {
       }
 };
 
+class LROCSensorModels : public ::testing::Test {
+   protected:
+      csm::Isd isd1;
+      UsgsAstroLsSensorModel *sensorModel1;
+      csm::Isd isd2;
+      UsgsAstroLsSensorModel *sensorModel2;
+
+      void SetUp() override {
+         sensorModel1 = nullptr;
+         sensorModel2 = nullptr;
+
+         isd1.setFilename("data/M1121188383LE.img");
+         isd2.setFilename("data/M1121202582LE.img");
+         UsgsAstroPlugin cameraPlugin;
+
+         csm::Model *model1 = cameraPlugin.constructModelFromISD(
+               isd1,
+               "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL");
+         sensorModel1 = dynamic_cast<UsgsAstroLsSensorModel *>(model1);
+         csm::Model *model2 = cameraPlugin.constructModelFromISD(
+               isd2,
+               "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL");
+         sensorModel2 = dynamic_cast<UsgsAstroLsSensorModel *>(model2);
+
+         ASSERT_NE(sensorModel1, nullptr);
+         ASSERT_NE(sensorModel2, nullptr);
+      }
+
+      void TearDown() override {
+         if (sensorModel1) {
+            delete sensorModel1;
+            sensorModel1 = nullptr;
+         }
+         if (sensorModel2) {
+            delete sensorModel2;
+            sensorModel2 = nullptr;
+         }
+      }
+};
+
 
 
 #endif
