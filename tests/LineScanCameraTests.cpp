@@ -183,3 +183,12 @@ TEST_F(OrbitalLineScanSensorModel, ReferenceDateTime) {
   std::string date = sensorModel->getReferenceDateAndTime();
   EXPECT_EQ(date, "20000101T001639");
 }
+
+TEST_F(OrbitalLineScanSensorModel, FocalLengthAdjustment) {
+  csm::ImageCoord imagePt(8.5, 4.0);
+  sensorModel->setParameterValue( 15, 50);
+  csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+  EXPECT_DOUBLE_EQ(groundPt.x, 999999.66000000737);
+  EXPECT_DOUBLE_EQ(groundPt.y, -200.00008000007344);
+  EXPECT_DOUBLE_EQ(groundPt.z, -799.99989866667613);
+}
