@@ -118,6 +118,10 @@ public:
    std::vector<double> m_covariance;
    int          m_imageFlipFlag;
 
+   std::vector<double> m_sunPosition;
+   std::vector<double> m_sunVelocity;
+
+
    // Define logging pointer and file content
    std::string m_logFile;
    std::shared_ptr<spdlog::logger> m_logger;

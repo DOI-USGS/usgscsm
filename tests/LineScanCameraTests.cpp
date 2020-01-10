@@ -122,6 +122,98 @@ TEST_F(ConstVelocityLineScanSensorModel, calculateAttitudeCorrection) {
   EXPECT_NEAR(attCorr[8], 0, 1e-8);
 }
 
+TEST_F(OrbitalLineScanSensorModel, getIlluminationDirectionLagrange) {
+  // Unlike other getIlluminationDirection tests, the default ISD is parameterized
+  //  such that it will enter the lagrange branch.
+  csm::ImageCoord imagePt(8.5,8);
+  csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+  csm::EcefVector direction = sensorModel->getIlluminationDirection(groundPt);
+
+  double imageTime = sensorModel->getImageTime(imagePt);
+  double sunPos[3];
+  lagrangeInterp(sensorModel->m_sunPosition.size()/3,
+                              &(sensorModel->m_sunPosition[0]),
+                              sensorModel->m_t0Ephem,
+                              sensorModel->m_dtEphem,
+                              imageTime,
+                              3, 8, sunPos);
+
+  double expected_x = groundPt.x - sunPos[0];
+  double expected_y = groundPt.y - sunPos[1];
+  double expected_z = groundPt.z - sunPos[2];
+
+  // Normalize
+  double scale = sqrt((expected_x * expected_x) + (expected_y * expected_y) + (expected_z * expected_z));
+  expected_x /= scale;
+  expected_y /= scale;
+  expected_z /= scale;
+
+  EXPECT_DOUBLE_EQ(direction.x, expected_x);
+  EXPECT_DOUBLE_EQ(direction.y, expected_y);
+  EXPECT_DOUBLE_EQ(direction.z, expected_z);
+}
+
+TEST_F(OrbitalLineScanSensorModel, getIlluminationDirectionLinear) {
+  // Get state information, replace sun position / velocity to hit second case:
+  //  One position, one velocity.
+  std::string state = sensorModel->getModelState();
+  json jState = json::parse(state);
+  jState["m_sunPosition"] = std::vector<double>{100.0,100.0,100.0};
+  jState["m_sunVelocity"] = std::vector<double>{50.0, 25.0, 10.0};
+  sensorModel->replaceModelState(jState.dump());
+
+  csm::ImageCoord imagePt(8.5,8);
+  csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+  csm::EcefVector direction = sensorModel->getIlluminationDirection(groundPt);
+
+  // Calculate expected sun direction
+  // Image Time = .00000000000000011102230246251565404236316680908203125
+  double imageTime = sensorModel->getImageTime(imagePt);
+  double expected_x = 999999.680000017 - ((imageTime*50.0) + 100);
+  double expected_y = 0.0 -  ((imageTime*25.0) + 100);
+  double expected_z = -799.99991466668735 - ((imageTime*10.0) + 100);
+
+  // Normalize
+  double scale = sqrt((expected_x * expected_x) + (expected_y * expected_y) + (expected_z * expected_z));
+  expected_x /= scale;
+  expected_y /= scale;
+  expected_z /= scale;
+
+  EXPECT_DOUBLE_EQ(direction.x, expected_x);
+  EXPECT_DOUBLE_EQ(direction.y, expected_y);
+  EXPECT_DOUBLE_EQ(direction.z, expected_z);
+
+}
+
+TEST_F(OrbitalLineScanSensorModel, getIlluminationDirectionStationary) {
+  // Get state information, replace sun position / velocity to hit third case:
+  //  One position, no velocity.
+  std::string state = sensorModel->getModelState();
+  json jState = json::parse(state);
+  jState["m_sunPosition"] = std::vector<double>{100.0,100.0,100.0};
+  jState["m_sunVelocity"] = std::vector<double>{};
+  sensorModel->replaceModelState(jState.dump());
+
+  csm::ImageCoord imagePt(8.5,8);
+  csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+  csm::EcefVector direction = sensorModel->getIlluminationDirection(groundPt);
+
+  // Calculate expected sun direction
+  double expected_x = 999999.680000017 - 100;
+  double expected_y = 0.0 - 100;
+  double expected_z = -799.99991466668735 - 100;
+
+  double scale = sqrt((expected_x * expected_x) + (expected_y * expected_y) + (expected_z * expected_z));
+
+  expected_x /= scale;
+  expected_y /= scale;
+  expected_z /= scale;
+
+  EXPECT_DOUBLE_EQ(direction.x, expected_x);
+  EXPECT_DOUBLE_EQ(direction.y, expected_y);
+  EXPECT_DOUBLE_EQ(direction.z, expected_z);
+}
+
 TEST_F(OrbitalLineScanSensorModel, Center) {
   csm::ImageCoord imagePt(8.5, 8.0);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
