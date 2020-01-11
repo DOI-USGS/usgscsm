@@ -714,18 +714,12 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    timei = getImageTime(approxPt);
    std::vector<double> pi1 = computeDetectorView(timei, groundPt, adj, desiredPrecision);
    double di1 = distanceToLine(pi1[0], pi1[1], a, b, c);
-   std::cout << approxPt.line << '\n';
    double line = approxPt.line + (abs(di) / (abs(di) + abs(di1)));
-   std::cout << line << '\n';
 
    // Invert distortion
-   std::cout << pi[0] << " " << pi[1] << '\n';
-
    double distortedFocalX, distortedFocalY;
    applyDistortion(pi[0], pi[1], distortedFocalX, distortedFocalY,
                    m_opticalDistCoeffs, m_distortionType, desiredPrecision);
-   std::cout << distortedFocalX << '\n';
-   std::cout << distortedFocalY << '\n';
 
    // Convert to detector line and sample
    double detectorLine = m_iTransL[0]
@@ -736,7 +730,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
                          + m_iTransS[2] * distortedFocalY;
 
    // Convert to image sample line
-   line = detectorLine + m_detectorLineOrigin;
+   line += detectorLine + m_detectorLineOrigin;
    double sample = (detectorSample + m_detectorSampleOrigin - m_startingSample)
                  / m_detectorSampleSumming;
    MESSAGE_LOG(m_logger, "computeViewingPixel: image line sample {} {}",
