@@ -1109,16 +1109,21 @@ std::vector<double> UsgsAstroLsSensorModel::computeGroundPartials(
    MESSAGE_LOG(m_logger, "Computing computeGroundPartials for point {}, {}, {}",
                                 ground_pt.x, ground_pt.y, ground_pt.z)
 
-   double GND_DELTA = m_gsd;
+   double GND_DELTA = 2 * m_gsd;
    // Partial of line, sample wrt X, Y, Z
    double x = ground_pt.x;
    double y = ground_pt.y;
    double z = ground_pt.z;
 
+   std::cerr << "Computing ground partials for: " << ground_pt.x << ", " << ground_pt.y << ", " << ground_pt.z << std::endl;
    csm::ImageCoord ipB = groundToImage(ground_pt);
    csm::ImageCoord ipX = groundToImage(csm::EcefCoord(x + GND_DELTA, y, z));
    csm::ImageCoord ipY = groundToImage(csm::EcefCoord(x, y + GND_DELTA, z));
    csm::ImageCoord ipZ = groundToImage(csm::EcefCoord(x, y, z + GND_DELTA));
+   std::cerr << "Image point: " << ipB.line << ", " << ipB.line << std::endl;
+   std::cerr << "X-Shift Image point: " << ipX.line << ", " << ipX.line << std::endl;
+   std::cerr << "Y-Shift Image point: " << ipY.line << ", " << ipY.line << std::endl;
+   std::cerr << "Z-Shift Image point: " << ipZ.line << ", " << ipZ.line << std::endl;
 
    std::vector<double> partials(6, 0.0);
    partials[0] = (ipX.line - ipB.line) / GND_DELTA;
