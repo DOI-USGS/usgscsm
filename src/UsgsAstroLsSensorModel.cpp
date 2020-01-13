@@ -447,27 +447,11 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
                              m_referencePointXyz.x, m_referencePointXyz.y,
                              m_referencePointXyz.z)
 
-      state["m_sunPosition"] = json();
-      state["m_sunPosition"][0] = m_sunPosition[0];
-      state["m_sunPosition"][1] = m_sunPosition[1];
-      state["m_sunPosition"][2] = m_sunPosition[2];
-      MESSAGE_LOG(m_logger, "m_sunPosition: {} "
-                            "m_sunPosition: {} "
-                            "m_sunPosition: {} ",
-                             m_sunPosition[0],
-                             m_sunPosition[1],
-                             m_sunPosition[2])
+      state["m_sunPosition"] = m_sunPosition;
+      MESSAGE_LOG(m_logger, "num sun positions: {} ", m_sunPosition.size())
 
-      state["m_sunVelocity"] = json();
-      state["m_sunVelocity"][0] = m_sunVelocity[0];
-      state["m_sunVelocity"][1] = m_sunVelocity[1];
-      state["m_sunVelocity"][2] = m_sunVelocity[2];
-      MESSAGE_LOG(m_logger, "m_sunVelocity: {} "
-                            "m_sunVelocity: {} "
-                            "m_sunVelocity: {} ",
-                             m_sunVelocity[0],
-                             m_sunVelocity[1],
-                             m_sunVelocity[2])
+      state["m_sunVelocity"] = m_sunVelocity;
+      MESSAGE_LOG(m_logger, "num sun velocities: {} ", m_sunVelocity.size())
 
       state["m_logFile"] = m_logFile;
 
@@ -1671,38 +1655,38 @@ csm::EcefVector UsgsAstroLsSensorModel::getIlluminationDirection(
 
   short numSunPositions = m_sunPosition.size();
   short numSunVelocities = m_sunVelocity.size();
-  double x;
-  double y;
-  double z;
+  csm::EcefVector illuminationDirection = csm::EcefVector();
 
   // If there are multiple positions, use Lagrange interpolation
   if ((numSunPositions/3) > 1) {
     double sunPos[3];
     lagrangeInterp(numSunPositions/3, &m_sunPosition[0], m_t0Ephem, m_dtEphem,
                    imageTime, 3, 8, sunPos);
-    x = groundPt.x - sunPos[0];
-    y = groundPt.y - sunPos[1];
-    z = groundPt.z - sunPos[2];
-  } else {
+    illuminationDirection.x = groundPt.x - sunPos[0];
+    illuminationDirection.y = groundPt.y - sunPos[1];
+    illuminationDirection.z = groundPt.z - sunPos[2];
+  }
+  else if ((numSunVelocities/3) >= 1){
     // If there is one position triple with at least one velocity triple
     //  then the illumination direction is calculated via linear extrapolation.
-    if ((numSunVelocities/3) >= 1){
-      x = groundPt.x - (imageTime * m_sunVelocity[0] + m_sunPosition[0]);
-      y = groundPt.y - (imageTime * m_sunVelocity[1] + m_sunPosition[1]);
-      z = groundPt.z - (imageTime * m_sunVelocity[2] + m_sunPosition[2]);
+      illuminationDirection.x = groundPt.x - (imageTime * m_sunVelocity[0] + m_sunPosition[0]);
+      illuminationDirection.y = groundPt.y - (imageTime * m_sunVelocity[1] + m_sunPosition[1]);
+      illuminationDirection.z = groundPt.z - (imageTime * m_sunVelocity[2] + m_sunPosition[2]);
+  }
+  else {
     // If there is one position triple with no velocity triple, then the
     //  illumination direction is the difference of the original vectors.
-    } else {
-      x = groundPt.x - m_sunPosition[0];
-      y = groundPt.y - m_sunPosition[1];
-      z = groundPt.z - m_sunPosition[2];
-    }
+      illuminationDirection.x = groundPt.x - m_sunPosition[0];
+      illuminationDirection.y = groundPt.y - m_sunPosition[1];
+      illuminationDirection.z = groundPt.z - m_sunPosition[2];
   }
-  double scale = sqrt(x*x + y*y + z*z);
-  x /= scale;
-  y /= scale;
-  z /= scale;
-  csm::EcefVector illuminationDirection(x,y,z);
+
+  double scale = sqrt(illuminationDirection.x * illuminationDirection.x +
+                      illuminationDirection.y * illuminationDirection.y +
+                      illuminationDirection.z * illuminationDirection.z);
+  illuminationDirection.x /= scale;
+  illuminationDirection.y /= scale;
+  illuminationDirection.z /= scale;
   return illuminationDirection;
 }
 
