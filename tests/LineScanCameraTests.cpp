@@ -183,3 +183,15 @@ TEST_F(OrbitalLineScanSensorModel, ReferenceDateTime) {
   std::string date = sensorModel->getReferenceDateAndTime();
   EXPECT_EQ(date, "20000101T001639");
 }
+
+TEST_F(OrbitalLineScanSensorModel, ComputeGroundPartials) {
+   csm::EcefCoord groundPt(1000000.0, 0.0, 0.0);
+   std::vector<double> partials = sensorModel->computeGroundPartials(groundPt);
+   ASSERT_EQ(partials.size(), 6);
+   EXPECT_NEAR(partials[0], 0.0, 1e-12);
+   EXPECT_NEAR(partials[1], 0.0, 1e-12);
+   EXPECT_NEAR(partials[2], -0.01, 1e-12);
+   EXPECT_NEAR(partials[3], 0.0, 1e-12);
+   EXPECT_NEAR(partials[4], -0.01, 1e-12);
+   EXPECT_NEAR(partials[5], 0.0, 1e-12);
+}

@@ -1145,7 +1145,7 @@ std::vector<double> UsgsAstroLsSensorModel::computeGroundPartials(
    MESSAGE_LOG(m_logger, "Computing computeGroundPartials for point {}, {}, {}",
                                 ground_pt.x, ground_pt.y, ground_pt.z)
 
-   double GND_DELTA = m_gsd;
+   double GND_DELTA = 3 * m_gsd;
    // Partial of line, sample wrt X, Y, Z
    double x = ground_pt.x;
    double y = ground_pt.y;
