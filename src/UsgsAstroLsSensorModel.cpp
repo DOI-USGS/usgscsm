@@ -654,7 +654,6 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    // check for convergence without re-intersecting
    csm::ImageCoord approxPt;
    computeLinearApproximation(groundPt, approxPt);
-   std::cout << approxPt.line << '\n';
 
    // Helper function to compute the CCD pixel that views a ground point based
    // on the exterior orientation at a given time.
@@ -662,13 +661,8 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    // Get the exterior orientation
    double time0 = getImageTime(csm::ImageCoord(0, approxPt.samp));
    double timei = getImageTime(approxPt);
-   // csm::ImageCoord pi(m_detectorXCoords[approxPt.line],
-   //                    m_detectorYCoords[approxPt.samp]);
-   // csm::ImageCoord pi1(m_detectorXCoords[0],
-   //                     m_detectorYCoords[approxPt.samp]);
    std::vector<double> p0 = computeDetectorView(time0, groundPt, adj, desiredPrecision);
    std::vector<double> pi = computeDetectorView(timei, groundPt, adj, desiredPrecision);
-   std::cout << pi[0] << " " << pi[1] << '\n';
 
    // Find what nodes the approxPt.samp falls between on the m_detectorNodes
    // Use those indices to determine the coeffs
