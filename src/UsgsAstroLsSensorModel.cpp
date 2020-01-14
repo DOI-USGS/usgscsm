@@ -733,7 +733,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    double lastOffset = computeViewingPixel(lastTime, ground_pt, adj, pixelPrec/2).line - 0.5;
    MESSAGE_LOG(m_logger, "groundToImage: Initial firstOffset {}, lastOffset {}", firstOffset, lastOffset)
 
-   double closestLine;
+   double computedLine;
    csm::ImageCoord detectorCoord;
 
    // Start secant method search
@@ -756,11 +756,11 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
       size_t referenceIndex = std::distance(m_intTimeStartTimes.begin(), referenceTimeIt);
       MESSAGE_LOG(m_logger, "groundToImage: Find reference time, line number {}, start time {}, duration {} ",
                   m_intTimeLines[referenceIndex], m_intTimeStartTimes[referenceIndex], m_intTimes[referenceIndex])
-      double computedLine = (nextTime - m_intTimeStartTimes[referenceIndex]) / m_intTimes[referenceIndex]
-                          + m_intTimeLines[referenceIndex];
+      computedLine = (nextTime - m_intTimeStartTimes[referenceIndex]) / m_intTimes[referenceIndex]
+                     + m_intTimeLines[referenceIndex];
       // Remove -0.5 once ISIS linescanrate is fixed
-      closestLine = floor(computedLine - 0.5);
-      nextTime = getImageTime(csm::ImageCoord(closestLine, sampCtr));
+      computedLine -= 0.5;
+      nextTime = getImageTime(csm::ImageCoord(computedLine, sampCtr));
 
       detectorCoord = computeViewingPixel(nextTime, ground_pt, adj, pixelPrec/2);
       double nextOffset = detectorCoord.line - 0.5;
@@ -784,7 +784,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    }
 
    // The computed pixel is the detector pixel, so we need to convert that to image lines
-   csm::ImageCoord calculatedPixel(detectorCoord.line + closestLine, detectorCoord.samp);
+   csm::ImageCoord calculatedPixel(computedLine, detectorCoord.samp);
 
    // Reintersect to ensure the image point actually views the ground point.
    csm::EcefCoord calculatedPoint = imageToGround(calculatedPixel, height);
@@ -1356,7 +1356,7 @@ double UsgsAstroLsSensorModel::getImageTime(
    const csm::ImageCoord& image_pt) const
 {
    // Remove 0.5 after ISIS dependency in the linescanrate is gone
-   double lineFull = floor(image_pt.line) + 0.5;
+   double lineFull = image_pt.line + 0.5;
 
    auto referenceLineIt = std::upper_bound(m_intTimeLines.begin(),
                                            m_intTimeLines.end(),
@@ -1366,9 +1366,8 @@ double UsgsAstroLsSensorModel::getImageTime(
    }
    size_t referenceIndex = std::distance(m_intTimeLines.begin(), referenceLineIt);
 
-   // Adding 0.5 to the line results in center exposure time for a given line
    double time = m_intTimeStartTimes[referenceIndex]
-      + m_intTimes[referenceIndex] * (lineFull - m_intTimeLines[referenceIndex] + 0.5);
+      + m_intTimes[referenceIndex] * (lineFull - m_intTimeLines[referenceIndex]);
 
    MESSAGE_LOG(m_logger, "getImageTime for image line {} is {}",
                          image_pt.line, time)
@@ -1969,12 +1968,11 @@ void UsgsAstroLsSensorModel::losToEcf(
    // USGS image convention: UL pixel center == (1.0, 1.0)
    double sampleCSMFull = sample;
    double sampleUSGSFull = sampleCSMFull;
-   double fractionalLine = line - floor(line);
 
    // Compute distorted image coordinates in mm (sample, line on image (pixels) -> focal plane
    double distortedFocalPlaneX, distortedFocalPlaneY;
    computeDistortedFocalPlaneCoordinates(
-         fractionalLine, sampleUSGSFull,
+         m_detectorLineOrigin, sampleUSGSFull,
          m_detectorSampleOrigin, m_detectorLineOrigin,
          m_detectorSampleSumming, 1.0,
          m_startingSample, 0.0,
