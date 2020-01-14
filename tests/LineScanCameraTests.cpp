@@ -180,22 +180,23 @@ TEST_F(OrbitalLineScanSensorModel, InversionReallyHigh) {
 }
 
 TEST_F(LROCSensorModels, GroundPartials) {
-  csm::ImageCoord imagePt(26114.9, 2532.07);
-  csm::EcefCoord groundPt = sensorModel1->imageToGround(imagePt, 0.292189);
-  std::vector<double> partials1 = sensorModel1->computeGroundPartials(groundPt);
-  std::vector<double> partials2 = sensorModel2->computeGroundPartials(groundPt);
-  std::cerr << "Image 1 GSD: " << sensorModel1->m_gsd << std::endl;
-  std::cerr << "Image 2 GSD: " << sensorModel1->m_gsd << std::endl;
-  std::cerr << "Image point: " << imagePt.line << ", " << imagePt.samp << " elevation: " << 0.292189 << std::endl;
-  std::cerr << "Ground point: " << groundPt.x << ", " << groundPt.y << ", " << groundPt.z << std::endl;
-  std::cerr << "M1121188383LE Ground Partials: ";
-  for (double partial : partials1) {
-    std::cerr << partial << " ";
+  for (int line = 2; line < 100; line += 11) {
+  // for (int line = 0; line < 52224; line += 52224/11) {
+    csm::ImageCoord imagePt(line, 5064/2);
+    std::cerr << "Image point: " << imagePt.line << ", " << imagePt.samp << " elevation: " << 0.292189 << std::endl;
+    csm::EcefCoord groundPt = sensorModel1->imageToGround(imagePt, 0.292189);
+    std::cerr << "  Ground point: " << groundPt.x << ", " << groundPt.y << ", " << groundPt.z << std::endl;
+    std::vector<double> partials1 = sensorModel1->computeGroundPartials(groundPt);
+    std::vector<double> partials2 = sensorModel2->computeGroundPartials(groundPt);
+    std::cerr << "  M1121188383LE Ground Partials: ";
+    for (double partial : partials1) {
+      std::cerr << partial << " ";
+    }
+    std::cerr << std::endl;
+    std::cerr << "  M1121202582LE Ground Partials: ";
+    for (double partial : partials2) {
+      std::cerr << partial << " ";
+    }
+    std::cerr << std::endl << std::endl;
   }
-  std::cerr << std::endl;
-  std::cerr << "M1121202582LE Ground Partials: ";
-  for (double partial : partials2) {
-    std::cerr << partial << " ";
-  }
-  std::cerr << std::endl;
 }

@@ -21,7 +21,7 @@
 "sample": 2547.5},
 "starting_detector_line": 0,
 "starting_detector_sample": 0,
-"focal2pixel_lines": [0.0, 142.857, 0.0],
+"focal2pixel_lines": [0.0, -142.857, 0.0],
 "focal2pixel_samples": [0.0, 0.0, 142.857],
 "optical_distortion":
   {"lrolrocnac":
