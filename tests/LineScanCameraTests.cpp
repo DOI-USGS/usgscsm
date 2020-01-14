@@ -105,7 +105,7 @@ TEST_F(ConstVelocityLineScanSensorModel, calculateAttitudeCorrection) {
   double attCorr[9];
   adj.resize(15, 0);
   // Pi/2 with simply compensating for member variable m_flyingHeight in UsgsAstroLsSensorModel
-  adj[7] = (M_PI / 2) * 990.0496255790623081338708;
+  adj[7] = (M_PI / 2) * sensorModel->m_flyingHeight;
   sensorModel->calculateAttitudeCorrection(999.5, adj, attCorr);
 
   // EXPECT_NEARs are used here instead of EXPECT_DOUBLE_EQs because index 0 and 8 of the matrix
