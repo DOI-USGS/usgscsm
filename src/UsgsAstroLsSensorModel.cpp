@@ -2940,8 +2940,8 @@ csm::EcefVector UsgsAstroLsSensorModel::getSunPosition(
   const double imageTime) const
 {
 
-  short numSunPositions = m_sunPosition.size();
-  short numSunVelocities = m_sunVelocity.size();
+  int numSunPositions = m_sunPosition.size();
+  int numSunVelocities = m_sunVelocity.size();
   csm::EcefVector sunPosition = csm::EcefVector();
 
   // If there are multiple positions, use Lagrange interpolation
