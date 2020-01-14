@@ -907,6 +907,15 @@ public:
        const std::vector<double>& adj,
        double attCorr[9]) const;
 
+   virtual csm::EcefVector getSunPosition(
+       const double imageTime) const;
+    //> This method returns the position of the sun at the time the image point
+    //  was recorded.  If multiple sun positions are available, the method uses
+    //  lagrange interpolation.  If one sun position and at least one sun velocity
+    //  are available, then the position is calculated using linear extrapolation.
+    //  If only one sun position is available, then that value is returned.
+
+
 private:
 
    void determineSensorCovarianceInImageSpace(
