@@ -24,6 +24,7 @@
 #include <iostream>
 #include <sstream>
 #include <math.h>
+#include <float.h>
 
 #include <sstream>
 #include <Error.h>
@@ -101,6 +102,8 @@ const std::string  UsgsAstroLsSensorModel::_STATE_KEYWORD[] =
    "m_currentParameterValue",
    "m_parameterType",
    "m_referencePointXyz",
+   "m_sunPosition",
+   "m_sunVelocity",
    "m_gsd",
    "m_flyingHeight",
    "m_halfSwath",
@@ -254,6 +257,8 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
    m_quaternions = j["m_quaternions"].get<std::vector<double>>();
    m_currentParameterValue = j["m_currentParameterValue"].get<std::vector<double>>();
    m_covariance = j["m_covariance"].get<std::vector<double>>();
+   m_sunPosition = j["m_sunPosition"].get<std::vector<double>>();
+   m_sunVelocity = j["m_sunVelocity"].get<std::vector<double>>();
 
    m_logFile = j["m_logFile"].get<std::string>();
    if (m_logFile.empty()) {
@@ -442,6 +447,12 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
                              m_referencePointXyz.x, m_referencePointXyz.y,
                              m_referencePointXyz.z)
 
+      state["m_sunPosition"] = m_sunPosition;
+      MESSAGE_LOG(m_logger, "num sun positions: {} ", m_sunPosition.size())
+
+      state["m_sunVelocity"] = m_sunVelocity;
+      MESSAGE_LOG(m_logger, "num sun velocities: {} ", m_sunVelocity.size())
+
       state["m_logFile"] = m_logFile;
 
       return state.dump();
@@ -505,6 +516,11 @@ void UsgsAstroLsSensorModel::reset()
   m_positions.clear();                        // 42
   m_velocities.clear();                      // 43
   m_quaternions.clear();                     // 44
+  m_detectorNodes.clear();
+  m_detectorXCoords.clear();
+  m_detectorYCoords.clear();
+  m_detectorLineCoeffs.clear();
+  m_averageDetectorSize = 0.0;
 
   m_currentParameterValue.assign(NUM_PARAMETERS,0.0);
   m_parameterType.assign(NUM_PARAMETERS,csm::param::REAL);
@@ -512,6 +528,10 @@ void UsgsAstroLsSensorModel::reset()
   m_referencePointXyz.x = 0.0;
   m_referencePointXyz.y = 0.0;
   m_referencePointXyz.z = 0.0;
+
+  m_sunPosition = std::vector<double>(3, 0.0);
+  m_sunVelocity = std::vector<double>(3, 0.0);
+
   m_gsd = 1.0;
   m_flyingHeight = 1000.0;
   m_halfSwath = 1000.0;
@@ -594,6 +614,37 @@ void UsgsAstroLsSensorModel::updateState()
    MESSAGE_LOG(m_logger, "updateState: half time duration set to {}",
                                m_halfTime)
 
+   // compute linearized detector coordinates
+   m_detectorXCoords.resize(m_nSamples);
+   m_detectorYCoords.resize(m_nSamples);
+
+   for (int i = 0; i < m_nSamples; i++) {
+     computeDistortedFocalPlaneCoordinates(
+          0.5, i,
+          m_detectorSampleOrigin, m_detectorLineOrigin,
+          m_detectorSampleSumming, 1.0,
+          m_startingSample, 0.0,
+          m_iTransS, m_iTransL,
+          m_detectorXCoords[i], m_detectorYCoords[i]
+     );
+   }
+   m_averageDetectorSize = 0;
+   for (int i = 1; i < m_nSamples; i++) {
+     double xDist = m_detectorXCoords[i] - m_detectorXCoords[i-1];
+     double yDist = m_detectorYCoords[i] - m_detectorYCoords[i-1];
+     m_averageDetectorSize += sqrt(xDist*xDist + yDist*yDist);
+   }
+   m_averageDetectorSize /= (m_nSamples-1);
+   m_detectorNodes = fitLinearApproximation(m_detectorXCoords, m_detectorYCoords,
+                                            m_averageDetectorSize);
+
+   m_detectorLineCoeffs.resize(3 * (m_detectorNodes.size() - 1));
+   for (size_t i = 0; i + 1 < m_detectorNodes.size(); i++) {
+     line(m_detectorXCoords[m_detectorNodes[i]], m_detectorYCoords[m_detectorNodes[i]],
+          m_detectorXCoords[m_detectorNodes[i+1]], m_detectorYCoords[m_detectorNodes[i+1]],
+          m_detectorLineCoeffs[3*i], m_detectorLineCoeffs[3*i+1], m_detectorLineCoeffs[3*i+2]);
+   }
+
    // Parameter covariance, hardcoded accuracy values
    int num_params = NUM_PARAMETERS;
    int num_paramsSquare = num_params * num_params;
@@ -646,7 +697,10 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
               ground_pt.x, ground_pt.y, ground_pt.z, desired_precision);
    // Search for the line, sample coordinate that viewed a given ground point.
    // This method uses an iterative secant method to search for the image
-   // line.
+   // line. Since this is looking for a zero we subtract 0.5 each time the offsets
+   // are calculated. This allows it to converge on the center of the pixel where
+   // there is only one correct answer instead of the top or bottom of the pixel
+   // where there are two correct answers.
 
    // Convert the ground precision to pixel precision so we can
    // check for convergence without re-intersecting
@@ -674,8 +728,13 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    double sampCtr = m_nSamples / 2.0;
    double firstTime = getImageTime(csm::ImageCoord(0.0, sampCtr));
    double lastTime = getImageTime(csm::ImageCoord(m_nLines, sampCtr));
+   // See comment above for why (- 0.5)
    double firstOffset = computeViewingPixel(firstTime, ground_pt, adj, pixelPrec/2).line - 0.5;
    double lastOffset = computeViewingPixel(lastTime, ground_pt, adj, pixelPrec/2).line - 0.5;
+   MESSAGE_LOG(m_logger, "groundToImage: Initial firstOffset {}, lastOffset {}", firstOffset, lastOffset)
+
+   double closestLine;
+   csm::ImageCoord detectorCoord;
 
    // Start secant method search
    for (int it = 0; it < 30; it++) {
@@ -693,13 +752,18 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
       if (referenceTimeIt != m_intTimeStartTimes.begin()) {
          --referenceTimeIt;
       }
+
       size_t referenceIndex = std::distance(m_intTimeStartTimes.begin(), referenceTimeIt);
+      MESSAGE_LOG(m_logger, "groundToImage: Find reference time, line number {}, start time {}, duration {} ",
+                  m_intTimeLines[referenceIndex], m_intTimeStartTimes[referenceIndex], m_intTimes[referenceIndex])
       double computedLine = (nextTime - m_intTimeStartTimes[referenceIndex]) / m_intTimes[referenceIndex]
-                          + m_intTimeLines[referenceIndex] - 0.5; // subtract 0.5 for ISIS -> CSM pixel conversion
-      double closestLine = floor(computedLine + 0.5);
+                          + m_intTimeLines[referenceIndex];
+      // Remove -0.5 once ISIS linescanrate is fixed
+      closestLine = floor(computedLine - 0.5);
       nextTime = getImageTime(csm::ImageCoord(closestLine, sampCtr));
 
-      double nextOffset = computeViewingPixel(nextTime, ground_pt, adj, pixelPrec/2).line - 0.5;
+      detectorCoord = computeViewingPixel(nextTime, ground_pt, adj, pixelPrec/2);
+      double nextOffset = detectorCoord.line - 0.5;
 
       // remove the farthest away node
       if (fabs(firstTime - nextTime) > fabs(lastTime - nextTime)) {
@@ -710,32 +774,17 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
         lastTime = nextTime;
         lastOffset = nextOffset;
       }
+      MESSAGE_LOG(m_logger, "groundToImage: Loop firstOffset {}, firstTime {}, lastOffset {}, lastTime {}, nextOffset {}, nextTime {}",
+                  firstOffset, firstTime, lastOffset, lastTime, nextOffset, nextTime)
+
       if (fabs(lastOffset - firstOffset) < pixelPrec) {
-         break;
+        MESSAGE_LOG(m_logger, "groundToImage: Final firstOffset {}, lastOffset {}, pixelPre {}", firstOffset, lastOffset, pixelPrec)
+        break;
       }
    }
 
-   // Avoid division by 0 if the first and last nodes are the same
-   double computedTime = firstTime;
-   if (fabs(lastOffset - firstOffset) > 10e-15) {
-     computedTime = ((firstTime * lastOffset) - (lastTime * firstOffset))
-                         / (lastOffset - firstOffset);
-   }
-
-   auto referenceTimeIt = std::upper_bound(m_intTimeStartTimes.begin(),
-                                           m_intTimeStartTimes.end(),
-                                           computedTime);
-   if (referenceTimeIt != m_intTimeStartTimes.begin()) {
-      --referenceTimeIt;
-   }
-   size_t referenceIndex = std::distance(m_intTimeStartTimes.begin(), referenceTimeIt);
-   double computedLine = (computedTime - m_intTimeStartTimes[referenceIndex]) / m_intTimes[referenceIndex]
-                       + m_intTimeLines[referenceIndex] - 0.5; // subtract 0.5 for ISIS -> CSM pixel conversion
-   double closestLine = floor(computedLine + 0.5); // This assumes pixels are the interval [n, n+1)
-   computedTime = getImageTime(csm::ImageCoord(closestLine, sampCtr));
-   csm::ImageCoord calculatedPixel = computeViewingPixel(computedTime, ground_pt, adj, pixelPrec/2);
-   // The computed pioxel is the detector pixel, so we need to convert that to image lines
-   calculatedPixel.line += closestLine;
+   // The computed pixel is the detector pixel, so we need to convert that to image lines
+   csm::ImageCoord calculatedPixel(detectorCoord.line + closestLine, detectorCoord.samp);
 
    // Reintersect to ensure the image point actually views the ground point.
    csm::EcefCoord calculatedPoint = imageToGround(calculatedPixel, height);
@@ -750,14 +799,15 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
 
    double preSquare = desired_precision * desired_precision;
    if (warnings && (desired_precision > 0.0) && (preSquare < len)) {
-      std::stringstream msg;
-      msg << "Desired precision not achieved. ";
-      msg << len << "  " << preSquare << "\n";
-      warnings->push_back(
-         csm::Warning(csm::Warning::PRECISION_NOT_MET,
-         msg.str().c_str(),
-         "UsgsAstroLsSensorModel::groundToImage()"));
+     MESSAGE_LOG(m_logger, "groundToImage: Desired precision not achieved {}", preSquare)
+     std::stringstream msg;
+     msg << "Desired precision not achieved. ";
+     msg << len << "  " << preSquare << "\n";
+     warnings->push_back(csm::Warning(csm::Warning::PRECISION_NOT_MET,
+                         msg.str().c_str(),
+                         "UsgsAstroLsSensorModel::groundToImage()"));
    }
+   MESSAGE_LOG(m_logger, "groundToImage: Final pixel line {}, sample {}", calculatedPixel.line, calculatedPixel.samp)
 
    return calculatedPixel;
 }
@@ -1287,10 +1337,20 @@ std::string UsgsAstroLsSensorModel::getTrajectoryIdentifier() const
 //***************************************************************************
 std::string UsgsAstroLsSensorModel::getReferenceDateAndTime() const
 {
-    throw csm::Error(
-       csm::Error::UNSUPPORTED_FUNCTION,
-       "Unsupported function",
-       "UsgsAstroLsSensorModel::getReferenceDateAndTime");
+    csm::EcefCoord referencePointGround = UsgsAstroLsSensorModel::getReferencePoint();
+    csm::ImageCoord referencePointImage = UsgsAstroLsSensorModel::groundToImage(referencePointGround);
+    double relativeTime = UsgsAstroLsSensorModel::getImageTime(referencePointImage);
+    time_t ephemTime = m_centerEphemerisTime + relativeTime;
+    struct tm t = {0};  // Initalize to all 0's
+    t.tm_year = 100;  // This is year-1900, so 100 = 2000
+    t.tm_mday = 1;
+    time_t timeSinceEpoch = mktime(&t);
+    time_t finalTime = ephemTime + timeSinceEpoch;
+    char buffer [16];
+    strftime(buffer, 16, "%Y%m%dT%H%M%S", localtime(&finalTime));
+    buffer[15] = '\0';
+
+    return buffer;
 }
 
 //***************************************************************************
@@ -1299,34 +1359,25 @@ std::string UsgsAstroLsSensorModel::getReferenceDateAndTime() const
 double UsgsAstroLsSensorModel::getImageTime(
    const csm::ImageCoord& image_pt) const
 {
+   // Remove 0.5 after ISIS dependency in the linescanrate is gone
+   double lineFull = floor(image_pt.line) + 0.5;
 
-   // Flip image taken backwards
-   double line1 = image_pt.line;
-
-   // CSM image convention: UL pixel center == (0.5, 0.5)
-   // USGS image convention: UL pixel center == (1.0, 1.0)
-
-   double lineCSMFull = line1;
-   double lineUSGSFull = floor(lineCSMFull) + 0.5;
-
-   // These calculation assumes that the values in the integration time
-   // vectors are in terms of ISIS' pixels
    auto referenceLineIt = std::upper_bound(m_intTimeLines.begin(),
                                            m_intTimeLines.end(),
-                                           lineUSGSFull);
+                                           lineFull);
    if (referenceLineIt != m_intTimeLines.begin()) {
       --referenceLineIt;
    }
    size_t referenceIndex = std::distance(m_intTimeLines.begin(), referenceLineIt);
 
+   // Adding 0.5 to the line results in center exposure time for a given line
    double time = m_intTimeStartTimes[referenceIndex]
-      + m_intTimes[referenceIndex] * (lineUSGSFull - m_intTimeLines[referenceIndex]);
+      + m_intTimes[referenceIndex] * (lineFull - m_intTimeLines[referenceIndex] + 0.5);
 
-  MESSAGE_LOG(m_logger, "getImageTime for image line {} is {}",
-                                image_pt.line, time)
+   MESSAGE_LOG(m_logger, "getImageTime for image line {} is {}",
+                         image_pt.line, time)
 
    return time;
-
 }
 
 //***************************************************************************
@@ -1626,7 +1677,7 @@ UsgsAstroLsSensorModel::getValidImageRange() const
 {
    return std::pair<csm::ImageCoord, csm::ImageCoord>(
       csm::ImageCoord(0.0, 0.0),
-      csm::ImageCoord(m_nLines, m_nSamples));
+      csm::ImageCoord(m_nLines, m_nSamples)); // Technically nl and ns are outside the image in a zero based system.
 }
 
 //***************************************************************************
@@ -1635,14 +1686,23 @@ UsgsAstroLsSensorModel::getValidImageRange() const
 csm::EcefVector UsgsAstroLsSensorModel::getIlluminationDirection(
    const csm::EcefCoord& groundPt) const
 {
-  MESSAGE_LOG(m_logger, "Accessing illimination direction of ground point"
-              "{} {} {}."
-              "Illimination direction is not supported, throwing exception",
+  MESSAGE_LOG(m_logger, "Accessing illumination direction of ground point"
+              "{} {} {}.",
               groundPt.x, groundPt.y, groundPt.z);
-   throw csm::Error(
-      csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "UsgsAstroLsSensorModel::getIlluminationDirection");
+
+  csm::EcefVector sunPosition = getSunPosition(getImageTime(groundToImage(groundPt)));
+  csm::EcefVector illuminationDirection = csm::EcefVector(groundPt.x - sunPosition.x,
+                                                          groundPt.y - sunPosition.y,
+                                                          groundPt.z - sunPosition.z);
+
+  double scale = sqrt(illuminationDirection.x * illuminationDirection.x +
+                      illuminationDirection.y * illuminationDirection.y +
+                      illuminationDirection.z * illuminationDirection.z);
+
+  illuminationDirection.x /= scale;
+  illuminationDirection.y /= scale;
+  illuminationDirection.z /= scale;
+  return illuminationDirection;
 }
 
 //---------------------------------------------------------------------------
@@ -1888,7 +1948,7 @@ void UsgsAstroLsSensorModel::calculateAttitudeCorrection(
 //***************************************************************************
 void UsgsAstroLsSensorModel::losToEcf(
    const double& line,       // CSM image convention
-   const double& sample,     //    UL pixel center == (0.5, 0.5)
+   const double& sample,     // UL pixel center == (0.5, 0.5)
    const std::vector<double>& adj, // Parameter Adjustments for partials
    double&       xc,         // output sensor x coordinate
    double&       yc,         // output sensor y coordinate
@@ -2126,7 +2186,7 @@ void UsgsAstroLsSensorModel::losEllipsoidIntersect(
    double&       achieved_precision,
    const double& desired_precision) const
 {
-   MESSAGE_LOG(m_logger, "Computing losEllipsoidIntersect for camera position"
+   MESSAGE_LOG(m_logger, "Computing losEllipsoidIntersect for camera position "
                                "{} {} {} looking {} {} {} with desired precision"
                                "{}",
                                 xc, yc, zc, xl, yl, zl, desired_precision)
@@ -2722,6 +2782,10 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   MESSAGE_LOG(m_logger, "m_referencePointXyz: {} ",
                         state["m_referencePointXyz"].dump())
 
+  // sun_position and velocity are required for getIlluminationDirection
+  state["m_sunPosition"]= getSunPositions(isd, parsingWarnings);
+  state["m_sunVelocity"]= getSunVelocities(isd, parsingWarnings);
+
   // leave these be for now.
   state["m_gsd"] = 1.0;
   state["m_flyingHeight"] = 1000.0;
@@ -2766,6 +2830,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
                         state["m_startingDetectorLine"].dump(),
                         state["m_detectorSampleOrigin"].dump(),
                         state["m_detectorLineOrigin"].dump())
+
 
   // These are exlusive to LineScanners, leave them here for now.
   try {
@@ -2875,7 +2940,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   }
 
   // Get the optional logging file
-  state["m_logFile"] = getLogFile(isd, warnings);
+  state["m_logFile"] = getLogFile(isd);
 
   if (!parsingWarnings->empty()) {
     if (warnings) {
@@ -2908,4 +2973,41 @@ std::shared_ptr<spdlog::logger> UsgsAstroLsSensorModel::getLogger() {
 
 void UsgsAstroLsSensorModel::setLogger(std::shared_ptr<spdlog::logger> logger) {
   m_logger = logger;
+}
+
+
+csm::EcefVector UsgsAstroLsSensorModel::getSunPosition(
+  const double imageTime) const
+{
+
+  int numSunPositions = m_sunPosition.size();
+  int numSunVelocities = m_sunVelocity.size();
+  csm::EcefVector sunPosition = csm::EcefVector();
+
+  // If there are multiple positions, use Lagrange interpolation
+  if ((numSunPositions/3) > 1) {
+    double sunPos[3];
+    double endTime = m_t0Ephem + (m_dtEphem * ((m_numPositions/3)));
+    double sun_dtEphem = (endTime - m_t0Ephem) / (numSunPositions/3);
+    lagrangeInterp(numSunPositions/3, &m_sunPosition[0], m_t0Ephem, sun_dtEphem,
+                   imageTime, 3, 8, sunPos);
+    sunPosition.x = sunPos[0];
+    sunPosition.y = sunPos[1];
+    sunPosition.z = sunPos[2];
+  }
+  else if ((numSunVelocities/3) >= 1){
+    // If there is one position triple with at least one velocity triple
+    //  then the illumination direction is calculated via linear extrapolation.
+      sunPosition.x = (imageTime * m_sunVelocity[0] + m_sunPosition[0]);
+      sunPosition.y = (imageTime * m_sunVelocity[1] + m_sunPosition[1]);
+      sunPosition.z = (imageTime * m_sunVelocity[2] + m_sunPosition[2]);
+  }
+  else {
+    // If there is one position triple with no velocity triple, then the
+    //  illumination direction is the difference of the original vectors.
+      sunPosition.x = m_sunPosition[0];
+      sunPosition.y = m_sunPosition[1];
+      sunPosition.z = m_sunPosition[2];
+  }
+  return sunPosition;
 }

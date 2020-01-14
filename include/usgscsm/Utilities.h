@@ -12,6 +12,24 @@
 
 #include <Warning.h>
 
+double distanceToLine(double x, double y,
+                      double a, double b, double c);
+
+double distanceToPlane(double x, double y, double z,
+                       double a, double b, double c, double d);
+
+void line(double x1, double y1, double x2, double y2,
+          double &a, double &b, double &c);
+
+void plane(double x0, double y0, double z0,
+           double v1x, double v1y, double v1z,
+           double v2x, double v2y, double v2z,
+           double &a, double &b, double &c, double &d);
+
+std::vector<int> fitLinearApproximation(const std::vector<double> &x,
+                                        const std::vector<double> &y,
+                                        double tolerance);
+
 // methods pulled out of los2ecf and computeViewingPixel
 
 // for now, put everything in here.
@@ -103,6 +121,7 @@ DistortionType getDistortionModel(nlohmann::json isd, csm::WarningList *list=nul
 std::vector<double> getDistortionCoeffs(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getRadialDistortion(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSunPositions(nlohmann::json isd, csm::WarningList *list=nullptr);
+std::vector<double> getSunVelocities(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSensorPositions(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSensorVelocities(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSensorOrientations(nlohmann::json isd, csm::WarningList *list=nullptr);

@@ -28,9 +28,9 @@ TEST_F(ConstVelocityLineScanSensorModel, State) {
 TEST_F(ConstVelocityLineScanSensorModel, Center) {
    csm::ImageCoord imagePt(8.5, 8.0);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   EXPECT_DOUBLE_EQ(groundPt.x, 10.0);
-   EXPECT_DOUBLE_EQ(groundPt.y, 0.0);
-   EXPECT_DOUBLE_EQ(groundPt.z, 0.0);
+   EXPECT_NEAR(groundPt.x, 10.0, 1e-12);
+   EXPECT_NEAR(groundPt.y, 0.0, 1e-12);
+   EXPECT_NEAR(groundPt.z, 0.0, 1e-12);
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, Inversion) {
@@ -54,23 +54,23 @@ TEST_F(ConstVelocityLineScanSensorModel, ProximateImageLocus) {
    csm::ImageCoord imagePt(8.5, 8.0);
    csm::EcefCoord groundPt(5, 5, 5);
    csm::EcefLocus locus = sensorModel->imageToProximateImagingLocus(imagePt, groundPt);
-   EXPECT_DOUBLE_EQ(locus.direction.x, -1.0);
-   EXPECT_DOUBLE_EQ(locus.direction.y,  0.0);
-   EXPECT_DOUBLE_EQ(locus.direction.z,  0.0);
-   EXPECT_DOUBLE_EQ(locus.point.x,      5.0);
-   EXPECT_DOUBLE_EQ(locus.point.y,      0.0);
-   EXPECT_DOUBLE_EQ(locus.point.z,      0.0);
+   EXPECT_NEAR(locus.direction.x, -1.0, 1e-12);
+   EXPECT_NEAR(locus.direction.y,  0.0, 1e-12);
+   EXPECT_NEAR(locus.direction.z,  0.0, 1e-12);
+   EXPECT_NEAR(locus.point.x,      5.0, 1e-12);
+   EXPECT_NEAR(locus.point.y,      0.0, 1e-12);
+   EXPECT_NEAR(locus.point.z,      0.0, 1e-12);
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, RemoteImageLocus) {
    csm::ImageCoord imagePt(8.5, 8.0);
    csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(imagePt);
-   EXPECT_DOUBLE_EQ(locus.direction.x, -1.0);
-   EXPECT_DOUBLE_EQ(locus.direction.y,  0.0);
-   EXPECT_DOUBLE_EQ(locus.direction.z,  0.0);
-   EXPECT_DOUBLE_EQ(locus.point.x,      1000.0);
-   EXPECT_DOUBLE_EQ(locus.point.y,      0.0);
-   EXPECT_DOUBLE_EQ(locus.point.z,      0.0);
+   EXPECT_NEAR(locus.direction.x, -1.0, 1e-12);
+   EXPECT_NEAR(locus.direction.y,  0.0, 1e-12);
+   EXPECT_NEAR(locus.direction.z,  0.0, 1e-12);
+   EXPECT_NEAR(locus.point.x,      1000.0, 1e-12);
+   EXPECT_NEAR(locus.point.y,      0.0, 1e-12);
+   EXPECT_NEAR(locus.point.z,      0.0, 1e-12);
 }
 
 // Pan tests
@@ -120,6 +120,75 @@ TEST_F(ConstVelocityLineScanSensorModel, calculateAttitudeCorrection) {
   EXPECT_NEAR(attCorr[6], -1, 1e-8);
   EXPECT_NEAR(attCorr[7], 0, 1e-8);
   EXPECT_NEAR(attCorr[8], 0, 1e-8);
+}
+
+
+TEST_F(OrbitalLineScanSensorModel, getIlluminationDirectionStationary) {
+  // Get state information, replace sun position / velocity to hit third case:
+  //  One position, no velocity.
+  std::string state = sensorModel->getModelState();
+  json jState = json::parse(state);
+  jState["m_sunPosition"] = std::vector<double>{100.0,100.0,100.0};
+  jState["m_sunVelocity"] = std::vector<double>{};
+  sensorModel->replaceModelState(jState.dump());
+
+  csm::ImageCoord imagePt(8.5,8);
+  csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+  csm::EcefVector direction = sensorModel->getIlluminationDirection(groundPt);
+
+  // Calculate expected sun direction
+  // These are the ground point coordinates minus constant sun positions.
+  double expected_x = 999899.680000017;
+  double expected_y = -100;
+  double expected_z = -899.99991466668735;
+
+  //normalize
+  double scale = sqrt((expected_x * expected_x) + (expected_y * expected_y) + (expected_z * expected_z));
+  expected_x /= scale;
+  expected_y /= scale;
+  expected_z /= scale;
+
+  EXPECT_DOUBLE_EQ(direction.x, expected_x);
+  EXPECT_DOUBLE_EQ(direction.y, expected_y);
+  EXPECT_DOUBLE_EQ(direction.z, expected_z);
+}
+
+TEST_F(OrbitalLineScanSensorModel, getSunPositionLagrange){
+  std::cout<<sensorModel->m_t0Ephem<<std::endl;
+  csm::EcefVector sunPosition = sensorModel->getSunPosition(-.6);
+  EXPECT_DOUBLE_EQ(sunPosition.x, 125);
+  EXPECT_DOUBLE_EQ(sunPosition.y, 125);
+  EXPECT_DOUBLE_EQ(sunPosition.z, 125);
+}
+
+TEST_F(OrbitalLineScanSensorModel, getSunPositionLinear){
+  // Get state information, replace sun position / velocity to hit third case:
+  //  One position, no velocity.
+  std::string state = sensorModel->getModelState();
+  json jState = json::parse(state);
+  jState["m_sunPosition"] = std::vector<double>{100.0,100.0,100.0};
+  jState["m_sunVelocity"] = std::vector<double>{50.0, 50.0, 50.0};
+  sensorModel->replaceModelState(jState.dump());
+
+  csm::EcefVector sunPosition = sensorModel->getSunPosition(.5);
+  EXPECT_DOUBLE_EQ(sunPosition.x, 125);
+  EXPECT_DOUBLE_EQ(sunPosition.y, 125);
+  EXPECT_DOUBLE_EQ(sunPosition.z, 125);
+}
+
+TEST_F(OrbitalLineScanSensorModel, getSunPositionStationary){
+  // Get state information, replace sun position / velocity to hit third case:
+  //  One position, no velocity.
+  std::string state = sensorModel->getModelState();
+  json jState = json::parse(state);
+  jState["m_sunPosition"] = std::vector<double>{100.0,100.0,100.0};
+  jState["m_sunVelocity"] = std::vector<double>{};
+  sensorModel->replaceModelState(jState.dump());
+
+  csm::EcefVector sunPosition = sensorModel->getSunPosition(1);
+  EXPECT_DOUBLE_EQ(sunPosition.x, 100);
+  EXPECT_DOUBLE_EQ(sunPosition.y, 100);
+  EXPECT_DOUBLE_EQ(sunPosition.z, 100);
 }
 
 TEST_F(OrbitalLineScanSensorModel, Center) {
@@ -199,4 +268,9 @@ TEST_F(LROCSensorModels, GroundPartials) {
     }
     std::cerr << std::endl << std::endl;
   }
+}
+
+TEST_F(OrbitalLineScanSensorModel, ReferenceDateTime) {
+  std::string date = sensorModel->getReferenceDateAndTime();
+  EXPECT_EQ(date, "20000101T001639");
 }

@@ -108,6 +108,11 @@ public:
    std::vector<double> m_positions;
    std::vector<double> m_velocities;
    std::vector<double> m_quaternions;
+   std::vector<int> m_detectorNodes;
+   std::vector<double> m_detectorXCoords;
+   std::vector<double> m_detectorYCoords;
+   std::vector<double> m_detectorLineCoeffs;
+   double m_averageDetectorSize;
    std::vector<double> m_currentParameterValue;
    std::vector<csm::param::Type> m_parameterType;
    csm::EcefCoord m_referencePointXyz;
@@ -117,6 +122,10 @@ public:
    double       m_halfTime;
    std::vector<double> m_covariance;
    int          m_imageFlipFlag;
+
+   std::vector<double> m_sunPosition;
+   std::vector<double> m_sunVelocity;
+
 
    // Define logging pointer and file content
    std::string m_logFile;
@@ -902,6 +911,15 @@ public:
        const double& time,
        const std::vector<double>& adj,
        double attCorr[9]) const;
+
+   virtual csm::EcefVector getSunPosition(
+       const double imageTime) const;
+    //> This method returns the position of the sun at the time the image point
+    //  was recorded.  If multiple sun positions are available, the method uses
+    //  lagrange interpolation.  If one sun position and at least one sun velocity
+    //  are available, then the position is calculated using linear extrapolation.
+    //  If only one sun position is available, then that value is returned.
+
 
 private:
 
