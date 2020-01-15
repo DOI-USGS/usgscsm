@@ -690,7 +690,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    // check for convergence without re-intersecting
    csm::ImageCoord approxPt;
    computeLinearApproximation(groundPt, approxPt);
-   // approxPt = csm::ImageCoord(m_nLines, approxPt.samp);
+   printf("First Linear Approx: %f8, %f8\n", approxPt.line, approxPt.samp);
 
    // Helper function to compute the CCD pixel that views a ground point based
    // on the exterior orientation at a given time.
@@ -711,52 +711,74 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    }
    size_t referenceIndex = std::distance(m_detectorNodes.begin(), referenceSamp);
 
+   std::cout << "REFERENCE INDEX IS: " << referenceIndex << '\n';
+
    double a, b, c;
-   a = m_detectorLineCoeffs[3*referenceIndex];
-   b = m_detectorLineCoeffs[3*referenceIndex + 1];
-   c = m_detectorLineCoeffs[3*referenceIndex + 2];
-   a = m_detectorLineCoeffs[0];
-   b = m_detectorLineCoeffs[0 + 1];
-   c = m_detectorLineCoeffs[0 + 2];
+   a = m_detectorLineCoeffs[3 * referenceIndex];
+   b = m_detectorLineCoeffs[3 * referenceIndex + 1];
+   c = m_detectorLineCoeffs[3 * referenceIndex + 2];
+   a = m_detectorLineCoeffs[3 * 0];
+   b = m_detectorLineCoeffs[3 * 0 + 1];
+   c = m_detectorLineCoeffs[3 * 0 + 2];
 
    double d0 = distanceToLine(p0[0], p0[1], a, b, c);
    double di = distanceToLine(pi[0], pi[1], a, b, c);
-   double delta = 0;
    int count = 0;
-   double di1 = 0;
+   double delta = 0.0;
+
+   csm::ImageCoord lineToCheck;
+   double lineTime;
+   std::vector<double> lineDetectorLine;
+   double detectorDistance;
 
    while (++count < 30) {
+
+     printf("CHECKING IF CONVERGE @ %f8\n", (abs(di) / m_averageDetectorSize));
+
      if ((abs(di) / m_averageDetectorSize) < 1.0) {
-       csm::ImageCoord previousLine(approxPt.line - 1.0, approxPt.samp);
-       double previousLineTime = getImageTime(previousLine);
-       std::vector<double> previousDetectorLine = computeDetectorView(previousLineTime, groundPt, adj, desiredPrecision);
-       double previousDetectorDistance = distanceToLine(previousDetectorLine[0], previousDetectorLine[1], a, b, c);
+       printf("TRYING TO CONVERGE @ %f8\n", (abs(di) / m_averageDetectorSize));
+       lineToCheck = csm::ImageCoord(approxPt.line - 1.0, approxPt.samp);
+       lineTime = getImageTime(lineToCheck);
+       lineDetectorLine = computeDetectorView(lineTime, groundPt, adj, desiredPrecision);
+       detectorDistance = distanceToLine(lineDetectorLine[0], lineDetectorLine[1], a, b, c);
 
-       csm::ImageCoord nextLine(approxPt.line + 1.0, approxPt.samp);
-       double nextLineTime = getImageTime(nextLine);
-       std::vector<double> nextDetectorLine = computeDetectorView(nextLineTime, groundPt, adj, desiredPrecision);
-       double nextDetectorDistance = distanceToLine(nextDetectorLine[0], nextDetectorLine[1], a, b, c);
+       std::cout << detectorDistance << " " << di << '\n';
 
-       if (previousDetectorDistance * di < 0) {
-         approxPt.line -= (abs(di) / (abs(di) + abs(previousDetectorDistance)));
+       if (detectorDistance * di < 0) {
+         approxPt.line -= (abs(di) / (abs(di) + abs(detectorDistance)));
          break;
        }
-       else if (di * nextDetectorDistance < 0) {
-         approxPt.line += (abs(di) / (abs(di) + abs(nextDetectorDistance)));
+
+       lineToCheck = csm::ImageCoord(approxPt.line + 1.0, approxPt.samp);
+       lineTime = getImageTime(lineToCheck);
+       lineDetectorLine = computeDetectorView(lineTime, groundPt, adj, desiredPrecision);
+       detectorDistance = distanceToLine(lineDetectorLine[0], lineDetectorLine[1], a, b, c);
+
+       std::cout << di << " " << detectorDistance << '\n';
+
+       if (di * detectorDistance < 0) {
+         approxPt.line += (abs(di) / (abs(di) + abs(detectorDistance)));
          break;
        }
      }
+
      delta = abs(di) / m_averageDetectorSize;
 
      if (d0 * di <= 0) {
        delta = -delta;
      }
 
+     printf("ORIGINAL LINE: %f8\n", approxPt.line);
+     printf("DELTA: %f8\n", delta);
+
      approxPt.line += delta;
      timei = getImageTime(approxPt);
      pi = computeDetectorView(timei, groundPt, adj, desiredPrecision);
      di = distanceToLine(pi[0], pi[1], a, b, c);
+   }
 
+   if (count >= 30) {
+     std::cout << "COULDN'T CONVERGE" << '\n';
    }
 
    std::vector<double> finalDetectorView;
@@ -766,6 +788,13 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
 
    while(abs(detectorLine) > desiredPrecision) {
      if (++count > 15) {
+       if (warnings) {
+         warnings->push_back(
+           csm::Warning(
+             csm::Warning::PRECISION_NOT_MET,
+             "Unable to achieve desired precision within 15 iterations.",
+             "UsgsAstroLsSensorModel::groundToImage()"));
+       }
        break;
      }
      timei = getImageTime(approxPt);
@@ -790,18 +819,28 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
 
    // Convert to detector line and sample
    detectorLine = m_iTransL[0]
-                       + m_iTransL[1] * distortedFocalX
-                       + m_iTransL[2] * distortedFocalY;
+                + m_iTransL[1] * distortedFocalX
+                + m_iTransL[2] * distortedFocalY;
    detectorSample = m_iTransS[0]
-                         + m_iTransS[1] * distortedFocalX
-                         + m_iTransS[2] * distortedFocalY;
+                  + m_iTransS[1] * distortedFocalX
+                  + m_iTransS[2] * distortedFocalY;
 
    // Convert to image sample line
    approxPt.line += detectorLine;
    approxPt.samp = (detectorSample + m_detectorSampleOrigin - m_startingSample)
                  / m_detectorSampleSumming;
+   achievedPrecision = &detectorLine;
    MESSAGE_LOG(m_logger, "computeViewingPixel: image line sample {} {}",
                                 approxPt.line, approxPt.samp)
+
+   if (warnings && (desiredPrecision > 0.0) && (*achievedPrecision > desiredPrecision))
+   {
+      warnings->push_back(
+         csm::Warning(
+            csm::Warning::PRECISION_NOT_MET,
+            "Desired precision not achieved.",
+            "UsgsAstroLsSensorModel::groundToImage()"));
+   }
 
    return approxPt;
 }
