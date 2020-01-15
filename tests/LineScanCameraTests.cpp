@@ -138,9 +138,9 @@ TEST_F(OrbitalLineScanSensorModel, getIlluminationDirectionStationary) {
 
   // Calculate expected sun direction
   // These are the ground point coordinates minus constant sun positions.
-  double expected_x = 999899.680000017;
-  double expected_y = -100;
-  double expected_z = -899.99991466668735;
+  double expected_x = groundPt.x - sensorModel->m_sunPosition[0];
+  double expected_y = groundPt.y - sensorModel->m_sunPosition[1];
+  double expected_z = groundPt.z - sensorModel->m_sunPosition[2];
 
   //normalize
   double scale = sqrt((expected_x * expected_x) + (expected_y * expected_y) + (expected_z * expected_z));
@@ -156,6 +156,7 @@ TEST_F(OrbitalLineScanSensorModel, getIlluminationDirectionStationary) {
 TEST_F(OrbitalLineScanSensorModel, getSunPositionLagrange){
   std::cout<<sensorModel->m_t0Ephem<<std::endl;
   csm::EcefVector sunPosition = sensorModel->getSunPosition(-.6);
+  double expected_x = 
   EXPECT_DOUBLE_EQ(sunPosition.x, 125);
   EXPECT_DOUBLE_EQ(sunPosition.y, 125);
   EXPECT_DOUBLE_EQ(sunPosition.z, 125);
@@ -194,9 +195,9 @@ TEST_F(OrbitalLineScanSensorModel, getSunPositionStationary){
 TEST_F(OrbitalLineScanSensorModel, Center) {
   csm::ImageCoord imagePt(8.5, 8.0);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-  EXPECT_DOUBLE_EQ(groundPt.x, 999999.680000017);
+  EXPECT_DOUBLE_EQ(groundPt.x, 999999.71120001574);
   EXPECT_DOUBLE_EQ(groundPt.y, 0.0);
-  EXPECT_DOUBLE_EQ(groundPt.z, -799.99991466668735);
+  EXPECT_DOUBLE_EQ(groundPt.z, -759.99992423469905);
 }
 
 TEST_F(OrbitalLineScanSensorModel, Inversion) {
