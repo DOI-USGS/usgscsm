@@ -257,6 +257,7 @@ TEST_F(OrbitalLineScanSensorModel, ReferenceDateTime) {
 
 TEST_F(LROCTest, Timing) {
   std::chrono::microseconds totalTime = std::chrono::microseconds::zero();
+  double totalError = 0;
 
   csm::ImageVector imageSize = sensorModel->getImageSize();
   for (double line = 0.5; line < imageSize.line; line+=10) {
@@ -264,11 +265,16 @@ TEST_F(LROCTest, Timing) {
       csm::ImageCoord imagePt(line, samp);
       csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
       auto start = std::chrono::high_resolution_clock::now();
-      sensorModel->groundToImage(groundPt);
+      csm::ImageCoord reprojPt = sensorModel->groundToImage(groundPt);
       auto stop = std::chrono::high_resolution_clock::now();
       totalTime += std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+      double lineDiff = reprojPt.line - imagePt.line;
+      double sampDiff = reprojPt.samp - imagePt.samp;
+      totalError += sqrt(lineDiff*lineDiff + sampDiff*sampDiff);
     }
   }
-  std::cerr << "Number of groundToImage calls: " << (imageSize.line/10)*(imageSize.samp/10) << std::endl;
+  int total_calls = (imageSize.line/10)*(imageSize.samp/10);
+  std::cerr << "Number of groundToImage calls: " << total_calls << std::endl;
   std::cerr << "Total seconds: " << totalTime.count() * 1e-6 << std::endl;
+  std::cerr << "Average Error: " << totalError / (double)total_calls << std::endl;
 }
