@@ -1994,7 +1994,8 @@ void UsgsAstroLsSensorModel::losToEcf(
 
   // Define imaging ray (look vector) in camera space
    double cameraLook[3];
-   createCameraLookVector(undistortedFocalPlaneX, undistortedFocalPlaneY, m_zDirection, m_focalLength, cameraLook);
+   createCameraLookVector(undistortedFocalPlaneX, undistortedFocalPlaneY,
+                          m_zDirection, m_focalLength + getValue(15, adj), cameraLook);
    MESSAGE_LOG(m_logger, "losToEcf: uncorrected camera look vector {} {} {}",
                          cameraLook[0], cameraLook[1], cameraLook[2])
 
@@ -2501,7 +2502,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
                                 adjustedLookX, adjustedLookY, adjustedLookZ)
 
    // Convert to focal plane coordinate
-   double lookScale = m_focalLength / adjustedLookZ;
+   double lookScale = (m_focalLength  + getValue(15, adj)) / adjustedLookZ;
    double focalX = adjustedLookX * lookScale;
    double focalY = adjustedLookY * lookScale;
    double distortedFocalX, distortedFocalY;

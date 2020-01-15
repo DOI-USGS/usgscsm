@@ -252,3 +252,12 @@ TEST_F(OrbitalLineScanSensorModel, ReferenceDateTime) {
   std::string date = sensorModel->getReferenceDateAndTime();
   EXPECT_EQ(date, "20000101T001639");
 }
+
+TEST_F(ConstVelocityLineScanSensorModel, FocalLengthAdjustment) {
+  csm::ImageCoord imagePt(8.5, 4.0);
+  sensorModel->setParameterValue(15, -45);
+  csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(imagePt);
+  EXPECT_DOUBLE_EQ(locus.direction.x, -5.0 / sqrt(5 * 5 + 0.4 * 0.4));
+  EXPECT_DOUBLE_EQ(locus.direction.y, -0.4 / sqrt(5 * 5 + 0.4 * 0.4));
+  EXPECT_DOUBLE_EQ(locus.direction.z, 0.0);
+}
