@@ -102,6 +102,8 @@ const std::string  UsgsAstroLsSensorModel::_STATE_KEYWORD[] =
    "m_currentParameterValue",
    "m_parameterType",
    "m_referencePointXyz",
+   "m_sunPosition",
+   "m_sunVelocity",
    "m_gsd",
    "m_flyingHeight",
    "m_halfSwath",
@@ -255,6 +257,8 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
    m_quaternions = j["m_quaternions"].get<std::vector<double>>();
    m_currentParameterValue = j["m_currentParameterValue"].get<std::vector<double>>();
    m_covariance = j["m_covariance"].get<std::vector<double>>();
+   m_sunPosition = j["m_sunPosition"].get<std::vector<double>>();
+   m_sunVelocity = j["m_sunVelocity"].get<std::vector<double>>();
 
    m_logFile = j["m_logFile"].get<std::string>();
    if (m_logFile.empty()) {
@@ -443,6 +447,12 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
                              m_referencePointXyz.x, m_referencePointXyz.y,
                              m_referencePointXyz.z)
 
+      state["m_sunPosition"] = m_sunPosition;
+      MESSAGE_LOG(m_logger, "num sun positions: {} ", m_sunPosition.size())
+
+      state["m_sunVelocity"] = m_sunVelocity;
+      MESSAGE_LOG(m_logger, "num sun velocities: {} ", m_sunVelocity.size())
+
       state["m_logFile"] = m_logFile;
 
       return state.dump();
@@ -518,6 +528,10 @@ void UsgsAstroLsSensorModel::reset()
   m_referencePointXyz.x = 0.0;
   m_referencePointXyz.y = 0.0;
   m_referencePointXyz.z = 0.0;
+
+  m_sunPosition = std::vector<double>(3, 0.0);
+  m_sunVelocity = std::vector<double>(3, 0.0);
+
   m_gsd = 1.0;
   m_flyingHeight = 1000.0;
   m_halfSwath = 1000.0;
@@ -1715,14 +1729,23 @@ UsgsAstroLsSensorModel::getValidImageRange() const
 csm::EcefVector UsgsAstroLsSensorModel::getIlluminationDirection(
    const csm::EcefCoord& groundPt) const
 {
-  MESSAGE_LOG(m_logger, "Accessing illimination direction of ground point"
-              "{} {} {}."
-              "Illimination direction is not supported, throwing exception",
+  MESSAGE_LOG(m_logger, "Accessing illumination direction of ground point"
+              "{} {} {}.",
               groundPt.x, groundPt.y, groundPt.z);
-   throw csm::Error(
-      csm::Error::UNSUPPORTED_FUNCTION,
-      "Unsupported function",
-      "UsgsAstroLsSensorModel::getIlluminationDirection");
+
+  csm::EcefVector sunPosition = getSunPosition(getImageTime(groundToImage(groundPt)));
+  csm::EcefVector illuminationDirection = csm::EcefVector(groundPt.x - sunPosition.x,
+                                                          groundPt.y - sunPosition.y,
+                                                          groundPt.z - sunPosition.z);
+
+  double scale = sqrt(illuminationDirection.x * illuminationDirection.x +
+                      illuminationDirection.y * illuminationDirection.y +
+                      illuminationDirection.z * illuminationDirection.z);
+
+  illuminationDirection.x /= scale;
+  illuminationDirection.y /= scale;
+  illuminationDirection.z /= scale;
+  return illuminationDirection;
 }
 
 //---------------------------------------------------------------------------
@@ -2779,6 +2802,10 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   MESSAGE_LOG(m_logger, "m_referencePointXyz: {} ",
                         state["m_referencePointXyz"].dump())
 
+  // sun_position and velocity are required for getIlluminationDirection
+  state["m_sunPosition"]= getSunPositions(isd, parsingWarnings);
+  state["m_sunVelocity"]= getSunVelocities(isd, parsingWarnings);
+
   // leave these be for now.
   state["m_gsd"] = 1.0;
   state["m_flyingHeight"] = 1000.0;
@@ -2823,6 +2850,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
                         state["m_startingDetectorLine"].dump(),
                         state["m_detectorSampleOrigin"].dump(),
                         state["m_detectorLineOrigin"].dump())
+
 
   // These are exlusive to LineScanners, leave them here for now.
   try {
@@ -2965,4 +2993,41 @@ std::shared_ptr<spdlog::logger> UsgsAstroLsSensorModel::getLogger() {
 
 void UsgsAstroLsSensorModel::setLogger(std::shared_ptr<spdlog::logger> logger) {
   m_logger = logger;
+}
+
+
+csm::EcefVector UsgsAstroLsSensorModel::getSunPosition(
+  const double imageTime) const
+{
+
+  int numSunPositions = m_sunPosition.size();
+  int numSunVelocities = m_sunVelocity.size();
+  csm::EcefVector sunPosition = csm::EcefVector();
+
+  // If there are multiple positions, use Lagrange interpolation
+  if ((numSunPositions/3) > 1) {
+    double sunPos[3];
+    double endTime = m_t0Ephem + (m_dtEphem * ((m_numPositions/3)));
+    double sun_dtEphem = (endTime - m_t0Ephem) / (numSunPositions/3);
+    lagrangeInterp(numSunPositions/3, &m_sunPosition[0], m_t0Ephem, sun_dtEphem,
+                   imageTime, 3, 8, sunPos);
+    sunPosition.x = sunPos[0];
+    sunPosition.y = sunPos[1];
+    sunPosition.z = sunPos[2];
+  }
+  else if ((numSunVelocities/3) >= 1){
+    // If there is one position triple with at least one velocity triple
+    //  then the illumination direction is calculated via linear extrapolation.
+      sunPosition.x = (imageTime * m_sunVelocity[0] + m_sunPosition[0]);
+      sunPosition.y = (imageTime * m_sunVelocity[1] + m_sunPosition[1]);
+      sunPosition.z = (imageTime * m_sunVelocity[2] + m_sunPosition[2]);
+  }
+  else {
+    // If there is one position triple with no velocity triple, then the
+    //  illumination direction is the difference of the original vectors.
+      sunPosition.x = m_sunPosition[0];
+      sunPosition.y = m_sunPosition[1];
+      sunPosition.z = m_sunPosition[2];
+  }
+  return sunPosition;
 }
