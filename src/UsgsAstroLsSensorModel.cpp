@@ -690,6 +690,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    // check for convergence without re-intersecting
    csm::ImageCoord approxPt;
    computeLinearApproximation(groundPt, approxPt);
+   // approxPt = csm::ImageCoord(m_nLines, approxPt.samp);
 
    // Helper function to compute the CCD pixel that views a ground point based
    // on the exterior orientation at a given time.
@@ -714,19 +715,40 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    a = m_detectorLineCoeffs[3*referenceIndex];
    b = m_detectorLineCoeffs[3*referenceIndex + 1];
    c = m_detectorLineCoeffs[3*referenceIndex + 2];
+   a = m_detectorLineCoeffs[0];
+   b = m_detectorLineCoeffs[0 + 1];
+   c = m_detectorLineCoeffs[0 + 2];
 
    double d0 = distanceToLine(p0[0], p0[1], a, b, c);
    double di = distanceToLine(pi[0], pi[1], a, b, c);
    double delta = 0;
    int count = 0;
+   double di1 = 0;
 
-   while (abs(di) > m_averageDetectorSize) {
-     delta = int(abs(di) / m_averageDetectorSize);
+   while (++count < 30) {
+     if ((abs(di) / m_averageDetectorSize) < 1.0) {
+       csm::ImageCoord previousLine(approxPt.line - 1.0, approxPt.samp);
+       double previousLineTime = getImageTime(previousLine);
+       std::vector<double> previousDetectorLine = computeDetectorView(previousLineTime, groundPt, adj, desiredPrecision);
+       double previousDetectorDistance = distanceToLine(previousDetectorLine[0], previousDetectorLine[1], a, b, c);
 
-     if (d0 * di > 0) {
-       delta = delta;
+       csm::ImageCoord nextLine(approxPt.line + 1.0, approxPt.samp);
+       double nextLineTime = getImageTime(nextLine);
+       std::vector<double> nextDetectorLine = computeDetectorView(nextLineTime, groundPt, adj, desiredPrecision);
+       double nextDetectorDistance = distanceToLine(nextDetectorLine[0], nextDetectorLine[1], a, b, c);
+
+       if (previousDetectorDistance * di < 0) {
+         approxPt.line -= (abs(di) / (abs(di) + abs(previousDetectorDistance)));
+         break;
+       }
+       else if (di * nextDetectorDistance < 0) {
+         approxPt.line += (abs(di) / (abs(di) + abs(nextDetectorDistance)));
+         break;
+       }
      }
-     else if (d0 * di <= 0) {
+     delta = abs(di) / m_averageDetectorSize;
+
+     if (d0 * di <= 0) {
        delta = -delta;
      }
 
@@ -735,38 +757,53 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
      pi = computeDetectorView(timei, groundPt, adj, desiredPrecision);
      di = distanceToLine(pi[0], pi[1], a, b, c);
 
-     count++;
+   }
 
-     if (count > 30) {
+   std::vector<double> finalDetectorView;
+   double detectorLine = 1;
+   double detectorSample;
+   count = 0;
+
+   while(abs(detectorLine) > desiredPrecision) {
+     if (++count > 15) {
        break;
      }
+     timei = getImageTime(approxPt);
+     finalDetectorView = computeDetectorView(timei, groundPt, adj, desiredPrecision);
+
+     // Convert to detector line and sample
+     detectorLine = m_iTransL[0]
+                  + m_iTransL[1] * finalDetectorView[0];
+                  + m_iTransL[2] * finalDetectorView[1];
+
+     // Convert to image sample line
+     approxPt.line += detectorLine;
    }
+
    timei = getImageTime(approxPt);
-   std::vector<double> pi1 = computeDetectorView(timei, groundPt, adj, desiredPrecision);
-   double di1 = distanceToLine(pi1[0], pi1[1], a, b, c);
-   double line = approxPt.line + (abs(di) / (abs(di) + abs(di1)));
+   finalDetectorView = computeDetectorView(timei, groundPt, adj, desiredPrecision);
 
    // Invert distortion
    double distortedFocalX, distortedFocalY;
-   applyDistortion(pi[0], pi[1], distortedFocalX, distortedFocalY,
+   applyDistortion(finalDetectorView[0], finalDetectorView[1], distortedFocalX, distortedFocalY,
                    m_opticalDistCoeffs, m_distortionType, desiredPrecision);
 
    // Convert to detector line and sample
-   double detectorLine = m_iTransL[0]
+   detectorLine = m_iTransL[0]
                        + m_iTransL[1] * distortedFocalX
                        + m_iTransL[2] * distortedFocalY;
-   double detectorSample = m_iTransS[0]
+   detectorSample = m_iTransS[0]
                          + m_iTransS[1] * distortedFocalX
                          + m_iTransS[2] * distortedFocalY;
 
    // Convert to image sample line
-   line += detectorLine + m_detectorLineOrigin;
-   double sample = (detectorSample + m_detectorSampleOrigin - m_startingSample)
+   approxPt.line += detectorLine;
+   approxPt.samp = (detectorSample + m_detectorSampleOrigin - m_startingSample)
                  / m_detectorSampleSumming;
    MESSAGE_LOG(m_logger, "computeViewingPixel: image line sample {} {}",
-                                line, sample)
+                                approxPt.line, approxPt.samp)
 
-   return csm::ImageCoord(line, sample);
+   return approxPt;
 }
 
 //***************************************************************************
@@ -1917,12 +1954,11 @@ void UsgsAstroLsSensorModel::losToEcf(
    // USGS image convention: UL pixel center == (1.0, 1.0)
    double sampleCSMFull = sample;
    double sampleUSGSFull = sampleCSMFull;
-   double fractionalLine = line - floor(line);
 
    // Compute distorted image coordinates in mm (sample, line on image (pixels) -> focal plane
    double distortedFocalPlaneX, distortedFocalPlaneY;
    computeDistortedFocalPlaneCoordinates(
-         fractionalLine, sampleUSGSFull,
+         m_detectorLineOrigin, sampleUSGSFull,
          m_detectorSampleOrigin, m_detectorLineOrigin,
          m_detectorSampleSumming, 1.0,
          m_startingSample, 0.0,
