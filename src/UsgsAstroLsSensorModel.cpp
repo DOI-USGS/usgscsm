@@ -2567,6 +2567,7 @@ void UsgsAstroLsSensorModel::computeLinearApproximation(
    {
       ip.line = _u0 + _du_dx * gp.x + _du_dy * gp.y + _du_dz * gp.z;
       ip.samp = _v0 + _dv_dx * gp.x + _dv_dy * gp.y + _dv_dz * gp.z;
+      printf("COMPUTED LINE SAMP: %f8, %f8\n", ip.line, ip.samp);
 
       // Since this is valid only over image,
       // don't let result go beyond the image border.
