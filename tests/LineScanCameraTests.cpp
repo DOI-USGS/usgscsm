@@ -156,7 +156,6 @@ TEST_F(OrbitalLineScanSensorModel, getIlluminationDirectionStationary) {
 TEST_F(OrbitalLineScanSensorModel, getSunPositionLagrange){
   std::cout<<sensorModel->m_t0Ephem<<std::endl;
   csm::EcefVector sunPosition = sensorModel->getSunPosition(-.6);
-  double expected_x = 
   EXPECT_DOUBLE_EQ(sunPosition.x, 125);
   EXPECT_DOUBLE_EQ(sunPosition.y, 125);
   EXPECT_DOUBLE_EQ(sunPosition.z, 125);
