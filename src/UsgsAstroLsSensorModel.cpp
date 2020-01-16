@@ -705,95 +705,8 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    csm::ImageCoord approxPt;
    computeLinearApproximation(groundPt, approxPt);
 
-   // Helper function to compute the CCD pixel that views a ground point based
-   // on the exterior orientation at a given time.
-
-   // Get the exterior orientation
-   // double time0 = getImageTime(csm::ImageCoord(0, approxPt.samp));
-   // double timei = getImageTime(approxPt);
-   // std::vector<double> p0 = computeDetectorView(time0, groundPt, adj, desiredPrecision);
-   // std::vector<double> pi = computeDetectorView(timei, groundPt, adj, desiredPrecision);
-//
-   // Find what nodes the approxPt.samp falls between on the m_detectorNodes
-   // Use those indices to determine the coeffs
-   // auto referenceSamp = std::upper_bound(m_detectorNodes.begin(),
-   //                                       m_detectorNodes.end(),
-   //                                       approxPt.samp);
-   // if (referenceSamp != m_detectorNodes.begin() && referenceSamp == m_detectorNodes.end()) {
-   //   --referenceSamp;
-   // }
-   //
-   // if (referenceSamp != m_detectorNodes.begin()) {
-   //    --referenceSamp;
-   // }
-   // size_t referenceIndex = std::distance(m_detectorNodes.begin(), referenceSamp);
-   //
-   // double a, b, c;
-   // a = m_detectorLineCoeffs[3 * referenceIndex];
-   // b = m_detectorLineCoeffs[3 * referenceIndex + 1];
-   // c = m_detectorLineCoeffs[3 * referenceIndex + 2];
-   //
-   // double d0 = distanceToLine(p0[0], p0[1], a, b, c);
-   // double di = distanceToLine(pi[0], pi[1], a, b, c);
-   // double delta = 0.0;
-   //
-   // csm::ImageCoord lineToCheck;
-   // double lineTime;
-   // std::vector<double> lineDetectorLine;
-   // double detectorDistance;
-//
-   // while (++count < 30) {
-   //
-   //   printf("CHECKING IF CONVERGE @ %f\n", (abs(di) / m_averageDetectorSize));
-   //
-   //   if ((abs(di) / m_averageDetectorSize) < 1.0) {
-   //     printf("TRYING TO CONVERGE @ %f\n", (abs(di) / m_averageDetectorSize));
-   //     lineToCheck = csm::ImageCoord(approxPt.line - 1.0, approxPt.samp);
-   //     lineTime = getImageTime(lineToCheck);
-   //     lineDetectorLine = computeDetectorView(lineTime, groundPt, adj, desiredPrecision);
-   //     detectorDistance = distanceToLine(lineDetectorLine[0], lineDetectorLine[1], a, b, c);
-   //
-   //     std::cout << detectorDistance << " " << di << '\n';
-   //
-   //     if (detectorDistance * di < 0) {
-   //       approxPt.line -= (abs(di) / (abs(di) + abs(detectorDistance)));
-   //       break;
-   //     }
-   //
-   //     lineToCheck = csm::ImageCoord(approxPt.line + 1.0, approxPt.samp);
-   //     lineTime = getImageTime(lineToCheck);
-   //     lineDetectorLine = computeDetectorView(lineTime, groundPt, adj, desiredPrecision);
-   //     detectorDistance = distanceToLine(lineDetectorLine[0], lineDetectorLine[1], a, b, c);
-   //
-   //     std::cout << di << " " << detectorDistance << '\n';
-   //
-   //     if (di * detectorDistance < 0) {
-   //       approxPt.line += (abs(di) / (abs(di) + abs(detectorDistance)));
-   //       break;
-   //     }
-   //   }
-   //
-   //   delta = abs(di) / m_averageDetectorSize;
-   //
-   //   if (d0 * di <= 0) {
-   //     delta = -delta;
-   //   }
-   //
-   //   printf("ORIGINAL LINE: %f\n", approxPt.line);
-   //   printf("DELTA: %f\n", delta);
-   //
-   //   approxPt.line += delta;
-   //   timei = getImageTime(approxPt);
-   //   pi = computeDetectorView(timei, groundPt, adj, desiredPrecision);
-   //   di = distanceToLine(pi[0], pi[1], a, b, c);
-   // }
-   //
-   // if (count >= 30) {
-   //   std::cout << "COULDN'T CONVERGE" << '\n';
-   // }
-
    std::vector<double> detectorView;
-   double detectorLine = 1;
+   double detectorLine = m_nLines;
    double detectorSample;
    double count = 0;
    double timei;
@@ -814,7 +727,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
 
      // Convert to detector line and sample
      detectorLine = m_iTransL[0]
-                  + m_iTransL[1] * detectorView[0];
+                  + m_iTransL[1] * detectorView[0]
                   + m_iTransL[2] * detectorView[1];
 
      // Convert to image sample line
@@ -841,11 +754,15 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    approxPt.line += detectorLine;
    approxPt.samp = (detectorSample + m_detectorSampleOrigin - m_startingSample)
                  / m_detectorSampleSumming;
-   achievedPrecision = &detectorLine;
+
+   if (achievedPrecision) {
+     *achievedPrecision = detectorLine;
+   }
+
    MESSAGE_LOG(m_logger, "computeViewingPixel: image line sample {} {}",
                                 approxPt.line, approxPt.samp)
 
-   if (warnings && (desiredPrecision > 0.0) && (*achievedPrecision > desiredPrecision))
+   if (warnings && (desiredPrecision > 0.0) && (achievedPrecision) && (*achievedPrecision > desiredPrecision))
    {
       warnings->push_back(
          csm::Warning(
@@ -2489,7 +2406,7 @@ std::vector<double> UsgsAstroLsSensorModel::computeDetectorView(
    const std::vector<double>& adj,
    const double& desiredPrecision) const
 {
-  MESSAGE_LOG(m_logger, "Computing computeViewingPixel (with adjusments)"
+  MESSAGE_LOG(m_logger, "Computing computeDetectorView (with adjusments)"
                               "for ground point {} {} {} at time {} ",
                               groundPoint.x, groundPoint.y, groundPoint.z, time)
 
@@ -2505,7 +2422,7 @@ std::vector<double> UsgsAstroLsSensorModel::computeDetectorView(
    double bodyLookX = groundPoint.x - xc;
    double bodyLookY = groundPoint.y - yc;
    double bodyLookZ = groundPoint.z - zc;
-   MESSAGE_LOG(m_logger, "computeViewingPixel: look vector {} {} {}",
+   MESSAGE_LOG(m_logger, "computeDetectorView: look vector {} {} {}",
                                 bodyLookX, bodyLookY, bodyLookZ)
 
    // Rotate the look vector into the camera reference frame
@@ -2524,7 +2441,7 @@ std::vector<double> UsgsAstroLsSensorModel::computeDetectorView(
    double cameraLookZ = bodyToCamera[2] * bodyLookX
                       + bodyToCamera[5] * bodyLookY
                       + bodyToCamera[8] * bodyLookZ;
-   MESSAGE_LOG(m_logger, "computeViewingPixel: look vector (camrea ref frame)"
+   MESSAGE_LOG(m_logger, "computeDetectorView: look vector (camrea ref frame)"
                                "{} {} {}",
                                 cameraLookX, cameraLookY, cameraLookZ)
 
@@ -2542,7 +2459,7 @@ std::vector<double> UsgsAstroLsSensorModel::computeDetectorView(
    double adjustedLookZ = attCorr[2] * cameraLookX
                         + attCorr[5] * cameraLookY
                         + attCorr[8] * cameraLookZ;
-   MESSAGE_LOG(m_logger, "computeViewingPixel: adjusted look vector"
+   MESSAGE_LOG(m_logger, "computeDetectorView: adjusted look vector"
                                "{} {} {}",
                                 adjustedLookX, adjustedLookY, adjustedLookZ)
 
