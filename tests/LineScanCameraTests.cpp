@@ -38,8 +38,8 @@ TEST_F(ConstVelocityLineScanSensorModel, Inversion) {
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
   csm::ImageCoord imageReprojPt = sensorModel->groundToImage(groundPt);
 
-  EXPECT_DOUBLE_EQ(imagePt.line, imageReprojPt.line);
-  EXPECT_DOUBLE_EQ(imagePt.samp, imageReprojPt.samp);
+  EXPECT_NEAR(imagePt.line, imageReprojPt.line, 1e-7);
+  EXPECT_NEAR(imagePt.samp, imageReprojPt.samp, 1e-7);
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, OffBody) {
@@ -73,39 +73,12 @@ TEST_F(ConstVelocityLineScanSensorModel, RemoteImageLocus) {
    EXPECT_NEAR(locus.point.z,      0.0, 1e-12);
 }
 
-// Pan tests
-
-TEST_F(ConstAngularVelocityLineScanSensorModel, Center) {
-   csm::ImageCoord imagePt(8.5, 8.0);
-   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   EXPECT_DOUBLE_EQ(groundPt.x, 10.0);
-   EXPECT_DOUBLE_EQ(groundPt.y, 0.0);
-   EXPECT_DOUBLE_EQ(groundPt.z, 0.0);
-}
-
-TEST_F(ConstAngularVelocityLineScanSensorModel, Inversion) {
-  csm::ImageCoord imagePt(8.5, 8);
-  csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-  csm::ImageCoord imageReprojPt = sensorModel->groundToImage(groundPt);
-
-  EXPECT_DOUBLE_EQ(imagePt.line, imageReprojPt.line);
-  EXPECT_DOUBLE_EQ(imagePt.samp, imageReprojPt.samp);
-}
-
-TEST_F(ConstAngularVelocityLineScanSensorModel, OffBody) {
-   csm::ImageCoord imagePt(4.5, 4.0);
-   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   EXPECT_NEAR(groundPt.x, 4.15414478, 1e-8);
-   EXPECT_NEAR(groundPt.y, -7.98311067, 1e-8);
-   EXPECT_NEAR(groundPt.z, 63.82129588, 1e-8);
-}
-
 TEST_F(ConstVelocityLineScanSensorModel, calculateAttitudeCorrection) {
   std::vector<double> adj;
   double attCorr[9];
   adj.resize(15, 0);
   // Pi/2 with simply compensating for member variable m_flyingHeight in UsgsAstroLsSensorModel
-  adj[7] = (M_PI / 2) * 990.0496255790623081338708;
+  adj[7] = (M_PI / 2) * sensorModel->m_flyingHeight;
   sensorModel->calculateAttitudeCorrection(999.5, adj, attCorr);
 
   // EXPECT_NEARs are used here instead of EXPECT_DOUBLE_EQs because index 0 and 8 of the matrix
@@ -238,7 +211,7 @@ TEST_F(OrbitalLineScanSensorModel, InversionHeight) {
 TEST_F(OrbitalLineScanSensorModel, InversionReallyHigh) {
   for (double line = 0.5; line < 16; line++) {
     csm::ImageCoord imagePt(line, 8);
-    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 49000.0);
+    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 4900.0);
     csm::ImageCoord imageReprojPt = sensorModel->groundToImage(groundPt);
 
     // groundToImage has a default precision of 0.001m and each pixel is 2m
