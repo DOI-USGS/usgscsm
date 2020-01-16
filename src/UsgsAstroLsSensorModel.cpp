@@ -2468,6 +2468,10 @@ std::vector<double> UsgsAstroLsSensorModel::computeDetectorView(
    double focalX = adjustedLookX * lookScale;
    double focalY = adjustedLookY * lookScale;
 
+   MESSAGE_LOG(m_logger, "computeDetectorView: focal plane coordinates"
+                         "x:{} y:{} scale:{}",
+                         focalX, focalY, lookScale)
+
    return std::vector<double> {focalX, focalY};
 }
 
