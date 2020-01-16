@@ -38,8 +38,8 @@ TEST_F(ConstVelocityLineScanSensorModel, Inversion) {
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
   csm::ImageCoord imageReprojPt = sensorModel->groundToImage(groundPt);
 
-  EXPECT_NEAR(imagePt.line, imageReprojPt.line, 1e-7);
-  EXPECT_NEAR(imagePt.samp, imageReprojPt.samp, 1e-7);
+  EXPECT_NEAR(imagePt.line, imageReprojPt.line, 1e-2);
+  EXPECT_NEAR(imagePt.samp, imageReprojPt.samp, 1e-2);
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, OffBody) {
