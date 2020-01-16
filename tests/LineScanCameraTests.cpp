@@ -194,9 +194,9 @@ TEST_F(OrbitalLineScanSensorModel, getSunPositionStationary){
 TEST_F(OrbitalLineScanSensorModel, Center) {
   csm::ImageCoord imagePt(8.5, 8.0);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-  EXPECT_DOUBLE_EQ(groundPt.x, 999999.71120001574);
+  EXPECT_DOUBLE_EQ(groundPt.x, 999999.70975015126);
   EXPECT_DOUBLE_EQ(groundPt.y, 0.0);
-  EXPECT_DOUBLE_EQ(groundPt.z, -759.99992423469905);
+  EXPECT_DOUBLE_EQ(groundPt.z, -761.90525203960692);
 }
 
 TEST_F(OrbitalLineScanSensorModel, Inversion) {
