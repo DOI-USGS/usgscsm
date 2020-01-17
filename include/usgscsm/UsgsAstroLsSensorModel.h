@@ -108,11 +108,6 @@ public:
    std::vector<double> m_positions;
    std::vector<double> m_velocities;
    std::vector<double> m_quaternions;
-   std::vector<int> m_detectorNodes;
-   std::vector<double> m_detectorXCoords;
-   std::vector<double> m_detectorYCoords;
-   std::vector<double> m_detectorLineCoeffs;
-   double m_averageDetectorSize;
    std::vector<double> m_currentParameterValue;
    std::vector<csm::param::Type> m_parameterType;
    csm::EcefCoord m_referencePointXyz;
@@ -1043,11 +1038,10 @@ private:
 
    // Computes the imaging locus that would view a ground point at a specific
    // time. Computationally, this is the opposite of losToEcf.
-   csm::ImageCoord computeViewingPixel(
+   std::vector<double> computeDetectorView(
       const double& time,   // The time to use the EO at
       const csm::EcefCoord& groundPoint,      // The ground coordinate
-      const std::vector<double>& adj, // Parameter Adjustments for partials
-      const double& desiredPrecision // Desired precision for distortion inversion
+      const std::vector<double>& adj // Parameter Adjustments for partials
    ) const;
 
    // The linear approximation for the sensor model is used as the starting point

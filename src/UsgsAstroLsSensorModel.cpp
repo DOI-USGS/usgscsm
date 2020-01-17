@@ -516,11 +516,6 @@ void UsgsAstroLsSensorModel::reset()
   m_positions.clear();                        // 42
   m_velocities.clear();                      // 43
   m_quaternions.clear();                     // 44
-  m_detectorNodes.clear();
-  m_detectorXCoords.clear();
-  m_detectorYCoords.clear();
-  m_detectorLineCoeffs.clear();
-  m_averageDetectorSize = 0.0;
 
   m_currentParameterValue.assign(NUM_PARAMETERS,0.0);
   m_parameterType.assign(NUM_PARAMETERS,csm::param::REAL);
@@ -614,37 +609,6 @@ void UsgsAstroLsSensorModel::updateState()
    MESSAGE_LOG(m_logger, "updateState: half time duration set to {}",
                                m_halfTime)
 
-   // compute linearized detector coordinates
-   m_detectorXCoords.resize(m_nSamples);
-   m_detectorYCoords.resize(m_nSamples);
-
-   for (int i = 0; i < m_nSamples; i++) {
-     computeDistortedFocalPlaneCoordinates(
-          0.5, i,
-          m_detectorSampleOrigin, m_detectorLineOrigin,
-          m_detectorSampleSumming, 1.0,
-          m_startingSample, 0.0,
-          m_iTransS, m_iTransL,
-          m_detectorXCoords[i], m_detectorYCoords[i]
-     );
-   }
-   m_averageDetectorSize = 0;
-   for (int i = 1; i < m_nSamples; i++) {
-     double xDist = m_detectorXCoords[i] - m_detectorXCoords[i-1];
-     double yDist = m_detectorYCoords[i] - m_detectorYCoords[i-1];
-     m_averageDetectorSize += sqrt(xDist*xDist + yDist*yDist);
-   }
-   m_averageDetectorSize /= (m_nSamples-1);
-   m_detectorNodes = fitLinearApproximation(m_detectorXCoords, m_detectorYCoords,
-                                            m_averageDetectorSize);
-
-   m_detectorLineCoeffs.resize(3 * (m_detectorNodes.size() - 1));
-   for (size_t i = 0; i + 1 < m_detectorNodes.size(); i++) {
-     line(m_detectorXCoords[m_detectorNodes[i]], m_detectorYCoords[m_detectorNodes[i]],
-          m_detectorXCoords[m_detectorNodes[i+1]], m_detectorYCoords[m_detectorNodes[i+1]],
-          m_detectorLineCoeffs[3*i], m_detectorLineCoeffs[3*i+1], m_detectorLineCoeffs[3*i+2]);
-   }
-
    // Parameter covariance, hardcoded accuracy values
    int num_params = NUM_PARAMETERS;
    int num_paramsSquare = num_params * num_params;
@@ -687,129 +651,76 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
 // UsgsAstroLsSensorModel::groundToImage (internal version)
 //***************************************************************************
 csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
-   const csm::EcefCoord& ground_pt,
+   const csm::EcefCoord& groundPt,
    const std::vector<double>& adj,
-   double                desired_precision,
-   double*               achieved_precision,
+   double                desiredPrecision,
+   double*               achievedPrecision,
    csm::WarningList*     warnings) const
 {
-   MESSAGE_LOG(m_logger, "Computing groundToImage (with adjustments) for {}, {}, {}, with desired precision {}",
-              ground_pt.x, ground_pt.y, ground_pt.z, desired_precision);
    // Search for the line, sample coordinate that viewed a given ground point.
-   // This method uses an iterative secant method to search for the image
-   // line. Since this is looking for a zero we subtract 0.5 each time the offsets
-   // are calculated. This allows it to converge on the center of the pixel where
-   // there is only one correct answer instead of the top or bottom of the pixel
-   // where there are two correct answers.
+   // This method first uses a linear approximation to get an initial point.
+   // Then the detector offset for the line is continuously computed and
+   // applied to the line until we achieve the desired precision.
 
-   // Convert the ground precision to pixel precision so we can
-   // check for convergence without re-intersecting
-   csm::ImageCoord approxPoint;
-   computeLinearApproximation(ground_pt, approxPoint);
-   csm::ImageCoord approxNextPoint = approxPoint;
-   if (approxNextPoint.line + 1 < m_nLines) {
-      ++approxNextPoint.line;
-   }
-   else {
-      --approxNextPoint.line;
-   }
-   double height, aPrec;
-   computeElevation(ground_pt.x, ground_pt.y, ground_pt.z, height, aPrec, desired_precision);
-   csm::EcefCoord approxIntersect = imageToGround(approxPoint, height);
-   csm::EcefCoord approxNextIntersect = imageToGround(approxNextPoint, height);
-   double lineDX = approxNextIntersect.x - approxIntersect.x;
-   double lineDY = approxNextIntersect.y - approxIntersect.y;
-   double lineDZ = approxNextIntersect.z - approxIntersect.z;
-   double approxLineRes = sqrt(lineDX * lineDX + lineDY * lineDY + lineDZ * lineDZ);
-   // Increase the precision by a small amount to ensure the desired precision is met
-   double pixelPrec = desired_precision / approxLineRes * 0.9;
+   csm::ImageCoord approxPt;
+   computeLinearApproximation(groundPt, approxPt);
 
-   // Start secant method search on the image lines
-   double sampCtr = m_nSamples / 2.0;
-   double firstTime = getImageTime(csm::ImageCoord(0.0, sampCtr));
-   double lastTime = getImageTime(csm::ImageCoord(m_nLines, sampCtr));
-   // See comment above for why (- 0.5)
-   double firstOffset = computeViewingPixel(firstTime, ground_pt, adj, pixelPrec/2).line - 0.5;
-   double lastOffset = computeViewingPixel(lastTime, ground_pt, adj, pixelPrec/2).line - 0.5;
-   MESSAGE_LOG(m_logger, "groundToImage: Initial firstOffset {}, lastOffset {}", firstOffset, lastOffset)
+   std::vector<double> detectorView;
+   double detectorLine = m_nLines;
+   double count = 0;
+   double timei;
 
-   double closestLine;
-   csm::ImageCoord detectorCoord;
+   while(abs(detectorLine) > desiredPrecision && ++count < 15) {
+     timei = getImageTime(approxPt);
+     detectorView = computeDetectorView(timei, groundPt, adj);
 
-   // Start secant method search
-   for (int it = 0; it < 30; it++) {
-      double nextTime = ((firstTime * lastOffset) - (lastTime * firstOffset))
-                      / (lastOffset - firstOffset);
-      // Because time across the image is not continuous, find the exposure closest
-      // to the computed nextTime and use that.
+     // Convert to detector line
+     detectorLine = m_iTransL[0]
+                  + m_iTransL[1] * detectorView[0]
+                  + m_iTransL[2] * detectorView[1];
 
-      // I.E. if the computed nextTime is 0.3, and the middle exposure times for
-      // lines are 0.07, 0.17, 0.27, 0.37, and 0.47; then use 0.27 because it is
-      // the closest middle exposure time.
-      auto referenceTimeIt = std::upper_bound(m_intTimeStartTimes.begin(),
-                                              m_intTimeStartTimes.end(),
-                                              nextTime);
-      if (referenceTimeIt != m_intTimeStartTimes.begin()) {
-         --referenceTimeIt;
-      }
-
-      size_t referenceIndex = std::distance(m_intTimeStartTimes.begin(), referenceTimeIt);
-      MESSAGE_LOG(m_logger, "groundToImage: Find reference time, line number {}, start time {}, duration {} ",
-                  m_intTimeLines[referenceIndex], m_intTimeStartTimes[referenceIndex], m_intTimes[referenceIndex])
-      double computedLine = (nextTime - m_intTimeStartTimes[referenceIndex]) / m_intTimes[referenceIndex]
-                          + m_intTimeLines[referenceIndex];
-      // Remove -0.5 once ISIS linescanrate is fixed
-      closestLine = floor(computedLine - 0.5);
-      nextTime = getImageTime(csm::ImageCoord(closestLine, sampCtr));
-
-      detectorCoord = computeViewingPixel(nextTime, ground_pt, adj, pixelPrec/2);
-      double nextOffset = detectorCoord.line - 0.5;
-
-      // remove the farthest away node
-      if (fabs(firstTime - nextTime) > fabs(lastTime - nextTime)) {
-        firstTime = nextTime;
-        firstOffset = nextOffset;
-      }
-      else {
-        lastTime = nextTime;
-        lastOffset = nextOffset;
-      }
-      MESSAGE_LOG(m_logger, "groundToImage: Loop firstOffset {}, firstTime {}, lastOffset {}, lastTime {}, nextOffset {}, nextTime {}",
-                  firstOffset, firstTime, lastOffset, lastTime, nextOffset, nextTime)
-
-      if (fabs(lastOffset - firstOffset) < pixelPrec) {
-        MESSAGE_LOG(m_logger, "groundToImage: Final firstOffset {}, lastOffset {}, pixelPre {}", firstOffset, lastOffset, pixelPrec)
-        break;
-      }
+     // Convert to image line
+     approxPt.line += detectorLine;
    }
 
-   // The computed pixel is the detector pixel, so we need to convert that to image lines
-   csm::ImageCoord calculatedPixel(detectorCoord.line + closestLine, detectorCoord.samp);
+   timei = getImageTime(approxPt);
+   detectorView = computeDetectorView(timei, groundPt, adj);
 
-   // Reintersect to ensure the image point actually views the ground point.
-   csm::EcefCoord calculatedPoint = imageToGround(calculatedPixel, height);
-   double dx = ground_pt.x - calculatedPoint.x;
-   double dy = ground_pt.y - calculatedPoint.y;
-   double dz = ground_pt.z - calculatedPoint.z;
-   double len = dx * dx + dy * dy + dz * dz;
+   // Invert distortion
+   double distortedFocalX, distortedFocalY;
+   applyDistortion(detectorView[0], detectorView[1], distortedFocalX, distortedFocalY,
+                   m_opticalDistCoeffs, m_distortionType, desiredPrecision);
 
-   if (achieved_precision) {
-      *achieved_precision = sqrt(len);
+   // Convert to detector line and sample
+   detectorLine = m_iTransL[0]
+                + m_iTransL[1] * distortedFocalX
+                + m_iTransL[2] * distortedFocalY;
+   double detectorSample = m_iTransS[0]
+                         + m_iTransS[1] * distortedFocalX
+                         + m_iTransS[2] * distortedFocalY;
+
+   // Convert to image sample line
+   approxPt.line += detectorLine;
+   approxPt.samp = (detectorSample + m_detectorSampleOrigin - m_startingSample)
+                 / m_detectorSampleSumming;
+
+   if (achievedPrecision) {
+     *achievedPrecision = detectorLine;
    }
 
-   double preSquare = desired_precision * desired_precision;
-   if (warnings && (desired_precision > 0.0) && (preSquare < len)) {
-     MESSAGE_LOG(m_logger, "groundToImage: Desired precision not achieved {}", preSquare)
-     std::stringstream msg;
-     msg << "Desired precision not achieved. ";
-     msg << len << "  " << preSquare << "\n";
-     warnings->push_back(csm::Warning(csm::Warning::PRECISION_NOT_MET,
-                         msg.str().c_str(),
-                         "UsgsAstroLsSensorModel::groundToImage()"));
-   }
-   MESSAGE_LOG(m_logger, "groundToImage: Final pixel line {}, sample {}", calculatedPixel.line, calculatedPixel.samp)
+   MESSAGE_LOG(m_logger, "groundToImage: image line sample {} {}",
+                                approxPt.line, approxPt.samp)
 
-   return calculatedPixel;
+   if (warnings && (desiredPrecision > 0.0) && (abs(detectorLine) > desiredPrecision))
+   {
+      warnings->push_back(
+         csm::Warning(
+            csm::Warning::PRECISION_NOT_MET,
+            "Desired precision not achieved.",
+            "UsgsAstroLsSensorModel::groundToImage()"));
+   }
+
+   return approxPt;
 }
 
 //***************************************************************************
@@ -1356,7 +1267,7 @@ double UsgsAstroLsSensorModel::getImageTime(
    const csm::ImageCoord& image_pt) const
 {
    // Remove 0.5 after ISIS dependency in the linescanrate is gone
-   double lineFull = floor(image_pt.line) + 0.5;
+   double lineFull = image_pt.line;
 
    auto referenceLineIt = std::upper_bound(m_intTimeLines.begin(),
                                            m_intTimeLines.end(),
@@ -1969,12 +1880,11 @@ void UsgsAstroLsSensorModel::losToEcf(
    // USGS image convention: UL pixel center == (1.0, 1.0)
    double sampleCSMFull = sample;
    double sampleUSGSFull = sampleCSMFull;
-   double fractionalLine = line - floor(line);
 
    // Compute distorted image coordinates in mm (sample, line on image (pixels) -> focal plane
    double distortedFocalPlaneX, distortedFocalPlaneY;
    computeDistortedFocalPlaneCoordinates(
-         fractionalLine, sampleUSGSFull,
+         m_detectorLineOrigin, sampleUSGSFull,
          m_detectorSampleOrigin, m_detectorLineOrigin,
          m_detectorSampleSumming, 1.0,
          m_startingSample, 0.0,
@@ -2369,6 +2279,7 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(
    double sensVelNom[3];
    lagrangeInterp(m_numPositions/3, &m_velocities[0], m_t0Ephem, m_dtEphem,
       time, 3, nOrder, sensVelNom);
+
    MESSAGE_LOG(m_logger, "getAdjSensorPosVel: using {} order Lagrange",
                                 nOrder)
 
@@ -2437,17 +2348,17 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(
 
 
 //***************************************************************************
-// UsgsAstroLineScannerSensorModel::computeViewingPixel
+// UsgsAstroLineScannerSensorModel::computeDetectorView
 //***************************************************************************
-csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
+std::vector<double> UsgsAstroLsSensorModel::computeDetectorView(
    const double& time,
    const csm::EcefCoord& groundPoint,
-   const std::vector<double>& adj,
-   const double& desiredPrecision) const
+   const std::vector<double>& adj) const
 {
-  MESSAGE_LOG(m_logger, "Computing computeViewingPixel (with adjusments)"
+  MESSAGE_LOG(m_logger, "Computing computeDetectorView (with adjusments)"
                               "for ground point {} {} {} at time {} ",
                               groundPoint.x, groundPoint.y, groundPoint.z, time)
+
 
   // Helper function to compute the CCD pixel that views a ground point based
   // on the exterior orientation at a given time.
@@ -2460,7 +2371,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double bodyLookX = groundPoint.x - xc;
    double bodyLookY = groundPoint.y - yc;
    double bodyLookZ = groundPoint.z - zc;
-   MESSAGE_LOG(m_logger, "computeViewingPixel: look vector {} {} {}",
+   MESSAGE_LOG(m_logger, "computeDetectorView: look vector {} {} {}",
                                 bodyLookX, bodyLookY, bodyLookZ)
 
    // Rotate the look vector into the camera reference frame
@@ -2479,7 +2390,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double cameraLookZ = bodyToCamera[2] * bodyLookX
                       + bodyToCamera[5] * bodyLookY
                       + bodyToCamera[8] * bodyLookZ;
-   MESSAGE_LOG(m_logger, "computeViewingPixel: look vector (camrea ref frame)"
+   MESSAGE_LOG(m_logger, "computeDetectorView: look vector (camrea ref frame)"
                                "{} {} {}",
                                 cameraLookX, cameraLookY, cameraLookZ)
 
@@ -2497,7 +2408,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double adjustedLookZ = attCorr[2] * cameraLookX
                         + attCorr[5] * cameraLookY
                         + attCorr[8] * cameraLookZ;
-   MESSAGE_LOG(m_logger, "computeViewingPixel: adjusted look vector"
+   MESSAGE_LOG(m_logger, "computeDetectorView: adjusted look vector"
                                "{} {} {}",
                                 adjustedLookX, adjustedLookY, adjustedLookZ)
 
@@ -2505,31 +2416,12 @@ csm::ImageCoord UsgsAstroLsSensorModel::computeViewingPixel(
    double lookScale = (m_focalLength  + getValue(15, adj)) / adjustedLookZ;
    double focalX = adjustedLookX * lookScale;
    double focalY = adjustedLookY * lookScale;
-   double distortedFocalX, distortedFocalY;
-   MESSAGE_LOG(m_logger, "computeViewingPixel: focal plane coordinates"
-                                "x:{} y:{} scale:{}",
-                                focalX, focalY, lookScale)
 
-   // Invert distortion
-   applyDistortion(focalX, focalY, distortedFocalX, distortedFocalY,
-                   m_opticalDistCoeffs, m_distortionType, desiredPrecision);
+   MESSAGE_LOG(m_logger, "computeDetectorView: focal plane coordinates"
+                         "x:{} y:{} scale:{}",
+                         focalX, focalY, lookScale)
 
-   // Convert to detector line and sample
-   double detectorLine = m_iTransL[0]
-                       + m_iTransL[1] * distortedFocalX
-                       + m_iTransL[2] * distortedFocalY;
-   double detectorSample = m_iTransS[0]
-                         + m_iTransS[1] * distortedFocalX
-                         + m_iTransS[2] * distortedFocalY;
-
-   // Convert to image sample line
-   double line = detectorLine + m_detectorLineOrigin;
-   double sample = (detectorSample + m_detectorSampleOrigin - m_startingSample)
-                 / m_detectorSampleSumming;
-   MESSAGE_LOG(m_logger, "computeViewingPixel: image line sample {} {}",
-                                line, sample)
-
-   return csm::ImageCoord(line, sample);
+   return std::vector<double> {focalX, focalY};
 }
 
 
