@@ -1041,8 +1041,7 @@ private:
    std::vector<double> computeDetectorView(
       const double& time,   // The time to use the EO at
       const csm::EcefCoord& groundPoint,      // The ground coordinate
-      const std::vector<double>& adj, // Parameter Adjustments for partials
-      const double& desiredPrecision // Desired precision for distortion inversion
+      const std::vector<double>& adj // Parameter Adjustments for partials
    ) const;
 
    // The linear approximation for the sensor model is used as the starting point

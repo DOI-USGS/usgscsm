@@ -658,48 +658,33 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    csm::WarningList*     warnings) const
 {
    // Search for the line, sample coordinate that viewed a given ground point.
-   // This method uses an iterative secant method to search for the image
-   // line. Since this is looking for a zero we subtract 0.5 each time the offsets
-   // are calculated. This allows it to converge on the center of the pixel where
-   // there is only one correct answer instead of the top or bottom of the pixel
-   // where there are two correct answers.
+   // This method first uses a linear approximation to get an initial point.
+   // Then the detector offset for the line is continuously computed and
+   // applied to the line until we achieve the desired precision.
 
-   // Convert the ground precision to pixel precision so we can
-   // check for convergence without re-intersecting
    csm::ImageCoord approxPt;
    computeLinearApproximation(groundPt, approxPt);
 
    std::vector<double> detectorView;
    double detectorLine = m_nLines;
-   double detectorSample;
    double count = 0;
    double timei;
 
-   while(abs(detectorLine) > desiredPrecision) {
-     if (++count > 15) {
-       if (warnings) {
-         warnings->push_back(
-           csm::Warning(
-             csm::Warning::PRECISION_NOT_MET,
-             "Unable to achieve desired precision within 15 iterations.",
-             "UsgsAstroLsSensorModel::groundToImage()"));
-       }
-       break;
-     }
+   while(abs(detectorLine) > desiredPrecision && ++count < 15) {
      timei = getImageTime(approxPt);
-     detectorView = computeDetectorView(timei, groundPt, adj, desiredPrecision);
+     detectorView = computeDetectorView(timei, groundPt, adj);
 
-     // Convert to detector line and sample
+     // Convert to detector line
      detectorLine = m_iTransL[0]
                   + m_iTransL[1] * detectorView[0]
                   + m_iTransL[2] * detectorView[1];
 
-     // Convert to image sample line
+     // Convert to image line
      approxPt.line += detectorLine;
    }
 
    timei = getImageTime(approxPt);
-   detectorView = computeDetectorView(timei, groundPt, adj, desiredPrecision);
+   detectorView = computeDetectorView(timei, groundPt, adj);
 
    // Invert distortion
    double distortedFocalX, distortedFocalY;
@@ -710,9 +695,9 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    detectorLine = m_iTransL[0]
                 + m_iTransL[1] * distortedFocalX
                 + m_iTransL[2] * distortedFocalY;
-   detectorSample = m_iTransS[0]
-                  + m_iTransS[1] * distortedFocalX
-                  + m_iTransS[2] * distortedFocalY;
+   double detectorSample = m_iTransS[0]
+                         + m_iTransS[1] * distortedFocalX
+                         + m_iTransS[2] * distortedFocalY;
 
    // Convert to image sample line
    approxPt.line += detectorLine;
@@ -723,10 +708,10 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
      *achievedPrecision = detectorLine;
    }
 
-   MESSAGE_LOG(m_logger, "computeViewingPixel: image line sample {} {}",
+   MESSAGE_LOG(m_logger, "groundToImage: image line sample {} {}",
                                 approxPt.line, approxPt.samp)
 
-   if (warnings && (desiredPrecision > 0.0) && (achievedPrecision) && (*achievedPrecision > desiredPrecision))
+   if (warnings && (desiredPrecision > 0.0) && (abs(detectorLine) > desiredPrecision))
    {
       warnings->push_back(
          csm::Warning(
@@ -2362,13 +2347,12 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(
 
 
 //***************************************************************************
-// UsgsAstroLineScannerSensorModel::computeViewingPixel
+// UsgsAstroLineScannerSensorModel::computeDetectorView
 //***************************************************************************
 std::vector<double> UsgsAstroLsSensorModel::computeDetectorView(
    const double& time,
    const csm::EcefCoord& groundPoint,
-   const std::vector<double>& adj,
-   const double& desiredPrecision) const
+   const std::vector<double>& adj) const
 {
   MESSAGE_LOG(m_logger, "Computing computeDetectorView (with adjusments)"
                               "for ground point {} {} {} at time {} ",

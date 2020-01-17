@@ -34,15 +34,14 @@ TEST_F(ConstVelocityLineScanSensorModel, Center) {
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, Inversion) {
-  double *achievedPrecision = new double;
+  double achievedPrecision;
   csm::ImageCoord imagePt(8.5, 8);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-  csm::ImageCoord imageReprojPt = sensorModel->groundToImage(groundPt, 0.001, achievedPrecision);
+  csm::ImageCoord imageReprojPt = sensorModel->groundToImage(groundPt, 0.001, &achievedPrecision);
 
-  EXPECT_NEAR(*achievedPrecision, 0.001, 1e-1);
-  EXPECT_NEAR(imagePt.line, imageReprojPt.line, 1e-1);
-  EXPECT_NEAR(imagePt.samp, imageReprojPt.samp, 1e-1);
-  delete achievedPrecision;
+  EXPECT_LT(achievedPrecision, 0.001);
+  EXPECT_NEAR(imagePt.line, imageReprojPt.line, 1e-3);
+  EXPECT_NEAR(imagePt.samp, imageReprojPt.samp, 1e-3);
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, OffBody) {
@@ -176,19 +175,18 @@ TEST_F(OrbitalLineScanSensorModel, Center) {
 }
 
 TEST_F(OrbitalLineScanSensorModel, Inversion) {
-  double *achievedPrecision = new double;
+  double achievedPrecision;
   for (double line = 0.5; line < 16; line++) {
     csm::ImageCoord imagePt(line, 8);
     csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-    csm::ImageCoord imageReprojPt = sensorModel->groundToImage(groundPt, 0.001, achievedPrecision);
+    csm::ImageCoord imageReprojPt = sensorModel->groundToImage(groundPt, 0.001, &achievedPrecision);
 
     // groundToImage has a default precision of 0.001m and each pixel is 100m
     // so we should be within 0.1 pixels
-    EXPECT_NEAR(*achievedPrecision, 0.001, 1e-1);
+    EXPECT_LT(achievedPrecision, 0.001);
     EXPECT_NEAR(imagePt.line, imageReprojPt.line, 0.1);
     EXPECT_NEAR(imagePt.samp, imageReprojPt.samp, 0.1);
   }
-  delete achievedPrecision;
 }
 
 TEST_F(OrbitalLineScanSensorModel, ImageToGroundHeight) {
