@@ -614,19 +614,18 @@ void UsgsAstroLsSensorModel::updateState()
    // Compute if downtrack is increasing or decreasing lines
    // This requires that all of the other parameters be set first!
    csm::ImageCoord nextLinePoint((lineCtr+m_nLines)/2, sampCtr);
-   std::cerr << "Next point: " << nextLinePoint.line << ", " << nextLinePoint.samp << std::endl;
    double nextLineTime = getImageTime(nextLinePoint);
-   std::cerr << "Next time: " << nextLineTime << std::endl;
    std::vector<double> refView = computeDetectorView(nextLineTime,
                                                      m_referencePointXyz,
                                                      _no_adjustment);
    double refDetectorLine = m_iTransL[0]
                           + m_iTransL[1] * refView[0]
                           + m_iTransL[2] * refView[1];
-   std::cerr << "Next dectector line: " << refDetectorLine << std::endl;
    if (refDetectorLine > 0.0) {
      m_downtrackLines = -1;
    }
+   MESSAGE_LOG(m_logger, "updateState: down track line direction set to {}",
+                               m_downtrackLines)
 
    // Parameter covariance, hardcoded accuracy values
    int num_params = NUM_PARAMETERS;
