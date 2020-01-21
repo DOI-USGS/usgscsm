@@ -240,6 +240,8 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
                          j["m_referencePointXyz"][1].dump(),
                          j["m_referencePointXyz"][2].dump())
 
+   m_downtrackLines = j["m_downtrackLines"];
+
    m_gsd = j["m_gsd"];
    m_flyingHeight = j["m_flyingHeight"];
    m_halfSwath = j["m_halfSwath"];
@@ -424,6 +426,8 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
 
       state["m_currentParameterValue"] = m_currentParameterValue;
       state["m_parameterType"] = m_parameterType;
+
+      state["m_downtrackLines"] = m_downtrackLines;
 
       state["m_gsd"] = m_gsd;
       state["m_flyingHeight"] = m_flyingHeight;
