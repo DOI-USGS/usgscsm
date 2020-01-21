@@ -681,7 +681,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    // Then the detector offset for the line is continuously computed and
    // applied to the line until we achieve the desired precision.
    MESSAGE_LOG(m_logger, "Computing groundToImage for {}, {}, {}, with desired precision {}",
-               ground_pt.x, ground_pt.y, ground_pt.z, desired_precision);
+               groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
 
    csm::ImageCoord approxPt;
    computeLinearApproximation(groundPt, approxPt);
