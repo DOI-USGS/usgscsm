@@ -2710,6 +2710,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_sunVelocity"]= getSunVelocities(isd, parsingWarnings);
 
   // leave these be for now.
+  state["m_downtrackLines"] = 1.0;
   state["m_gsd"] = 1.0;
   state["m_flyingHeight"] = 1000.0;
   state["m_halfSwath"] = 1000.0;
