@@ -232,7 +232,7 @@ TEST_F(OrbitalLineScanSensorModel, ReferenceDateTime) {
 
 TEST_F(ConstVelocityLineScanSensorModel, FocalLengthAdjustment) {
   csm::ImageCoord imagePt(8.5, 4.0);
-  sensorModel->setParameterValue(15, -45);
+  sensorModel->setParameterValue(15, 0.9 * sensorModel->m_halfSwath);
   csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(imagePt);
   EXPECT_DOUBLE_EQ(locus.direction.x, -5.0 / sqrt(5 * 5 + 0.4 * 0.4));
   EXPECT_DOUBLE_EQ(locus.direction.y, -0.4 / sqrt(5 * 5 + 0.4 * 0.4));
