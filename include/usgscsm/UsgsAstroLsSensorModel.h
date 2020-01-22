@@ -111,6 +111,7 @@ public:
    std::vector<double> m_currentParameterValue;
    std::vector<csm::param::Type> m_parameterType;
    csm::EcefCoord m_referencePointXyz;
+   int          m_downtrackLines;
    double       m_gsd;
    double       m_flyingHeight;
    double       m_halfSwath;
