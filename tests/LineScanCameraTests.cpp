@@ -230,6 +230,33 @@ TEST_F(OrbitalLineScanSensorModel, ReferenceDateTime) {
   EXPECT_EQ(date, "20000101T001639");
 }
 
+TEST_F(TwoLineScanSensorModels, CrossCovariance) {
+  std::vector<double> crossCovars = sensorModel1->getCrossCovarianceMatrix(*sensorModel2);
+  ASSERT_EQ(crossCovars.size(), sensorModel1->getNumParameters() * sensorModel2->getNumParameters());
+  for (int i = 0; i < sensorModel1->getNumParameters(); i++) {
+    for (int j = 0; j < sensorModel2->getNumParameters(); j++) {
+      EXPECT_EQ(crossCovars[i * sensorModel2->getNumParameters() + j], 0.0)
+                << "Value at row " << i << " column " << j;
+    }
+  }
+
+  std::vector<double> covars = sensorModel1->getCrossCovarianceMatrix(*sensorModel1);
+  ASSERT_EQ(covars.size(), 16*16);
+  for (int i = 0; i < 16; i++) {
+    for (int j = 0; j < 16; j++) {
+      if (i == j) {
+        EXPECT_GT(covars[i * 16 + j], 0.0) << "Value at row " << i << " column " << j;
+      }
+      else {
+        EXPECT_EQ(covars[i * 16 + j], 0.0) << "Value at row " << i << " column " << j;
+      }
+    }
+  }
+
+  std::vector<double> fixedCovars = sensorModel1->getCrossCovarianceMatrix(*sensorModel1, csm::param::NON_ADJUSTABLE);
+  EXPECT_EQ(fixedCovars.size(), 0);
+}
+
 TEST_F(ConstVelocityLineScanSensorModel, FocalLengthAdjustment) {
   csm::ImageCoord imagePt(8.5, 4.0);
   sensorModel->setParameterValue(15, 0.9 * sensorModel->m_halfSwath);
