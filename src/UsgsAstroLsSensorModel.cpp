@@ -616,6 +616,7 @@ void UsgsAstroLsSensorModel::updateState()
                                m_halfTime)
 
    // Compute if downtrack is increasing or decreasing lines
+   // so that we know which direction to iterate during groundToImage
    // This requires that all of the other parameters be set first!
    csm::ImageCoord nextLinePoint((lineCtr+m_nLines)/2, sampCtr);
    double nextLineTime = getImageTime(nextLinePoint);
