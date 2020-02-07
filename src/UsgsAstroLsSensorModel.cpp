@@ -73,6 +73,7 @@ const std::string  UsgsAstroLsSensorModel::_STATE_KEYWORD[] =
    "m_startingEphemerisTime",
    "m_centerEphemerisTime",
    "m_detectorSampleSumming",
+   "m_detectorSampleSumming",
    "m_startingDetectorSample",
    "m_startingDetectorLine",
    "m_ikCode",
@@ -163,17 +164,21 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
    m_startingEphemerisTime = j["m_startingEphemerisTime"];
    m_centerEphemerisTime = j["m_centerEphemerisTime"];
    m_detectorSampleSumming = j["m_detectorSampleSumming"];
-   m_startingSample = j["m_startingDetectorSample"];
+   m_detectorLineSumming = j["m_detectorLineSumming"];
+   m_startingDetectorSample = j["m_startingDetectorSample"];
+   m_startingDetectorLine = j["m_startingDetectorLine"];
    m_ikCode = j["m_ikCode"];
    MESSAGE_LOG(m_logger, "m_startingEphemerisTime: {} "
                          "m_centerEphemerisTime: {} "
                          "m_detectorSampleSumming: {} "
-                         "m_startingSample: {} "
+                         "m_detectorLineSumming: {} "
+                         "m_startingDetectorSample: {} "
                          "m_ikCode: {} ",
                          j["m_startingEphemerisTime"].dump(),
                          j["m_centerEphemerisTime"].dump(),
                          j["m_detectorSampleSumming"].dump(),
-                         j["m_startingSample"].dump(), j["m_ikCode"].dump())
+                         j["m_detectorLineSumming"].dump(),
+                         j["m_startingDetectorSample"].dump(), j["m_ikCode"].dump())
 
    m_focalLength = j["m_focalLength"];
    m_zDirection = j["m_zDirection"];
@@ -334,7 +339,8 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
 
       json state;
       state["m_modelName"] = _SENSOR_MODEL_NAME;
-      state["m_startingDetectorSample"] = m_startingSample;
+      state["m_startingDetectorSample"] = m_startingDetectorSample;
+      state["m_startingDetectorLine"] = m_startingDetectorLine;
       state["m_imageIdentifier"] = m_imageIdentifier;
       state["m_sensorName"] = m_sensorName;
       state["m_nLines"] = m_nLines;
@@ -359,13 +365,16 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
                                   m_centerEphemerisTime)
 
       state["m_detectorSampleSumming"] = m_detectorSampleSumming;
-      state["m_startingSample"] = m_startingSample;
+      state["m_detectorLineSumming"] = m_detectorLineSumming;
+      state["m_startingDetectorSample"] = m_startingDetectorSample;
       state["m_ikCode"] = m_ikCode;
       MESSAGE_LOG(m_logger, "m_detectorSampleSumming: {} "
-                                  "m_startingSample: {} "
-                                  "m_ikCode: {} ",
-                                  m_detectorSampleSumming, m_startingSample,
-                                  m_ikCode)
+                            "m_detectorLineSumming: {} "
+                            "m_startingDetectorSample: {} "
+                            "m_ikCode: {} ",
+                            m_detectorSampleSumming, m_detectorLineSumming,
+                            m_startingDetectorSample,
+                            m_ikCode)
 
       state["m_focalLength"] = m_focalLength;
       state["m_zDirection"] = m_zDirection;
@@ -487,7 +496,8 @@ void UsgsAstroLsSensorModel::reset()
   m_startingEphemerisTime = 0.0;             // 13
   m_centerEphemerisTime = 0.0;               // 14
   m_detectorSampleSumming = 1.0;             // 15
-  m_startingSample = 1.0;                    // 16
+  m_detectorLineSumming = 1.0;
+  m_startingDetectorSample = 1.0;                    // 16
   m_ikCode = -85600;                         // 17
   m_focalLength = 350.0;                           // 18
   m_zDirection = 1.0;                        // 19
@@ -667,6 +677,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
 
    std::vector<double> detectorView;
    double detectorLine = m_nLines;
+   double detectorSample = 0;
    double count = 0;
    double timei;
 
@@ -695,13 +706,13 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    detectorLine = m_iTransL[0]
                 + m_iTransL[1] * distortedFocalX
                 + m_iTransL[2] * distortedFocalY;
-   double detectorSample = m_iTransS[0]
-                         + m_iTransS[1] * distortedFocalX
-                         + m_iTransS[2] * distortedFocalY;
-
+   detectorSample = m_iTransS[0]
+                + m_iTransS[1] * distortedFocalX
+                + m_iTransS[2] * distortedFocalY;
    // Convert to image sample line
-   approxPt.line += detectorLine;
-   approxPt.samp = (detectorSample + m_detectorSampleOrigin - m_startingSample)
+   approxPt.line += (detectorLine + m_detectorLineOrigin - m_startingDetectorLine)
+                 / m_detectorLineSumming;
+   approxPt.samp = (detectorSample + m_detectorSampleOrigin - m_startingDetectorSample)
                  / m_detectorSampleSumming;
 
    if (achievedPrecision) {
@@ -1513,7 +1524,7 @@ csm::ImageVector UsgsAstroLsSensorModel::getImageSize() const
 //   m_startingEphemerisTime = j["m_startingEphemerisTime"];
 //   m_centerEphemerisTime = j["m_centerEphemerisTime"];
 //   m_detectorSampleSumming = j["m_detectorSampleSumming"];
-//   m_startingSample = j["m_startingSample"];
+//   m_startingDetectorSample = j["m_startingDetectorSample"];
 //   m_ikCode = j["m_ikCode"];
 //   m_focalLength = j["m_focalLength"];
 //   m_isisZDirection = j["m_isisZDirection"];
@@ -1884,10 +1895,10 @@ void UsgsAstroLsSensorModel::losToEcf(
    // Compute distorted image coordinates in mm (sample, line on image (pixels) -> focal plane
    double distortedFocalPlaneX, distortedFocalPlaneY;
    computeDistortedFocalPlaneCoordinates(
-         m_detectorLineOrigin, sampleUSGSFull,
+         0.0, sampleUSGSFull,
          m_detectorSampleOrigin, m_detectorLineOrigin,
-         m_detectorSampleSumming, 1.0,
-         m_startingSample, 0.0,
+         m_detectorSampleSumming, m_detectorLineSumming,
+         m_startingDetectorSample, m_startingDetectorLine,
          m_iTransS, m_iTransL,
          distortedFocalPlaneX, distortedFocalPlaneY);
    MESSAGE_LOG(m_logger, "losToEcf: distorted focal plane coordinate {} {}",
@@ -2705,16 +2716,19 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
                         state["m_intTimes"].dump())
 
   state["m_detectorSampleSumming"] = getSampleSumming(isd, parsingWarnings);
+  state["m_detectorLineSumming"] = getLineSumming(isd, parsingWarnings);
   state["m_startingDetectorSample"] = getDetectorStartingSample(isd, parsingWarnings);
   state["m_startingDetectorLine"] = getDetectorStartingLine(isd, parsingWarnings);
   state["m_detectorSampleOrigin"] = getDetectorCenterSample(isd, parsingWarnings);
   state["m_detectorLineOrigin"] = getDetectorCenterLine(isd, parsingWarnings);
   MESSAGE_LOG(m_logger, "m_detectorSampleSumming: {} "
+                        "m_detectorLineSumming: {}"
                         "m_startingDetectorSample: {} "
                         "m_startingDetectorLine: {} "
                         "m_detectorSampleOrigin: {} "
                         "m_detectorLineOrigin: {} ",
                         state["m_detectorSampleSumming"].dump(),
+                        state["m_detectorLineSumming"].dump(),
                         state["m_startingDetectorSample"].dump(),
                         state["m_startingDetectorLine"].dump(),
                         state["m_detectorSampleOrigin"].dump(),
