@@ -240,8 +240,6 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
                          j["m_referencePointXyz"][1].dump(),
                          j["m_referencePointXyz"][2].dump())
 
-   m_downtrackLines = j["m_downtrackLines"];
-
    m_gsd = j["m_gsd"];
    m_flyingHeight = j["m_flyingHeight"];
    m_halfSwath = j["m_halfSwath"];
@@ -427,8 +425,6 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
       state["m_currentParameterValue"] = m_currentParameterValue;
       state["m_parameterType"] = m_parameterType;
 
-      state["m_downtrackLines"] = m_downtrackLines;
-
       state["m_gsd"] = m_gsd;
       state["m_flyingHeight"] = m_flyingHeight;
       state["m_halfSwath"] = m_halfSwath;
@@ -531,8 +527,6 @@ void UsgsAstroLsSensorModel::reset()
   m_sunPosition = std::vector<double>(3, 0.0);
   m_sunVelocity = std::vector<double>(3, 0.0);
 
-  m_downtrackLines = 1;
-
   m_gsd = 1.0;
   m_flyingHeight = 1000.0;
   m_halfSwath = 1000.0;
@@ -615,23 +609,6 @@ void UsgsAstroLsSensorModel::updateState()
    MESSAGE_LOG(m_logger, "updateState: half time duration set to {}",
                                m_halfTime)
 
-   // Compute if downtrack is increasing or decreasing lines
-   // so that we know which direction to iterate during groundToImage
-   // This requires that all of the other parameters be set first!
-   csm::ImageCoord nextLinePoint((lineCtr+m_nLines)/2, sampCtr);
-   double nextLineTime = getImageTime(nextLinePoint);
-   std::vector<double> refView = computeDetectorView(nextLineTime,
-                                                     m_referencePointXyz,
-                                                     _no_adjustment);
-   double refDetectorLine = m_iTransL[0]
-                          + m_iTransL[1] * refView[0]
-                          + m_iTransL[2] * refView[1];
-   if (refDetectorLine > 0.0) {
-     m_downtrackLines = -1;
-   }
-   MESSAGE_LOG(m_logger, "updateState: down track line direction set to {}",
-                               m_downtrackLines)
-
    // Parameter covariance, hardcoded accuracy values
    int num_params = NUM_PARAMETERS;
    int num_paramsSquare = num_params * num_params;
@@ -684,13 +661,9 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    // This method first uses a linear approximation to get an initial point.
    // Then the detector offset for the line is continuously computed and
    // applied to the line until we achieve the desired precision.
-   MESSAGE_LOG(m_logger, "Computing groundToImage for {}, {}, {}, with desired precision {}",
-               groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
 
    csm::ImageCoord approxPt;
    computeLinearApproximation(groundPt, approxPt);
-   MESSAGE_LOG(m_logger, "Approximate image point {}, {}",
-               approxPt.line, approxPt.samp);
 
    std::vector<double> detectorView;
    double detectorLine = m_nLines;
@@ -700,8 +673,6 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    while(abs(detectorLine) > desiredPrecision && ++count < 15) {
      timei = getImageTime(approxPt);
      detectorView = computeDetectorView(timei, groundPt, adj);
-     MESSAGE_LOG(m_logger, "Computed detector view {}, {}",
-                 detectorView[0], detectorView[1]);
 
      // Convert to detector line
      detectorLine = m_iTransL[0]
@@ -709,22 +680,16 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
                   + m_iTransL[2] * detectorView[1];
 
      // Convert to image line
-     approxPt.line += m_downtrackLines * detectorLine;
-     MESSAGE_LOG(m_logger, "Updated image point {}, {}",
-                 approxPt.line, approxPt.samp);
+     approxPt.line += detectorLine;
    }
 
    timei = getImageTime(approxPt);
    detectorView = computeDetectorView(timei, groundPt, adj);
-   MESSAGE_LOG(m_logger, "Computed detector view {}, {}",
-               detectorView[0], detectorView[1]);
 
    // Invert distortion
    double distortedFocalX, distortedFocalY;
    applyDistortion(detectorView[0], detectorView[1], distortedFocalX, distortedFocalY,
                    m_opticalDistCoeffs, m_distortionType, desiredPrecision);
-   MESSAGE_LOG(m_logger, "Distorted detector view {}, {}",
-               distortedFocalX, distortedFocalY);
 
    // Convert to detector line and sample
    detectorLine = m_iTransL[0]
@@ -735,7 +700,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
                          + m_iTransS[2] * distortedFocalY;
 
    // Convert to image sample line
-   approxPt.line += m_downtrackLines * detectorLine;
+   approxPt.line += detectorLine;
    approxPt.samp = (detectorSample + m_detectorSampleOrigin - m_startingSample)
                  / m_detectorSampleSumming;
 
@@ -2711,7 +2676,6 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_sunVelocity"]= getSunVelocities(isd, parsingWarnings);
 
   // leave these be for now.
-  state["m_downtrackLines"] = 1.0;
   state["m_gsd"] = 1.0;
   state["m_flyingHeight"] = 1000.0;
   state["m_halfSwath"] = 1000.0;
