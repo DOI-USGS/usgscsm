@@ -688,7 +688,9 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
      // Convert to detector line
      detectorLine = m_iTransL[0]
                   + m_iTransL[1] * detectorView[0]
-                  + m_iTransL[2] * detectorView[1];
+                  + m_iTransL[2] * detectorView[1]
+                  + m_detectorLineOrigin - m_startingDetectorLine;
+     detectorLine /= m_detectorLineSumming;
 
      // Convert to image line
      approxPt.line += detectorLine;
@@ -710,19 +712,21 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
                 + m_iTransS[1] * distortedFocalX
                 + m_iTransS[2] * distortedFocalY;
    // Convert to image sample line
-   approxPt.line += (detectorLine + m_detectorLineOrigin - m_startingDetectorLine)
-                 / m_detectorLineSumming;
+   double finalUpdate = (detectorLine + m_detectorLineOrigin - m_startingDetectorLine)
+                      / m_detectorLineSumming;
+   approxPt.line += finalUpdate;
    approxPt.samp = (detectorSample + m_detectorSampleOrigin - m_startingDetectorSample)
                  / m_detectorSampleSumming;
 
+   double precision = detectorLine + m_detectorLineOrigin - m_startingDetectorLine;
    if (achievedPrecision) {
-     *achievedPrecision = detectorLine;
+     *achievedPrecision = finalUpdate;
    }
 
    MESSAGE_LOG(m_logger, "groundToImage: image line sample {} {}",
                                 approxPt.line, approxPt.samp)
 
-   if (warnings && (desiredPrecision > 0.0) && (abs(detectorLine) > desiredPrecision))
+   if (warnings && (desiredPrecision > 0.0) && (abs(finalUpdate) > desiredPrecision))
    {
       warnings->push_back(
          csm::Warning(
@@ -818,7 +822,6 @@ csm::EcefCoord UsgsAstroLsSensorModel::imageToGround(
 {
    MESSAGE_LOG(m_logger, "Computing imageToGround for {}, {}, {}, with desired precision {}",
                image_pt.line, image_pt.samp, height, desired_precision);
-
    double xc, yc, zc;
    double vx, vy, vz;
    double xl, yl, zl;
@@ -1277,7 +1280,6 @@ std::string UsgsAstroLsSensorModel::getReferenceDateAndTime() const
 double UsgsAstroLsSensorModel::getImageTime(
    const csm::ImageCoord& image_pt) const
 {
-   // Remove 0.5 after ISIS dependency in the linescanrate is gone
    double lineFull = image_pt.line;
 
    auto referenceLineIt = std::upper_bound(m_intTimeLines.begin(),

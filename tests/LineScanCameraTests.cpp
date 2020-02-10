@@ -26,11 +26,11 @@ TEST_F(ConstVelocityLineScanSensorModel, State) {
 // Fly by tests
 
 TEST_F(ConstVelocityLineScanSensorModel, Center) {
-   csm::ImageCoord imagePt(8.5, 8.0);
+   csm::ImageCoord imagePt(8.0, 8.0);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   EXPECT_NEAR(groundPt.x, 10.0, 1e-12);
-   EXPECT_NEAR(groundPt.y, 0.0, 1e-12);
-   EXPECT_NEAR(groundPt.z, 0.0, 1e-12);
+   EXPECT_NEAR(groundPt.x, 9.99999500000, 1e-10);
+   EXPECT_NEAR(groundPt.y, 0.0, 1e-10);
+   EXPECT_NEAR(groundPt.z, 0.00999999500, 1e-10);
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, Inversion) {
@@ -45,7 +45,7 @@ TEST_F(ConstVelocityLineScanSensorModel, Inversion) {
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, OffBody) {
-   csm::ImageCoord imagePt(4.5, 4.0);
+   csm::ImageCoord imagePt(4.0, 4.0);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
    EXPECT_NEAR(groundPt.x, 0.063995905, 1e-8);
    EXPECT_NEAR(groundPt.y, -7.999488033, 1e-8);
@@ -129,7 +129,6 @@ TEST_F(OrbitalLineScanSensorModel, getIlluminationDirectionStationary) {
 }
 
 TEST_F(OrbitalLineScanSensorModel, getSunPositionLagrange){
-  std::cout<<sensorModel->m_t0Ephem<<std::endl;
   csm::EcefVector sunPosition = sensorModel->getSunPosition(-.6);
   EXPECT_DOUBLE_EQ(sunPosition.x, 125);
   EXPECT_DOUBLE_EQ(sunPosition.y, 125);
@@ -169,7 +168,7 @@ TEST_F(OrbitalLineScanSensorModel, getSunPositionStationary){
 TEST_F(OrbitalLineScanSensorModel, Center) {
   csm::ImageCoord imagePt(8.5, 8.0);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-  EXPECT_DOUBLE_EQ(groundPt.x, 999999.70975015126);
+  EXPECT_NEAR(groundPt.x, 1000000, 1);
   EXPECT_DOUBLE_EQ(groundPt.y, 0.0);
   EXPECT_DOUBLE_EQ(groundPt.z, -761.90525203960692);
 }
