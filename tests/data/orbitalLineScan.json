@@ -99,7 +99,7 @@
       [0.0, -0.70660152, 0.0, 0.70761168]
     ]
   },
-  "starting_detector_line": 0,
+  "starting_detector_line": 1,
   "starting_detector_sample": 0,
   "sun_position": {
     "positions": [

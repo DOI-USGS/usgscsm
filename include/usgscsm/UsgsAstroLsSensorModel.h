@@ -78,7 +78,9 @@ public:
    double       m_startingEphemerisTime;
    double       m_centerEphemerisTime;
    double       m_detectorSampleSumming;
-   double       m_startingSample;
+   double       m_detectorLineSumming;
+   double       m_startingDetectorSample;
+   double       m_startingDetectorLine;
    int          m_ikCode;
    double       m_focalLength;
    double       m_zDirection;
