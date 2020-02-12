@@ -620,17 +620,36 @@ void UsgsAstroLsSensorModel::updateState()
                                m_halfTime)
 
    // Parameter covariance, hardcoded accuracy values
+   // hardcoded ~1 pixel accuracy values
    int num_params = NUM_PARAMETERS;
-   int num_paramsSquare = num_params * num_params;
-   double variance = m_gsd * m_gsd;
-   for (int i = 0; i < num_paramsSquare; i++)
-   {
-      m_covariance[i] = 0.0;
-   }
-   for (int i = 0; i < num_params; i++)
-   {
-      m_covariance[i * num_params + i] = variance;
-   }
+   double positionVariance = m_gsd * m_gsd;
+   // parameter time is scaled to [0, 2]
+   // so divide by 2 for velocities and 4 for accelerations
+   double velocityVariance = positionVariance / 2.0;
+   double accelerationVariance = positionVariance / 4.0;
+   m_covariance.assign(num_params * num_params, 0.0);
+
+   // Set position variances
+   m_covariance[0] = positionVariance;
+   m_covariance[num_params + 1] = positionVariance;
+   m_covariance[2 * num_params + 2] = positionVariance;
+   m_covariance[3 * num_params + 3] = velocityVariance;
+   m_covariance[4 * num_params + 4] = velocityVariance;
+   m_covariance[5 * num_params + 5] = velocityVariance;
+
+   // Set orientation variances
+   m_covariance[6 * num_params + 6] = positionVariance;
+   m_covariance[7 * num_params + 7] = positionVariance;
+   m_covariance[8 * num_params + 8] = positionVariance;
+   m_covariance[9 * num_params + 9] = velocityVariance;
+   m_covariance[10 * num_params + 10] = velocityVariance;
+   m_covariance[11 * num_params + 11] = velocityVariance;
+   m_covariance[12 * num_params + 12] = accelerationVariance;
+   m_covariance[13 * num_params + 13] = accelerationVariance;
+   m_covariance[14 * num_params + 14] = accelerationVariance;
+
+   // Set focal length variance
+   m_covariance[15 * num_params + 15] = positionVariance;
 }
 
 
@@ -1695,6 +1714,18 @@ std::vector<double> UsgsAstroLsSensorModel::getCrossCovarianceMatrix(
    csm::param::Set            pSet,
    const csm::GeometricModel::GeometricModelList& otherModels) const
 {
+   // Return covariance matrix
+   if (&comparisonModel == this) {
+     std::vector<int> paramIndices = getParameterSetIndices(pSet);
+     int numParams = paramIndices.size();
+     std::vector<double> covariances(numParams * numParams, 0.0);
+     for (int i = 0; i < numParams; i++) {
+       for (int j = 0; j < numParams; j++) {
+         covariances[i * numParams + j] = getParameterCovariance(paramIndices[i], paramIndices[j]);
+       }
+     }
+     return covariances;
+   }
    // No correlation between models.
    const std::vector<int>& indices = getParameterSetIndices(pSet);
    size_t num_rows = indices.size();
@@ -1918,7 +1949,8 @@ void UsgsAstroLsSensorModel::losToEcf(
   // Define imaging ray (look vector) in camera space
    double cameraLook[3];
    createCameraLookVector(undistortedFocalPlaneX, undistortedFocalPlaneY,
-                          m_zDirection, m_focalLength + getValue(15, adj), cameraLook);
+                          m_zDirection, m_focalLength * (1 - getValue(15, adj) / m_halfSwath),
+                          cameraLook);
    MESSAGE_LOG(m_logger, "losToEcf: uncorrected camera look vector {} {} {}",
                          cameraLook[0], cameraLook[1], cameraLook[2])
 
