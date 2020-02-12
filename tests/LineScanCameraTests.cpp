@@ -26,11 +26,11 @@ TEST_F(ConstVelocityLineScanSensorModel, State) {
 // Fly by tests
 
 TEST_F(ConstVelocityLineScanSensorModel, Center) {
-   csm::ImageCoord imagePt(8.5, 8.0);
+   csm::ImageCoord imagePt(8.0, 8.0);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   EXPECT_NEAR(groundPt.x, 10.0, 1e-12);
-   EXPECT_NEAR(groundPt.y, 0.0, 1e-12);
-   EXPECT_NEAR(groundPt.z, 0.0, 1e-12);
+   EXPECT_NEAR(groundPt.x, 9.99999500000, 1e-10);
+   EXPECT_NEAR(groundPt.y, 0.0, 1e-10);
+   EXPECT_NEAR(groundPt.z, 0.00999999500, 1e-10);
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, Inversion) {
@@ -45,34 +45,46 @@ TEST_F(ConstVelocityLineScanSensorModel, Inversion) {
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, OffBody) {
-   csm::ImageCoord imagePt(4.5, 4.0);
+   csm::ImageCoord imagePt(0.0, 4.0);
    csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-   EXPECT_NEAR(groundPt.x, 0.063995905, 1e-8);
-   EXPECT_NEAR(groundPt.y, -7.999488033, 1e-8);
-   EXPECT_NEAR(groundPt.z, 8, 1e-8);
+   EXPECT_NEAR(groundPt.x, 0.04799688020, 1e-10);
+   EXPECT_NEAR(groundPt.y, -7.99961602495, 1e-10);
+   EXPECT_NEAR(groundPt.z, 16.00004799688, 1e-10);
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, ProximateImageLocus) {
-   csm::ImageCoord imagePt(8.5, 8.0);
-   csm::EcefCoord groundPt(5, 5, 5);
+   csm::ImageCoord imagePt(8.0, 8.0);
+   csm::EcefCoord groundPt(10, 2, 1);
+   csm::EcefLocus remoteLocus = sensorModel->imageToRemoteImagingLocus(imagePt);
    csm::EcefLocus locus = sensorModel->imageToProximateImagingLocus(imagePt, groundPt);
-   EXPECT_NEAR(locus.direction.x, -1.0, 1e-12);
-   EXPECT_NEAR(locus.direction.y,  0.0, 1e-12);
-   EXPECT_NEAR(locus.direction.z,  0.0, 1e-12);
-   EXPECT_NEAR(locus.point.x,      5.0, 1e-12);
-   EXPECT_NEAR(locus.point.y,      0.0, 1e-12);
-   EXPECT_NEAR(locus.point.z,      0.0, 1e-12);
+   double locusToGroundX = locus.point.x - groundPt.x;
+   double locusToGroundY = locus.point.y - groundPt.y;
+   double locusToGroundZ = locus.point.z - groundPt.z;
+   EXPECT_NEAR(locus.direction.x, remoteLocus.direction.x, 1e-10);
+   EXPECT_NEAR(locus.direction.y, remoteLocus.direction.y, 1e-10);
+   EXPECT_NEAR(locus.direction.z, remoteLocus.direction.z, 1e-10);
+   EXPECT_NEAR(locusToGroundX * locus.direction.x +
+               locusToGroundY * locus.direction.y +
+               locusToGroundZ * locus.direction.z, 0.0, 1e-10);
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, RemoteImageLocus) {
    csm::ImageCoord imagePt(8.5, 8.0);
    csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(imagePt);
-   EXPECT_NEAR(locus.direction.x, -1.0, 1e-12);
-   EXPECT_NEAR(locus.direction.y,  0.0, 1e-12);
-   EXPECT_NEAR(locus.direction.z,  0.0, 1e-12);
-   EXPECT_NEAR(locus.point.x,      1000.0, 1e-12);
-   EXPECT_NEAR(locus.point.y,      0.0, 1e-12);
-   EXPECT_NEAR(locus.point.z,      0.0, 1e-12);
+   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+   double lookX = groundPt.x - locus.point.x;
+   double lookY = groundPt.y - locus.point.y;
+   double lookZ = groundPt.z - locus.point.z;
+   double lookMag = sqrt(lookX * lookX + lookY * lookY + lookZ * lookZ);
+   lookX /= lookMag;
+   lookY /= lookMag;
+   lookZ /= lookMag;
+   EXPECT_NEAR(locus.direction.x, lookX, 1e-12);
+   EXPECT_NEAR(locus.direction.y, lookY, 1e-12);
+   EXPECT_NEAR(locus.direction.z, lookZ, 1e-12);
+   EXPECT_NEAR(locus.point.x,     1000.0, 1e-12);
+   EXPECT_NEAR(locus.point.y,     0.0, 1e-12);
+   EXPECT_NEAR(locus.point.z,     0.0, 1e-12);
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, calculateAttitudeCorrection) {
@@ -129,7 +141,6 @@ TEST_F(OrbitalLineScanSensorModel, getIlluminationDirectionStationary) {
 }
 
 TEST_F(OrbitalLineScanSensorModel, getSunPositionLagrange){
-  std::cout<<sensorModel->m_t0Ephem<<std::endl;
   csm::EcefVector sunPosition = sensorModel->getSunPosition(-.6);
   EXPECT_DOUBLE_EQ(sunPosition.x, 125);
   EXPECT_DOUBLE_EQ(sunPosition.y, 125);
@@ -169,9 +180,9 @@ TEST_F(OrbitalLineScanSensorModel, getSunPositionStationary){
 TEST_F(OrbitalLineScanSensorModel, Center) {
   csm::ImageCoord imagePt(8.5, 8.0);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-  EXPECT_DOUBLE_EQ(groundPt.x, 999999.70975015126);
+  EXPECT_DOUBLE_EQ(groundPt.x, 999999.67040488799);
   EXPECT_DOUBLE_EQ(groundPt.y, 0.0);
-  EXPECT_DOUBLE_EQ(groundPt.z, -761.90525203960692);
+  EXPECT_DOUBLE_EQ(groundPt.z, -811.90523782723039);
 }
 
 TEST_F(OrbitalLineScanSensorModel, Inversion) {
@@ -261,7 +272,8 @@ TEST_F(ConstVelocityLineScanSensorModel, FocalLengthAdjustment) {
   csm::ImageCoord imagePt(8.5, 4.0);
   sensorModel->setParameterValue(15, 0.9 * sensorModel->m_halfSwath);
   csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(imagePt);
-  EXPECT_DOUBLE_EQ(locus.direction.x, -5.0 / sqrt(5 * 5 + 0.4 * 0.4));
-  EXPECT_DOUBLE_EQ(locus.direction.y, -0.4 / sqrt(5 * 5 + 0.4 * 0.4));
-  EXPECT_DOUBLE_EQ(locus.direction.z, 0.0);
+  double scale = sqrt(5 * 5 + 0.4 * 0.4 + 0.05 * 0.05);
+  EXPECT_DOUBLE_EQ(locus.direction.x, -5.0 / scale);
+  EXPECT_DOUBLE_EQ(locus.direction.y, -0.4 / scale);
+  EXPECT_DOUBLE_EQ(locus.direction.z, -0.05 / scale);
 }

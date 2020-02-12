@@ -73,6 +73,7 @@ const std::string  UsgsAstroLsSensorModel::_STATE_KEYWORD[] =
    "m_startingEphemerisTime",
    "m_centerEphemerisTime",
    "m_detectorSampleSumming",
+   "m_detectorSampleSumming",
    "m_startingDetectorSample",
    "m_startingDetectorLine",
    "m_ikCode",
@@ -163,17 +164,21 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
    m_startingEphemerisTime = j["m_startingEphemerisTime"];
    m_centerEphemerisTime = j["m_centerEphemerisTime"];
    m_detectorSampleSumming = j["m_detectorSampleSumming"];
-   m_startingSample = j["m_startingDetectorSample"];
+   m_detectorLineSumming = j["m_detectorLineSumming"];
+   m_startingDetectorSample = j["m_startingDetectorSample"];
+   m_startingDetectorLine = j["m_startingDetectorLine"];
    m_ikCode = j["m_ikCode"];
    MESSAGE_LOG(m_logger, "m_startingEphemerisTime: {} "
                          "m_centerEphemerisTime: {} "
                          "m_detectorSampleSumming: {} "
-                         "m_startingSample: {} "
+                         "m_detectorLineSumming: {} "
+                         "m_startingDetectorSample: {} "
                          "m_ikCode: {} ",
                          j["m_startingEphemerisTime"].dump(),
                          j["m_centerEphemerisTime"].dump(),
                          j["m_detectorSampleSumming"].dump(),
-                         j["m_startingSample"].dump(), j["m_ikCode"].dump())
+                         j["m_detectorLineSumming"].dump(),
+                         j["m_startingDetectorSample"].dump(), j["m_ikCode"].dump())
 
    m_focalLength = j["m_focalLength"];
    m_zDirection = j["m_zDirection"];
@@ -239,8 +244,6 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
                          j["m_numQuaternions"].dump(), j["m_referencePointXyz"][0].dump(),
                          j["m_referencePointXyz"][1].dump(),
                          j["m_referencePointXyz"][2].dump())
-
-   m_downtrackLines = j["m_downtrackLines"];
 
    m_gsd = j["m_gsd"];
    m_flyingHeight = j["m_flyingHeight"];
@@ -336,7 +339,8 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
 
       json state;
       state["m_modelName"] = _SENSOR_MODEL_NAME;
-      state["m_startingDetectorSample"] = m_startingSample;
+      state["m_startingDetectorSample"] = m_startingDetectorSample;
+      state["m_startingDetectorLine"] = m_startingDetectorLine;
       state["m_imageIdentifier"] = m_imageIdentifier;
       state["m_sensorName"] = m_sensorName;
       state["m_nLines"] = m_nLines;
@@ -361,13 +365,16 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
                                   m_centerEphemerisTime)
 
       state["m_detectorSampleSumming"] = m_detectorSampleSumming;
-      state["m_startingSample"] = m_startingSample;
+      state["m_detectorLineSumming"] = m_detectorLineSumming;
+      state["m_startingDetectorSample"] = m_startingDetectorSample;
       state["m_ikCode"] = m_ikCode;
       MESSAGE_LOG(m_logger, "m_detectorSampleSumming: {} "
-                                  "m_startingSample: {} "
-                                  "m_ikCode: {} ",
-                                  m_detectorSampleSumming, m_startingSample,
-                                  m_ikCode)
+                            "m_detectorLineSumming: {} "
+                            "m_startingDetectorSample: {} "
+                            "m_ikCode: {} ",
+                            m_detectorSampleSumming, m_detectorLineSumming,
+                            m_startingDetectorSample,
+                            m_ikCode)
 
       state["m_focalLength"] = m_focalLength;
       state["m_zDirection"] = m_zDirection;
@@ -426,8 +433,6 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
 
       state["m_currentParameterValue"] = m_currentParameterValue;
       state["m_parameterType"] = m_parameterType;
-
-      state["m_downtrackLines"] = m_downtrackLines;
 
       state["m_gsd"] = m_gsd;
       state["m_flyingHeight"] = m_flyingHeight;
@@ -491,7 +496,8 @@ void UsgsAstroLsSensorModel::reset()
   m_startingEphemerisTime = 0.0;             // 13
   m_centerEphemerisTime = 0.0;               // 14
   m_detectorSampleSumming = 1.0;             // 15
-  m_startingSample = 1.0;                    // 16
+  m_detectorLineSumming = 1.0;
+  m_startingDetectorSample = 1.0;                    // 16
   m_ikCode = -85600;                         // 17
   m_focalLength = 350.0;                           // 18
   m_zDirection = 1.0;                        // 19
@@ -530,8 +536,6 @@ void UsgsAstroLsSensorModel::reset()
 
   m_sunPosition = std::vector<double>(3, 0.0);
   m_sunVelocity = std::vector<double>(3, 0.0);
-
-  m_downtrackLines = 1;
 
   m_gsd = 1.0;
   m_flyingHeight = 1000.0;
@@ -615,24 +619,7 @@ void UsgsAstroLsSensorModel::updateState()
    MESSAGE_LOG(m_logger, "updateState: half time duration set to {}",
                                m_halfTime)
 
-   // Compute if downtrack is increasing or decreasing lines
-   // so that we know which direction to iterate during groundToImage
-   // This requires that all of the other parameters be set first!
-   csm::ImageCoord nextLinePoint((lineCtr+m_nLines)/2, sampCtr);
-   double nextLineTime = getImageTime(nextLinePoint);
-   std::vector<double> refView = computeDetectorView(nextLineTime,
-                                                     m_referencePointXyz,
-                                                     _no_adjustment);
-   double refDetectorLine = m_iTransL[0]
-                          + m_iTransL[1] * refView[0]
-                          + m_iTransL[2] * refView[1];
-   if (refDetectorLine > 0.0) {
-     m_downtrackLines = -1;
-   }
-   MESSAGE_LOG(m_logger, "updateState: down track line direction set to {}",
-                               m_downtrackLines)
-
-   // Parameter covariance
+   // Parameter covariance, hardcoded accuracy values
    // hardcoded ~1 pixel accuracy values
    int num_params = NUM_PARAMETERS;
    double positionVariance = m_gsd * m_gsd;
@@ -703,69 +690,62 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
    // This method first uses a linear approximation to get an initial point.
    // Then the detector offset for the line is continuously computed and
    // applied to the line until we achieve the desired precision.
-   MESSAGE_LOG(m_logger, "Computing groundToImage for {}, {}, {}, with desired precision {}",
-               groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
 
    csm::ImageCoord approxPt;
    computeLinearApproximation(groundPt, approxPt);
-   MESSAGE_LOG(m_logger, "Approximate image point {}, {}",
-               approxPt.line, approxPt.samp);
 
    std::vector<double> detectorView;
    double detectorLine = m_nLines;
+   double detectorSample = 0;
    double count = 0;
    double timei;
 
    while(abs(detectorLine) > desiredPrecision && ++count < 15) {
      timei = getImageTime(approxPt);
      detectorView = computeDetectorView(timei, groundPt, adj);
-     MESSAGE_LOG(m_logger, "Computed detector view {}, {}",
-                 detectorView[0], detectorView[1]);
 
      // Convert to detector line
      detectorLine = m_iTransL[0]
                   + m_iTransL[1] * detectorView[0]
-                  + m_iTransL[2] * detectorView[1];
+                  + m_iTransL[2] * detectorView[1]
+                  + m_detectorLineOrigin - m_startingDetectorLine;
+     detectorLine /= m_detectorLineSumming;
 
      // Convert to image line
-     approxPt.line += m_downtrackLines * detectorLine;
-     MESSAGE_LOG(m_logger, "Updated image point {}, {}",
-                 approxPt.line, approxPt.samp);
+     approxPt.line += detectorLine;
    }
 
    timei = getImageTime(approxPt);
    detectorView = computeDetectorView(timei, groundPt, adj);
-   MESSAGE_LOG(m_logger, "Computed detector view {}, {}",
-               detectorView[0], detectorView[1]);
 
    // Invert distortion
    double distortedFocalX, distortedFocalY;
    applyDistortion(detectorView[0], detectorView[1], distortedFocalX, distortedFocalY,
                    m_opticalDistCoeffs, m_distortionType, desiredPrecision);
-   MESSAGE_LOG(m_logger, "Distorted detector view {}, {}",
-               distortedFocalX, distortedFocalY);
 
    // Convert to detector line and sample
    detectorLine = m_iTransL[0]
                 + m_iTransL[1] * distortedFocalX
                 + m_iTransL[2] * distortedFocalY;
-   double detectorSample = m_iTransS[0]
-                         + m_iTransS[1] * distortedFocalX
-                         + m_iTransS[2] * distortedFocalY;
-
+   detectorSample = m_iTransS[0]
+                + m_iTransS[1] * distortedFocalX
+                + m_iTransS[2] * distortedFocalY;
    // Convert to image sample line
-   approxPt.line += m_downtrackLines * detectorLine;
-   approxPt.samp = (detectorSample + m_detectorSampleOrigin - m_startingSample)
+   double finalUpdate = (detectorLine + m_detectorLineOrigin - m_startingDetectorLine)
+                      / m_detectorLineSumming;
+   approxPt.line += finalUpdate;
+   approxPt.samp = (detectorSample + m_detectorSampleOrigin - m_startingDetectorSample)
                  / m_detectorSampleSumming;
 
+   double precision = detectorLine + m_detectorLineOrigin - m_startingDetectorLine;
    if (achievedPrecision) {
-     *achievedPrecision = detectorLine;
+     *achievedPrecision = finalUpdate;
    }
 
    MESSAGE_LOG(m_logger, "groundToImage: image line sample {} {}",
                                 approxPt.line, approxPt.samp)
 
-   if (warnings && (desiredPrecision > 0.0) && (abs(detectorLine) > desiredPrecision))
+   if (warnings && (desiredPrecision > 0.0) && (abs(finalUpdate) > desiredPrecision))
    {
       warnings->push_back(
          csm::Warning(
@@ -861,7 +841,6 @@ csm::EcefCoord UsgsAstroLsSensorModel::imageToGround(
 {
    MESSAGE_LOG(m_logger, "Computing imageToGround for {}, {}, {}, with desired precision {}",
                image_pt.line, image_pt.samp, height, desired_precision);
-
    double xc, yc, zc;
    double vx, vy, vz;
    double xl, yl, zl;
@@ -1320,7 +1299,6 @@ std::string UsgsAstroLsSensorModel::getReferenceDateAndTime() const
 double UsgsAstroLsSensorModel::getImageTime(
    const csm::ImageCoord& image_pt) const
 {
-   // Remove 0.5 after ISIS dependency in the linescanrate is gone
    double lineFull = image_pt.line;
 
    auto referenceLineIt = std::upper_bound(m_intTimeLines.begin(),
@@ -1567,7 +1545,7 @@ csm::ImageVector UsgsAstroLsSensorModel::getImageSize() const
 //   m_startingEphemerisTime = j["m_startingEphemerisTime"];
 //   m_centerEphemerisTime = j["m_centerEphemerisTime"];
 //   m_detectorSampleSumming = j["m_detectorSampleSumming"];
-//   m_startingSample = j["m_startingSample"];
+//   m_startingDetectorSample = j["m_startingDetectorSample"];
 //   m_ikCode = j["m_ikCode"];
 //   m_focalLength = j["m_focalLength"];
 //   m_isisZDirection = j["m_isisZDirection"];
@@ -1950,10 +1928,10 @@ void UsgsAstroLsSensorModel::losToEcf(
    // Compute distorted image coordinates in mm (sample, line on image (pixels) -> focal plane
    double distortedFocalPlaneX, distortedFocalPlaneY;
    computeDistortedFocalPlaneCoordinates(
-         m_detectorLineOrigin, sampleUSGSFull,
+         0.0, sampleUSGSFull,
          m_detectorSampleOrigin, m_detectorLineOrigin,
-         m_detectorSampleSumming, 1.0,
-         m_startingSample, 0.0,
+         m_detectorSampleSumming, m_detectorLineSumming,
+         m_startingDetectorSample, m_startingDetectorLine,
          m_iTransS, m_iTransL,
          distortedFocalPlaneX, distortedFocalPlaneY);
    MESSAGE_LOG(m_logger, "losToEcf: distorted focal plane coordinate {} {}",
@@ -2743,7 +2721,6 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_sunVelocity"]= getSunVelocities(isd, parsingWarnings);
 
   // leave these be for now.
-  state["m_downtrackLines"] = 1.0;
   state["m_gsd"] = 1.0;
   state["m_flyingHeight"] = 1000.0;
   state["m_halfSwath"] = 1000.0;
@@ -2773,16 +2750,19 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
                         state["m_intTimes"].dump())
 
   state["m_detectorSampleSumming"] = getSampleSumming(isd, parsingWarnings);
+  state["m_detectorLineSumming"] = getLineSumming(isd, parsingWarnings);
   state["m_startingDetectorSample"] = getDetectorStartingSample(isd, parsingWarnings);
   state["m_startingDetectorLine"] = getDetectorStartingLine(isd, parsingWarnings);
   state["m_detectorSampleOrigin"] = getDetectorCenterSample(isd, parsingWarnings);
   state["m_detectorLineOrigin"] = getDetectorCenterLine(isd, parsingWarnings);
   MESSAGE_LOG(m_logger, "m_detectorSampleSumming: {} "
+                        "m_detectorLineSumming: {}"
                         "m_startingDetectorSample: {} "
                         "m_startingDetectorLine: {} "
                         "m_detectorSampleOrigin: {} "
                         "m_detectorLineOrigin: {} ",
                         state["m_detectorSampleSumming"].dump(),
+                        state["m_detectorLineSumming"].dump(),
                         state["m_startingDetectorSample"].dump(),
                         state["m_startingDetectorLine"].dump(),
                         state["m_detectorSampleOrigin"].dump(),

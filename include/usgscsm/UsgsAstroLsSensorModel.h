@@ -78,7 +78,9 @@ public:
    double       m_startingEphemerisTime;
    double       m_centerEphemerisTime;
    double       m_detectorSampleSumming;
-   double       m_startingSample;
+   double       m_detectorLineSumming;
+   double       m_startingDetectorSample;
+   double       m_startingDetectorLine;
    int          m_ikCode;
    double       m_focalLength;
    double       m_zDirection;
@@ -111,7 +113,6 @@ public:
    std::vector<double> m_currentParameterValue;
    std::vector<csm::param::Type> m_parameterType;
    csm::EcefCoord m_referencePointXyz;
-   int          m_downtrackLines;
    double       m_gsd;
    double       m_flyingHeight;
    double       m_halfSwath;
