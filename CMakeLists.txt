@@ -73,7 +73,6 @@ install(DIRECTORY ${USGSCSM_INCLUDE_DIRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR
 
 # Optional build or link against CSM
 option (USGSCSM_BUILD_TESTS "Build tests" ON)
-message("-- Build test var: ${USGSCSM_BUILD_TESTS}")
 if(USGSCSM_BUILD_TESTS)
 
   include(GoogleTest)
