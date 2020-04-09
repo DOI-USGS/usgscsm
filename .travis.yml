@@ -44,13 +44,13 @@ install:
 script:
   - mkdir build
   - cd build
-  - cmake -DCOVERAGE=ON ..
+  - cmake -DCOVERAGE=ON -DALE_BUILD_TESTS=OFF ..
   - cmake --build .
   - ctest -VV
   - cd ..
 
 after_success:
-  - conda install -y -q conda-build anaconda-client 
+  - conda install -y -q conda-build anaconda-client
   # Pull the libcsm for the build from our anaconda channel
   - conda config --add channels usgs-astrogeology
   - conda config --set anaconda_upload no
