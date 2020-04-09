@@ -33,8 +33,8 @@ else()
 			    PATHS $ENV{CONDA_PREFIX}/include/)
   find_library(ALE_LIBRARY ale PATHS $ENV{CONDA_PREFIX}/lib)
 
-  message("--Found CSM Library: ${ALE_LIBRARY}")
-  message("--Found CSM Include Directory: ${ALE_INCLUDE_DIR}")
+  message("--Found ALE Library: ${ALE_LIBRARY}")
+  message("--Found ALE Include Directory: ${ALE_INCLUDE_DIR}")
 endif(BUILD_ALE)
 
 add_library(usgscsm SHARED
