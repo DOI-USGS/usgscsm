@@ -8,7 +8,9 @@
 #include <tuple>
 #include <string>
 
-#include <json/json.hpp>
+#include "ale/Isd.h"
+
+#include <nlohmann/json.hpp>
 
 #include <Warning.h>
 // methods pulled out of los2ecf and computeViewingPixel
@@ -81,9 +83,9 @@ int getTotalLines(nlohmann::json isd, csm::WarningList *list=nullptr);
 int getTotalSamples(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getStartingTime(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getCenterTime(nlohmann::json isd, csm::WarningList *list=nullptr);
-std::vector<double> getIntegrationStartLines(nlohmann::json isd, csm::WarningList *list=nullptr);
-std::vector<double> getIntegrationStartTimes(nlohmann::json isd, csm::WarningList *list=nullptr);
-std::vector<double> getIntegrationTimes(nlohmann::json isd, csm::WarningList *list=nullptr);
+std::vector<double> getIntegrationStartLines(ale::Isd stateIsd, csm::WarningList *list=nullptr);
+std::vector<double> getIntegrationStartTimes(ale::Isd stateIsd, csm::WarningList *list=nullptr);
+std::vector<double> getIntegrationTimes(ale::Isd stateIsd, csm::WarningList *list=nullptr);
 int getSampleSumming(nlohmann::json isd, csm::WarningList *list=nullptr);
 int getLineSumming(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getFocalLength(nlohmann::json isd, csm::WarningList *list=nullptr);

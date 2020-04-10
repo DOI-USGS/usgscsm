@@ -15,7 +15,7 @@
 #include <Warning.h>
 #include <Version.h>
 
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
 #ifdef _WIN32
@@ -120,12 +120,12 @@ bool UsgsAstroPlugin::canModelBeConstructedFromState(const std::string &modelNam
     return (bool)model;
   }
   catch(std::exception& e) {
+    std::string msg = "Could not create model [";
+    msg += modelName;
+    msg += "] with error [";
+    msg += e.what();
+    msg += "]";
     if(warnings) {
-      std::string msg = "Could not create model [";
-      msg += modelName;
-      msg += "] with error [";
-      msg += e.what();
-      msg += "]";
       warnings->push_back(
         csm::Warning(
           csm::Warning::UNKNOWN_WARNING,
@@ -135,10 +135,10 @@ bool UsgsAstroPlugin::canModelBeConstructedFromState(const std::string &modelNam
     return false;
   }
   catch(...) {
+    std::string msg = "Could not create model [";
+    msg += modelName;
+    msg += "] with an unknown error.";
     if(warnings) {
-      std::string msg = "Could not create model [";
-      msg += modelName;
-      msg += "] with an unknown error.";
       warnings->push_back(
         csm::Warning(
           csm::Warning::UNKNOWN_WARNING,

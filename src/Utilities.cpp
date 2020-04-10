@@ -443,10 +443,10 @@ double getCenterTime(json isd, csm::WarningList *list) {
   return time;
 }
 
-std::vector<double> getIntegrationStartLines(json isd, csm::WarningList *list) {
+std::vector<double> getIntegrationStartLines(ale::Isd stateIsd, csm::WarningList *list) {
   std::vector<double> lines;
   try {
-    for (auto& scanRate : isd.at("line_scan_rate")) {
+    for (auto& scanRate : stateIsd.line_scan_rate) {
       lines.push_back(scanRate[0]);
     }
   }
@@ -462,10 +462,10 @@ std::vector<double> getIntegrationStartLines(json isd, csm::WarningList *list) {
   return lines;
 }
 
-std::vector<double> getIntegrationStartTimes(json isd, csm::WarningList *list) {
+std::vector<double> getIntegrationStartTimes(ale::Isd stateIsd, csm::WarningList *list) {
   std::vector<double> times;
   try {
-    for (auto& scanRate : isd.at("line_scan_rate")) {
+    for (auto& scanRate : stateIsd.line_scan_rate) {
       times.push_back(scanRate[1]);
     }
   }
@@ -481,10 +481,10 @@ std::vector<double> getIntegrationStartTimes(json isd, csm::WarningList *list) {
   return times;
 }
 
-std::vector<double> getIntegrationTimes(json isd, csm::WarningList *list) {
+std::vector<double> getIntegrationTimes(ale::Isd stateIsd, csm::WarningList *list) {
   std::vector<double> times;
   try {
-    for (auto& scanRate : isd.at("line_scan_rate")) {
+    for (auto& scanRate : stateIsd.line_scan_rate) {
       times.push_back(scanRate[2]);
     }
   }
