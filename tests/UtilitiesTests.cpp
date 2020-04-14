@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 
 #include <math.h>
+#include <stdexcept>
 
 using json = nlohmann::json;
 
@@ -336,4 +337,14 @@ TEST(UtilitiesTests, lagrangeInterp2D) {
                     time, vectorLength, order, &outputValue[0]);
   EXPECT_DOUBLE_EQ(outputValue[0], 0.5);
   EXPECT_DOUBLE_EQ(outputValue[1], 1.5);
+}
+
+double testPoly(double x) {
+  return (x - 2) * (x + 1) * (x + 7);
+};
+
+TEST(UtilitiesTests, brentRoot) {
+  EXPECT_NEAR(brentRoot(1.0, 3.0, testPoly, 1e-10), 2.0, 1e-10);
+  EXPECT_NEAR(brentRoot(0.0, -3.0, testPoly, 1e-10), -1.0, 1e-10);
+  EXPECT_THROW(brentRoot(-3.0, 3.0, testPoly), std::invalid_argument);
 }
