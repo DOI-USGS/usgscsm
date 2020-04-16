@@ -1103,3 +1103,54 @@ std::vector<double> getSensorOrientations(json isd, csm::WarningList *list) {
   }
   return quaternions;
 }
+
+double getExposureDuration(nlohmann::json isd, csm::WarningList *list) {
+  double duration;
+  try {
+    duration = isd.at("line_exposure_duration");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the line exposure duration.",
+          "Utilities::getExposureDuration()"));
+    }
+  }
+  return duration;
+}
+
+double getScaledPixelWidth(nlohmann::json isd, csm::WarningList *list) {
+  double width;
+  try {
+    width = isd.at("scaled_pixel_width");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the scaled pixel width.",
+          "Utilities::getScaledPixelWidth()"));
+    }
+  }
+  return width;
+}
+
+std::vector<double> getScaleConversionCoefficients(nlohmann::json isd, csm::WarningList *list) {
+  std::vector<double> coefficients;
+  try {
+    coefficients = isd.at("range_conversion_coefficients").get<std::vector<double>>();
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the range conversion coefficients and times.",
+          "Utilities::getScaleConversionCoefficients()"));
+    }
+  }
+  return coefficients;
+}
