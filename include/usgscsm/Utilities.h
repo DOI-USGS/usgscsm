@@ -69,6 +69,14 @@ void lagrangeInterp (
   const int&     i_order,
   double*        valueVector);
 
+// Brent's algorithm for finding the roots of a function
+// Arguments are two inputs that bracket a root, the function, and a convergence tolerance
+double brentRoot(
+  double lowerBound,
+  double upperBound,
+  double (*func)(double),
+  double epsilon = 1e-10);
+
 // Methods for checking/accessing the ISD
 
 double metric_conversion(double val, std::string from, std::string to="m");
