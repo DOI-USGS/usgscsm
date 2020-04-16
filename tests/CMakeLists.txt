@@ -6,6 +6,7 @@ add_executable(runCSMCameraModelTests
                FrameCameraTests.cpp
                LineScanCameraTests.cpp
                DistortionTests.cpp
+               SarTests.cpp
                ISDParsingTests.cpp
                UtilitiesTests.cpp)
 if(WIN32)

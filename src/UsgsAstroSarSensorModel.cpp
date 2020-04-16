@@ -40,7 +40,7 @@ const csm::param::Type
 string UsgsAstroSarSensorModel::constructStateFromIsd(
     const string imageSupportData,
     csm::WarningList *warnings
-) const {
+) {
   json isd = json::parse(imageSupportData);
   json state = {};
 
@@ -104,8 +104,8 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
   state["m_sensorIdentifier"] = getSensorName(isd, parsingWarnings);
 
   // get reference_height
-  state["m_minElevation"] = getMinHeight(isd, parsingWarnings);
-  state["m_maxElevation"] = getMaxHeight(isd, parsingWarnings);
+  state["m_minElevation"] = -1000;
+  state["m_maxElevation"] = 1000;
 
   // SAR specific values
   state["m_scaledPixelWidth"] = getScaledPixelWidth(isd, parsingWarnings);
