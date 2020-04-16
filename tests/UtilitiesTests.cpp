@@ -348,34 +348,3 @@ TEST(UtilitiesTests, brentRoot) {
   EXPECT_NEAR(brentRoot(0.0, -3.0, testPoly, 1e-10), -1.0, 1e-10);
   EXPECT_THROW(brentRoot(-3.0, 3.0, testPoly), std::invalid_argument);
 }
-
-TEST(UtilitiesTests, getExposureDuration) {
-  json isd = {{"line_exposure_duration", 0.45}};
-  EXPECT_EQ(getExposureDuration(isd), 0.45);
-}
-
-TEST(UtilitiesTests, getScaledPixelWidth) {
-  json isd = {{"scaled_pixel_width", 7.5}};
-  EXPECT_EQ(getScaledPixelWidth(isd), 7.5);
-}
-
-TEST(UtilitiesTests, getScaleConversionCoefficients) {
-  json isd = {{"range_conversion_coefficients",
-               {300, 1, 0.1, 0.01,
-                400, 2, 0.2, 0.02,
-                500, 3, 0.3, 0.03}}};
-  std::vector<double> coefficients = getScaleConversionCoefficients(isd);
-  ASSERT_EQ(coefficients.size(), 12);
-  EXPECT_EQ(coefficients[0], 300);
-  EXPECT_EQ(coefficients[1], 1);
-  EXPECT_EQ(coefficients[2], 0.1);
-  EXPECT_EQ(coefficients[3], 0.01);
-  EXPECT_EQ(coefficients[4], 400);
-  EXPECT_EQ(coefficients[5], 2);
-  EXPECT_EQ(coefficients[6], 0.2);
-  EXPECT_EQ(coefficients[7], 0.02);
-  EXPECT_EQ(coefficients[8], 500);
-  EXPECT_EQ(coefficients[9], 3);
-  EXPECT_EQ(coefficients[10], 0.3);
-  EXPECT_EQ(coefficients[11], 0.03);
-}
