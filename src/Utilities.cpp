@@ -4,6 +4,7 @@
 #include <Error.h>
 #include <stack>
 #include <utility>
+#include <stdexcept>
 
 using json = nlohmann::json;
 
@@ -275,6 +276,74 @@ void lagrangeInterp(
     }
   }
 }
+
+double brentRoot(
+  double lowerBound,
+  double upperBound,
+  double (*func)(double),
+  double epsilon) {
+    double counterPoint = lowerBound;
+    double currentPoint = upperBound;
+    double counterFunc = func(counterPoint);
+    double currentFunc = func(currentPoint);
+    if (counterFunc * currentFunc > 0.0) {
+      throw std::invalid_argument("Function values at the boundaries have the same sign.");
+    }
+    if (fabs(counterFunc) < fabs(currentFunc)) {
+      std::swap(counterPoint, currentPoint);
+      std::swap(counterFunc, currentFunc);
+    }
+
+    double previousPoint = counterPoint;
+    double previousFunc = counterFunc;
+    double evenOlderPoint = previousPoint;
+    double nextPoint;
+    double nextFunc;
+    int iteration = 0;
+    bool bisected = true;
+
+    do {
+      // Inverse quadratic interpolation
+      if (counterFunc != previousFunc && counterFunc != currentFunc) {
+        nextPoint = (counterPoint * currentFunc * previousFunc) / ((counterFunc - currentFunc) * (counterFunc - previousFunc));
+        nextPoint += (currentPoint * counterFunc * previousFunc) / ((currentFunc - counterFunc) * (currentFunc - previousFunc));
+        nextPoint += (previousPoint * currentFunc * counterFunc) / ((previousFunc - counterFunc) * (previousFunc - currentFunc));
+      }
+      // Secant method
+      else {
+        nextPoint = currentPoint - currentFunc * (currentPoint - counterPoint) / (currentFunc - counterFunc);
+      }
+
+      // Bisection method
+      if (((currentPoint - nextPoint) * (nextPoint - (3 * counterPoint + currentPoint) / 4) < 0) ||
+          (bisected && fabs(nextPoint - currentPoint) >= fabs(currentPoint - previousPoint) / 2) ||
+          (!bisected && fabs(nextPoint - currentPoint) >= fabs(previousPoint - evenOlderPoint) / 2) ||
+          (bisected && fabs(currentPoint - previousPoint) < epsilon) ||
+          (!bisected && fabs(previousPoint - evenOlderPoint) < epsilon)) {
+        nextPoint = (currentPoint + counterPoint) / 2;
+        bisected = true;
+      }
+      else {
+        bisected = false;
+      }
+
+      // Setup for next iteration
+      evenOlderPoint = previousPoint;
+      previousPoint = currentPoint;
+      previousFunc = currentFunc;
+      nextFunc = func(nextPoint);
+      if (counterFunc * nextFunc < 0) {
+        currentPoint = nextPoint;
+        currentFunc = nextFunc;
+      }
+      else {
+        counterPoint = nextPoint;
+        counterFunc = nextFunc;
+      }
+    } while (++iteration < 30 && fabs(counterPoint - currentPoint) > epsilon);
+
+    return nextPoint;
+  }
 
 // convert a measurement
 double metric_conversion(double val, std::string from, std::string to) {
@@ -1033,4 +1102,55 @@ std::vector<double> getSensorOrientations(json isd, csm::WarningList *list) {
     }
   }
   return quaternions;
+}
+
+double getExposureDuration(nlohmann::json isd, csm::WarningList *list) {
+  double duration;
+  try {
+    duration = isd.at("line_exposure_duration");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the line exposure duration.",
+          "Utilities::getExposureDuration()"));
+    }
+  }
+  return duration;
+}
+
+double getScaledPixelWidth(nlohmann::json isd, csm::WarningList *list) {
+  double width;
+  try {
+    width = isd.at("scaled_pixel_width");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the scaled pixel width.",
+          "Utilities::getScaledPixelWidth()"));
+    }
+  }
+  return width;
+}
+
+std::vector<double> getScaleConversionCoefficients(nlohmann::json isd, csm::WarningList *list) {
+  std::vector<double> coefficients;
+  try {
+    coefficients = isd.at("range_conversion_coefficients").get<std::vector<double>>();
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the range conversion coefficients and times.",
+          "Utilities::getScaleConversionCoefficients()"));
+    }
+  }
+  return coefficients;
 }
