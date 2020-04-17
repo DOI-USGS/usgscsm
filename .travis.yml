@@ -33,12 +33,12 @@ install:
   # Install a supported cmake version (>= 3.10)
   - |
     if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+      wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
     else
-      curl -o miniconda.sh  https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh;
+      curl -o miniconda.sh  https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh;
     fi
   - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
+  - source $HOME/miniconda/etc/profile.d/conda.sh
   - conda install -y -c conda-forge cmake
 
 script:
@@ -50,7 +50,7 @@ script:
   - cd ..
 
 after_success:
-  - conda install -y -q conda-build anaconda-client 
+  - conda install -y -q conda-build anaconda-client
   # Pull the libcsm for the build from our anaconda channel
   - conda config --add channels usgs-astrogeology
   - conda config --set anaconda_upload no
