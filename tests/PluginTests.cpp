@@ -26,7 +26,7 @@ TEST(PluginTests, ReleaseDate) {
 
 TEST(PluginTests, NumModels) {
    UsgsAstroPlugin testPlugin;
-   EXPECT_EQ(2, testPlugin.getNumModels());
+   EXPECT_EQ(3, testPlugin.getNumModels());
 }
 
 TEST(PluginTests, BadISDFile) {
@@ -199,6 +199,70 @@ TEST_F(ConstVelLineScanIsdTest, ConstructInValidCamera) {
       delete cameraModel;
    }
 }
+
+// Commented out until all of the abstract methods are implemented
+
+// TEST_F(SarIsdTest, Constructible) {
+//    UsgsAstroPlugin testPlugin;
+//    EXPECT_TRUE(testPlugin.canModelBeConstructedFromISD(
+//                isd,
+//                "USGS_ASTRO_SAR_SENSOR_MODEL"));
+// }
+//
+// TEST_F(SarIsdTest, ConstructibleFromState) {
+//    UsgsAstroPlugin testPlugin;
+//    std::string modelState = testPlugin.getStateFromISD(isd);
+//    EXPECT_TRUE(testPlugin.canModelBeConstructedFromState(
+//          "USGS_ASTRO_SAR_SENSOR_MODEL",
+//          modelState));
+// }
+//
+// TEST_F(SarIsdTest, NotConstructible) {
+//    UsgsAstroPlugin testPlugin;
+//    isd.setFilename("data/simpleFramerISD.img");
+//    EXPECT_FALSE(testPlugin.canModelBeConstructedFromISD(
+//                isd,
+//                "USGS_ASTRO_SAR_SENSOR_MODEL"));
+// }
+//
+// TEST_F(SarIsdTest, ConstructValidCamera) {
+//    UsgsAstroPlugin testPlugin;
+//    csm::Model *cameraModel = NULL;
+//    EXPECT_NO_THROW(
+//          cameraModel = testPlugin.constructModelFromISD(
+//                isd,
+//                "USGS_ASTRO_SAR_SENSOR_MODEL",
+//                NULL)
+//    );
+//    UsgsAstroSarSensorModel *sarModel = dynamic_cast<UsgsAstroSarSensorModel *>(cameraModel);
+//    EXPECT_NE(sarModel, nullptr);
+//    if (cameraModel) {
+//       delete cameraModel;
+//    }
+// }
+//
+// TEST_F(SarIsdTest, ConstructInValidCamera) {
+//    UsgsAstroPlugin testPlugin;
+//    isd.setFilename("data/empty.img");
+//    csm::Model *cameraModel = NULL;
+//    try {
+//       testPlugin.constructModelFromISD(
+//             isd,
+//             "USGS_ASTRO_SAR_SENSOR_MODEL",
+//             nullptr);
+//       FAIL() << "Expected an error";
+//
+//    }
+//    catch(csm::Error &e) {
+//       EXPECT_EQ(e.getError(), csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE);
+//    }
+//    catch(...) {
+//       FAIL() << "Expected csm SENSOR_MODEL_NOT_CONSTRUCTIBLE error";
+//    }
+//    if (cameraModel) {
+//       delete cameraModel;
+//    }
+// }
 
 int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);
