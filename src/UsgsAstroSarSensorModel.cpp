@@ -4,7 +4,6 @@
 #include <functional>
 #include <string.h>
 #include <cmath>
-#include <string.h>
 
 #include <json/json.hpp>
 
@@ -149,18 +148,7 @@ double EXPOSURE_DURATION = 0.005;
 double SCALED_PIXEL_WIDTH = 7.5; 
 double WAVELENGTH = 0.125;
 double SAMPLES = 1000.0;
-double LINES = SAMPLES;
-double groundRangeFunc(double x);
-
-// Needs to be a function that can interpolate between existing times
-double a1 = 7.99423808710000e+04;
-double a2 = 6.92122900000000e-01;
-double a3 = 3.40193700000000e-06;
-double a4 = -2.39924200000000e-11;
-double slantRange = 0.12;
-
-double secantRoot(std::function<double(double)> lambda, double x1, double xh, 
-                  double tolerance, double maxIters);
+double LINES = 1000.0;
 
 csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
     const csm::EcefCoord& groundPt,
@@ -177,18 +165,18 @@ csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
   double time = dopplerShiftRoot(newGroundPt);
   double slantRange = calcSlantRange(newGroundPt, time);
 
-  if (time != -1) {
-    // Find the ground range, based on the ground-range-to-slant-range polynomial defined by the 
-    // range coefficient set, with a time closest to the calculated time of closest approach
-    double groundRange = slantToGroundRange(groundPt, time, slantRange);
+  // Find the ground range, based on the ground-range-to-slant-range polynomial defined by the 
+  // range coefficient set, with a time closest to the calculated time of closest approach
+  double groundRange = slantToGroundRange(groundPt, time, slantRange);
 
-    if (groundRange =! -1) {
-      double line = 1 + (time - START_TIME) / EXPOSURE_DURATION;
-      double sample = 1 + groundRange / SCALED_PIXEL_WIDTH;
-      return csm::ImageCoord(line, sample);
-    }
-  }
-  return csm::ImageCoord(-1, -1); // what do we do if this fails?
+  double line = (time - START_TIME) / EXPOSURE_DURATION;
+  double sample = groundRange / SCALED_PIXEL_WIDTH;
+  return csm::ImageCoord(line, sample);
+
+  throw csm::Error(
+    csm::Error::UNKNOWN_ERROR,
+    "Could not calculate groundToImage.",
+    "groundToImage");
 }
 
 // Calculate the root 
@@ -196,10 +184,9 @@ double UsgsAstroSarSensorModel::dopplerShiftRoot(
     csm::EcefCoord groundPt) const{
 
   // Moon body-fixed coordinates of surface point
-  csm::EcefCoord surfPt(0.0, 0.0, 0.0); // obviously populate with real value
+  csm::EcefCoord surfPt(0.0, 0.0, 0.0); // populate with real value
 
    std::function<double(double)> dopplerShiftFrequency = [surfPt](double time) { 
-     // Exsiting vector subtraction function in usgscsm? 
      double spacecraftPosition[3] = {3.73740000e+06,  0.00000000e+00, -0.00000000e+00}; //spacecraftPosition(time);
      double spacecraftVelocity[3] = {-0.00000000e+00,  0.00000000e+00, -3.73740000e+0};; //spacecraftPosition(time);
      double lookVector[3];
@@ -208,11 +195,9 @@ double UsgsAstroSarSensorModel::dopplerShiftRoot(
      lookVector[1] = spacecraftPosition[1] - surfPt.y;
      lookVector[2] = spacecraftPosition[2] - surfPt.z;
 
-     // Existing vector magnitude function in usgscsm? 
      double slantRange = sqrt(pow(lookVector[0], 2) +  pow(lookVector[1], 2) + pow(lookVector[2], 2)); 
 
 
-     // Existing dot product function in usgscsm?
      double dopplerShift = -2.0 * (lookVector[0]*spacecraftVelocity[0] + lookVector[1]*spacecraftVelocity[1] 
                             + lookVector[2]*spacecraftVelocity[2])/(slantRange * WAVELENGTH);
      return dopplerShift;
@@ -225,76 +210,22 @@ double UsgsAstroSarSensorModel::dopplerShiftRoot(
   double stopShift = dopplerShiftFrequency(STOP_TIME);
 
   // Make sure we bound root (dopplerShift = 0.0)
-  if (((startShift < 0.0) && (stopShift < 0.0)) || ((startShift > 0.0) && (stopShift > 0.0))) {
-    return -1;
+  if (!(((startShift < 0.0) && (stopShift < 0.0)) || ((startShift > 0.0) && (stopShift > 0.0)))) {
+
+    // Do root-finding for "dopplerShift"
+    double tolerance = (STOP_TIME - START_TIME) / LINES / 20.0;
+
+    return secantRoot(START_TIME, STOP_TIME, dopplerShiftFrequency, tolerance);
   }
-
-  // Do root-finding for "dopplerShift"
-  double tolerance = (STOP_TIME - START_TIME) / LINES / 20.0;
-  double maxIterations = 30;
-
-  // Order the bounds
-  double fl, fh, xl, xh;
-  if (startShift < stopShift) {
-    xl = START_TIME;
-    xh = STOP_TIME;
-  }
-  else {
-    xl = STOP_TIME;
-    xh = START_TIME;
-  }
-
-  return secantRoot(dopplerShiftFrequency, xl, xh, tolerance, 30);
-}
-
-
-double secantRoot(std::function<double(double)> lambda, double xl, double xh, 
-                  double tolerance, double maxIters) {
-  double time;
-  int j = 0;
-    int found = -1;
-    double shift;
-    double fl = lambda(xl);
-    double fh = lambda(xh);
-    while (found==-1 && j < maxIters) {
-      // Use the secant method to guess the next time
-      time = xl + (xh - xl) * fl / (fl - fh);
-      
-      // Compute a guessed Doppler shift.
-      shift = lambda(time);
-      
-      // Update the bounds
-      double deltaTime;
-      if (shift < 0.0) {
-        deltaTime = xl - time;
-        xl = time;
-        fl = shift;
-      }
-      else {
-        deltaTime = xh - time;
-        xh = time;
-        fh = shift;
-      }
-
-      // See if we are done
-      if ((fabs(deltaTime) <= tolerance) || (shift == 0.0)) {
-        time = time;
-        found = 0;
-      }
-      j++;
-    }
-    if (found != -1) {
-      return time; 
-    }
-    else {
-      return -1;
-    }
+  throw csm::Error(
+    csm::Error::UNKNOWN_ERROR,
+    "Could not find a root of the doppler shift frequency function",
+    "dopplerShiftRoot");
 }
 
 
 double UsgsAstroSarSensorModel::calcSlantRange(csm::EcefCoord surfPt,
     double time) const{
-  // Exsiting vector subtraction function in usgscsm? 
   double spacecraftPosition[3] = {3.73740000e+06,  0.00000000e+00, -0.00000000e+00}; //spacecraftPosition(time);
   double spacecraftVelocity[3] = {-0.00000000e+00,  0.00000000e+00, -3.73740000e+0};; //spacecraftPosition(time);
   double lookVector[3];
@@ -303,7 +234,6 @@ double UsgsAstroSarSensorModel::calcSlantRange(csm::EcefCoord surfPt,
   lookVector[1] = spacecraftPosition[1] - surfPt.y;
   lookVector[2] = spacecraftPosition[2] - surfPt.z;
 
-  // Existing vector magnitude function in usgscsm? 
   return sqrt(pow(lookVector[0], 2) +  pow(lookVector[1], 2) + pow(lookVector[2], 2)); 
 }
 
@@ -312,6 +242,7 @@ double UsgsAstroSarSensorModel::slantToGroundRange(
         const csm::EcefCoord& groundPt,
         double time,
         double slantRange) const{
+
   // Need to come up with an initial guess when solving for ground 
   // range given slant range. Compute the ground range at the
   // near and far edges of the image by evaluating the sample-to-
@@ -325,7 +256,16 @@ double UsgsAstroSarSensorModel::slantToGroundRange(
   double initialMaxGroundRangeGuess = (1.25 * SAMPLES - 1.0) * SCALED_PIXEL_WIDTH;
 
   //a1, a2, a3, a4 = getRangeCoefficients(t_min);
-    
+  double a1 = 7.99423808710000e+04;
+  double a2 = 6.92122900000000e-01;
+  double a3 = 3.40193700000000e-06;
+  double a4 = -2.39924200000000e-11;
+
+  // Calculates the ground range from the slant range.
+  std::function<double(double)> groundRangeFunc = [a1, a2, a3, a4, slantRange](double groundRange){
+   return slantRange - (a1 + groundRange * (a2 + groundRange * (a3 + groundRange * a4)));
+  };
+
   // Evaluate the ground range at the 2 extremes of the image
   double minGroundRangeGuess = groundRangeFunc(initialMinGroundRangeGuess);
   double maxGroundRangeGuess = groundRangeFunc(initialMaxGroundRangeGuess);
@@ -339,11 +279,10 @@ double UsgsAstroSarSensorModel::slantToGroundRange(
     // Use Brent's algorithm to find a root of the function:
     return brentRoot(minGroundRangeGuess, maxGroundRangeGuess, groundRangeFunc, 0.1);
   }
-  return -1; // How to fail?  
+  throw csm::Error(
+    csm::Error::UNKNOWN_ERROR,
+    "Could not find a root of the slant range to ground range function",
+    "slantToGroundRange");
 }
 
-// Calculates the ground range from the slant range.
-double groundRangeFunc(double groundRange){
-  return slantRange - (a1 + groundRange * (a2 + groundRange * (a3 + groundRange * a4)));
-}
 

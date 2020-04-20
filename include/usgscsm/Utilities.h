@@ -74,8 +74,15 @@ void lagrangeInterp (
 double brentRoot(
   double lowerBound,
   double upperBound,
-  double (*func)(double),
+  std::function<double(double)> func,
   double epsilon = 1e-10);
+
+double secantRoot(
+    double lowerBound,
+    double upperBound,
+    std::function<double(double)> func,
+    double epsilon = 1e-10,
+    int maxIterations = 30);
 
 // Methods for checking/accessing the ISD
 

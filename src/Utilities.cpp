@@ -280,7 +280,7 @@ void lagrangeInterp(
 double brentRoot(
   double lowerBound,
   double upperBound,
-  double (*func)(double),
+  std::function<double(double)> func,
   double epsilon) {
     double counterPoint = lowerBound;
     double currentPoint = upperBound;
@@ -344,6 +344,58 @@ double brentRoot(
 
     return nextPoint;
   }
+
+double secantRoot(double lowerBound, double upperBound, std::function<double(double)> func, 
+                  double epsilon, int maxIters) {
+  bool found = false;
+
+  double x0 = lowerBound;
+  double x1 = upperBound; 
+  double f0 = func(x0);
+  double f1 = func(x1);
+  double diff = 0; 
+  double x2 = 0; 
+  double f2 = 0; 
+  // Order the bounds
+  if (f1 < f0) {
+    std::swap(x0, x1);
+    std::swap(f0, f1);
+  }
+
+  for (int iteration=0; iteration < maxIters; iteration++) {
+    x2 = x1 - f1 * (x1 - x0)/(f1 - f0);
+    f2 = func(x2);
+
+    // Update the bounds for the next iteration
+    if (f2 < 0.0) {
+      diff = x1 - x2;
+      x1 = x2;
+      f1 = f2; 
+    }
+    else {
+      diff = x0 - x2;
+      x0 = x2;
+      f0 = f2;
+    }
+
+    // Check to see if we're done
+    if ((fabs(diff) <= epsilon) || (f2 == 0.0) ) {
+      found = true;
+      break;
+    }
+  }
+
+  if (found) {
+   return x2;
+  }
+  else {
+    throw csm::Error(
+    csm::Error::UNKNOWN_ERROR,
+    "Could not find a root of the function using the secant method",
+    "secantRoot");
+  }
+}
+
 
 // convert a measurement
 double metric_conversion(double val, std::string from, std::string to) {
