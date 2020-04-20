@@ -191,17 +191,8 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
 
     // Added
     double slantToGroundRange(const csm::EcefCoord& groundPt, double time, double slantRange) const;
-
-    bool dopplerShiftRoot(
-        csm::EcefCoord groundPt,
-        double& time,
-        double& slantRange) const;
-
-    void dopplerShiftFrequency(
-        csm::EcefCoord surfPt,
-        double time,
-        double& dopplerShift,
-        double& slantRange) const;
+    double dopplerShiftRoot(csm::EcefCoord groundPt) const;
+    double calcSlantRange(csm::EcefCoord surfPt, double time) const;
 
     ////////////////////////////
     // Model static variables //
