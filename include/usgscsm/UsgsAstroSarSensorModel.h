@@ -196,6 +196,12 @@ bool dopplerShiftRoot(
     double& time,
     double& slantRange) const;
 
+void dopplerShift(
+    csm::EcefCoord surfPt,
+    double time,
+    double& dopplerShift,
+    double& slantRange) const;
+
     ////////////////////////////
     // Model static variables //
     ////////////////////////////

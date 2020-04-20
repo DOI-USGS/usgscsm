@@ -1,8 +1,9 @@
 #include "UsgsAstroSarSensorModel.h"
 #include "Utilities.h"
 
-#include <functional>
+//#include <functional>
 #include <string.h>
+#include <cmath>
 
 #include <json/json.hpp>
 
@@ -140,6 +141,7 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
   return state.dump();
 }
 
+/// UPDATES 
 
 double START_TIME = 0.0;
 double STOP_TIME = 5.0;                         
@@ -147,13 +149,14 @@ double EXPOSURE_DURATION = 0.005;
 double SCALED_PIXEL_WIDTH = 7.5; 
 double WAVELENGTH = 0.125;
 double SAMPLES = 1000.0;
+double LINES = SAMPLES;
 double groundRangeFunc(double x);
 
-// need to be time-varying function calls eventually
-double a1=7.99423808710000e+04;
-double a2=6.92122900000000e-01;
-double a3=3.40193700000000e-06;
-double a4=-2.39924200000000e-11;
+// Need to be time-varying function calls eventually
+double a1 = 7.99423808710000e+04;
+double a2 = 6.92122900000000e-01;
+double a3 = 3.40193700000000e-06;
+double a4 = -2.39924200000000e-11;
 double slantRange = 0.12;
 
 csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
@@ -193,36 +196,94 @@ bool UsgsAstroSarSensorModel::dopplerShiftRoot(
     double& slantRange) const{
 
   // Moon body-fixed coordinates of surface point
-  csm::EcefCoord surfPt(0.0,0.0, 0.0); // obviously populate with real value
+  csm::EcefCoord surfPt(0.0, 0.0, 0.0); // obviously populate with real value
 
   // Lower-bound for doppler-shift
-  double startTime, range;
-  //dopperShift(surfPt, START_TIME, startTime&, range&);
+  double startShift, range;
+  dopplerShift(surfPt, START_TIME, startShift, range);
 
   // Upper-bound for doppler-shift
-  double stopTime;
-  //dopplerShift(surfPt, STOP_TIME, stopTime&, range&);
+  double stopShift;
+  dopplerShift(surfPt, STOP_TIME, stopShift, range);
 
   // Make sure we bound root (dopplerShift = 0.0)
-  if (((startTime < 0.0) && (stopTime < 0.0)) || ((startTime > 0.0) && (stopTime > 0.0))) {
+  if (((startShift < 0.0) && (stopShift < 0.0)) || ((startShift > 0.0) && (stopShift > 0.0))) {
     return false;
   }
 
   // do root-finding for "dopplerShift"
+  double tolerance = (STOP_TIME - START_TIME) / LINES / 20.0;
 
-  return true;
+  // Order the bounds
+  double fl, fh, xl, xh;
+  if (startShift < stopShift) {
+    fl = startShift;
+    fh = stopShift;
+    xl = START_TIME;
+    xh = STOP_TIME;
+  }
+  else {
+    fl = stopShift;
+    fh = startShift;
+    xl = START_TIME;
+    xh = STOP_TIME;
+  }
+  double maxIterations = 30;
+  int j = 0;
+  int found = -1;
+  double shift;
+  while (found==-1 && j < maxIterations) {
+    // Use the secant method to guess the next time
+    time = xl + (xh - xl) * fl / (fl - fh);
+    
+    // Compute a guessed Doppler shift.  Hopefully
+    dopplerShift(surfPt, time, shift, range);
+    
+    // Update the bounds
+    double deltaTime;
+    if (shift < 0.0) {
+      deltaTime = xl - time;
+      xl = time;
+      fl = shift;
+    }
+    else {
+      deltaTime = xh - time;
+      xh = time;
+      fh = shift;
+    }
+
+    // See if we are done
+    if ((fabs(deltaTime) <= tolerance) || (shift == 0.0)) {
+//      time = time;
+      slantRange = range;
+      found = 0;
+    }
+    j++;
+  }
+  return found; // return secantRoot(f1, fh, x1, xh, tolerance, 30);
 }
 
 
-//void UsgsAstroSarSensorModel::dopplerShift(
-//    something surfPt,
-//    double time,
-//    double dopplerShift&,
-//    double slantRange&) {
-//  slantRange = spacecraftPosition(time); // different function, FIXME
-//  dopplerShift = -2.0 * spacecraftVelocity(time)/(slantRange * WAVELENGTH);
-//}
-//
+void UsgsAstroSarSensorModel::dopplerShift(
+    csm::EcefCoord surfPt,
+    double time,
+    double& dopplerShift,
+    double& slantRange) const{
+
+  // Exsiting vector subtraction fn? 
+  double lookVector[3];
+  double spacecraftPosition[3] = {0.0, 0.0, 0.0};//spacecraftPosition(time);
+  double spacecraftVelocity[3] = {0.0, 0.0, 0.0};//spacecraftPosition(time);
+  lookVector[0] = spacecraftPosition[0] - surfPt.x;
+  lookVector[1] = spacecraftPosition[1] - surfPt.y;
+  lookVector[2] = spacecraftPosition[2] - surfPt.z;
+  slantRange = sqrt(pow(lookVector[0], 2) +  pow(lookVector[1], 2) + pow(lookVector[2], 2)); // existing norm fn in usgscsm? 
+
+  // existing dot product function?
+  dopplerShift = -2.0 * (lookVector[0]*spacecraftVelocity[0] + lookVector[1]*spacecraftVelocity[1] 
+                         + lookVector[2]*spacecraftVelocity[2])/(slantRange * WAVELENGTH);
+}
+
 
 double UsgsAstroSarSensorModel::slantToGroundRange(
         const csm::EcefCoord& groundPt,
@@ -271,7 +332,7 @@ double UsgsAstroSarSensorModel::slantToGroundRange(
   return -1;
 }
 
-
+// Local function to find the root of.
 double groundRangeFunc(double groundRange){
   return slantRange - (a1 + groundRange * (a2 + groundRange * (a3 + groundRange * a4)));
 }
