@@ -4,13 +4,14 @@
 #include <functional>
 #include <string.h>
 #include <cmath>
+#include <string.h>
 
 #include <json/json.hpp>
 
 using json = nlohmann::json;
 using namespace std;
-#define MESSAGE_LOG(logger, ...) if (logger) { logger->info(__VA_ARGS__); }
 
+#define MESSAGE_LOG(logger, ...) if (logger) { logger->info(__VA_ARGS__); }
 
 const string UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME = "USGS_ASTRO_SAR_SENSOR_MODEL";
 const int UsgsAstroSarSensorModel::NUM_PARAMETERS = 6;
