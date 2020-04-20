@@ -356,5 +356,5 @@ TEST(UtilitiesTests, secantRoot) {
   };
   EXPECT_NEAR(secantRoot(1.0, 3.0, testPoly, 1e-10), 2.0, 1e-10);
   EXPECT_NEAR(secantRoot(0.0, -3.0, testPoly, 1e-10), -1.0, 1e-10);
-  EXPECT_THROW(secantRoot(-1000.0, 1000.0, testPoly), csm::Error);ooo
+  EXPECT_THROW(secantRoot(-1000.0, 1000.0, testPoly), csm::Error);
 }
