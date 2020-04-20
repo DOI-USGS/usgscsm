@@ -17,7 +17,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
 
     virtual std::string getModelState() const;
 
-    std::string constructStateFromIsd(const std::string imageSupportData, csm::WarningList *list) const;
+    static std::string constructStateFromIsd(const std::string imageSupportData, csm::WarningList *list);
 
     static std::string getModelNameFromModelState(const std::string& model_state);
 
@@ -189,12 +189,18 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
 
     virtual void setEllipsoid(const csm::Ellipsoid &ellipsoid);
 
+    // Added
+    double slantToGroundRange(const csm::EcefCoord& groundPt, double time, double slantRange) const;
+bool dopplerShiftRoot(
+    csm::EcefCoord groundPt,
+    double& time,
+    double& slantRange) const;
+
     ////////////////////////////
     // Model static variables //
     ////////////////////////////
 
     static const std::string      _SENSOR_MODEL_NAME;
-    static const std::string      _STATE_KEYWORD[];
     static const int              NUM_PARAM_TYPES;
     static const std::string      PARAM_STRING_ALL[];
     static const csm::param::Type PARAM_CHAR_ALL[];

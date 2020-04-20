@@ -4,6 +4,7 @@
 #include "UsgsAstroPlugin.h"
 #include "UsgsAstroFrameSensorModel.h"
 #include "UsgsAstroLsSensorModel.h"
+#include "UsgsAstroSarSensorModel.h"
 
 #include <json/json.hpp>
 
@@ -305,6 +306,17 @@ class TwoLineScanSensorModels : public ::testing::Test {
       }
 };
 
+//////////////////
+// SAR Fixtures //
+//////////////////
 
+class SarIsdTest : public ::testing::Test {
+   protected:
+      csm::Isd isd;
+
+   virtual void SetUp() {
+      isd.setFilename("data/orbitalSar.img");
+   }
+};
 
 #endif

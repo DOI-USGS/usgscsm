@@ -1,82 +1,233 @@
 #include "UsgsAstroSarSensorModel.h"
+#include "Utilities.h"
 
+#include <functional>
+#include <string.h>
+
+#include <json/json.hpp>
+
+using json = nlohmann::json;
+using namespace std;
 #define MESSAGE_LOG(logger, ...) if (logger) { logger->info(__VA_ARGS__); }
 
-using namespace std;
 
-//UsgsAstroSarSensorModel();
-//~UsgsAstroSarSensorModel();
-//
-//virtual void replaceModelState(const std::string& argState);
-//
-//virtual std::string getModelState() const;
-//
-//std::string constructStateFromIsd(const std::string imageSupportData, csm::WarningList *list) const;
-//
-//static std::string getModelNameFromModelState(const std::string& model_state);
+const string UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME = "USGS_ASTRO_SAR_SENSOR_MODEL";
+const int UsgsAstroSarSensorModel::NUM_PARAMETERS = 6;
+const string UsgsAstroSarSensorModel::PARAMETER_NAME[] =
+{
+   "IT Pos. Bias   ",   // 0
+   "CT Pos. Bias   ",   // 1
+   "Rad Pos. Bias  ",   // 2
+   "X Vel. Bias    ",   // 3
+   "Y Vel. Bias    ",   // 4
+   "Z Vel. Bias    "    // 5
+};
+
+const int UsgsAstroSarSensorModel::NUM_PARAM_TYPES = 4;
+const string UsgsAstroSarSensorModel::PARAM_STRING_ALL[] =
+{
+   "NONE",
+   "FICTITIOUS",
+   "REAL",
+   "FIXED"
+};
+const csm::param::Type
+      UsgsAstroSarSensorModel::PARAM_CHAR_ALL[] =
+{
+   csm::param::NONE,
+   csm::param::FICTITIOUS,
+   csm::param::REAL,
+   csm::param::FIXED
+};
+
+string UsgsAstroSarSensorModel::constructStateFromIsd(
+    const string imageSupportData,
+    csm::WarningList *warnings
+) {
+  json isd = json::parse(imageSupportData);
+  json state = {};
+
+  csm::WarningList* parsingWarnings = new csm::WarningList;
+
+  int num_params = NUM_PARAMETERS;
+
+  state["m_modelName"] = getSensorModelName(isd, parsingWarnings);
+  state["m_imageIdentifier"] = getImageId(isd, parsingWarnings);
+  state["m_sensorName"] = getSensorName(isd, parsingWarnings);
+  state["m_platformName"] = getPlatformName(isd, parsingWarnings);
+
+  state["m_nLines"] = getTotalLines(isd, parsingWarnings);
+  state["m_nSamples"] = getTotalSamples(isd, parsingWarnings);
+
+  // Zero computed state values
+  state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
+
+  // sun_position and velocity are required for getIlluminationDirection
+  state["m_sunPosition"]= getSunPositions(isd, parsingWarnings);
+  state["m_sunVelocity"]= getSunVelocities(isd, parsingWarnings);
+
+  state["m_centerEphemerisTime"] = getCenterTime(isd, parsingWarnings);
+  state["m_startingEphemerisTime"] = getStartingTime(isd, parsingWarnings);
+
+  state["m_exposureDuration"] = getExposureDuration(isd, parsingWarnings);
+
+  try {
+    state["m_dtEphem"] = isd.at("dt_ephemeris");
+  }
+  catch(...) {
+    parsingWarnings->push_back(
+      csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE,
+        "dt_ephemeris not in ISD",
+        "UsgsAstroSarSensorModel::constructStateFromIsd()"));
+  }
+
+  try {
+    state["m_t0Ephem"] = isd.at("t0_ephemeris");
+  }
+  catch(...) {
+    parsingWarnings->push_back(
+      csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE,
+        "t0_ephemeris not in ISD",
+        "UsgsAstroSarSensorModel::constructStateFromIsd()"));
+  }
+
+  state["m_positions"] = getSensorPositions(isd, parsingWarnings);
+  state["m_velocities"] = getSensorVelocities(isd, parsingWarnings);
+
+  state["m_currentParameterValue"] = std::vector<double>(NUM_PARAMETERS, 0.0);
+
+  // get radii
+  state["m_minorAxis"] = getSemiMinorRadius(isd, parsingWarnings);
+  state["m_majorAxis"] = getSemiMajorRadius(isd, parsingWarnings);
+
+  // set identifiers
+  state["m_platformIdentifier"] = getPlatformName(isd, parsingWarnings);
+  state["m_sensorIdentifier"] = getSensorName(isd, parsingWarnings);
+
+  // get reference_height
+  state["m_minElevation"] = -1000;
+  state["m_maxElevation"] = 1000;
+
+  // SAR specific values
+  state["m_scaledPixelWidth"] = getScaledPixelWidth(isd, parsingWarnings);
+  state["m_scaleConversionCoefficients"] = getScaleConversionCoefficients(isd, parsingWarnings);
+
+  // Default to identity covariance
+  state["m_covariance"] =
+       std::vector<double>(NUM_PARAMETERS * NUM_PARAMETERS, 0.0);
+  for (int i = 0; i < NUM_PARAMETERS; i++) {
+   state["m_covariance"][i * NUM_PARAMETERS + i] = 1.0;
+  }
+
+  if (!parsingWarnings->empty()) {
+    if (warnings) {
+      warnings->insert(warnings->end(), parsingWarnings->begin(), parsingWarnings->end());
+    }
+    delete parsingWarnings;
+    parsingWarnings = nullptr;
+    throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
+                     "ISD is invalid for creating the sensor model.",
+                     "UsgsAstroSarSensorModel::constructStateFromIsd");
+  }
+
+  delete parsingWarnings;
+  parsingWarnings = nullptr;
+
+  // The state data will still be updated when a sensor model is created since
+  // some state data is not in the ISD and requires a SM to compute them.
+  return state.dump();
+}
+
+
+double START_TIME = 0.0;
+double STOP_TIME = 5.0;                         
+double EXPOSURE_DURATION = 0.005;
+double SCALED_PIXEL_WIDTH = 7.5; 
+double WAVELENGTH = 0.125;
+double SAMPLES = 1000.0;
+double groundRangeFunc(double x);
+
+// need to be time-varying function calls eventually
+double a1=7.99423808710000e+04;
+double a2=6.92122900000000e-01;
+double a3=3.40193700000000e-06;
+double a4=-2.39924200000000e-11;
+double slantRange = 0.12;
 
 csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
     const csm::EcefCoord& groundPt,
-    double desiredPrecision = 0.001,
-    double* achievedPrecision = NULL,
-    csm::WarningList* warnings = NULL) const {
+    double desiredPrecision,
+    double* achievedPrecision,
+    csm::WarningList* warnings) const {
 
-  MESSAGE_LOG(this->m_logger, "Computing groundToImage(ImageCoord) for {}, {}, {}, with desired precision {}",
-              groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
+//MESSAGE_LOG(this->m_logger, "Computing groundToImage(ImageCoord) for {}, {}, {}, with desired precision {}",
+//            groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
 
   // Find time of closest approach to groundPt and the corresponding slant range by finding 
   // the root of the doppler shift wavelength
-  foundTime = dopplerShiftRoot(groundPt, time&, slantRange&);
+  double time, slantRange;
+  csm::EcefCoord newGroundPt(groundPt);
+  bool foundTime = dopplerShiftRoot(newGroundPt, time, slantRange);
 
   if (foundTime) {
     // Find the ground range, based on the ground-range-to-slant-range polynomial defined by the 
     // range coefficient set, with a time closest to the calculated time of closest approach
-    groundRange = slantToGroundRange(groundPt, time, slantRange);
+    double groundRange = slantToGroundRange(groundPt, time, slantRange);
 
     if (groundRange =! -1) {
       // Construct a new point and return with:
-      double line = 1 + time + startTime / exposureDuration;
-      double sample = 1 + groundRange / scaledPixelWidth;
+      double line = 1 + time + START_TIME / EXPOSURE_DURATION;
+      double sample = 1 + groundRange / SCALED_PIXEL_WIDTH;
       return csm::ImageCoord(line, sample);
     }
   }
-} 
+  return csm::ImageCoord(-1, -1); // what do we do if fails?? 
+}
 
 
-bool UsgsAstroSarSensorModel::dopplerShiftRoot(){
+bool UsgsAstroSarSensorModel::dopplerShiftRoot(
+    csm::EcefCoord groundPt,
+    double& time,
+    double& slantRange) const{
+
   // Moon body-fixed coordinates of surface point
-  surfPt = fixme; 
+  csm::EcefCoord surfPt(0.0,0.0, 0.0); // obviously populate with real value
 
   // Lower-bound for doppler-shift
-  startTime, range = dopperShift(surfPt, START_TIME);
+  double startTime, range;
+  //dopperShift(surfPt, START_TIME, startTime&, range&);
 
   // Upper-bound for doppler-shift
-  stopTime, range = dopplerShift(surfPt, STOP_TIME);
+  double stopTime;
+  //dopplerShift(surfPt, STOP_TIME, stopTime&, range&);
 
-  // Make sure we bound root (Df= 0.0)
-  if ((startTime < 0.0) && (stopTime < 0.0)) return (-1); // FAIL
-  if ((startTime > 0.0) && (stopTime > 0.0)) return (-1); // FAIL
+  // Make sure we bound root (dopplerShift = 0.0)
+  if (((startTime < 0.0) && (stopTime < 0.0)) || ((startTime > 0.0) && (stopTime > 0.0))) {
+    return false;
+  }
 
   // do root-finding for "dopplerShift"
 
-  return true;//time, slantRange;
+  return true;
 }
 
 
-void UsgsAstroSarSensorModel::dopplerShift(
-    something surfPt,
-    double time,
-    double dopplerShift&,
-    double slantRange) {
-  slantRange = spacecraftPosition(time); // different function, FIXME
-  dopplerShift = -2.0 * spacecraftVelocity(time)/(slantRange * WAVELENGTH);
-}
-
+//void UsgsAstroSarSensorModel::dopplerShift(
+//    something surfPt,
+//    double time,
+//    double dopplerShift&,
+//    double slantRange&) {
+//  slantRange = spacecraftPosition(time); // different function, FIXME
+//  dopplerShift = -2.0 * spacecraftVelocity(time)/(slantRange * WAVELENGTH);
+//}
+//
 
 double UsgsAstroSarSensorModel::slantToGroundRange(
         const csm::EcefCoord& groundPt,
         double time,
-        double slantRange) {
+        double slantRange) const{
   // Need to come up with an initial guess when solving for ground 
   // range given slantrange. We will compute the ground range at the
   // near and far edges of the image by evaluating the sample-to-
@@ -85,260 +236,54 @@ double UsgsAstroSarSensorModel::slantToGroundRange(
   // allow for solving for coordinates that are slightly outside of
   // the actual image area. Use S=-0.25*image_samples and
   // S=1.25*image_samples.
-  double initialMinGroundRangeGuess = (-0.25 * SAMPLES - 1.0)
-                                    * SCALED_PIXEL_WIDTH;
-  double initialMaxGroundRangeGuess = (1.25 * SAMPLES - 1.0)
-                                    * SCALED_PIXEL_WIDTH;
+  double initialMinGroundRangeGuess = (-0.25 * SAMPLES - 1.0) * SCALED_PIXEL_WIDTH;
+  double initialMaxGroundRangeGuess = (1.25 * SAMPLES - 1.0) * SCALED_PIXEL_WIDTH;
 
-  a1, a2, a3, a4 = getRangeCoefficients(t_min);
+  //a1, a2, a3, a4 = getRangeCoefficients(t_min);
     
   // Evaluate the ground range at the 2 extremes of the image
-  double minGroundRangeGuess = r_slant - (a1 + initialMinGroundRangeGuess *
+  double minGroundRangeGuess = slantRange - (a1 + initialMinGroundRangeGuess *
                                           (a2 + initialMinGroundRangeGuess * (a3 +
                              initialMinGroundRangeGuess * a4)));
-  double maxGroundRangeGuess = r_slant - (a1 + initialMaxGroundRangeGuess *
+  double maxGroundRangeGuess = slantRange - (a1 + initialMaxGroundRangeGuess *
                              (a2 + initialMaxGroundRangeGuess * (a3 +
                              initialMaxGroundRangeGuess * a4)));
 
   // If the ground range guesses at the 2 extremes of the image are equal
   // or they have the same sign, then the ground range cannot be solved for.
   // do we want to do this check or just have Brent's method fail? will it fail? 
-  if !((minGroundRangeGuess == maxGroundRangeGuess) || 
+  if (!((minGroundRangeGuess == maxGroundRangeGuess) || 
       (minGroundRangeGuess < 0.0 && maxGroundRangeGuess < 0.0) ||
-      (minGroundRangeGuess > 0.0 && maxGroundRangeGuess > 0.0)) {
+      (minGroundRangeGuess > 0.0 && maxGroundRangeGuess > 0.0))) {
 
     // Use Brent's algorithm to find a root of the function:
     // g(groundRange) = slantRange - (a1 + groundRange * (a2 +
     //                  groundRange * (a3 + groundRange * a4)))
 
-    // do I actually want to use a lambda for this? what is most clear? 
-    double groundRange = brentRoot(minGroundRange, maxGroundRange, 
-              [](double slantRange, 
-                 double groundRange, 
-                 double a1, 
-                 double a2, 
-                 double a3, 
-                 double a4){
-      return slantRange - (a1 + groundRange * (a2 + groundRange * (a3 + groundRange * a4)));
-    }
-      , 0.1);
-    return groundRange
+//    std::function<double(double)> groundRangeFunc;
+//    groundRangeFunc = [slantRange](double groundRange) -> double{
+//      groundRange = slantRange - (a1 + groundRange * (a2 + groundRange * (a3 + groundRange * a4)));
+//      return groundRange;
+//    };
+
+    return brentRoot(minGroundRangeGuess, maxGroundRangeGuess, groundRangeFunc, 0.1);
   }
+  return -1;
 }
 
-csm::ImageCoordCovar groundToImage(
-    const csm::EcefCoordCovar& groundPt,
-    double desiredPrecision = 0.001,
-    double* achievedPrecision = NULL,
-    csm::WarningList* warnings = NULL) const {
 
-    MESSAGE_LOG(this->m_logger, "Computing groundToImage(Covar) for {}, {}, {}, with desired precision {}",
-                groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
-
-
+double groundRangeFunc(double groundRange){
+  return slantRange - (a1 + groundRange * (a2 + groundRange * (a3 + groundRange * a4)));
 }
 
-//virtual csm::EcefCoord imageToGround(
-//    const csm::ImageCoord& imagePt,
-//    double height,
+//csm::ImageCoordCovar groundToImage(
+//    const csm::EcefCoordCovar& groundPt,
 //    double desiredPrecision = 0.001,
 //    double* achievedPrecision = NULL,
-//    csm::WarningList* warnings = NULL) const;
+//    csm::WarningList* warnings = NULL) const {
 //
-//virtual csm::EcefCoordCovar imageToGround(
-//    const csm::ImageCoordCovar& imagePt,
-//    double height,
-//    double heightVariance,
-//    double desiredPrecision = 0.001,
-//    double* achievedPrecision = NULL,
-//    csm::WarningList* warnings = NULL) const;
+//    MESSAGE_LOG(this->m_logger, "Computing groundToImage(Covar) for {}, {}, {}, with desired precision {}",
+//                groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
 //
-//virtual csm::EcefLocus imageToProximateImagingLocus(
-//    const csm::ImageCoord& imagePt,
-//    const csm::EcefCoord& groundPt,
-//    double desiredPrecision = 0.001,
-//    double* achievedPrecision = NULL,
-//    csm::WarningList* warnings = NULL) const;
-//
-//virtual csm::EcefLocus imageToRemoteImagingLocus(
-//    const csm::ImageCoord& imagePt,
-//    double desiredPrecision = 0.001,
-//    double* achievedPrecision = NULL,
-//    csm::WarningList* warnings = NULL) const;
-//
-//virtual csm::ImageCoord getImageStart() const;
-//
-//virtual csm::ImageVector getImageSize() const;
-//
-//virtual std::pair<csm::ImageCoord, csm::ImageCoord> getValidImageRange() const;
-//
-//virtual std::pair<double, double> getValidHeightRange() const;
-//
-//virtual csm::EcefVector getIlluminationDirection(const csm::EcefCoord& groundPt) const;
-//
-//virtual double getImageTime(const csm::ImageCoord& imagePt) const;
-//
-//virtual csm::EcefCoord getSensorPosition(const csm::ImageCoord& imagePt) const;
-//
-//virtual csm::EcefCoord getSensorPosition(double time) const;
-//
-//virtual csm::EcefVector getSensorVelocity(const csm::ImageCoord& imagePt) const;
-//
-//virtual csm::EcefVector getSensorVelocity(double time) const;
-//
-//virtual csm::RasterGM::SensorPartials computeSensorPartials(
-//    int index,
-//    const csm::EcefCoord& groundPt,
-//    double desiredPrecision = 0.001,
-//    double* achievedPrecision = NULL,
-//    csm::WarningList* warnings = NULL) const;
-//
-//virtual csm::RasterGM::SensorPartials computeSensorPartials(
-//    int index,
-//    const csm::ImageCoord& imagePt,
-//    const csm::EcefCoord& groundPt,
-//    double desiredPrecision = 0.001,
-//    double* achievedPrecision = NULL,
-//    csm::WarningList* warnings = NULL) const;
-//
-//virtual std::vector<csm::RasterGM::SensorPartials> computeAllSensorPartials(
-//    const csm::EcefCoord& groundPt,
-//    csm::param::Set pSet = csm::param::VALID,
-//    double desiredPrecision = 0.001,
-//    double* achievedPrecision = NULL,
-//    csm::WarningList* warnings = NULL) const;
-//
-//virtual std::vector<double> computeGroundPartials(const csm::EcefCoord& groundPt) const;
-//
-//virtual const csm::CorrelationModel& getCorrelationModel() const;
-//
-//virtual std::vector<double> getUnmodeledCrossCovariance(
-//    const csm::ImageCoord& pt1,
-//    const csm::ImageCoord& pt2) const;
-//
-//virtual csm::EcefCoord getReferencePoint() const;
-//
-//virtual void setReferencePoint(const csm::EcefCoord& groundPt);
-//
-//virtual int getNumParameters() const;
-//
-//virtual std::string getParameterName(int index) const;
-//
-//virtual std::string getParameterUnits(int index) const;
-//
-//virtual bool hasShareableParameters() const;
-//
-//virtual bool isParameterShareable(int index) const;
-//
-//virtual csm::SharingCriteria getParameterSharingCriteria(int index) const;
-//
-//virtual double getParameterValue(int index) const;
-//
-//virtual void setParameterValue(int index, double value);
-//
-//virtual csm::param::Type getParameterType(int index) const;
-//
-//virtual void setParameterType(int index, csm::param::Type pType);
-//
-//virtual double getParameterCovariance(
-//    int index1,
-//    int index2) const;
-//
-//virtual void setParameterCovariance(
-//    int index1,
-//    int index2,
-//    double covariance);
-//
-//virtual int getNumGeometricCorrectionSwitches() const;
-//
-//virtual std::string getGeometricCorrectionName(int index) const;
-//
-//virtual void setGeometricCorrectionSwitch(int index,
-//    bool value,
-//    csm::param::Type pType);
-//
-//virtual bool getGeometricCorrectionSwitch(int index) const;
-//
-//virtual std::vector<double> getCrossCovarianceMatrix(
-//    const csm::GeometricModel& comparisonModel,
-//    csm::param::Set pSet = csm::param::VALID,
-//    const csm::GeometricModel::GeometricModelList& otherModels = csm::GeometricModel::GeometricModelList()) const;
-//
-//virtual csm::Version getVersion() const;
-//
-//virtual std::string getModelName() const;
-//
-//virtual std::string getPedigree() const;
-//
-//virtual std::string getImageIdentifier() const;
-//
-//virtual void setImageIdentifier(
-//    const std::string& imageId,
-//    csm::WarningList* warnings = NULL);
-//
-//virtual std::string getSensorIdentifier() const;
-//
-//virtual std::string getPlatformIdentifier() const;
-//
-//virtual std::string getCollectionIdentifier() const;
-//
-//virtual std::string getTrajectoryIdentifier() const;
-//
-//virtual std::string getSensorType() const;
-//
-//virtual std::string getSensorMode() const;
-//
-//virtual std::string getReferenceDateAndTime() const;
-//
-//virtual csm::Ellipsoid getEllipsoid() const;
-//
-//virtual void setEllipsoid(const csm::Ellipsoid &ellipsoid);
-//
-//////////////////////////////
-//// Model static variables //
-//////////////////////////////
-//
-//static const std::string      _SENSOR_MODEL_NAME;
-//static const std::string      _STATE_KEYWORD[];
-//static const int              NUM_PARAM_TYPES;
-//static const std::string      PARAM_STRING_ALL[];
-//static const csm::param::Type PARAM_CHAR_ALL[];
-//static const int              NUM_PARAMETERS;
-//static const std::string      PARAMETER_NAME[];
-//csm::NoCorrelationModel       _NO_CORR_MODEL; // A way to report no correlation between images is supported
-//std::vector<double>           _NO_ADJUSTMENT;
-//
-/////////////////////////////
-//// Model state variables //
-/////////////////////////////
-//std::string  m_imageIdentifier;
-//std::string  m_sensorName;
-//int          m_nLines;
-//int          m_nSamples;
-//double       m_exposureDuration;
-//double       m_scaledPixelWidth;
-//double       m_startingEphemerisTime;
-//double       m_centerEphemerisTime;
-//double       m_majorAxis;
-//double       m_minorAxis;
-//std::string  m_referenceDateAndTime;
-//std::string  m_platformIdentifier;
-//std::string  m_sensorIdentifier;
-//std::string  m_trajectoryIdentifier;
-//std::string  m_collectionIdentifier;
-//double       m_refElevation;
-//double       m_minElevation;
-//double       m_maxElevation;
-//double       m_dtEphem;
-//double       m_t0Ephem;
-//std::vector<double> m_scaleConversionCoefficients;
-//std::vector<double> m_positions;
-//std::vector<double> m_velocities;
-//std::vector<double> m_currentParameterValue;
-//std::vector<csm::param::Type> m_parameterType;
-//csm::EcefCoord m_referencePointXyz;
-//std::vector<double> m_covariance;
-//std::vector<double> m_sunPosition;
-//std::vector<double> m_sunVelocity;
-//
-//
+//}
+
