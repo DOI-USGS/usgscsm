@@ -11,7 +11,9 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
   public:
 
     UsgsAstroSarSensorModel();
-    ~UsgsAstroSarSensorModel();
+    ~UsgsAstroSarSensorModel() {}
+
+    void reset();
 
     virtual void replaceModelState(const std::string& argState);
 
@@ -206,6 +208,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     // Model state variables //
     ///////////////////////////
     std::string  m_imageIdentifier;
+    std::string  m_platformName;
     std::string  m_sensorName;
     int          m_nLines;
     int          m_nSamples;
@@ -215,7 +218,6 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     double       m_centerEphemerisTime;
     double       m_majorAxis;
     double       m_minorAxis;
-    std::string  m_referenceDateAndTime;
     std::string  m_platformIdentifier;
     std::string  m_sensorIdentifier;
     std::string  m_trajectoryIdentifier;

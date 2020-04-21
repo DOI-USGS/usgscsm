@@ -55,7 +55,6 @@ private:
     static const std::string _MANUFACTURER_NAME;
     static const std::string _RELEASE_DATE;
     static const int         _N_SENSOR_MODELS;
-    static const std::string _ISD_KEYWORD[];
 
     typedef csm::Model* (*sensorConstructor)(void);
     static std::map<std::string, sensorConstructor> MODELS;

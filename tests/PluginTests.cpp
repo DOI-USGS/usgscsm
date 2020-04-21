@@ -26,7 +26,7 @@ TEST(PluginTests, ReleaseDate) {
 
 TEST(PluginTests, NumModels) {
    UsgsAstroPlugin testPlugin;
-   EXPECT_EQ(2, testPlugin.getNumModels());
+   EXPECT_EQ(3, testPlugin.getNumModels());
 }
 
 TEST(PluginTests, BadISDFile) {
@@ -185,6 +185,85 @@ TEST_F(ConstVelLineScanIsdTest, ConstructInValidCamera) {
       testPlugin.constructModelFromISD(
             isd,
             "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL",
+            nullptr);
+      FAIL() << "Expected an error";
+
+   }
+   catch(csm::Error &e) {
+      EXPECT_EQ(e.getError(), csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE);
+   }
+   catch(...) {
+      FAIL() << "Expected csm SENSOR_MODEL_NOT_CONSTRUCTIBLE error";
+   }
+   if (cameraModel) {
+      delete cameraModel;
+   }
+}
+
+TEST_F(SarIsdTest, Constructible) {
+  UsgsAstroPlugin testPlugin;
+  csm::WarningList warnings;
+  EXPECT_TRUE(testPlugin.canModelBeConstructedFromISD(
+              isd,
+              "USGS_ASTRO_SAR_SENSOR_MODEL",
+              &warnings));
+  for (auto &warn: warnings) {
+    std::cerr << "Warning in " << warn.getFunction() << std::endl;
+    std::cerr << "  " << warn.getMessage() << std::endl;
+  }
+}
+
+TEST_F(SarIsdTest, ConstructibleFromState) {
+   UsgsAstroPlugin testPlugin;
+   csm::WarningList warnings;
+   std::string modelState = testPlugin.getStateFromISD(isd);
+   EXPECT_TRUE(testPlugin.canModelBeConstructedFromState(
+         "USGS_ASTRO_SAR_SENSOR_MODEL",
+         modelState,
+         &warnings));
+  for (auto &warn: warnings) {
+    std::cerr << "Warning in " << warn.getFunction() << std::endl;
+    std::cerr << "  " << warn.getMessage() << std::endl;
+  }
+}
+
+TEST_F(SarIsdTest, NotConstructible) {
+   UsgsAstroPlugin testPlugin;
+   isd.setFilename("data/simpleFramerISD.img");
+   EXPECT_FALSE(testPlugin.canModelBeConstructedFromISD(
+               isd,
+               "USGS_ASTRO_SAR_SENSOR_MODEL"));
+}
+
+TEST_F(SarIsdTest, ConstructValidCamera) {
+   UsgsAstroPlugin testPlugin;
+   csm::WarningList warnings;
+   csm::Model *cameraModel = NULL;
+   EXPECT_NO_THROW(
+         cameraModel = testPlugin.constructModelFromISD(
+               isd,
+               "USGS_ASTRO_SAR_SENSOR_MODEL",
+               &warnings)
+   );
+   for (auto &warn: warnings) {
+     std::cerr << "Warning in " << warn.getFunction() << std::endl;
+     std::cerr << "  " << warn.getMessage() << std::endl;
+   }
+   UsgsAstroSarSensorModel *sarModel = dynamic_cast<UsgsAstroSarSensorModel *>(cameraModel);
+   EXPECT_NE(sarModel, nullptr);
+   if (cameraModel) {
+      delete cameraModel;
+   }
+}
+
+TEST_F(SarIsdTest, ConstructInValidCamera) {
+   UsgsAstroPlugin testPlugin;
+   isd.setFilename("data/empty.img");
+   csm::Model *cameraModel = NULL;
+   try {
+      testPlugin.constructModelFromISD(
+            isd,
+            "USGS_ASTRO_SAR_SENSOR_MODEL",
             nullptr);
       FAIL() << "Expected an error";
 
