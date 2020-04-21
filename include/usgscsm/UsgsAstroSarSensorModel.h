@@ -11,7 +11,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
   public:
 
     UsgsAstroSarSensorModel();
-    ~UsgsAstroSarSensorModel();
+    ~UsgsAstroSarSensorModel() {}
 
     void reset();
 
@@ -218,7 +218,6 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     double       m_centerEphemerisTime;
     double       m_majorAxis;
     double       m_minorAxis;
-    std::string  m_referenceDateAndTime;
     std::string  m_platformIdentifier;
     std::string  m_sensorIdentifier;
     std::string  m_trajectoryIdentifier;

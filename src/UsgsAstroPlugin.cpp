@@ -297,23 +297,23 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(const csm::Isd &imageSupportD
       }
       return model;
     }
-    // else if (modelName == UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME) {
-    //   UsgsAstroSarSensorModel *model =  new UsgsAstroSarSensorModel();
-    //   try {
-    //     model->replaceModelState(model->constructStateFromIsd(stringIsd, warnings));
-    //   }
-    //   catch (std::exception& e) {
-    //     csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE;
-    //     std::string aMessage = "Could not construct model [";
-    //     aMessage += modelName;
-    //     aMessage += "] with error [";
-    //     aMessage += e.what();
-    //     aMessage += "]";
-    //     std::string aFunction = "UsgsAstroPlugin::constructModelFromISD()";
-    //     throw csm::Error(aErrorType, aMessage, aFunction);
-    //   }
-    //   return model;
-    // }
+    else if (modelName == UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME) {
+      UsgsAstroSarSensorModel *model =  new UsgsAstroSarSensorModel();
+      try {
+        model->replaceModelState(model->constructStateFromIsd(stringIsd, warnings));
+      }
+      catch (std::exception& e) {
+        csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE;
+        std::string aMessage = "Could not construct model [";
+        aMessage += modelName;
+        aMessage += "] with error [";
+        aMessage += e.what();
+        aMessage += "]";
+        std::string aFunction = "UsgsAstroPlugin::constructModelFromISD()";
+        throw csm::Error(aErrorType, aMessage, aFunction);
+      }
+      return model;
+    }
     else {
       csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
       std::string aMessage = "Model [" + modelName + "] not supported: ";
@@ -339,11 +339,11 @@ csm::Model *UsgsAstroPlugin::constructModelFromState(const std::string& modelSta
         model->replaceModelState(modelState);
         return model;
     }
-    // else if (modelName == UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME) {
-    //     UsgsAstroSarSensorModel* model = new UsgsAstroSarSensorModel();
-    //     model->replaceModelState(modelState);
-    //     return model;
-    // }
+    else if (modelName == UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME) {
+        UsgsAstroSarSensorModel* model = new UsgsAstroSarSensorModel();
+        model->replaceModelState(modelState);
+        return model;
+    }
     else {
       csm::Error::ErrorType aErrorType = csm::Error::ISD_NOT_SUPPORTED;
       std::string aMessage = "Model" + modelName + " not supported: ";

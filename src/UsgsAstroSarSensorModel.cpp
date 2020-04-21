@@ -140,26 +140,31 @@ string UsgsAstroSarSensorModel::getModelNameFromModelState(const string& model_s
    // Parse the string to JSON
    auto j = json::parse(model_state);
    // If model name cannot be determined, return a blank string
-   std::string model_name;
+   string model_name;
 
    if (j.find("m_modelName") != j.end()) {
        model_name = j["m_modelName"];
    } else {
        csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
-       std::string aMessage = "No 'm_modelName' key in the model state object.";
-       std::string aFunction = "UsgsAstroSarSensorModel::getModelNameFromModelState";
+       string aMessage = "No 'm_modelName' key in the model state object.";
+       string aFunction = "UsgsAstroSarSensorModel::getModelNameFromModelState";
        csm::Error csmErr(aErrorType, aMessage, aFunction);
        throw(csmErr);
    }
    if (model_name != _SENSOR_MODEL_NAME){
        csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
-       std::string aMessage = "Sensor model not supported.";
-       std::string aFunction = "UsgsAstroSarSensorModel::getModelNameFromModelState()";
+       string aMessage = "Sensor model not supported.";
+       string aFunction = "UsgsAstroSarSensorModel::getModelNameFromModelState()";
        csm::Error csmErr(aErrorType, aMessage, aFunction);
        throw(csmErr);
    }
    return model_name;
 
+}
+
+UsgsAstroSarSensorModel::UsgsAstroSarSensorModel()
+{
+  reset();
 }
 
 void UsgsAstroSarSensorModel::reset()
@@ -175,12 +180,10 @@ void UsgsAstroSarSensorModel::reset()
   m_centerEphemerisTime = 0;
   m_majorAxis = 0;
   m_minorAxis = 0;
-  m_referenceDateAndTime = "Unknown";
   m_platformIdentifier = "Unknown";
   m_sensorIdentifier = "Unknown";
   m_trajectoryIdentifier = "Unknown";
   m_collectionIdentifier = "Unknown";
-  m_refElevation = 0;
   m_minElevation = -1000;
   m_maxElevation = 1000;
   m_dtEphem = 0;
@@ -215,12 +218,8 @@ void UsgsAstroSarSensorModel::replaceModelState(const string& argState)
   m_centerEphemerisTime = stateJson["m_centerEphemerisTime"];
   m_majorAxis = stateJson["m_majorAxis"];
   m_minorAxis = stateJson["m_minorAxis"];
-  m_referenceDateAndTime = stateJson["m_referenceDateAndTime"].get<string>();
   m_platformIdentifier = stateJson["m_platformIdentifier"].get<string>();
   m_sensorIdentifier = stateJson["m_sensorIdentifier"].get<string>();
-  m_trajectoryIdentifier = stateJson["m_trajectoryIdentifier"].get<string>();
-  m_collectionIdentifier = stateJson["m_collectionIdentifier"].get<string>();
-  m_refElevation = stateJson["m_refElevation"];
   m_minElevation = stateJson["m_minElevation"];
   m_maxElevation = stateJson["m_maxElevation"];
   m_dtEphem = stateJson["m_dtEphem"];
@@ -233,8 +232,8 @@ void UsgsAstroSarSensorModel::replaceModelState(const string& argState)
   m_referencePointXyz.y = stateJson["m_referencePointXyz"][1];
   m_referencePointXyz.z = stateJson["m_referencePointXyz"][2];
   m_covariance = stateJson["m_covariance"].get<vector<double>>();
-  m_sunPosition = stateJson["m_sunPosition"].get<vector<double>>();;
-  m_sunVelocity = stateJson["m_sunVelocity"].get<vector<double>>();;
+  m_sunPosition = stateJson["m_sunPosition"].get<vector<double>>();
+  m_sunVelocity = stateJson["m_sunVelocity"].get<vector<double>>();
 }
 
 string UsgsAstroSarSensorModel::getModelState() const
@@ -350,4 +349,311 @@ csm::ImageCoord UsgsAstroSarSensorModel::getImageStart() const
 csm::ImageVector UsgsAstroSarSensorModel::getImageSize() const
 {
   return csm::ImageVector(0.0, 0.0);
+}
+
+pair<csm::ImageCoord, csm::ImageCoord> UsgsAstroSarSensorModel::getValidImageRange() const
+{
+  return make_pair(csm::ImageCoord(0.0, 0.0), csm::ImageCoord(0.0, 0.0));
+}
+
+pair<double, double> UsgsAstroSarSensorModel::getValidHeightRange() const
+{
+  return make_pair(0.0, 0.0);
+}
+
+csm::EcefVector UsgsAstroSarSensorModel::getIlluminationDirection(const csm::EcefCoord& groundPt) const
+{
+  return csm::EcefVector(0.0, 0.0, 0.0);
+}
+
+double UsgsAstroSarSensorModel::getImageTime(const csm::ImageCoord& imagePt) const
+{
+  return 0.0;
+}
+
+csm::EcefCoord UsgsAstroSarSensorModel::getSensorPosition(const csm::ImageCoord& imagePt) const
+{
+  return csm::EcefCoord(0.0, 0.0, 0.0);
+}
+
+csm::EcefCoord UsgsAstroSarSensorModel::getSensorPosition(double time) const
+{
+  return csm::EcefCoord(0.0, 0.0, 0.0);
+}
+
+csm::EcefVector UsgsAstroSarSensorModel::getSensorVelocity(const csm::ImageCoord& imagePt) const
+{
+  return csm::EcefVector(0.0, 0.0, 0.0);
+}
+
+csm::EcefVector UsgsAstroSarSensorModel::getSensorVelocity(double time) const
+{
+  return csm::EcefVector(0.0, 0.0, 0.0);
+}
+
+csm::RasterGM::SensorPartials UsgsAstroSarSensorModel::computeSensorPartials(
+    int index,
+    const csm::EcefCoord& groundPt,
+    double desiredPrecision,
+    double* achievedPrecision,
+    csm::WarningList* warnings) const
+{
+  return csm::RasterGM::SensorPartials(0.0, 0.0);
+}
+
+csm::RasterGM::SensorPartials UsgsAstroSarSensorModel::computeSensorPartials(
+    int index,
+    const csm::ImageCoord& imagePt,
+    const csm::EcefCoord& groundPt,
+    double desiredPrecision,
+    double* achievedPrecision,
+    csm::WarningList* warnings) const
+{
+  return csm::RasterGM::SensorPartials(0.0, 0.0);
+}
+
+vector<csm::RasterGM::SensorPartials> UsgsAstroSarSensorModel::computeAllSensorPartials(
+    const csm::EcefCoord& groundPt,
+    csm::param::Set pSet,
+    double desiredPrecision,
+    double* achievedPrecision,
+    csm::WarningList* warnings) const
+{
+  return vector<csm::RasterGM::SensorPartials>(NUM_PARAMETERS, csm::RasterGM::SensorPartials(0.0, 0.0));
+}
+
+vector<double> UsgsAstroSarSensorModel::computeGroundPartials(const csm::EcefCoord& groundPt) const
+{
+  return vector<double>(6, 0.0);
+}
+
+const csm::CorrelationModel& UsgsAstroSarSensorModel::getCorrelationModel() const
+{
+  return _NO_CORR_MODEL;
+}
+
+vector<double> UsgsAstroSarSensorModel::getUnmodeledCrossCovariance(
+    const csm::ImageCoord& pt1,
+    const csm::ImageCoord& pt2) const
+{
+  return vector<double>(4, 0.0);
+}
+
+csm::EcefCoord UsgsAstroSarSensorModel::getReferencePoint() const
+{
+  return m_referencePointXyz;
+}
+
+void UsgsAstroSarSensorModel::setReferencePoint(const csm::EcefCoord& groundPt)
+{
+  m_referencePointXyz = groundPt;
+}
+
+int UsgsAstroSarSensorModel::getNumParameters() const
+{
+  return NUM_PARAMETERS;
+}
+
+string UsgsAstroSarSensorModel::getParameterName(int index) const
+{
+  return PARAMETER_NAME[index];
+}
+
+string UsgsAstroSarSensorModel::getParameterUnits(int index) const
+{
+  return "m";
+}
+
+bool UsgsAstroSarSensorModel::hasShareableParameters() const
+{
+  return false;
+}
+
+bool UsgsAstroSarSensorModel::isParameterShareable(int index) const
+{
+  return false;
+}
+
+csm::SharingCriteria UsgsAstroSarSensorModel::getParameterSharingCriteria(int index) const
+{
+  return csm::SharingCriteria();
+}
+
+double UsgsAstroSarSensorModel::getParameterValue(int index) const
+{
+  return m_currentParameterValue[index];
+}
+
+void UsgsAstroSarSensorModel::setParameterValue(int index, double value)
+{
+  m_currentParameterValue[index] = value;
+}
+
+csm::param::Type UsgsAstroSarSensorModel::getParameterType(int index) const
+{
+  return m_parameterType[index];
+}
+
+void UsgsAstroSarSensorModel::setParameterType(int index, csm::param::Type pType)
+{
+  m_parameterType[index] = pType;
+}
+
+double UsgsAstroSarSensorModel::getParameterCovariance(
+    int index1,
+    int index2) const
+{
+  return m_covariance[index1 * NUM_PARAMETERS + index2];
+}
+
+
+void UsgsAstroSarSensorModel::setParameterCovariance(
+    int index1,
+    int index2,
+    double covariance)
+
+{
+  m_covariance[index1 * NUM_PARAMETERS + index2] = covariance;
+}
+
+int UsgsAstroSarSensorModel::getNumGeometricCorrectionSwitches() const
+{
+  return 0;
+}
+
+string UsgsAstroSarSensorModel::getGeometricCorrectionName(int index) const
+{
+  throw csm::Error(
+     csm::Error::INDEX_OUT_OF_RANGE,
+     "Index is out of range.",
+     "UsgsAstroSarSensorModel::getGeometricCorrectionName");
+}
+
+void UsgsAstroSarSensorModel::setGeometricCorrectionSwitch(int index,
+    bool value,
+    csm::param::Type pType)
+{
+  throw csm::Error(
+     csm::Error::INDEX_OUT_OF_RANGE,
+     "Index is out of range.",
+     "UsgsAstroSarSensorModel::setGeometricCorrectionSwitch");
+}
+
+bool UsgsAstroSarSensorModel::getGeometricCorrectionSwitch(int index) const
+{
+  throw csm::Error(
+     csm::Error::INDEX_OUT_OF_RANGE,
+     "Index is out of range.",
+     "UsgsAstroSarSensorModel::getGeometricCorrectionSwitch");
+}
+
+vector<double> UsgsAstroSarSensorModel::getCrossCovarianceMatrix(
+    const csm::GeometricModel& comparisonModel,
+    csm::param::Set pSet,
+    const csm::GeometricModel::GeometricModelList& otherModels) const
+{
+  // Return covariance matrix
+  if (&comparisonModel == this) {
+    vector<int> paramIndices = getParameterSetIndices(pSet);
+    int numParams = paramIndices.size();
+    vector<double> covariances(numParams * numParams, 0.0);
+    for (int i = 0; i < numParams; i++) {
+      for (int j = 0; j < numParams; j++) {
+        covariances[i * numParams + j] = getParameterCovariance(paramIndices[i], paramIndices[j]);
+      }
+    }
+    return covariances;
+  }
+  // No correlation between models.
+  const vector<int>& indices = getParameterSetIndices(pSet);
+  size_t num_rows = indices.size();
+  const vector<int>& indices2 = comparisonModel.getParameterSetIndices(pSet);
+  size_t num_cols = indices.size();
+
+  return vector<double>(num_rows * num_cols, 0.0);
+}
+
+csm::Version UsgsAstroSarSensorModel::getVersion() const
+{
+  return csm::Version(1, 0, 0);
+}
+
+string UsgsAstroSarSensorModel::getModelName() const
+{
+  return _SENSOR_MODEL_NAME;
+}
+
+string UsgsAstroSarSensorModel::getPedigree() const
+{
+  return "USGS_SAR";
+}
+
+string UsgsAstroSarSensorModel::getImageIdentifier() const
+{
+  return m_imageIdentifier;
+}
+
+void UsgsAstroSarSensorModel::setImageIdentifier(
+    const string& imageId,
+    csm::WarningList* warnings)
+{
+  m_imageIdentifier = imageId;
+}
+
+string UsgsAstroSarSensorModel::getSensorIdentifier() const
+{
+  return m_sensorIdentifier;
+}
+
+string UsgsAstroSarSensorModel::getPlatformIdentifier() const
+{
+  return m_platformIdentifier;
+}
+
+string UsgsAstroSarSensorModel::getCollectionIdentifier() const
+{
+  return m_collectionIdentifier;
+}
+
+string UsgsAstroSarSensorModel::getTrajectoryIdentifier() const
+{
+  return m_trajectoryIdentifier;
+}
+
+string UsgsAstroSarSensorModel::getSensorType() const
+{
+  return "SAR";
+}
+
+string UsgsAstroSarSensorModel::getSensorMode() const
+{
+  return "STRIP";
+}
+
+string UsgsAstroSarSensorModel::getReferenceDateAndTime() const
+{
+  csm::ImageCoord referencePointImage = groundToImage(m_referencePointXyz);
+  double relativeTime = getImageTime(referencePointImage);
+  time_t ephemTime = m_centerEphemerisTime + relativeTime;
+  struct tm t = {0};  // Initalize to all 0's
+  t.tm_year = 100;  // This is year-1900, so 100 = 2000
+  t.tm_mday = 1;
+  time_t timeSinceEpoch = mktime(&t);
+  time_t finalTime = ephemTime + timeSinceEpoch;
+  char buffer [16];
+  strftime(buffer, 16, "%Y%m%dT%H%M%S", localtime(&finalTime));
+  buffer[15] = '\0';
+
+  return buffer;
+}
+
+csm::Ellipsoid UsgsAstroSarSensorModel::getEllipsoid() const
+{
+   return csm::Ellipsoid(m_majorAxis, m_minorAxis);
+}
+
+void UsgsAstroSarSensorModel::setEllipsoid(const csm::Ellipsoid &ellipsoid)
+{
+   m_majorAxis = ellipsoid.getSemiMajorRadius();
+   m_minorAxis = ellipsoid.getSemiMinorRadius();
 }
