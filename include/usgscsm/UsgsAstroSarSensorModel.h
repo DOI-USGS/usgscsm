@@ -219,6 +219,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     double       m_scaledPixelWidth;
     double       m_startingEphemerisTime;
     double       m_centerEphemerisTime;
+    double       m_endingEphemerisTime;
     double       m_majorAxis;
     double       m_minorAxis;
     std::string  m_referenceDateAndTime;
@@ -240,6 +241,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     std::vector<double> m_covariance;
     std::vector<double> m_sunPosition;
     std::vector<double> m_sunVelocity;
+    double m_wavelength;
 };
 
 #endif

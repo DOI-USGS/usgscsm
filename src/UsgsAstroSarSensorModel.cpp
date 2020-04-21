@@ -141,15 +141,6 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
   return state.dump();
 }
 
-// TEMPORARY hard-coded values. Need to be replaced by accessors.
-double START_TIME = 0.0;
-double STOP_TIME = 5.0;                         
-double EXPOSURE_DURATION = 0.005;
-double SCALED_PIXEL_WIDTH = 7.5; 
-double WAVELENGTH = 0.125;
-double SAMPLES = 1000.0;
-double LINES = 1000.0;
-
 csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
     const csm::EcefCoord& groundPt,
     double desiredPrecision,
@@ -171,8 +162,8 @@ csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
     // range coefficient set, with a time closest to the calculated time of closest approach
     double groundRange = slantRangeToGroundRange(groundPt, time, slantRangeValue);
 
-    double line = (time - START_TIME) / EXPOSURE_DURATION;
-    double sample = groundRange / SCALED_PIXEL_WIDTH;
+    double line = (time - m_startingEphemerisTime) / m_exposureDuration;
+    double sample = groundRange / m_scaledPixelWidth;
     return csm::ImageCoord(line, sample);
   } catch (std::exception& error) {
     std::string message = "Could not calculate groundToImage, with error [";
@@ -201,14 +192,14 @@ double UsgsAstroSarSensorModel::dopplerShift(
      double slantRange = sqrt(pow(lookVector[0], 2) +  pow(lookVector[1], 2) + pow(lookVector[2], 2)); 
 
      double dopplerShift = -2.0 * (lookVector[0]*spacecraftVelocity[0] + lookVector[1]*spacecraftVelocity[1] 
-                            + lookVector[2]*spacecraftVelocity[2])/(slantRange * WAVELENGTH);
+                            + lookVector[2]*spacecraftVelocity[2])/(slantRange * m_wavelength);
      return dopplerShift;
    };
 
   // Do root-finding for "dopplerShift"
-  double tolerance = (STOP_TIME - START_TIME) / LINES / 20.0;
+  double tolerance = (m_endingEphemerisTime - m_startingEphemerisTime) / m_nLines / 20.0;
 
-  return secantRoot(START_TIME, STOP_TIME, dopplerShiftFunction, tolerance);
+  return secantRoot(m_startingEphemerisTime, m_endingEphemerisTime, dopplerShiftFunction, tolerance);
 }
 
 
@@ -251,8 +242,8 @@ double UsgsAstroSarSensorModel::slantRangeToGroundRange(
   // allow for solving for coordinates that are slightly outside of
   // the actual image area. Use sample=-0.25*image_samples and
   // sample=1.25*image_samples.
-  double minGroundRangeGuess = (-0.25 * SAMPLES - 1.0) * SCALED_PIXEL_WIDTH;
-  double maxGroundRangeGuess = (1.25 * SAMPLES - 1.0) * SCALED_PIXEL_WIDTH;
+  double minGroundRangeGuess = (-0.25 * m_nSamples - 1.0) * m_scaledPixelWidth;
+  double maxGroundRangeGuess = (1.25 * m_nSamples - 1.0) * m_scaledPixelWidth;
 
   return brentRoot(minGroundRangeGuess, maxGroundRangeGuess, slantRangeToGroundRangeFunction, 0.1);
 }
