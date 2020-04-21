@@ -356,6 +356,12 @@ double secantRoot(double lowerBound, double upperBound, std::function<double(dou
   double diff = 0; 
   double x2 = 0; 
   double f2 = 0; 
+
+  // Make sure we bound the root (f = 0.0)
+  if (f0 * f1 > 0.0) {
+    throw std::invalid_argument("Function values at the boundaries have the same sign.");
+  }
+
   // Order the bounds
   if (f1 < f0) {
     std::swap(x0, x1);
