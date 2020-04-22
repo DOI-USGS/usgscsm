@@ -1,5 +1,5 @@
 {
-  "name_model": "USGS_ASTRO_SAR_MODEL",
+  "name_model": "USGS_ASTRO_SAR_SENSOR_MODEL",
   "image_identifier" : "test_sar.img",
   "name_platform": "TEST LUNAR PLATFORM",
   "name_sensor": "TEST SAR",
