@@ -764,7 +764,7 @@ csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftPosition(double time) cons
   // If there are multiple positions, use Lagrange interpolation
   if ((numPositions/3) > 1) {
     double position[3];
-    double endTime = m_endingEphemerisTime; //m_t0Ephem + (m_dtEphem * ((numPositions/3)));
+    double endTime = m_endingEphemerisTime;
     double dtEphem = (endTime - m_t0Ephem) / (numPositions/3);
     lagrangeInterp(numPositions/3, &m_positions[0], m_t0Ephem, dtEphem,
                    time, 3, 8, position);
@@ -788,7 +788,7 @@ csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftVelocity(double time) cons
   // If there are multiple positions, use Lagrange interpolation
   if ((numVelocities/3) > 1) {
     double velocity[3];
-    double endTime = m_endingEphemerisTime; //m_t0Ephem + (m_dtEphem * ((m_numVelocities/3)));
+    double endTime = m_endingEphemerisTime;
     double dtEphem = (endTime - m_t0Ephem) / (numVelocities/3);
     lagrangeInterp(numVelocities/3, &m_velocities[0], m_t0Ephem, dtEphem,
                    time, 3, 8, velocity);
@@ -804,50 +804,34 @@ csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftVelocity(double time) cons
   return spacecraftVelocity;
 }
 
-std::vector<double> UsgsAstroSarSensorModel::getRangeCoefficients(double time) const {
-  return m_scaleConversionCoefficients;
-//   int index;
-//   int pos;
-//   int found;
-//   double weight;
-//    
-//   // Find the lower_bound of t_min in the range_coefficient_set array
-//   // (using 'found' to insure not overrunning array bounds)
-//   pos = 0;
-//   found = 0;
-//   while (pos < 5*this->num_range_coefficients && found ==0) 
-//      if (this->range_coefficient_set[pos] < time)
-//          pos = pos + 5;
-//      else
-//          found = 1;
-//
-//   // Set the pos to end of array if needed, so as not to overrun memory
-//   if (pos >= 5*this->num_range_coefficients)
-//      pos = 5*(this->num_range_coefficients-1);
-//
-//     if(pos == 0) {
-//         index = 0;
-//         *a1 = this->range_coefficient_set[index+1];
-//         *a2 = this->range_coefficient_set[index+2];
-//         *a3 = this->range_coefficient_set[index+3];
-//         *a4 = this->range_coefficient_set[index+4];
-//     }
-//     else {
-//       index = pos;
-//       if(pos == (5*(this->num_range_coefficients-1)) && time >= this->range_coefficient_set[index]) {
-//         *a1 = this->range_coefficient_set[index+1];
-//         *a2 = this->range_coefficient_set[index+2];
-//         *a3 = this->range_coefficient_set[index+3];
-//         *a4 = this->range_coefficient_set[index+4];
-//       }
-//       else {
-//         weight = (time - this->range_coefficient_set[index-5]) /
-//                         (this->range_coefficient_set[index] - this->range_coefficient_set[index-5]);
-//         *a1 = this->range_coefficient_set[index-4] * (1.0 - weight) + this->range_coefficient_set[index+1] * weight;
-//         *a2 = this->range_coefficient_set[index-3] * (1.0 - weight) + this->range_coefficient_set[index+2] * weight;
-//         *a3 = this->range_coefficient_set[index-2] * (1.0 - weight) + this->range_coefficient_set[index+3] * weight;
-//         *a4 = this->range_coefficient_set[index-1] * (1.0 - weight) + this->range_coefficient_set[index+4] * weight;
-//       }
-//     }
 
+std::vector<double> UsgsAstroSarSensorModel::getRangeCoefficients(double time) const {
+  int numCoeffs = m_scaleConversionCoefficients.size();
+  std::vector<double> coeffs, coefficients;
+  double endTime = m_scaleConversionCoefficients[numCoeffs - 4];
+
+  for (int i=0; i<numCoeffs/5.0; i++) {
+    if (i%5 != 0) {
+      coeffs.push_back(m_scaleConversionCoefficients[i]);
+    }
+  }
+
+  if ((numCoeffs/5) > 1) {
+    double coefficients[3];
+
+    double dtEphem = (endTime - m_scaleConversionCoefficients[0]) / (numCoeffs/5);
+    lagrangeInterp(numCoeffs/3, &coeffs[0], m_scaleConversionCoefficients[0], dtEphem,
+                   time, 5, 8, coefficients);
+    coeffs.push_back(coefficients[1]);
+    coeffs.push_back(coefficients[2]);
+    coeffs.push_back(coefficients[3]);
+    coeffs.push_back(coefficients[4]);
+  }
+  else {
+    coeffs.push_back(m_scaleConversionCoefficients[1]);
+    coeffs.push_back(m_scaleConversionCoefficients[2]);
+    coeffs.push_back(m_scaleConversionCoefficients[3]);
+    coeffs.push_back(m_scaleConversionCoefficients[4]);
+  }
+  return coeffs;
 }
