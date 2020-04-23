@@ -332,7 +332,7 @@ double UsgsAstroSarSensorModel::dopplerShift(
 
    std::function<double(double)> dopplerShiftFunction = [this, surfPt](double time) { 
      csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
-     csm::EcefVector spacecraftVelocity = getSpacecraftPosition(time);
+     csm::EcefVector spacecraftVelocity = getSpacecraftVelocity(time);
      double lookVector[3];
 
      lookVector[0] = spacecraftPosition.x - surfPt.x;
@@ -345,10 +345,6 @@ double UsgsAstroSarSensorModel::dopplerShift(
      double dopplerShift = -2.0 * (lookVector[0]*spacecraftVelocity.x + lookVector[1]*spacecraftVelocity.y
                             + lookVector[2]*spacecraftVelocity.z)/(slantRange * m_wavelength);
 
-     std::cout << "Velocity (x,y,z): " << spacecraftVelocity.x << ", " << spacecraftVelocity.y << ", " << spacecraftVelocity.z << std::endl; 
-     std::cout << "look: " << lookVector[0] << ", " << lookVector[1] << ", " << lookVector[2] << std::endl;
-     std::cout << "Slant Range:" << slantRange << std::endl; 
-     std::cout << "Shift:" << dopplerShift << std::endl; 
      return dopplerShift;
    };
 
@@ -362,7 +358,6 @@ double UsgsAstroSarSensorModel::dopplerShift(
 double UsgsAstroSarSensorModel::slantRange(csm::EcefCoord surfPt,
     double time) const{
   csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
-  csm::EcefVector spacecraftVelocity = getSpacecraftPosition(time);
   double lookVector[3];
 
   lookVector[0] = spacecraftPosition.x - surfPt.x;
@@ -376,16 +371,12 @@ double UsgsAstroSarSensorModel::slantRangeToGroundRange(
         double time,
         double slantRange) const{
 
-  //a1, a2, a3, a4 = getRangeCoefficients(t_min);
-  double a1 = 7.99423808710000e+04;
-  double a2 = 6.92122900000000e-01;
-  double a3 = 3.40193700000000e-06;
-  double a4 = -2.39924200000000e-11;
+  std::vector<double> coeffs = getRangeCoefficients(time);
 
   // Calculates the ground range from the slant range.
   std::function<double(double)> slantRangeToGroundRangeFunction = 
-    [a1, a2, a3, a4, slantRange](double groundRange){
-   return slantRange - (a1 + groundRange * (a2 + groundRange * (a3 + groundRange * a4)));
+    [coeffs, slantRange](double groundRange){
+   return slantRange - (coeffs[0] + groundRange * (coeffs[1] + groundRange * (coeffs[2] + groundRange * coeffs[3])));
   };
 
   // Need to come up with an initial guess when solving for ground 
@@ -398,8 +389,9 @@ double UsgsAstroSarSensorModel::slantRangeToGroundRange(
   // sample=1.25*image_samples.
   double minGroundRangeGuess = (-0.25 * m_nSamples - 1.0) * m_scaledPixelWidth;
   double maxGroundRangeGuess = (1.25 * m_nSamples - 1.0) * m_scaledPixelWidth;
-
-  return brentRoot(minGroundRangeGuess, maxGroundRangeGuess, slantRangeToGroundRangeFunction, 0.1);
+  
+  // Tolerance to 1/20th of a pixel for now.
+  return brentRoot(minGroundRangeGuess, maxGroundRangeGuess, slantRangeToGroundRangeFunction, m_scaledPixelWidth/20.0);
 }
 
 

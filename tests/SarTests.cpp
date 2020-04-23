@@ -56,10 +56,10 @@ TEST_F(SarSensorModel, GroundToImage) {
   // ground point from test image campt ISIS run
   csm::EcefCoord groundPt(-1605729.6097547, -466940.66390268,
                                 487897.51906835);
-  csm::ImageCoord imagePt2 = sensorModel->groundToImage(groundPt);
-  EXPECT_NEAR(groundPt.x, 0, 1e-8);
-  EXPECT_NEAR(groundPt.y, 0, 1e-8);
-  EXPECT_NEAR(groundPt.z, 0, 1e-8);
+  csm::ImageCoord imagePt = sensorModel->groundToImage(groundPt);
+  EXPECT_NEAR(imagePt.line, 32288.0, 1e-8);
+  EXPECT_NEAR(imagePt.samp, 1183.5, 1e-8);
+
 }
 
 TEST_F(SarSensorModel, spacecraftPosition) {

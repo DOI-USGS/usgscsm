@@ -1216,6 +1216,31 @@ double getScaledPixelWidth(nlohmann::json isd, csm::WarningList *list) {
   return width;
 }
 
+//std::vector<double> getScaleConversionTimes(nlohmann::json isd, csm::WarningList *list) {
+//  std::vector<double> coefficients;
+//  try {
+//   for (auto& location : isd.at("range_conversion_coefficients")){
+//     coefficients.push_back(location[0]);
+//     coefficients.push_back(location[1]);
+//     coefficients.push_back(location[2]);
+//     coefficients.push_back(location[3]);
+//     coefficients.push_back(location[4]); 
+//    }
+////    coefficients = isd.at("range_conversion_coefficients").get<std::vector<double>>();
+//  }
+//  catch (...) {
+//    if (list) {
+//      list->push_back(
+//        csm::Warning(
+//          csm::Warning::DATA_NOT_AVAILABLE,
+//          "Could not parse the range conversion coefficients and times.",
+//          "Utilities::getScaleConversionCoefficients()"));
+//    }
+//  }
+//  return coefficients;
+//}
+
+
 std::vector<double> getScaleConversionCoefficients(nlohmann::json isd, csm::WarningList *list) {
   std::vector<double> coefficients;
   try {
@@ -1224,7 +1249,7 @@ std::vector<double> getScaleConversionCoefficients(nlohmann::json isd, csm::Warn
      coefficients.push_back(location[1]);
      coefficients.push_back(location[2]);
      coefficients.push_back(location[3]);
-     coefficients.push_back(location[4]); // 
+     coefficients.push_back(location[4]); 
     }
 //    coefficients = isd.at("range_conversion_coefficients").get<std::vector<double>>();
   }
