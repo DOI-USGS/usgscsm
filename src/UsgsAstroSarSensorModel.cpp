@@ -67,6 +67,7 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
 
   state["m_centerEphemerisTime"] = getCenterTime(isd, parsingWarnings);
   state["m_startingEphemerisTime"] = getStartingTime(isd, parsingWarnings);
+  state["m_endingEphemerisTime"] = getEndingTime(isd, parsingWarnings);
 
   state["m_exposureDuration"] = getExposureDuration(isd, parsingWarnings);
 
@@ -112,6 +113,7 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
   // SAR specific values
   state["m_scaledPixelWidth"] = getScaledPixelWidth(isd, parsingWarnings);
   state["m_scaleConversionCoefficients"] = getScaleConversionCoefficients(isd, parsingWarnings);
+  state["m_wavelength"] = getWavelength(isd, parsingWarnings);
 
   // Default to identity covariance
   state["m_covariance"] =
@@ -124,10 +126,14 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
     if (warnings) {
       warnings->insert(warnings->end(), parsingWarnings->begin(), parsingWarnings->end());
     }
-    delete parsingWarnings;
+    std::string message = "ISD is invalid for creating the sensor model with error [";
+    csm::Warning warn = parsingWarnings->front();
+    message += warn.getMessage(); 
+    message += "]"; 
     parsingWarnings = nullptr;
+    delete parsingWarnings;
     throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
-                     "ISD is invalid for creating the sensor model.",
+                     message,
                      "UsgsAstroSarSensorModel::constructStateFromIsd");
   }
 
@@ -182,6 +188,7 @@ void UsgsAstroSarSensorModel::reset()
   m_scaledPixelWidth = 0;
   m_startingEphemerisTime = 0;
   m_centerEphemerisTime = 0;
+  m_endingEphemerisTime = 0;
   m_majorAxis = 0;
   m_minorAxis = 0;
   m_platformIdentifier = "Unknown";
@@ -203,6 +210,7 @@ void UsgsAstroSarSensorModel::reset()
   m_covariance = vector<double>(NUM_PARAMETERS * NUM_PARAMETERS,0.0);
   m_sunPosition.clear();
   m_sunVelocity.clear();
+  m_wavelength = 0;
 }
 
 void UsgsAstroSarSensorModel::replaceModelState(const string& argState)
@@ -218,8 +226,10 @@ void UsgsAstroSarSensorModel::replaceModelState(const string& argState)
   m_nSamples = stateJson["m_nSamples"];
   m_exposureDuration = stateJson["m_exposureDuration"];
   m_scaledPixelWidth = stateJson["m_scaledPixelWidth"];
+  m_wavelength = stateJson["m_wavelength"];
   m_startingEphemerisTime = stateJson["m_startingEphemerisTime"];
   m_centerEphemerisTime = stateJson["m_centerEphemerisTime"];
+  m_endingEphemerisTime = stateJson["m_endingEphemerisTime"];
   m_majorAxis = stateJson["m_majorAxis"];
   m_minorAxis = stateJson["m_minorAxis"];
   m_platformIdentifier = stateJson["m_platformIdentifier"].get<string>();
@@ -259,6 +269,7 @@ string UsgsAstroSarSensorModel::getModelState() const
   state["m_sunVelocity"] = m_sunVelocity;
   state["m_centerEphemerisTime"] = m_centerEphemerisTime;
   state["m_startingEphemerisTime"] = m_startingEphemerisTime;
+  state["m_endingEphemerisTime"] = m_endingEphemerisTime;
   state["m_exposureDuration"] = m_exposureDuration;
   state["m_dtEphem"] = m_dtEphem;
   state["m_t0Ephem"] = m_t0Ephem;
@@ -272,6 +283,7 @@ string UsgsAstroSarSensorModel::getModelState() const
   state["m_minElevation"] = m_minElevation;
   state["m_maxElevation"] = m_maxElevation;
   state["m_scaledPixelWidth"] = m_scaledPixelWidth;
+  state["m_wavelength"] = m_wavelength;
   state["m_scaleConversionCoefficients"] = m_scaleConversionCoefficients;
   state["m_covariance"] = m_covariance;
 
@@ -316,7 +328,7 @@ double UsgsAstroSarSensorModel::dopplerShift(
     csm::EcefCoord groundPt) const{
 
   // Moon body-fixed coordinates of surface point
-  csm::EcefCoord surfPt(0.0, 0.0, 0.0); // populate with real value
+  csm::EcefCoord surfPt(groundPt);
 
    std::function<double(double)> dopplerShiftFunction = [this, surfPt](double time) { 
      csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
@@ -329,13 +341,20 @@ double UsgsAstroSarSensorModel::dopplerShift(
 
      double slantRange = sqrt(pow(lookVector[0], 2) +  pow(lookVector[1], 2) + pow(lookVector[2], 2)); 
 
+
      double dopplerShift = -2.0 * (lookVector[0]*spacecraftVelocity.x + lookVector[1]*spacecraftVelocity.y
                             + lookVector[2]*spacecraftVelocity.z)/(slantRange * m_wavelength);
+
+     std::cout << "Velocity (x,y,z): " << spacecraftVelocity.x << ", " << spacecraftVelocity.y << ", " << spacecraftVelocity.z << std::endl; 
+     std::cout << "look: " << lookVector[0] << ", " << lookVector[1] << ", " << lookVector[2] << std::endl;
+     std::cout << "Slant Range:" << slantRange << std::endl; 
+     std::cout << "Shift:" << dopplerShift << std::endl; 
      return dopplerShift;
    };
 
   // Do root-finding for "dopplerShift"
   double tolerance = (m_endingEphemerisTime - m_startingEphemerisTime) / m_nLines / 20.0;
+
   return secantRoot(m_startingEphemerisTime, m_endingEphemerisTime, dopplerShiftFunction, tolerance);
 }
 
@@ -788,8 +807,7 @@ csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftVelocity(double time) cons
   // If there are multiple positions, use Lagrange interpolation
   if ((numVelocities/3) > 1) {
     double velocity[3];
-    double endTime = m_endingEphemerisTime;
-    double dtEphem = (endTime - m_t0Ephem) / (numVelocities/3);
+    double dtEphem = (m_endingEphemerisTime - m_startingEphemerisTime) / (numVelocities/3);
     lagrangeInterp(numVelocities/3, &m_velocities[0], m_t0Ephem, dtEphem,
                    time, 3, 8, velocity);
     spacecraftVelocity.x = velocity[0];
@@ -807,31 +825,33 @@ csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftVelocity(double time) cons
 
 std::vector<double> UsgsAstroSarSensorModel::getRangeCoefficients(double time) const {
   int numCoeffs = m_scaleConversionCoefficients.size();
-  std::vector<double> coeffs, coefficients;
-  double endTime = m_scaleConversionCoefficients[numCoeffs - 4];
+  std::vector<double> coeffs, interpCoeffs;
 
-  for (int i=0; i<numCoeffs/5.0; i++) {
+  double endTime = m_scaleConversionCoefficients[numCoeffs - 5];
+
+  // The structure of the input is [time0 a0 a1 a2 a3 time1 a0 a1 a2 a3....] 
+  for (int i=0; i < numCoeffs; i++) {
     if (i%5 != 0) {
       coeffs.push_back(m_scaleConversionCoefficients[i]);
     }
   }
 
   if ((numCoeffs/5) > 1) {
-    double coefficients[3];
+    double coefficients[4];
 
-    double dtEphem = (endTime - m_scaleConversionCoefficients[0]) / (numCoeffs/5);
-    lagrangeInterp(numCoeffs/3, &coeffs[0], m_scaleConversionCoefficients[0], dtEphem,
-                   time, 5, 8, coefficients);
-    coeffs.push_back(coefficients[1]);
-    coeffs.push_back(coefficients[2]);
-    coeffs.push_back(coefficients[3]);
-    coeffs.push_back(coefficients[4]);
+    double dtEphem = (endTime - m_scaleConversionCoefficients[0]) / (coeffs.size()/4);
+    lagrangeInterp(coeffs.size()/4, &coeffs[0], m_scaleConversionCoefficients[0], dtEphem,
+                   time, 4, 8, coefficients);
+    interpCoeffs.push_back(coefficients[0]);
+    interpCoeffs.push_back(coefficients[1]);
+    interpCoeffs.push_back(coefficients[2]);
+    interpCoeffs.push_back(coefficients[3]);
   }
   else {
-    coeffs.push_back(m_scaleConversionCoefficients[1]);
-    coeffs.push_back(m_scaleConversionCoefficients[2]);
-    coeffs.push_back(m_scaleConversionCoefficients[3]);
-    coeffs.push_back(m_scaleConversionCoefficients[4]);
+    interpCoeffs.push_back(m_scaleConversionCoefficients[1]);
+    interpCoeffs.push_back(m_scaleConversionCoefficients[2]);
+    interpCoeffs.push_back(m_scaleConversionCoefficients[3]);
+    interpCoeffs.push_back(m_scaleConversionCoefficients[4]);
   }
   return coeffs;
 }

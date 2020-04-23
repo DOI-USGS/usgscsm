@@ -96,6 +96,7 @@ int getTotalLines(nlohmann::json isd, csm::WarningList *list=nullptr);
 int getTotalSamples(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getStartingTime(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getCenterTime(nlohmann::json isd, csm::WarningList *list=nullptr);
+double getEndingTime(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getIntegrationStartLines(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getIntegrationStartTimes(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getIntegrationTimes(nlohmann::json isd, csm::WarningList *list=nullptr);
@@ -124,5 +125,5 @@ std::vector<double> getSunVelocities(nlohmann::json isd, csm::WarningList *list=
 std::vector<double> getSensorPositions(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSensorVelocities(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSensorOrientations(nlohmann::json isd, csm::WarningList *list=nullptr);
-
+double getWavelength(nlohmann::json isd, csm::WarningList *list=nullptr);
 #endif

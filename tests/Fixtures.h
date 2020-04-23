@@ -319,4 +319,31 @@ class SarIsdTest : public ::testing::Test {
    }
 };
 
+class SarSensorModel : public ::testing::Test {
+   protected:
+      csm::Isd isd;
+      UsgsAstroSarSensorModel *sensorModel;
+
+      void SetUp() override {
+         sensorModel = NULL;
+
+//         isd.setFilename("data/orbitalSar.img");
+         isd.setFilename("data/realTestSar.img");
+         UsgsAstroPlugin sarCameraPlugin;
+
+         csm::Model *model = sarCameraPlugin.constructModelFromISD(
+               isd,
+               "USGS_ASTRO_SAR_SENSOR_MODEL");
+         sensorModel = dynamic_cast<UsgsAstroSarSensorModel *>(model);
+         ASSERT_NE(sensorModel, nullptr);
+      }
+
+      void TearDown() override {
+         if (sensorModel) {
+            delete sensorModel;
+            sensorModel = NULL;
+         }
+      }
+};
+
 #endif

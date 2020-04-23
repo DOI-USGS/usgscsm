@@ -287,7 +287,7 @@ double brentRoot(
     double counterFunc = func(counterPoint);
     double currentFunc = func(currentPoint);
     if (counterFunc * currentFunc > 0.0) {
-      throw std::invalid_argument("Function values at the boundaries have the same sign.");
+      throw std::invalid_argument("Function values at the boundaries have the same sign [brentRoot].");
     }
     if (fabs(counterFunc) < fabs(currentFunc)) {
       std::swap(counterPoint, currentPoint);
@@ -357,9 +357,11 @@ double secantRoot(double lowerBound, double upperBound, std::function<double(dou
   double x2 = 0; 
   double f2 = 0; 
 
+  std::cout << "f0, f1: " << f0 << ", " << f1 << std::endl; 
+
   // Make sure we bound the root (f = 0.0)
   if (f0 * f1 > 0.0) {
-    throw std::invalid_argument("Function values at the boundaries have the same sign.");
+    throw std::invalid_argument("Function values at the boundaries have the same sign [secantRoot].");
   }
 
   // Order the bounds
@@ -565,6 +567,23 @@ double getCenterTime(json isd, csm::WarningList *list) {
           csm::Warning::DATA_NOT_AVAILABLE,
           "Could not parse the center image time.",
           "Utilities::getCenterTime()"));
+    }
+  }
+  return time;
+}
+
+double getEndingTime(json isd, csm::WarningList *list) {
+  double time = 0.0;
+  try {
+    time = isd.at("ending_ephemeris_time");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the ending image time.",
+          "Utilities::getEndingTime()"));
     }
   }
   return time;
@@ -1148,6 +1167,7 @@ std::vector<double> getSensorOrientations(json isd, csm::WarningList *list) {
       quaternions.push_back(quaternion[1]);
       quaternions.push_back(quaternion[2]);
       quaternions.push_back(quaternion[3]);
+      quaternions.push_back(quaternion[4]);
      }
   }
   catch (...) {
@@ -1199,7 +1219,14 @@ double getScaledPixelWidth(nlohmann::json isd, csm::WarningList *list) {
 std::vector<double> getScaleConversionCoefficients(nlohmann::json isd, csm::WarningList *list) {
   std::vector<double> coefficients;
   try {
-    coefficients = isd.at("range_conversion_coefficients").get<std::vector<double>>();
+   for (auto& location : isd.at("range_conversion_coefficients")){
+     coefficients.push_back(location[0]);
+     coefficients.push_back(location[1]);
+     coefficients.push_back(location[2]);
+     coefficients.push_back(location[3]);
+     coefficients.push_back(location[4]); // 
+    }
+//    coefficients = isd.at("range_conversion_coefficients").get<std::vector<double>>();
   }
   catch (...) {
     if (list) {
@@ -1212,3 +1239,21 @@ std::vector<double> getScaleConversionCoefficients(nlohmann::json isd, csm::Warn
   }
   return coefficients;
 }
+
+double getWavelength(json isd, csm::WarningList *list) {
+  double wavelength = 0.0;
+  try {
+    wavelength = isd.at("wavelength");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the wavelength.",
+          "Utilities::getWavelength()"));
+    }
+  }
+  return wavelength;
+}
+
