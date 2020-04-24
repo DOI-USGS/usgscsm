@@ -316,7 +316,7 @@ csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
     double groundTolerance = m_scaledPixelWidth * desiredPrecision / 2.0;
     double groundRange = slantRangeToGroundRange(groundPt, time, slantRangeValue, groundTolerance);
 
-    double line = (time - m_startingEphemerisTime) / m_exposureDuration;
+    double line = (time - m_startingEphemerisTime) / m_exposureDuration + 0.5;
     double sample = groundRange / m_scaledPixelWidth;
     return csm::ImageCoord(line, sample);
   } catch (std::exception& error) {

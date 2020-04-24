@@ -43,7 +43,6 @@ TEST_F(SarSensorModel, State) {
   EXPECT_EQ(sensorModel->getModelState(), modelState);
 }
 
-// Placeholder for future "real" i->g test.
 TEST_F(SarSensorModel, Center) {
   csm::ImageCoord imagePt(7.5, 7.5);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
@@ -57,6 +56,13 @@ TEST_F(SarSensorModel, GroundToImage) {
   csm::ImageCoord imagePt = sensorModel->groundToImage(groundPt, 0.001);
   EXPECT_NEAR(imagePt.line, 500.0, 0.001);
   EXPECT_NEAR(imagePt.samp, 500.0, 0.001);
+}
+
+TEST_F(SarSensorModelIsis, GroundToImageIsis) {
+  csm::EcefCoord groundPt(-1600440.4018623, -469427.74616985,486607.51249095 );
+  csm::ImageCoord imagePt = sensorModel->groundToImage(groundPt, 0.001);
+  EXPECT_NEAR(imagePt.line, 32287.5, 0.001);
+  EXPECT_NEAR(imagePt.samp, 1183.0, 0.001);
 
 }
 
