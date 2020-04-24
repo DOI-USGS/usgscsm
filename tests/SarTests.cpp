@@ -59,14 +59,6 @@ TEST_F(SarSensorModel, GroundToImage) {
   EXPECT_NEAR(imagePt.samp, 500.0, 0.002);
 }
 
-TEST_F(SarSensorModelIsis, GroundToImageIsis) {
-  csm::EcefCoord groundPt(-1600440.4018623, -469427.74616985,486607.51249095 );
-  csm::ImageCoord imagePt = sensorModel->groundToImage(groundPt, 0.001);
-  EXPECT_NEAR(imagePt.line, 32287.5, 0.001);
-  EXPECT_NEAR(imagePt.samp, 1183.0, 0.001);
-
-}
-
 TEST_F(SarSensorModel, spacecraftPosition) {
   csm::EcefVector position = sensorModel->getSpacecraftPosition(-0.0025);
   EXPECT_NEAR(position.x, 3.73740000e+06, 1e-8);
