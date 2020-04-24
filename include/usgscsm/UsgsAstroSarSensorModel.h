@@ -195,6 +195,12 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
 
     virtual void setEllipsoid(const csm::Ellipsoid &ellipsoid);
 
+    ////////////////////
+    // Helper methods //
+    ////////////////////
+    void determineSensorCovarianceInImageSpace(
+       csm::EcefCoord &gp,
+       double          sensor_cov[4]) const;
     double dopplerShift(csm::EcefCoord groundPt, double tolerance) const;
 
     double slantRange(csm::EcefCoord surfPt, double time) const;
