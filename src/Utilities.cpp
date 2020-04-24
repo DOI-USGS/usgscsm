@@ -304,7 +304,7 @@ double brentRoot(
 
     do {
       // Inverse quadratic interpolation
-      if (counterFunc != previousFunc && counterFunc != currentFunc) {
+      if (counterFunc != previousFunc && counterFunc != currentFunc && currentFunc != previousFunc) {
         nextPoint = (counterPoint * currentFunc * previousFunc) / ((counterFunc - currentFunc) * (counterFunc - previousFunc));
         nextPoint += (currentPoint * counterFunc * previousFunc) / ((currentFunc - counterFunc) * (currentFunc - previousFunc));
         nextPoint += (previousPoint * currentFunc * counterFunc) / ((previousFunc - counterFunc) * (previousFunc - currentFunc));
@@ -345,19 +345,19 @@ double brentRoot(
     return nextPoint;
   }
 
-double secantRoot(double lowerBound, double upperBound, std::function<double(double)> func, 
+double secantRoot(double lowerBound, double upperBound, std::function<double(double)> func,
                   double epsilon, int maxIters) {
   bool found = false;
 
   double x0 = lowerBound;
-  double x1 = upperBound; 
+  double x1 = upperBound;
   double f0 = func(x0);
   double f1 = func(x1);
-  double diff = 0; 
-  double x2 = 0; 
-  double f2 = 0; 
+  double diff = 0;
+  double x2 = 0;
+  double f2 = 0;
 
-  std::cout << "f0, f1: " << f0 << ", " << f1 << std::endl; 
+  std::cout << "f0, f1: " << f0 << ", " << f1 << std::endl;
 
   // Make sure we bound the root (f = 0.0)
   if (f0 * f1 > 0.0) {
@@ -378,7 +378,7 @@ double secantRoot(double lowerBound, double upperBound, std::function<double(dou
     if (f2 < 0.0) {
       diff = x1 - x2;
       x1 = x2;
-      f1 = f2; 
+      f1 = f2;
     }
     else {
       diff = x0 - x2;
@@ -1167,7 +1167,6 @@ std::vector<double> getSensorOrientations(json isd, csm::WarningList *list) {
       quaternions.push_back(quaternion[1]);
       quaternions.push_back(quaternion[2]);
       quaternions.push_back(quaternion[3]);
-      quaternions.push_back(quaternion[4]);
      }
   }
   catch (...) {
@@ -1224,7 +1223,7 @@ double getScaledPixelWidth(nlohmann::json isd, csm::WarningList *list) {
 //     coefficients.push_back(location[1]);
 //     coefficients.push_back(location[2]);
 //     coefficients.push_back(location[3]);
-//     coefficients.push_back(location[4]); 
+//     coefficients.push_back(location[4]);
 //    }
 ////    coefficients = isd.at("range_conversion_coefficients").get<std::vector<double>>();
 //  }
@@ -1249,7 +1248,7 @@ std::vector<double> getScaleConversionCoefficients(nlohmann::json isd, csm::Warn
      coefficients.push_back(location[1]);
      coefficients.push_back(location[2]);
      coefficients.push_back(location[3]);
-     coefficients.push_back(location[4]); 
+     coefficients.push_back(location[4]);
     }
 //    coefficients = isd.at("range_conversion_coefficients").get<std::vector<double>>();
   }
@@ -1281,4 +1280,3 @@ double getWavelength(json isd, csm::WarningList *list) {
   }
   return wavelength;
 }
-

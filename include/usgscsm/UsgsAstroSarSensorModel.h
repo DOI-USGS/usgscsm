@@ -191,11 +191,11 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
 
     virtual void setEllipsoid(const csm::Ellipsoid &ellipsoid);
 
-    double dopplerShift(csm::EcefCoord groundPt) const;
+    double dopplerShift(csm::EcefCoord groundPt, double tolerance) const;
 
     double slantRange(csm::EcefCoord surfPt, double time) const;
 
-    double slantRangeToGroundRange(const csm::EcefCoord& groundPt, double time, double slantRange) const;
+    double slantRangeToGroundRange(const csm::EcefCoord& groundPt, double time, double slantRange, double tolerance) const;
 
     csm::EcefVector getSpacecraftPosition(double time) const;
     csm::EcefVector getSpacecraftVelocity(double time) const;

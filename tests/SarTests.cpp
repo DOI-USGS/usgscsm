@@ -53,57 +53,31 @@ TEST_F(SarSensorModel, Center) {
 }
 
 TEST_F(SarSensorModel, GroundToImage) {
-  // ground point from test image campt ISIS run
-  csm::EcefCoord groundPt(-1605729.6097547, -466940.66390268,
-                                487897.51906835);
-  csm::ImageCoord imagePt = sensorModel->groundToImage(groundPt);
-  EXPECT_NEAR(imagePt.line, 32288.0, 1e-8);
-  EXPECT_NEAR(imagePt.samp, 1183.5, 1e-8);
+  csm::EcefCoord groundPt(1737391.90602155, 3749.98835331, -3749.99708833);
+  csm::ImageCoord imagePt = sensorModel->groundToImage(groundPt, 0.001);
+  EXPECT_NEAR(imagePt.line, 500.0, 0.001);
+  EXPECT_NEAR(imagePt.samp, 500.0, 0.001);
 
 }
 
 TEST_F(SarSensorModel, spacecraftPosition) {
-//   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt1, 0.0);
   csm::EcefVector position = sensorModel->getSpacecraftPosition(0.0);
   EXPECT_NEAR(position.x, 3.73740000e+06, 1e-8);
   EXPECT_NEAR(position.y, 0.00000000e+00, 1e-8);
-  EXPECT_NEAR(position.z, -0.00000000e+00, 1e-8);
+  EXPECT_NEAR(position.z, 0.00000000e+00, 1e-8);
 }
 
 TEST_F(SarSensorModel, spacecraftVelocity) {
   csm::EcefVector velocity = sensorModel->getSpacecraftVelocity(0.0);
-  EXPECT_NEAR(velocity.x, -0.00000000e+00, 1e-8);
+  EXPECT_NEAR(velocity.x, 0.00000000e+00, 1e-8);
   EXPECT_NEAR(velocity.y, 0.00000000e+00, 1e-8);
   EXPECT_NEAR(velocity.z, -3.73740000e+06, 1e-8);
 }
 
-//TEST_F(SarSensorModel, spacecraftPositionInterp) {
-//  csm::EcefVector position = sensorModel->getSpacecraftPosition(4.125);
-//  EXPECT_NEAR(position.x, 3.73737771e+06, 1e-8);
-//  EXPECT_NEAR(position.y, 0.00000000e+00, 1e-8);
-//  EXPECT_NEAR(position.z, -1.29068467e+04, 1e-8);
-//}
-//
-//TEST_F(SarSensorModel, spacecraftVelocityInterp) {
-//  csm::EcefVector velocity = sensorModel->getSpacecraftVelocity(4.125);
-//  EXPECT_NEAR(velocity.x, -1.21001717e+04, 1e-8);
-//  EXPECT_NEAR(velocity.y,  0.00000000e+00, 1e-8);
-//  EXPECT_NEAR(velocity.z, -3.73738041e+06, 1e-8);
-//}
-
-TEST_F(SarSensorModel, getRangeCoefficientsNoInterp) {
-  std::vector<double> coeffs = sensorModel->getRangeCoefficients(3.25441417470548e+08);
-  EXPECT_NEAR(coeffs[0], 7.99423808710000e+04, 1e-8);
-  EXPECT_NEAR(coeffs[1], 6.92122900000000e-01, 1e-8);
-  EXPECT_NEAR(coeffs[2], 3.40193700000000e-06, 1e-8);
-  EXPECT_NEAR(coeffs[3], -2.39924200000000e-11, 1e-8);
-}
-
-// Halfway between 2 values at indices 10 and 11 in the list
-TEST_F(SarSensorModel, getRangeCoefficientsInterp) {
-  std::vector<double> coeffs = sensorModel->getRangeCoefficients(325441567.760548);
-  EXPECT_NEAR(coeffs[0], 7.99423758150000e+04, 1e-8);
-  EXPECT_NEAR(coeffs[1], 6.84453800000000e-01, 1e-8);
-  EXPECT_NEAR(coeffs[2], 3.46968000000000e-06, 1e-8);
-  EXPECT_NEAR(coeffs[3], -2.42686600000000e-11, 1e-8);
+TEST_F(SarSensorModel, getRangeCoefficients) {
+  std::vector<double> coeffs = sensorModel->getRangeCoefficients(0.5);
+  EXPECT_NEAR(coeffs[0], 2000000.0000039602, 1e-8);
+  EXPECT_NEAR(coeffs[1], -1.0504347070801814e-08, 1e-8);
+  EXPECT_NEAR(coeffs[2], 5.377926500384916e-07, 1e-8);
+  EXPECT_NEAR(coeffs[3], -1.3072206620088014e-15, 1e-8);
 }

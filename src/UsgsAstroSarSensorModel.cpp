@@ -128,8 +128,8 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
     }
     std::string message = "ISD is invalid for creating the sensor model with error [";
     csm::Warning warn = parsingWarnings->front();
-    message += warn.getMessage(); 
-    message += "]"; 
+    message += warn.getMessage();
+    message += "]";
     parsingWarnings = nullptr;
     delete parsingWarnings;
     throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
@@ -300,17 +300,17 @@ csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
   //MESSAGE_LOG(this->m_logger, "Computing groundToImage(ImageCoord) for {}, {}, {}, with desired precision {}",
   //          groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
 
-  // Find time of closest approach to groundPt and the corresponding slant range by finding 
+  // Find time of closest approach to groundPt and the corresponding slant range by finding
   // the root of the doppler shift frequency
-  csm::EcefCoord newGroundPt(groundPt);
-
   try {
-    double time = dopplerShift(newGroundPt); 
-    double slantRangeValue = slantRange(newGroundPt, time);
+    double timeTolerance = m_exposureDuration * desiredPrecision / 2.0;
+    double time = dopplerShift(groundPt, timeTolerance);
+    double slantRangeValue = slantRange(groundPt, time);
 
-    // Find the ground range, based on the ground-range-to-slant-range polynomial defined by the 
+    // Find the ground range, based on the ground-range-to-slant-range polynomial defined by the
     // range coefficient set, with a time closest to the calculated time of closest approach
-    double groundRange = slantRangeToGroundRange(groundPt, time, slantRangeValue);
+    double groundTolerance = m_scaledPixelWidth * desiredPrecision / 2.0;
+    double groundRange = slantRangeToGroundRange(groundPt, time, slantRangeValue, groundTolerance);
 
     double line = (time - m_startingEphemerisTime) / m_exposureDuration;
     double sample = groundRange / m_scaledPixelWidth;
@@ -323,23 +323,21 @@ csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
   }
 }
 
-// Calculate the root 
+// Calculate the root
 double UsgsAstroSarSensorModel::dopplerShift(
-    csm::EcefCoord groundPt) const{
-
-  // Moon body-fixed coordinates of surface point
-  csm::EcefCoord surfPt(groundPt);
-
-   std::function<double(double)> dopplerShiftFunction = [this, surfPt](double time) { 
+    csm::EcefCoord groundPt,
+    double tolerance) const
+{
+   std::function<double(double)> dopplerShiftFunction = [this, groundPt](double time) {
      csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
      csm::EcefVector spacecraftVelocity = getSpacecraftVelocity(time);
      double lookVector[3];
 
-     lookVector[0] = spacecraftPosition.x - surfPt.x;
-     lookVector[1] = spacecraftPosition.y - surfPt.y;
-     lookVector[2] = spacecraftPosition.z - surfPt.z;
+     lookVector[0] = spacecraftPosition.x - groundPt.x;
+     lookVector[1] = spacecraftPosition.y - groundPt.y;
+     lookVector[2] = spacecraftPosition.z - groundPt.z;
 
-     double slantRange = sqrt(pow(lookVector[0], 2) +  pow(lookVector[1], 2) + pow(lookVector[2], 2)); 
+     double slantRange = sqrt(pow(lookVector[0], 2) +  pow(lookVector[1], 2) + pow(lookVector[2], 2));
 
 
      double dopplerShift = -2.0 * (lookVector[0]*spacecraftVelocity.x + lookVector[1]*spacecraftVelocity.y
@@ -349,37 +347,37 @@ double UsgsAstroSarSensorModel::dopplerShift(
    };
 
   // Do root-finding for "dopplerShift"
-  double tolerance = (m_endingEphemerisTime - m_startingEphemerisTime) / m_nLines / 20.0;
-
-  return secantRoot(m_startingEphemerisTime, m_endingEphemerisTime, dopplerShiftFunction, tolerance);
+  return brentRoot(m_startingEphemerisTime, m_endingEphemerisTime, dopplerShiftFunction, tolerance);
 }
 
 
 double UsgsAstroSarSensorModel::slantRange(csm::EcefCoord surfPt,
-    double time) const{
+    double time) const
+{
   csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
   double lookVector[3];
 
   lookVector[0] = spacecraftPosition.x - surfPt.x;
   lookVector[1] = spacecraftPosition.y - surfPt.y;
   lookVector[2] = spacecraftPosition.z - surfPt.z;
-  return sqrt(pow(lookVector[0], 2) +  pow(lookVector[1], 2) + pow(lookVector[2], 2)); 
+  return sqrt(pow(lookVector[0], 2) +  pow(lookVector[1], 2) + pow(lookVector[2], 2));
 }
 
 double UsgsAstroSarSensorModel::slantRangeToGroundRange(
-        const csm::EcefCoord& groundPt,
-        double time,
-        double slantRange) const{
-
+    const csm::EcefCoord& groundPt,
+    double time,
+    double slantRange,
+    double tolerance) const
+{
   std::vector<double> coeffs = getRangeCoefficients(time);
 
   // Calculates the ground range from the slant range.
-  std::function<double(double)> slantRangeToGroundRangeFunction = 
+  std::function<double(double)> slantRangeToGroundRangeFunction =
     [coeffs, slantRange](double groundRange){
    return slantRange - (coeffs[0] + groundRange * (coeffs[1] + groundRange * (coeffs[2] + groundRange * coeffs[3])));
   };
 
-  // Need to come up with an initial guess when solving for ground 
+  // Need to come up with an initial guess when solving for ground
   // range given slant range. Compute the ground range at the
   // near and far edges of the image by evaluating the sample-to-
   // ground-range equation: groundRange=(sample-1)*scaled_pixel_width
@@ -389,9 +387,9 @@ double UsgsAstroSarSensorModel::slantRangeToGroundRange(
   // sample=1.25*image_samples.
   double minGroundRangeGuess = (-0.25 * m_nSamples - 1.0) * m_scaledPixelWidth;
   double maxGroundRangeGuess = (1.25 * m_nSamples - 1.0) * m_scaledPixelWidth;
-  
+
   // Tolerance to 1/20th of a pixel for now.
-  return brentRoot(minGroundRangeGuess, maxGroundRangeGuess, slantRangeToGroundRangeFunction, m_scaledPixelWidth/20.0);
+  return brentRoot(minGroundRangeGuess, maxGroundRangeGuess, slantRangeToGroundRangeFunction, tolerance);
 }
 
 
@@ -775,9 +773,7 @@ csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftPosition(double time) cons
   // If there are multiple positions, use Lagrange interpolation
   if ((numPositions/3) > 1) {
     double position[3];
-    double endTime = m_endingEphemerisTime;
-    double dtEphem = (endTime - m_t0Ephem) / (numPositions/3);
-    lagrangeInterp(numPositions/3, &m_positions[0], m_t0Ephem, dtEphem,
+    lagrangeInterp(numPositions/3, &m_positions[0], m_t0Ephem, m_dtEphem,
                    time, 3, 8, position);
     spacecraftPosition.x = position[0];
     spacecraftPosition.y = position[1];
@@ -799,8 +795,7 @@ csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftVelocity(double time) cons
   // If there are multiple positions, use Lagrange interpolation
   if ((numVelocities/3) > 1) {
     double velocity[3];
-    double dtEphem = (m_endingEphemerisTime - m_startingEphemerisTime) / (numVelocities/3);
-    lagrangeInterp(numVelocities/3, &m_velocities[0], m_t0Ephem, dtEphem,
+    lagrangeInterp(numVelocities/3, &m_velocities[0], m_t0Ephem, m_dtEphem,
                    time, 3, 8, velocity);
     spacecraftVelocity.x = velocity[0];
     spacecraftVelocity.y = velocity[1];
@@ -821,7 +816,7 @@ std::vector<double> UsgsAstroSarSensorModel::getRangeCoefficients(double time) c
 
   double endTime = m_scaleConversionCoefficients[numCoeffs - 5];
 
-  // The structure of the input is [time0 a0 a1 a2 a3 time1 a0 a1 a2 a3....] 
+  // The structure of the input is [time0 a0 a1 a2 a3 time1 a0 a1 a2 a3....]
   for (int i=0; i < numCoeffs; i++) {
     if (i%5 != 0) {
       coeffs.push_back(m_scaleConversionCoefficients[i]);

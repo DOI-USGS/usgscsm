@@ -328,7 +328,7 @@ class SarSensorModel : public ::testing::Test {
          sensorModel = NULL;
 
 //         isd.setFilename("data/orbitalSar.img");
-         isd.setFilename("data/realTestSar.img");
+         isd.setFilename("data/orbitalSar.img");
          UsgsAstroPlugin sarCameraPlugin;
 
          csm::Model *model = sarCameraPlugin.constructModelFromISD(
