@@ -113,6 +113,7 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
   // SAR specific values
   state["m_scaledPixelWidth"] = getScaledPixelWidth(isd, parsingWarnings);
   state["m_scaleConversionCoefficients"] = getScaleConversionCoefficients(isd, parsingWarnings);
+  state["m_scaleConversionTimes"] = getScaleConversionTimes(isd, parsingWarnings);
   state["m_wavelength"] = getWavelength(isd, parsingWarnings);
 
   // Default to identity covariance
@@ -200,6 +201,7 @@ void UsgsAstroSarSensorModel::reset()
   m_dtEphem = 0;
   m_t0Ephem = 0;
   m_scaleConversionCoefficients.clear();
+  m_scaleConversionTimes.clear();
   m_positions.clear();
   m_velocities.clear();
   m_currentParameterValue = vector<double>(NUM_PARAMETERS, 0.0);
@@ -239,6 +241,7 @@ void UsgsAstroSarSensorModel::replaceModelState(const string& argState)
   m_dtEphem = stateJson["m_dtEphem"];
   m_t0Ephem = stateJson["m_t0Ephem"];
   m_scaleConversionCoefficients = stateJson["m_scaleConversionCoefficients"].get<vector<double>>();
+  m_scaleConversionTimes = stateJson["m_scaleConversionTimes"].get<vector<double>>();
   m_positions = stateJson["m_positions"].get<vector<double>>();
   m_velocities = stateJson["m_velocities"].get<vector<double>>();
   m_currentParameterValue = stateJson["m_currentParameterValue"].get<vector<double>>();
@@ -285,6 +288,7 @@ string UsgsAstroSarSensorModel::getModelState() const
   state["m_scaledPixelWidth"] = m_scaledPixelWidth;
   state["m_wavelength"] = m_wavelength;
   state["m_scaleConversionCoefficients"] = m_scaleConversionCoefficients;
+  state["m_scaleConversionTimes"] = m_scaleConversionTimes;
   state["m_covariance"] = m_covariance;
 
   return state.dump();
@@ -817,22 +821,13 @@ csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftVelocity(double time) cons
 
 std::vector<double> UsgsAstroSarSensorModel::getRangeCoefficients(double time) const {
   int numCoeffs = m_scaleConversionCoefficients.size();
-  std::vector<double> coeffs, interpCoeffs;
+  std::vector<double> interpCoeffs;
 
-  double endTime = m_scaleConversionCoefficients[numCoeffs - 5];
-
-  // The structure of the input is [time0 a0 a1 a2 a3 time1 a0 a1 a2 a3....] 
-  for (int i=0; i < numCoeffs; i++) {
-    if (i%5 != 0) {
-      coeffs.push_back(m_scaleConversionCoefficients[i]);
-    }
-  }
-
-  if ((numCoeffs/5) > 1) {
+  double endTime = m_scaleConversionTimes.back();
+  if ((numCoeffs/4) > 1) {
     double coefficients[4];
-
-    double dtEphem = (endTime - m_scaleConversionCoefficients[0]) / (coeffs.size()/4);
-    lagrangeInterp(coeffs.size()/4, &coeffs[0], m_scaleConversionCoefficients[0], dtEphem,
+    double dtEphem = (endTime - m_scaleConversionTimes[0]) / (m_scaleConversionCoefficients.size()/4);
+    lagrangeInterp(m_scaleConversionCoefficients.size()/4, &m_scaleConversionCoefficients[0], m_scaleConversionTimes[0], dtEphem,
                    time, 4, 8, coefficients);
     interpCoeffs.push_back(coefficients[0]);
     interpCoeffs.push_back(coefficients[1]);
@@ -840,10 +835,10 @@ std::vector<double> UsgsAstroSarSensorModel::getRangeCoefficients(double time) c
     interpCoeffs.push_back(coefficients[3]);
   }
   else {
+    interpCoeffs.push_back(m_scaleConversionCoefficients[0]);
     interpCoeffs.push_back(m_scaleConversionCoefficients[1]);
     interpCoeffs.push_back(m_scaleConversionCoefficients[2]);
     interpCoeffs.push_back(m_scaleConversionCoefficients[3]);
-    interpCoeffs.push_back(m_scaleConversionCoefficients[4]);
   }
-  return coeffs;
+  return interpCoeffs;
 }

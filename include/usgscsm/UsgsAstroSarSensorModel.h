@@ -239,6 +239,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     double       m_dtEphem;
     double       m_t0Ephem;
     std::vector<double> m_scaleConversionCoefficients;
+    std::vector<double> m_scaleConversionTimes;
     std::vector<double> m_positions;
     std::vector<double> m_velocities;
     std::vector<double> m_currentParameterValue;

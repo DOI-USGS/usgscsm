@@ -103,6 +103,7 @@ std::vector<double> getIntegrationTimes(nlohmann::json isd, csm::WarningList *li
 double getExposureDuration(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getScaledPixelWidth(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getScaleConversionCoefficients(nlohmann::json isd, csm::WarningList *list=nullptr);
+std::vector<double> getScaleConversionTimes(nlohmann::json isd, csm::WarningList *list=nullptr);
 int getSampleSumming(nlohmann::json isd, csm::WarningList *list=nullptr);
 int getLineSumming(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getFocalLength(nlohmann::json isd, csm::WarningList *list=nullptr);
