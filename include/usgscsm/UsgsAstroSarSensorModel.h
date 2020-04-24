@@ -191,6 +191,16 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
 
     virtual void setEllipsoid(const csm::Ellipsoid &ellipsoid);
 
+    double dopplerShift(csm::EcefCoord groundPt, double tolerance) const;
+
+    double slantRange(csm::EcefCoord surfPt, double time) const;
+
+    double slantRangeToGroundRange(const csm::EcefCoord& groundPt, double time, double slantRange, double tolerance) const;
+
+    csm::EcefVector getSpacecraftPosition(double time) const;
+    csm::EcefVector getSpacecraftVelocity(double time) const;
+    std::vector<double> getRangeCoefficients(double time) const;
+
     ////////////////////////////
     // Model static variables //
     ////////////////////////////
@@ -216,6 +226,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     double       m_scaledPixelWidth;
     double       m_startingEphemerisTime;
     double       m_centerEphemerisTime;
+    double       m_endingEphemerisTime;
     double       m_majorAxis;
     double       m_minorAxis;
     std::string  m_platformIdentifier;
@@ -228,6 +239,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     double       m_dtEphem;
     double       m_t0Ephem;
     std::vector<double> m_scaleConversionCoefficients;
+    std::vector<double> m_scaleConversionTimes;
     std::vector<double> m_positions;
     std::vector<double> m_velocities;
     std::vector<double> m_currentParameterValue;
@@ -236,6 +248,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     std::vector<double> m_covariance;
     std::vector<double> m_sunPosition;
     std::vector<double> m_sunVelocity;
+    double m_wavelength;
 };
 
 #endif

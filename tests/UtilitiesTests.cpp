@@ -9,6 +9,7 @@
 
 #include <math.h>
 #include <stdexcept>
+#include <functional>
 
 using json = nlohmann::json;
 
@@ -339,12 +340,21 @@ TEST(UtilitiesTests, lagrangeInterp2D) {
   EXPECT_DOUBLE_EQ(outputValue[1], 1.5);
 }
 
-double testPoly(double x) {
-  return (x - 2) * (x + 1) * (x + 7);
-};
-
 TEST(UtilitiesTests, brentRoot) {
+  std::function<double(double)> testPoly = [](double x) {
+    return (x - 2) * (x + 1) * (x + 7);
+  };
+
   EXPECT_NEAR(brentRoot(1.0, 3.0, testPoly, 1e-10), 2.0, 1e-10);
   EXPECT_NEAR(brentRoot(0.0, -3.0, testPoly, 1e-10), -1.0, 1e-10);
   EXPECT_THROW(brentRoot(-3.0, 3.0, testPoly), std::invalid_argument);
+}
+
+TEST(UtilitiesTests, secantRoot) {
+  std::function<double(double)> testPoly = [](double x) {
+    return (x - 2) * (x + 1) * (x + 7);
+  };
+  EXPECT_NEAR(secantRoot(1.0, 3.0, testPoly, 1e-10), 2.0, 1e-10);
+  EXPECT_NEAR(secantRoot(0.0, -3.0, testPoly, 1e-10), -1.0, 1e-10);
+  EXPECT_THROW(secantRoot(-1000.0, 1000.0, testPoly), csm::Error);
 }

@@ -324,9 +324,9 @@ TEST(ISDParsing, getScaledPixelWidth) {
 
 TEST(ISDParsing, getScaleConversionCoefficients) {
   json isd = {{"range_conversion_coefficients",
-               {300, 1, 0.1, 0.01,
-                400, 2, 0.2, 0.02,
-                500, 3, 0.3, 0.03}}};
+               {{300, 1, 0.1, 0.01},
+                {400, 2, 0.2, 0.02},
+                {500, 3, 0.3, 0.03}}}};
   std::vector<double> coefficients = getScaleConversionCoefficients(isd);
   ASSERT_EQ(coefficients.size(), 12);
   EXPECT_EQ(coefficients[0], 300);
@@ -341,4 +341,15 @@ TEST(ISDParsing, getScaleConversionCoefficients) {
   EXPECT_EQ(coefficients[9], 3);
   EXPECT_EQ(coefficients[10], 0.3);
   EXPECT_EQ(coefficients[11], 0.03);
+}
+
+TEST(ISDParsing, getScaleConversionTimes) {
+  json isd = {{"range_conversion_times",
+               {100, 200, 300, -400}}};
+  std::vector<double> times = getScaleConversionTimes(isd);
+  ASSERT_EQ(times.size(), 4);
+  EXPECT_EQ(times[0], 100);
+  EXPECT_EQ(times[1], 200);
+  EXPECT_EQ(times[2], 300);
+  EXPECT_EQ(times[3], -400);
 }

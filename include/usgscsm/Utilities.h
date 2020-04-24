@@ -74,8 +74,15 @@ void lagrangeInterp (
 double brentRoot(
   double lowerBound,
   double upperBound,
-  double (*func)(double),
+  std::function<double(double)> func,
   double epsilon = 1e-10);
+
+double secantRoot(
+    double lowerBound,
+    double upperBound,
+    std::function<double(double)> func,
+    double epsilon = 1e-10,
+    int maxIterations = 30);
 
 // Methods for checking/accessing the ISD
 
@@ -89,12 +96,14 @@ int getTotalLines(nlohmann::json isd, csm::WarningList *list=nullptr);
 int getTotalSamples(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getStartingTime(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getCenterTime(nlohmann::json isd, csm::WarningList *list=nullptr);
+double getEndingTime(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getIntegrationStartLines(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getIntegrationStartTimes(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getIntegrationTimes(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getExposureDuration(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getScaledPixelWidth(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getScaleConversionCoefficients(nlohmann::json isd, csm::WarningList *list=nullptr);
+std::vector<double> getScaleConversionTimes(nlohmann::json isd, csm::WarningList *list=nullptr);
 int getSampleSumming(nlohmann::json isd, csm::WarningList *list=nullptr);
 int getLineSumming(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getFocalLength(nlohmann::json isd, csm::WarningList *list=nullptr);
@@ -117,5 +126,5 @@ std::vector<double> getSunVelocities(nlohmann::json isd, csm::WarningList *list=
 std::vector<double> getSensorPositions(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSensorVelocities(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSensorOrientations(nlohmann::json isd, csm::WarningList *list=nullptr);
-
+double getWavelength(nlohmann::json isd, csm::WarningList *list=nullptr);
 #endif

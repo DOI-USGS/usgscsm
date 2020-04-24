@@ -1,12 +1,17 @@
 #include "UsgsAstroSarSensorModel.h"
 #include "Utilities.h"
 
+#include <functional>
+#include <iomanip>
 #include <string.h>
+#include <cmath>
 
 #include <json/json.hpp>
 
 using json = nlohmann::json;
 using namespace std;
+
+#define MESSAGE_LOG(logger, ...) if (logger) { logger->info(__VA_ARGS__); }
 
 const string UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME = "USGS_ASTRO_SAR_SENSOR_MODEL";
 const int UsgsAstroSarSensorModel::NUM_PARAMETERS = 6;
@@ -63,6 +68,7 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
 
   state["m_centerEphemerisTime"] = getCenterTime(isd, parsingWarnings);
   state["m_startingEphemerisTime"] = getStartingTime(isd, parsingWarnings);
+  state["m_endingEphemerisTime"] = getEndingTime(isd, parsingWarnings);
 
   state["m_exposureDuration"] = getExposureDuration(isd, parsingWarnings);
 
@@ -108,6 +114,8 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
   // SAR specific values
   state["m_scaledPixelWidth"] = getScaledPixelWidth(isd, parsingWarnings);
   state["m_scaleConversionCoefficients"] = getScaleConversionCoefficients(isd, parsingWarnings);
+  state["m_scaleConversionTimes"] = getScaleConversionTimes(isd, parsingWarnings);
+  state["m_wavelength"] = getWavelength(isd, parsingWarnings);
 
   // Default to identity covariance
   state["m_covariance"] =
@@ -120,10 +128,14 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
     if (warnings) {
       warnings->insert(warnings->end(), parsingWarnings->begin(), parsingWarnings->end());
     }
-    delete parsingWarnings;
+    std::string message = "ISD is invalid for creating the sensor model with error [";
+    csm::Warning warn = parsingWarnings->front();
+    message += warn.getMessage();
+    message += "]";
     parsingWarnings = nullptr;
+    delete parsingWarnings;
     throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
-                     "ISD is invalid for creating the sensor model.",
+                     message,
                      "UsgsAstroSarSensorModel::constructStateFromIsd");
   }
 
@@ -178,6 +190,7 @@ void UsgsAstroSarSensorModel::reset()
   m_scaledPixelWidth = 0;
   m_startingEphemerisTime = 0;
   m_centerEphemerisTime = 0;
+  m_endingEphemerisTime = 0;
   m_majorAxis = 0;
   m_minorAxis = 0;
   m_platformIdentifier = "Unknown";
@@ -189,6 +202,7 @@ void UsgsAstroSarSensorModel::reset()
   m_dtEphem = 0;
   m_t0Ephem = 0;
   m_scaleConversionCoefficients.clear();
+  m_scaleConversionTimes.clear();
   m_positions.clear();
   m_velocities.clear();
   m_currentParameterValue = vector<double>(NUM_PARAMETERS, 0.0);
@@ -199,6 +213,7 @@ void UsgsAstroSarSensorModel::reset()
   m_covariance = vector<double>(NUM_PARAMETERS * NUM_PARAMETERS,0.0);
   m_sunPosition.clear();
   m_sunVelocity.clear();
+  m_wavelength = 0;
 }
 
 void UsgsAstroSarSensorModel::replaceModelState(const string& argState)
@@ -214,8 +229,10 @@ void UsgsAstroSarSensorModel::replaceModelState(const string& argState)
   m_nSamples = stateJson["m_nSamples"];
   m_exposureDuration = stateJson["m_exposureDuration"];
   m_scaledPixelWidth = stateJson["m_scaledPixelWidth"];
+  m_wavelength = stateJson["m_wavelength"];
   m_startingEphemerisTime = stateJson["m_startingEphemerisTime"];
   m_centerEphemerisTime = stateJson["m_centerEphemerisTime"];
+  m_endingEphemerisTime = stateJson["m_endingEphemerisTime"];
   m_majorAxis = stateJson["m_majorAxis"];
   m_minorAxis = stateJson["m_minorAxis"];
   m_platformIdentifier = stateJson["m_platformIdentifier"].get<string>();
@@ -225,6 +242,7 @@ void UsgsAstroSarSensorModel::replaceModelState(const string& argState)
   m_dtEphem = stateJson["m_dtEphem"];
   m_t0Ephem = stateJson["m_t0Ephem"];
   m_scaleConversionCoefficients = stateJson["m_scaleConversionCoefficients"].get<vector<double>>();
+  m_scaleConversionTimes = stateJson["m_scaleConversionTimes"].get<vector<double>>();
   m_positions = stateJson["m_positions"].get<vector<double>>();
   m_velocities = stateJson["m_velocities"].get<vector<double>>();
   m_currentParameterValue = stateJson["m_currentParameterValue"].get<vector<double>>();
@@ -255,6 +273,7 @@ string UsgsAstroSarSensorModel::getModelState() const
   state["m_sunVelocity"] = m_sunVelocity;
   state["m_centerEphemerisTime"] = m_centerEphemerisTime;
   state["m_startingEphemerisTime"] = m_startingEphemerisTime;
+  state["m_endingEphemerisTime"] = m_endingEphemerisTime;
   state["m_exposureDuration"] = m_exposureDuration;
   state["m_dtEphem"] = m_dtEphem;
   state["m_t0Ephem"] = m_t0Ephem;
@@ -268,22 +287,116 @@ string UsgsAstroSarSensorModel::getModelState() const
   state["m_minElevation"] = m_minElevation;
   state["m_maxElevation"] = m_maxElevation;
   state["m_scaledPixelWidth"] = m_scaledPixelWidth;
+  state["m_wavelength"] = m_wavelength;
   state["m_scaleConversionCoefficients"] = m_scaleConversionCoefficients;
+  state["m_scaleConversionTimes"] = m_scaleConversionTimes;
   state["m_covariance"] = m_covariance;
 
   return state.dump();
 }
 
 
-
 csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
     const csm::EcefCoord& groundPt,
     double desiredPrecision,
     double* achievedPrecision,
-    csm::WarningList* warnings) const
-{
-  return csm::ImageCoord(0.0, 0.0);
+    csm::WarningList* warnings) const {
+
+  //MESSAGE_LOG(this->m_logger, "Computing groundToImage(ImageCoord) for {}, {}, {}, with desired precision {}",
+  //          groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
+
+  // Find time of closest approach to groundPt and the corresponding slant range by finding
+  // the root of the doppler shift frequency
+  try {
+    double timeTolerance = m_exposureDuration * desiredPrecision / 2.0;
+    double time = dopplerShift(groundPt, timeTolerance);
+    double slantRangeValue = slantRange(groundPt, time);
+
+    // Find the ground range, based on the ground-range-to-slant-range polynomial defined by the
+    // range coefficient set, with a time closest to the calculated time of closest approach
+    double groundTolerance = m_scaledPixelWidth * desiredPrecision / 2.0;
+    double groundRange = slantRangeToGroundRange(groundPt, time, slantRangeValue, groundTolerance);
+
+    double line = (time - m_startingEphemerisTime) / m_exposureDuration + 0.5;
+    double sample = groundRange / m_scaledPixelWidth;
+    return csm::ImageCoord(line, sample);
+  } catch (std::exception& error) {
+    std::string message = "Could not calculate groundToImage, with error [";
+    message += error.what();
+    message += "]";
+    throw csm::Error(csm::Error::UNKNOWN_ERROR, message, "groundToImage");
+  }
 }
+
+// Calculate the root
+double UsgsAstroSarSensorModel::dopplerShift(
+    csm::EcefCoord groundPt,
+    double tolerance) const
+{
+   std::function<double(double)> dopplerShiftFunction = [this, groundPt](double time) {
+     csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
+     csm::EcefVector spacecraftVelocity = getSpacecraftVelocity(time);
+     double lookVector[3];
+
+     lookVector[0] = spacecraftPosition.x - groundPt.x;
+     lookVector[1] = spacecraftPosition.y - groundPt.y;
+     lookVector[2] = spacecraftPosition.z - groundPt.z;
+
+     double slantRange = sqrt(pow(lookVector[0], 2) +  pow(lookVector[1], 2) + pow(lookVector[2], 2));
+
+
+     double dopplerShift = -2.0 * (lookVector[0]*spacecraftVelocity.x + lookVector[1]*spacecraftVelocity.y
+                            + lookVector[2]*spacecraftVelocity.z)/(slantRange * m_wavelength);
+
+     return dopplerShift;
+   };
+
+  // Do root-finding for "dopplerShift"
+  return brentRoot(m_startingEphemerisTime, m_endingEphemerisTime, dopplerShiftFunction, tolerance);
+}
+
+
+double UsgsAstroSarSensorModel::slantRange(csm::EcefCoord surfPt,
+    double time) const
+{
+  csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
+  double lookVector[3];
+
+  lookVector[0] = spacecraftPosition.x - surfPt.x;
+  lookVector[1] = spacecraftPosition.y - surfPt.y;
+  lookVector[2] = spacecraftPosition.z - surfPt.z;
+  return sqrt(pow(lookVector[0], 2) +  pow(lookVector[1], 2) + pow(lookVector[2], 2));
+}
+
+double UsgsAstroSarSensorModel::slantRangeToGroundRange(
+    const csm::EcefCoord& groundPt,
+    double time,
+    double slantRange,
+    double tolerance) const
+{
+  std::vector<double> coeffs = getRangeCoefficients(time);
+
+  // Calculates the ground range from the slant range.
+  std::function<double(double)> slantRangeToGroundRangeFunction =
+    [coeffs, slantRange](double groundRange){
+   return slantRange - (coeffs[0] + groundRange * (coeffs[1] + groundRange * (coeffs[2] + groundRange * coeffs[3])));
+  };
+
+  // Need to come up with an initial guess when solving for ground
+  // range given slant range. Compute the ground range at the
+  // near and far edges of the image by evaluating the sample-to-
+  // ground-range equation: groundRange=(sample-1)*scaled_pixel_width
+  // at the edges of the image. We also need to add some padding to
+  // allow for solving for coordinates that are slightly outside of
+  // the actual image area. Use sample=-0.25*image_samples and
+  // sample=1.25*image_samples.
+  double minGroundRangeGuess = (-0.25 * m_nSamples - 1.0) * m_scaledPixelWidth;
+  double maxGroundRangeGuess = (1.25 * m_nSamples - 1.0) * m_scaledPixelWidth;
+
+  // Tolerance to 1/20th of a pixel for now.
+  return brentRoot(minGroundRangeGuess, maxGroundRangeGuess, slantRangeToGroundRangeFunction, tolerance);
+}
+
 
 csm::ImageCoordCovar UsgsAstroSarSensorModel::groundToImage(
     const csm::EcefCoordCovar& groundPt,
@@ -656,4 +769,72 @@ void UsgsAstroSarSensorModel::setEllipsoid(const csm::Ellipsoid &ellipsoid)
 {
    m_majorAxis = ellipsoid.getSemiMajorRadius();
    m_minorAxis = ellipsoid.getSemiMinorRadius();
+}
+
+csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftPosition(double time) const{
+  int numPositions = m_positions.size();
+  csm::EcefVector spacecraftPosition = csm::EcefVector();
+
+  // If there are multiple positions, use Lagrange interpolation
+  if ((numPositions/3) > 1) {
+    double position[3];
+    lagrangeInterp(numPositions/3, &m_positions[0], m_t0Ephem, m_dtEphem,
+                   time, 3, 8, position);
+    spacecraftPosition.x = position[0];
+    spacecraftPosition.y = position[1];
+    spacecraftPosition.z = position[2];
+  }
+  else {
+    spacecraftPosition.x = m_positions[0];
+    spacecraftPosition.y = m_positions[1];
+    spacecraftPosition.z = m_positions[2];
+  }
+  // Can add third case if need be, but seems unlikely to come up for SAR
+  return spacecraftPosition;
+}
+
+csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftVelocity(double time) const {
+  int numVelocities = m_velocities.size();
+  csm::EcefVector spacecraftVelocity = csm::EcefVector();
+
+  // If there are multiple positions, use Lagrange interpolation
+  if ((numVelocities/3) > 1) {
+    double velocity[3];
+    lagrangeInterp(numVelocities/3, &m_velocities[0], m_t0Ephem, m_dtEphem,
+                   time, 3, 8, velocity);
+    spacecraftVelocity.x = velocity[0];
+    spacecraftVelocity.y = velocity[1];
+    spacecraftVelocity.z = velocity[2];
+  }
+  else {
+    spacecraftVelocity.x = m_velocities[0];
+    spacecraftVelocity.y = m_velocities[1];
+    spacecraftVelocity.z = m_velocities[2];
+  }
+  return spacecraftVelocity;
+}
+
+
+std::vector<double> UsgsAstroSarSensorModel::getRangeCoefficients(double time) const {
+  int numCoeffs = m_scaleConversionCoefficients.size();
+  std::vector<double> interpCoeffs;
+
+  double endTime = m_scaleConversionTimes.back();
+  if ((numCoeffs/4) > 1) {
+    double coefficients[4];
+    double dtEphem = (endTime - m_scaleConversionTimes[0]) / (m_scaleConversionCoefficients.size()/4);
+    lagrangeInterp(m_scaleConversionCoefficients.size()/4, &m_scaleConversionCoefficients[0], m_scaleConversionTimes[0], dtEphem,
+                   time, 4, 8, coefficients);
+    interpCoeffs.push_back(coefficients[0]);
+    interpCoeffs.push_back(coefficients[1]);
+    interpCoeffs.push_back(coefficients[2]);
+    interpCoeffs.push_back(coefficients[3]);
+  }
+  else {
+    interpCoeffs.push_back(m_scaleConversionCoefficients[0]);
+    interpCoeffs.push_back(m_scaleConversionCoefficients[1]);
+    interpCoeffs.push_back(m_scaleConversionCoefficients[2]);
+    interpCoeffs.push_back(m_scaleConversionCoefficients[3]);
+  }
+  return interpCoeffs;
 }

@@ -280,14 +280,14 @@ void lagrangeInterp(
 double brentRoot(
   double lowerBound,
   double upperBound,
-  double (*func)(double),
+  std::function<double(double)> func,
   double epsilon) {
     double counterPoint = lowerBound;
     double currentPoint = upperBound;
     double counterFunc = func(counterPoint);
     double currentFunc = func(currentPoint);
     if (counterFunc * currentFunc > 0.0) {
-      throw std::invalid_argument("Function values at the boundaries have the same sign.");
+      throw std::invalid_argument("Function values at the boundaries have the same sign [brentRoot].");
     }
     if (fabs(counterFunc) < fabs(currentFunc)) {
       std::swap(counterPoint, currentPoint);
@@ -304,7 +304,7 @@ double brentRoot(
 
     do {
       // Inverse quadratic interpolation
-      if (counterFunc != previousFunc && counterFunc != currentFunc) {
+      if (counterFunc != previousFunc && counterFunc != currentFunc && currentFunc != previousFunc) {
         nextPoint = (counterPoint * currentFunc * previousFunc) / ((counterFunc - currentFunc) * (counterFunc - previousFunc));
         nextPoint += (currentPoint * counterFunc * previousFunc) / ((currentFunc - counterFunc) * (currentFunc - previousFunc));
         nextPoint += (previousPoint * currentFunc * counterFunc) / ((previousFunc - counterFunc) * (previousFunc - currentFunc));
@@ -344,6 +344,66 @@ double brentRoot(
 
     return nextPoint;
   }
+
+double secantRoot(double lowerBound, double upperBound, std::function<double(double)> func,
+                  double epsilon, int maxIters) {
+  bool found = false;
+
+  double x0 = lowerBound;
+  double x1 = upperBound;
+  double f0 = func(x0);
+  double f1 = func(x1);
+  double diff = 0;
+  double x2 = 0;
+  double f2 = 0;
+
+  std::cout << "f0, f1: " << f0 << ", " << f1 << std::endl;
+
+  // Make sure we bound the root (f = 0.0)
+  if (f0 * f1 > 0.0) {
+    throw std::invalid_argument("Function values at the boundaries have the same sign [secantRoot].");
+  }
+
+  // Order the bounds
+  if (f1 < f0) {
+    std::swap(x0, x1);
+    std::swap(f0, f1);
+  }
+
+  for (int iteration=0; iteration < maxIters; iteration++) {
+    x2 = x1 - f1 * (x1 - x0)/(f1 - f0);
+    f2 = func(x2);
+
+    // Update the bounds for the next iteration
+    if (f2 < 0.0) {
+      diff = x1 - x2;
+      x1 = x2;
+      f1 = f2;
+    }
+    else {
+      diff = x0 - x2;
+      x0 = x2;
+      f0 = f2;
+    }
+
+    // Check to see if we're done
+    if ((fabs(diff) <= epsilon) || (f2 == 0.0) ) {
+      found = true;
+      break;
+    }
+  }
+
+  if (found) {
+   return x2;
+  }
+  else {
+    throw csm::Error(
+    csm::Error::UNKNOWN_ERROR,
+    "Could not find a root of the function using the secant method",
+    "secantRoot");
+  }
+}
+
 
 // convert a measurement
 double metric_conversion(double val, std::string from, std::string to) {
@@ -507,6 +567,23 @@ double getCenterTime(json isd, csm::WarningList *list) {
           csm::Warning::DATA_NOT_AVAILABLE,
           "Could not parse the center image time.",
           "Utilities::getCenterTime()"));
+    }
+  }
+  return time;
+}
+
+double getEndingTime(json isd, csm::WarningList *list) {
+  double time = 0.0;
+  try {
+    time = isd.at("ending_ephemeris_time");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the ending image time.",
+          "Utilities::getEndingTime()"));
     }
   }
   return time;
@@ -1138,19 +1215,58 @@ double getScaledPixelWidth(nlohmann::json isd, csm::WarningList *list) {
   return width;
 }
 
-std::vector<double> getScaleConversionCoefficients(nlohmann::json isd, csm::WarningList *list) {
-  std::vector<double> coefficients;
+std::vector<double> getScaleConversionTimes(nlohmann::json isd, csm::WarningList *list) {
+  std::vector<double> time;
   try {
-    coefficients = isd.at("range_conversion_coefficients").get<std::vector<double>>();
+    time = isd.at("range_conversion_times").get<std::vector<double>>();
   }
   catch (...) {
     if (list) {
       list->push_back(
         csm::Warning(
           csm::Warning::DATA_NOT_AVAILABLE,
-          "Could not parse the range conversion coefficients and times.",
+          "Could not parse the range conversion times.",
+          "Utilities::getScaleConversionTimes()"));
+    }
+  }
+  return time;
+}
+
+std::vector<double> getScaleConversionCoefficients(nlohmann::json isd, csm::WarningList *list) {
+  std::vector<double> coefficients;
+  try {
+   for (auto& location : isd.at("range_conversion_coefficients")){
+     coefficients.push_back(location[0]);
+     coefficients.push_back(location[1]);
+     coefficients.push_back(location[2]);
+     coefficients.push_back(location[3]);
+    }
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the range conversion coefficients.",
           "Utilities::getScaleConversionCoefficients()"));
     }
   }
   return coefficients;
+}
+
+double getWavelength(json isd, csm::WarningList *list) {
+  double wavelength = 0.0;
+  try {
+    wavelength = isd.at("wavelength");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the wavelength.",
+          "Utilities::getWavelength()"));
+    }
+  }
+  return wavelength;
 }
