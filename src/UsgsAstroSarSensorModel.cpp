@@ -116,6 +116,7 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
   state["m_scaleConversionCoefficients"] = getScaleConversionCoefficients(isd, parsingWarnings);
   state["m_scaleConversionTimes"] = getScaleConversionTimes(isd, parsingWarnings);
   state["m_wavelength"] = getWavelength(isd, parsingWarnings);
+  state["m_lookDirection"] = getLookDirection(isd, parsingWarnings);
 
   // Default to identity covariance
   state["m_covariance"] =
@@ -188,6 +189,7 @@ void UsgsAstroSarSensorModel::reset()
   m_nSamples = 0;
   m_exposureDuration = 0;
   m_scaledPixelWidth = 0;
+  m_lookDirection = "Unknown";
   m_startingEphemerisTime = 0;
   m_centerEphemerisTime = 0;
   m_endingEphemerisTime = 0;
@@ -229,6 +231,7 @@ void UsgsAstroSarSensorModel::replaceModelState(const string& argState)
   m_nSamples = stateJson["m_nSamples"];
   m_exposureDuration = stateJson["m_exposureDuration"];
   m_scaledPixelWidth = stateJson["m_scaledPixelWidth"];
+  m_lookDirection = stateJson["m_lookDirection"];
   m_wavelength = stateJson["m_wavelength"];
   m_startingEphemerisTime = stateJson["m_startingEphemerisTime"];
   m_centerEphemerisTime = stateJson["m_centerEphemerisTime"];
@@ -287,6 +290,7 @@ string UsgsAstroSarSensorModel::getModelState() const
   state["m_minElevation"] = m_minElevation;
   state["m_maxElevation"] = m_maxElevation;
   state["m_scaledPixelWidth"] = m_scaledPixelWidth;
+  state["m_lookDirection"] = m_lookDirection;
   state["m_wavelength"] = m_wavelength;
   state["m_scaleConversionCoefficients"] = m_scaleConversionCoefficients;
   state["m_scaleConversionTimes"] = m_scaleConversionTimes;

@@ -249,6 +249,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     std::vector<double> m_sunPosition;
     std::vector<double> m_sunVelocity;
     double m_wavelength;
+    std::string m_lookDirection;
 };
 
 #endif
