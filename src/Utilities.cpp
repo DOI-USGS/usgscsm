@@ -405,6 +405,74 @@ double secantRoot(double lowerBound, double upperBound, std::function<double(dou
 }
 
 
+csm::EcefVector operator*(double scalar, const csm::EcefVector &vec)
+{
+  return csm::EcefVector(
+      scalar * vec.x,
+      scalar * vec.y,
+      scalar * vec.z);
+}
+
+csm::EcefVector operator*(const csm::EcefVector &vec, double scalar)
+{
+  return scalar * vec;
+}
+
+csm::EcefVector operator/(const csm::EcefVector &vec, double scalar)
+{
+  return 1.0 / scalar * vec;
+}
+
+csm::EcefVector operator+(const csm::EcefVector &vec1, const csm::EcefVector &vec2)
+{
+  return csm::EcefVector(
+      vec1.x + vec2.x,
+      vec1.y + vec2.y,
+      vec1.z + vec2.z);
+}
+
+csm::EcefVector operator-(const csm::EcefVector &vec1, const csm::EcefVector &vec2)
+{
+  return csm::EcefVector(
+      vec1.x - vec2.x,
+      vec1.y - vec2.y,
+      vec1.z - vec2.z);
+}
+
+double dot(const csm::EcefVector &vec1, const csm::EcefVector &vec2)
+{
+  return vec1.x * vec2.x + vec1.y * vec2.y + vec1.z * vec2.z;
+}
+
+csm::EcefVector cross(const csm::EcefVector &vec1, const csm::EcefVector &vec2)
+{
+  return csm::EcefVector(
+      vec1.y * vec2.z - vec1.z * vec2.y,
+      vec1.z * vec2.x - vec1.x * vec2.z,
+      vec1.x * vec2.y - vec1.y * vec2.x);
+}
+
+double norm(const csm::EcefVector &vec)
+{
+  return sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+}
+
+csm::EcefVector normalized(const csm::EcefVector &vec)
+{
+  return vec / norm(vec);
+}
+
+csm::EcefVector projection(const csm::EcefVector &vec1, const csm::EcefVector &vec2)
+{
+  return dot(vec1, vec2) / dot(vec2, vec2) * vec2;
+}
+
+csm::EcefVector rejection(const csm::EcefVector &vec1, const csm::EcefVector &vec2)
+{
+  return vec1 - projection(vec1, vec2);
+}
+
+
 // convert a measurement
 double metric_conversion(double val, std::string from, std::string to) {
     json typemap = {

@@ -333,20 +333,15 @@ double UsgsAstroSarSensorModel::dopplerShift(
     csm::EcefCoord groundPt,
     double tolerance) const
 {
-   std::function<double(double)> dopplerShiftFunction = [this, groundPt](double time) {
+   csm::EcefVector groundVec(groundPt.x ,groundPt.y, groundPt.z);
+   std::function<double(double)> dopplerShiftFunction = [this, groundVec](double time) {
      csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
      csm::EcefVector spacecraftVelocity = getSpacecraftVelocity(time);
-     double lookVector[3];
+     csm::EcefVector lookVector = spacecraftPosition - groundVec;
 
-     lookVector[0] = spacecraftPosition.x - groundPt.x;
-     lookVector[1] = spacecraftPosition.y - groundPt.y;
-     lookVector[2] = spacecraftPosition.z - groundPt.z;
+     double slantRange = norm(lookVector);
 
-     double slantRange = sqrt(pow(lookVector[0], 2) +  pow(lookVector[1], 2) + pow(lookVector[2], 2));
-
-
-     double dopplerShift = -2.0 * (lookVector[0]*spacecraftVelocity.x + lookVector[1]*spacecraftVelocity.y
-                            + lookVector[2]*spacecraftVelocity.z)/(slantRange * m_wavelength);
+     double dopplerShift = -2.0 * dot(lookVector, spacecraftVelocity) / (slantRange * m_wavelength);
 
      return dopplerShift;
    };
@@ -359,13 +354,9 @@ double UsgsAstroSarSensorModel::dopplerShift(
 double UsgsAstroSarSensorModel::slantRange(csm::EcefCoord surfPt,
     double time) const
 {
+  csm::EcefVector surfVec(surfPt.x ,surfPt.y, surfPt.z);
   csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
-  double lookVector[3];
-
-  lookVector[0] = spacecraftPosition.x - surfPt.x;
-  lookVector[1] = spacecraftPosition.y - surfPt.y;
-  lookVector[2] = spacecraftPosition.z - surfPt.z;
-  return sqrt(pow(lookVector[0], 2) +  pow(lookVector[1], 2) + pow(lookVector[2], 2));
+  return norm(spacecraftPosition - surfVec);
 }
 
 double UsgsAstroSarSensorModel::slantRangeToGroundRange(
@@ -428,41 +419,19 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
 
   // Compute the in-track, cross-track, nadir, coordinate system to solve in
   csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
-  double positionMag = sqrt(
-      spacecraftPosition.x * spacecraftPosition.x +
-      spacecraftPosition.y * spacecraftPosition.y +
-      spacecraftPosition.z * spacecraftPosition.z);
+  double positionMag = norm(spacecraftPosition);
   csm::EcefVector spacecraftVelocity = getSpacecraftVelocity(time);
-  double velocityMag = sqrt(
-      spacecraftVelocity.x * spacecraftVelocity.x +
-      spacecraftVelocity.y * spacecraftVelocity.y +
-      spacecraftVelocity.z * spacecraftVelocity.z);
   // In-track unit vector
-  csm::EcefVector vHat(
-      spacecraftVelocity.x / velocityMag,
-      spacecraftVelocity.y / velocityMag,
-      spacecraftVelocity.z / velocityMag);
-  double posDotVHat = spacecraftPosition.x * vHat.x + spacecraftPosition.y * vHat.y + spacecraftPosition.z * vHat.z;
-  csm::EcefVector tVec(
-      spacecraftPosition.x - posDotVHat * vHat.x,
-      spacecraftPosition.y - posDotVHat * vHat.y,
-      spacecraftPosition.z - posDotVHat * vHat.z);
-  double tVecMag = sqrt(tVec.x * tVec.x + tVec.y * tVec.y + tVec.z * tVec.z);
+  csm::EcefVector vHat = normalized(spacecraftVelocity);
   // Nadir unit vector
-  csm::EcefVector tHat(
-      tVec.x / tVecMag,
-      tVec.y / tVecMag,
-      tVec.z / tVecMag);
+  csm::EcefVector tHat = normalized(rejection(spacecraftPosition, vHat));
   // Cross-track unit vector
-  csm::EcefVector uHat(
-      vHat.y * tHat.z - vHat.z * tHat.y,
-      vHat.z * tHat.x - vHat.x * tHat.z,
-      vHat.x * tHat.y - vHat.y * tHat.x);
+  csm::EcefVector uHat = cross(vHat, tHat);
 
   // Compute the spacecraft position in the new coordinate system
   //   The cross-track unit vector is orthogonal to the position so we ignore it
-  double nadirComp = spacecraftPosition.x * tHat.x + spacecraftPosition.y * tHat.y + spacecraftPosition.z * tHat.z;
-  double inTrackComp = spacecraftPosition.x * vHat.x + spacecraftPosition.y * vHat.y + spacecraftPosition.z * vHat.z;
+  double nadirComp = dot(spacecraftPosition, tHat);
+  double inTrackComp = dot(spacecraftPosition, vHat);
 
   // Compute the substituted values
   // TODO properly handle ellipsoid radii
@@ -470,12 +439,9 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   double alpha = (radiusSqr - slantRange * slantRange - positionMag * positionMag) / (2 * nadirComp);
   // TODO use right/left look to determine +/-
   double beta = -sqrt(slantRange * slantRange - alpha * alpha);
-  csm::EcefCoord groundPt(
-      alpha * tHat.x + beta * uHat.x + spacecraftPosition.x,
-      alpha * tHat.y + beta * uHat.y + spacecraftPosition.y,
-      alpha * tHat.z + beta * uHat.z + spacecraftPosition.z);
+  csm::EcefVector groundVec = alpha * tHat + beta * uHat + spacecraftPosition;
 
-  return groundPt;
+  return csm::EcefCoord(groundVec.x, groundVec.y, groundVec.z);
 }
 
 csm::EcefCoordCovar UsgsAstroSarSensorModel::imageToGround(

@@ -10,6 +10,7 @@
 
 #include <json/json.hpp>
 
+#include <csm.h>
 #include <Warning.h>
 // methods pulled out of los2ecf and computeViewingPixel
 
@@ -83,6 +84,21 @@ double secantRoot(
     std::function<double(double)> func,
     double epsilon = 1e-10,
     int maxIterations = 30);
+
+// Vector operations
+csm::EcefVector operator*(double scalar, const csm::EcefVector &vec);
+csm::EcefVector operator*(const csm::EcefVector &vec, double scalar);
+csm::EcefVector operator/(const csm::EcefVector &vec, double scalar);
+csm::EcefVector operator+(const csm::EcefVector &vec1, const csm::EcefVector &vec2);
+csm::EcefVector operator-(const csm::EcefVector &vec1, const csm::EcefVector &vec2);
+double dot(const csm::EcefVector &vec1, const csm::EcefVector &vec2);
+csm::EcefVector cross(const csm::EcefVector &vec1, const csm::EcefVector &vec2);
+double norm(const csm::EcefVector &vec);
+csm::EcefVector normalized(const csm::EcefVector &vec);
+// The projection of vec1 onto vec2. The component of vec1 that is parallel to vec2
+csm::EcefVector projection(const csm::EcefVector &vec1, const csm::EcefVector &vec2);
+// The rejection of vec1 onto vec2. The component of vec1 that is orthogonal to vec2
+csm::EcefVector rejection(const csm::EcefVector &vec1, const csm::EcefVector &vec2);
 
 // Methods for checking/accessing the ISD
 
