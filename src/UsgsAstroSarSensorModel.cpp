@@ -627,32 +627,47 @@ pair<double, double> UsgsAstroSarSensorModel::getValidHeightRange() const
 
 csm::EcefVector UsgsAstroSarSensorModel::getIlluminationDirection(const csm::EcefCoord& groundPt) const
 {
-  return csm::EcefVector(0.0, 0.0, 0.0);
+  csm::EcefVector sunPosition = getSunPosition(getImageTime(groundToImage(groundPt)));
+  csm::EcefVector illuminationDirection = csm::EcefVector(groundPt.x - sunPosition.x,
+                                                          groundPt.y - sunPosition.y,
+                                                          groundPt.z - sunPosition.z);
+
+  double scale = sqrt(illuminationDirection.x * illuminationDirection.x +
+                      illuminationDirection.y * illuminationDirection.y +
+                      illuminationDirection.z * illuminationDirection.z);
+
+  illuminationDirection.x /= scale;
+  illuminationDirection.y /= scale;
+  illuminationDirection.z /= scale;
+  return illuminationDirection;
 }
 
 double UsgsAstroSarSensorModel::getImageTime(const csm::ImageCoord& imagePt) const
 {
-  return 0.0;
+  return m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
 }
 
 csm::EcefCoord UsgsAstroSarSensorModel::getSensorPosition(const csm::ImageCoord& imagePt) const
 {
-  return csm::EcefCoord(0.0, 0.0, 0.0);
+  double time = getImageTime(imagePt);
+  return getSensorPosition(time);
 }
 
 csm::EcefCoord UsgsAstroSarSensorModel::getSensorPosition(double time) const
 {
-  return csm::EcefCoord(0.0, 0.0, 0.0);
+  csm::EcefVector sensorVector = getSpacecraftPosition(time);
+  return csm::EcefCoord(sensorVector.x, sensorVector.y, sensorVector.z);
 }
 
 csm::EcefVector UsgsAstroSarSensorModel::getSensorVelocity(const csm::ImageCoord& imagePt) const
 {
-  return csm::EcefVector(0.0, 0.0, 0.0);
+  double time = getImageTime(imagePt);
+  return getSensorVelocity(time);
 }
 
 csm::EcefVector UsgsAstroSarSensorModel::getSensorVelocity(double time) const
 {
-  return csm::EcefVector(0.0, 0.0, 0.0);
+  return getSpacecraftVelocity(time);
 }
 
 csm::RasterGM::SensorPartials UsgsAstroSarSensorModel::computeSensorPartials(
@@ -1014,4 +1029,39 @@ std::vector<double> UsgsAstroSarSensorModel::getRangeCoefficients(double time) c
     interpCoeffs.push_back(m_scaleConversionCoefficients[3]);
   }
   return interpCoeffs;
+}
+
+csm::EcefVector UsgsAstroSarSensorModel::getSunPosition(const double imageTime) const
+{
+
+  int numSunPositions = m_sunPosition.size();
+  int numSunVelocities = m_sunVelocity.size();
+  csm::EcefVector sunPosition = csm::EcefVector();
+
+  // If there are multiple positions, use Lagrange interpolation
+  if ((numSunPositions/3) > 1) {
+    double sunPos[3];
+    double endTime = m_t0Ephem + m_nLines * m_exposureDuration;
+    double sun_dtEphem = (endTime - m_t0Ephem) / (numSunPositions/3);
+    lagrangeInterp(numSunPositions/3, &m_sunPosition[0], m_t0Ephem, sun_dtEphem,
+                   imageTime, 3, 8, sunPos);
+    sunPosition.x = sunPos[0];
+    sunPosition.y = sunPos[1];
+    sunPosition.z = sunPos[2];
+  }
+  else if ((numSunVelocities/3) >= 1){
+    // If there is one position triple with at least one velocity triple
+    //  then the illumination direction is calculated via linear extrapolation.
+      sunPosition.x = (imageTime * m_sunVelocity[0] + m_sunPosition[0]);
+      sunPosition.y = (imageTime * m_sunVelocity[1] + m_sunPosition[1]);
+      sunPosition.z = (imageTime * m_sunVelocity[2] + m_sunPosition[2]);
+  }
+  else {
+    // If there is one position triple with no velocity triple, then the
+    //  illumination direction is the difference of the original vectors.
+      sunPosition.x = m_sunPosition[0];
+      sunPosition.y = m_sunPosition[1];
+      sunPosition.z = m_sunPosition[2];
+  }
+  return sunPosition;
 }
