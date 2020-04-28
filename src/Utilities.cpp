@@ -1215,6 +1215,23 @@ double getScaledPixelWidth(nlohmann::json isd, csm::WarningList *list) {
   return width;
 }
 
+std::string getLookDirection(nlohmann::json isd, csm::WarningList *list) {
+  std::string lookDirection = "";
+  try {
+    lookDirection = isd.at("look_direction");
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the scaled pixel width.",
+          "Utilities::getScaledPixelWidth()"));
+    }
+  }
+  return lookDirection;
+}
+
 std::vector<double> getScaleConversionTimes(nlohmann::json isd, csm::WarningList *list) {
   std::vector<double> time;
   try {

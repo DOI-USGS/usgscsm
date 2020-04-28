@@ -18,6 +18,7 @@
   "scaled_pixel_width" : 7.5,
   "t0_ephemeris": -0.0025,
   "dt_ephemeris": 0.25,
+  "look_direction": "right",
   "sensor_position": {
     "positions":
       [[3737400.0, 0.0, -0.0],
