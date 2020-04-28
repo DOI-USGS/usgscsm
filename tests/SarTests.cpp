@@ -68,7 +68,7 @@ TEST_F(SarSensorModel, spacecraftPosition) {
 }
 
 TEST_F(SarSensorModel, spacecraftVelocity) {
-  csm::EcefVector velocity = sensorModel->getSpacecraftVelocity(-0.0025);
+  csm::EcefVector velocity = sensorModel->getSensorVelocity(-0.0025);
   EXPECT_NEAR(velocity.x, 0.00000000e+00, 1e-8);
   EXPECT_NEAR(velocity.y, 0.00000000e+00, 1e-8);
   EXPECT_NEAR(velocity.z, -3.73740000e+06, 1e-8);
