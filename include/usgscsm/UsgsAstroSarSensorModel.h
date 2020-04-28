@@ -9,6 +9,10 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
 {
 
   public:
+    enum LookDirection {
+      LEFT  = 0,
+      RIGHT = 1
+    };
 
     UsgsAstroSarSensorModel();
     ~UsgsAstroSarSensorModel() {}
@@ -249,7 +253,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     std::vector<double> m_sunPosition;
     std::vector<double> m_sunVelocity;
     double m_wavelength;
-    std::string m_lookDirection;
+    LookDirection m_lookDirection;
 };
 
 #endif

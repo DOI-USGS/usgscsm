@@ -189,7 +189,7 @@ void UsgsAstroSarSensorModel::reset()
   m_nSamples = 0;
   m_exposureDuration = 0;
   m_scaledPixelWidth = 0;
-  m_lookDirection = "Unknown";
+  m_lookDirection = LookDirection::LEFT;
   m_startingEphemerisTime = 0;
   m_centerEphemerisTime = 0;
   m_endingEphemerisTime = 0;
@@ -231,7 +231,19 @@ void UsgsAstroSarSensorModel::replaceModelState(const string& argState)
   m_nSamples = stateJson["m_nSamples"];
   m_exposureDuration = stateJson["m_exposureDuration"];
   m_scaledPixelWidth = stateJson["m_scaledPixelWidth"];
-  m_lookDirection = stateJson["m_lookDirection"];
+  std::string lookStr = stateJson["m_lookDirection"]; 
+  if (lookStr.compare("right") == 0 ) {
+    m_lookDirection = UsgsAstroSarSensorModel::RIGHT; 
+  }
+  else if (lookStr.compare("left") == 0) {
+    m_lookDirection = UsgsAstroSarSensorModel::LEFT; 
+  }
+  else {
+    std::string message = "Could not determine look direction from state";
+    throw csm::Error(csm::Error::INVALID_SENSOR_MODEL_STATE,
+                     message,
+                     "UsgsAstroSarSensorModel::replaceModelState");
+  }
   m_wavelength = stateJson["m_wavelength"];
   m_startingEphemerisTime = stateJson["m_startingEphemerisTime"];
   m_centerEphemerisTime = stateJson["m_centerEphemerisTime"];
@@ -290,7 +302,18 @@ string UsgsAstroSarSensorModel::getModelState() const
   state["m_minElevation"] = m_minElevation;
   state["m_maxElevation"] = m_maxElevation;
   state["m_scaledPixelWidth"] = m_scaledPixelWidth;
-  state["m_lookDirection"] = m_lookDirection;
+  if (m_lookDirection == 0) {
+    state["m_lookDirection"] = "left";
+  }
+  else if (m_lookDirection == 1) {
+    state["m_lookDirection"] = "right";
+  }
+  else {
+    std::string message = "Could not parse look direction from json state.";
+    throw csm::Error(csm::Error::INVALID_SENSOR_MODEL_STATE,
+                     message,
+                     "UsgsAstroSarSensorModel::getModelState");
+  }
   state["m_wavelength"] = m_wavelength;
   state["m_scaleConversionCoefficients"] = m_scaleConversionCoefficients;
   state["m_scaleConversionTimes"] = m_scaleConversionTimes;
