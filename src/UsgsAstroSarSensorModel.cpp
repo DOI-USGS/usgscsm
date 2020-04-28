@@ -363,7 +363,7 @@ double UsgsAstroSarSensorModel::dopplerShift(
    csm::EcefVector groundVec(groundPt.x ,groundPt.y, groundPt.z);
    std::function<double(double)> dopplerShiftFunction = [this, groundVec](double time) {
      csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
-     csm::EcefVector spacecraftVelocity = getSpacecraftVelocity(time);
+     csm::EcefVector spacecraftVelocity = getSensorVelocity(time);
      csm::EcefVector lookVector = spacecraftPosition - groundVec;
 
      double slantRange = norm(lookVector);
@@ -429,10 +429,7 @@ csm::ImageCoordCovar UsgsAstroSarSensorModel::groundToImage(
 {
   // Ground to image with error propagation
   // Compute corresponding image point
-  csm::EcefCoord gp;
-  gp.x = groundPt.x;
-  gp.y = groundPt.y;
-  gp.z = groundPt.z;
+  csm::EcefCoord gp(groundPt);
 
   csm::ImageCoord ip = groundToImage(gp, desiredPrecision, achievedPrecision, warnings);
   csm::ImageCoordCovar result(ip.line, ip.samp);
@@ -502,7 +499,7 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   // Compute the in-track, cross-track, nadir, coordinate system to solve in
   csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
   double positionMag = norm(spacecraftPosition);
-  csm::EcefVector spacecraftVelocity = getSpacecraftVelocity(time);
+  csm::EcefVector spacecraftVelocity = getSensorVelocity(time);
   // In-track unit vector
   csm::EcefVector vHat = normalized(spacecraftVelocity);
   // Nadir unit vector
@@ -642,7 +639,7 @@ pair<csm::ImageCoord, csm::ImageCoord> UsgsAstroSarSensorModel::getValidImageRan
 {
   csm::ImageCoord start = getImageStart();
   csm::ImageVector size = getImageSize();
-  return make_pair(start, csm::ImageCoord(start.line + size.line, start.samp + start.samp));
+  return make_pair(start, csm::ImageCoord(start.line + size.line, start.samp + size.samp));
 }
 
 pair<double, double> UsgsAstroSarSensorModel::getValidHeightRange() const
@@ -652,18 +649,9 @@ pair<double, double> UsgsAstroSarSensorModel::getValidHeightRange() const
 
 csm::EcefVector UsgsAstroSarSensorModel::getIlluminationDirection(const csm::EcefCoord& groundPt) const
 {
+  csm::EcefVector groundVec(groundPt.x, groundPt.y, groundPt.z);
   csm::EcefVector sunPosition = getSunPosition(getImageTime(groundToImage(groundPt)));
-  csm::EcefVector illuminationDirection = csm::EcefVector(groundPt.x - sunPosition.x,
-                                                          groundPt.y - sunPosition.y,
-                                                          groundPt.z - sunPosition.z);
-
-  double scale = sqrt(illuminationDirection.x * illuminationDirection.x +
-                      illuminationDirection.y * illuminationDirection.y +
-                      illuminationDirection.z * illuminationDirection.z);
-
-  illuminationDirection.x /= scale;
-  illuminationDirection.y /= scale;
-  illuminationDirection.z /= scale;
+  csm::EcefVector illuminationDirection = normalized(groundVec - sunPosition);
   return illuminationDirection;
 }
 
@@ -692,7 +680,24 @@ csm::EcefVector UsgsAstroSarSensorModel::getSensorVelocity(const csm::ImageCoord
 
 csm::EcefVector UsgsAstroSarSensorModel::getSensorVelocity(double time) const
 {
-  return getSpacecraftVelocity(time);
+  int numVelocities = m_velocities.size();
+  csm::EcefVector spacecraftVelocity = csm::EcefVector();
+
+  // If there are multiple positions, use Lagrange interpolation
+  if ((numVelocities/3) > 1) {
+    double velocity[3];
+    lagrangeInterp(numVelocities/3, &m_velocities[0], m_t0Ephem, m_dtEphem,
+                   time, 3, 8, velocity);
+    spacecraftVelocity.x = velocity[0];
+    spacecraftVelocity.y = velocity[1];
+    spacecraftVelocity.z = velocity[2];
+  }
+  else {
+    spacecraftVelocity.x = m_velocities[0];
+    spacecraftVelocity.y = m_velocities[1];
+    spacecraftVelocity.z = m_velocities[2];
+  }
+  return spacecraftVelocity;
 }
 
 csm::RasterGM::SensorPartials UsgsAstroSarSensorModel::computeSensorPartials(
@@ -1008,27 +1013,6 @@ csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftPosition(double time) cons
   }
   // Can add third case if need be, but seems unlikely to come up for SAR
   return spacecraftPosition;
-}
-
-csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftVelocity(double time) const {
-  int numVelocities = m_velocities.size();
-  csm::EcefVector spacecraftVelocity = csm::EcefVector();
-
-  // If there are multiple positions, use Lagrange interpolation
-  if ((numVelocities/3) > 1) {
-    double velocity[3];
-    lagrangeInterp(numVelocities/3, &m_velocities[0], m_t0Ephem, m_dtEphem,
-                   time, 3, 8, velocity);
-    spacecraftVelocity.x = velocity[0];
-    spacecraftVelocity.y = velocity[1];
-    spacecraftVelocity.z = velocity[2];
-  }
-  else {
-    spacecraftVelocity.x = m_velocities[0];
-    spacecraftVelocity.y = m_velocities[1];
-    spacecraftVelocity.z = m_velocities[2];
-  }
-  return spacecraftVelocity;
 }
 
 
