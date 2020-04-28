@@ -44,11 +44,12 @@ TEST_F(SarSensorModel, State) {
 }
 
 TEST_F(SarSensorModel, Center) {
-  csm::ImageCoord imagePt(7.5, 7.5);
+  csm::ImageCoord imagePt(500.0, 500.0);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-  EXPECT_NEAR(groundPt.x, 0, 1e-8);
-  EXPECT_NEAR(groundPt.y, 0, 1e-8);
-  EXPECT_NEAR(groundPt.z, 0, 1e-8);
+  // TODO these tolerances are bad
+  EXPECT_NEAR(groundPt.x, 1737391.90602155, 1e-2);
+  EXPECT_NEAR(groundPt.y, 3749.98835331, 1e-2);
+  EXPECT_NEAR(groundPt.z, -3749.99708833, 1e-2);
 }
 
 TEST_F(SarSensorModel, GroundToImage) {

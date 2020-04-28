@@ -207,6 +207,8 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
 
     double slantRangeToGroundRange(const csm::EcefCoord& groundPt, double time, double slantRange, double tolerance) const;
 
+    double groundRangeToSlantRange(double groundRange, const std::vector<double> &coeffs) const;
+
     csm::EcefVector getSpacecraftPosition(double time) const;
     csm::EcefVector getSpacecraftVelocity(double time) const;
     csm::EcefVector getSunPosition(const double imageTime) const;
