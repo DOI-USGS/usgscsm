@@ -521,8 +521,10 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   do {
     radiusSqr = pointRadius * pointRadius;
     double alpha = (radiusSqr - slantRange * slantRange - positionMag * positionMag) / (2 * nadirComp);
-    // TODO use right/left look to determine +/-
-    double beta = -sqrt(slantRange * slantRange - alpha * alpha);
+    double beta = sqrt(slantRange * slantRange - alpha * alpha);
+    if (m_lookDirection == LEFT) {
+      beta *= -1;
+    }
     groundVec = alpha * tHat + beta * uHat + spacecraftPosition;
     computeElevation(groundVec.x, groundVec.y, groundVec.z, pointHeight);
     pointRadius -= (pointHeight - height);
