@@ -513,14 +513,25 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   double inTrackComp = dot(spacecraftPosition, vHat);
 
   // Compute the substituted values
-  // TODO properly handle ellipsoid radii
-  double radiusSqr = m_majorAxis * m_majorAxis;
-  double alpha = (radiusSqr - slantRange * slantRange - positionMag * positionMag) / (2 * nadirComp);
-  // TODO use right/left look to determine +/-
-  double beta = -sqrt(slantRange * slantRange - alpha * alpha);
-  csm::EcefVector groundVec = alpha * tHat + beta * uHat + spacecraftPosition;
+  // Iterate to find proper radius value
+  double pointRadius = m_majorAxis + height;
+  double radiusSqr;
+  double pointHeight;
+  csm::EcefVector groundVec;
+  do {
+    radiusSqr = pointRadius * pointRadius;
+    double alpha = (radiusSqr - slantRange * slantRange - positionMag * positionMag) / (2 * nadirComp);
+    // TODO use right/left look to determine +/-
+    double beta = -sqrt(slantRange * slantRange - alpha * alpha);
+    groundVec = alpha * tHat + beta * uHat + spacecraftPosition;
+    computeElevation(groundVec.x, groundVec.y, groundVec.z, pointHeight);
+    pointRadius -= (pointHeight - height);
+  } while(fabs(pointHeight - height) > desiredPrecision);
 
-  return csm::EcefCoord(groundVec.x, groundVec.y, groundVec.z);
+
+  csm::EcefCoord groundPt(groundVec.x, groundVec.y, groundVec.z);
+
+  return groundPt;
 }
 
 csm::EcefCoordCovar UsgsAstroSarSensorModel::imageToGround(
@@ -1073,4 +1084,65 @@ csm::EcefVector UsgsAstroSarSensorModel::getSunPosition(const double imageTime) 
       sunPosition.z = m_sunPosition[2];
   }
   return sunPosition;
+}
+
+void UsgsAstroSarSensorModel::computeElevation(
+   const double& x,
+   const double& y,
+   const double& z,
+   double&       height,
+   double*       achieved_precision,
+   const double& desired_precision) const
+{
+   // Compute elevation given xyz
+   // Requires semi-major-axis and eccentricity-square
+   const int MKTR = 10;
+   double ecc_sqr = 1.0 - m_minorAxis * m_minorAxis / m_majorAxis / m_majorAxis;
+   double ep2 = 1.0 - ecc_sqr;
+   double d2 = x * x + y * y;
+   double d = sqrt(d2);
+   double h = 0.0;
+   int ktr = 0;
+   double hPrev, r;
+
+   // Suited for points near equator
+   if (d >= z)
+   {
+      double tt, zz, n;
+      double tanPhi = z / d;
+      do
+      {
+         hPrev = h;
+         tt = tanPhi * tanPhi;
+         r = m_majorAxis / sqrt(1.0 + ep2 * tt);
+         zz = z + r * ecc_sqr * tanPhi;
+         n = r * sqrt(1.0 + tt);
+         h = sqrt(d2 + zz * zz) - n;
+         tanPhi = zz / d;
+         ktr++;
+      } while (MKTR > ktr && fabs(h - hPrev) > desired_precision);
+   }
+
+   // Suited for points near the poles
+   else
+   {
+      double cc, dd, nn;
+      double cotPhi = d / z;
+      do
+      {
+         hPrev = h;
+         cc = cotPhi * cotPhi;
+         r = m_majorAxis / sqrt(ep2 + cc);
+         dd = d - r * ecc_sqr * cotPhi;
+         nn = r * sqrt(1.0 + cc) * ep2;
+         h = sqrt(dd * dd + z * z) - nn;
+         cotPhi = dd / z;
+         ktr++;
+      } while (MKTR > ktr && fabs(h - hPrev) > desired_precision);
+   }
+
+   height = h;
+   if (achieved_precision) {
+     *achieved_precision = fabs(h - hPrev);
+   }
 }
