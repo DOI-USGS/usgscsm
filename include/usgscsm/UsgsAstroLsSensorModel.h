@@ -1018,15 +1018,6 @@ private:
       double&       z,
       int&          mode ) const;
 
-   // Computes the height above ellipsoid for an input ECF coordinate
-   void computeElevation (
-      const double& x,
-      const double& y,
-      const double& z,
-      double&       height,
-      double&       achieved_precision,
-      const double& desired_precision) const;
-
    // determines the sensor velocity accounting for parameter adjustments.
    void getAdjSensorPosVel(
       const double& time,

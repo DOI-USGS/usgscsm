@@ -513,14 +513,29 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   double inTrackComp = dot(spacecraftPosition, vHat);
 
   // Compute the substituted values
-  // TODO properly handle ellipsoid radii
-  double radiusSqr = m_majorAxis * m_majorAxis;
-  double alpha = (radiusSqr - slantRange * slantRange - positionMag * positionMag) / (2 * nadirComp);
-  // TODO use right/left look to determine +/-
-  double beta = -sqrt(slantRange * slantRange - alpha * alpha);
-  csm::EcefVector groundVec = alpha * tHat + beta * uHat + spacecraftPosition;
+  // Iterate to find proper radius value
+  double pointRadius = m_majorAxis + height;
+  double radiusSqr;
+  double pointHeight;
+  csm::EcefVector groundVec;
+  do {
+    radiusSqr = pointRadius * pointRadius;
+    double alpha = (radiusSqr - slantRange * slantRange - positionMag * positionMag) / (2 * nadirComp);
+    double beta = sqrt(slantRange * slantRange - alpha * alpha);
+    if (m_lookDirection == LEFT) {
+      beta *= -1;
+    }
+    groundVec = alpha * tHat + beta * uHat + spacecraftPosition;
+    pointHeight = computeEllipsoidElevation(
+        groundVec.x, groundVec.y, groundVec.z,
+        m_majorAxis, m_minorAxis);
+    pointRadius -= (pointHeight - height);
+  } while(fabs(pointHeight - height) > desiredPrecision);
 
-  return csm::EcefCoord(groundVec.x, groundVec.y, groundVec.z);
+
+  csm::EcefCoord groundPt(groundVec.x, groundVec.y, groundVec.z);
+
+  return groundPt;
 }
 
 csm::EcefCoordCovar UsgsAstroSarSensorModel::imageToGround(
@@ -611,8 +626,33 @@ csm::EcefLocus UsgsAstroSarSensorModel::imageToProximateImagingLocus(
     double* achievedPrecision,
     csm::WarningList* warnings) const
 {
-  return csm::EcefLocus(0.0, 0.0, 0.0,
-                        0.0, 0.0, 0.0);
+  // Compute the slant range
+  double time = m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
+  double groundRange = imagePt.samp * m_scaledPixelWidth;
+  std::vector<double> coeffs = getRangeCoefficients(time);
+  double slantRange = groundRangeToSlantRange(groundRange, coeffs);
+
+  // Project the sensor to ground point vector onto the 0 doppler plane
+  // then compute the closest point at the slant range to that
+  csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
+  csm::EcefVector spacecraftVelocity = getSensorVelocity(time);
+  csm::EcefVector groundVec(groundPt.x, groundPt.y, groundPt.z);
+  csm::EcefVector lookVec = normalized(rejection(groundVec - spacecraftPosition, spacecraftVelocity));
+  csm::EcefVector closestVec = spacecraftPosition + slantRange * lookVec;
+
+
+  // Compute the tangent at the closest point
+  csm::EcefVector tangent;
+  if (m_lookDirection == LEFT) {
+    tangent = cross(spacecraftVelocity, lookVec);
+  }
+  else {
+    tangent = cross(lookVec, spacecraftVelocity);
+  }
+  tangent = normalized(tangent);
+
+  return csm::EcefLocus(closestVec.x, closestVec.y, closestVec.z,
+                        tangent.x,    tangent.y,    tangent.z);
 }
 
 csm::EcefLocus UsgsAstroSarSensorModel::imageToRemoteImagingLocus(
@@ -621,8 +661,32 @@ csm::EcefLocus UsgsAstroSarSensorModel::imageToRemoteImagingLocus(
     double* achievedPrecision,
     csm::WarningList* warnings) const
 {
-  return csm::EcefLocus(0.0, 0.0, 0.0,
-                        0.0, 0.0, 0.0);
+  // Compute the slant range
+  double time = m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
+  double groundRange = imagePt.samp * m_scaledPixelWidth;
+  std::vector<double> coeffs = getRangeCoefficients(time);
+  double slantRange = groundRangeToSlantRange(groundRange, coeffs);
+
+  // Project the negative sensor position vector onto the 0 doppler plane
+  // then compute the closest point at the slant range to that
+  csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
+  csm::EcefVector spacecraftVelocity = getSensorVelocity(time);
+  csm::EcefVector lookVec = normalized(rejection(-1 * spacecraftPosition, spacecraftVelocity));
+  csm::EcefVector closestVec = spacecraftPosition + slantRange * lookVec;
+
+
+  // Compute the tangent at the closest point
+  csm::EcefVector tangent;
+  if (m_lookDirection == LEFT) {
+    tangent = cross(spacecraftVelocity, lookVec);
+  }
+  else {
+    tangent = cross(lookVec, spacecraftVelocity);
+  }
+  tangent = normalized(tangent);
+
+  return csm::EcefLocus(closestVec.x, closestVec.y, closestVec.z,
+                        tangent.x,    tangent.y,    tangent.z);
 }
 
 csm::ImageCoord UsgsAstroSarSensorModel::getImageStart() const

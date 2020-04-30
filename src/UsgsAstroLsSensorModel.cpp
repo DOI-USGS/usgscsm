@@ -1018,8 +1018,9 @@ csm::EcefLocus UsgsAstroLsSensorModel::imageToProximateImagingLocus(
    double z = ground_pt.z;
 
    // Elevation at input ground point
-   double height, aPrec;
-   computeElevation(x, y, z, height, aPrec, desired_precision);
+   double height = computeEllipsoidElevation(
+         x, y, z,
+         m_majorAxis, m_minorAxis, desired_precision);
 
    // Ground point on object ray with the same elevation
    csm::EcefCoord gp1 = imageToGround(
@@ -1050,10 +1051,11 @@ csm::EcefLocus UsgsAstroLsSensorModel::imageToProximateImagingLocus(
    gp2.y = gp1.y + scale * dy2;
    gp2.z = gp1.z + scale * dz2;
 
-   double hLocus;
-   computeElevation(gp2.x, gp2.y, gp2.z, hLocus, aPrec, desired_precision);
+   double hLocus = computeEllipsoidElevation(
+         gp2.x, gp2.y, gp2.z,
+         m_majorAxis, m_minorAxis, desired_precision);
    locus.point = imageToGround(
-      image_pt, hLocus, desired_precision, achieved_precision, warnings);
+         image_pt, hLocus, desired_precision, achieved_precision, warnings);
 
    locus.direction.x = dx2;
    locus.direction.y = dy2;
@@ -2052,76 +2054,6 @@ void UsgsAstroLsSensorModel::lightAberrationCorr(
 }
 
 //***************************************************************************
-// UsgsAstroLsSensorModel::computeElevation
-//***************************************************************************
-void UsgsAstroLsSensorModel::computeElevation(
-   const double& x,
-   const double& y,
-   const double& z,
-   double&       height,
-   double&       achieved_precision,
-   const double& desired_precision) const
-{
-   MESSAGE_LOG(m_logger, "Calculating computeElevation for {} {} {}"
-                               "with desired precision {}",
-                              x, y, z, desired_precision)
-   // Compute elevation given xyz
-   // Requires semi-major-axis and eccentricity-square
-   const int MKTR = 10;
-   double ecc_sqr = 1.0 - m_minorAxis * m_minorAxis / m_majorAxis / m_majorAxis;
-   double ep2 = 1.0 - ecc_sqr;
-   double d2 = x * x + y * y;
-   double d = sqrt(d2);
-   double h = 0.0;
-   int ktr = 0;
-   double hPrev, r;
-
-   // Suited for points near equator
-   if (d >= z)
-   {
-      double tt, zz, n;
-      double tanPhi = z / d;
-      do
-      {
-         hPrev = h;
-         tt = tanPhi * tanPhi;
-         r = m_majorAxis / sqrt(1.0 + ep2 * tt);
-         zz = z + r * ecc_sqr * tanPhi;
-         n = r * sqrt(1.0 + tt);
-         h = sqrt(d2 + zz * zz) - n;
-         tanPhi = zz / d;
-         ktr++;
-      } while (MKTR > ktr && fabs(h - hPrev) > desired_precision);
-      MESSAGE_LOG(m_logger, "computeElevation: point is near equator")
-   }
-
-   // Suited for points near the poles
-   else
-   {
-      double cc, dd, nn;
-      double cotPhi = d / z;
-      do
-      {
-         hPrev = h;
-         cc = cotPhi * cotPhi;
-         r = m_majorAxis / sqrt(ep2 + cc);
-         dd = d - r * ecc_sqr * cotPhi;
-         nn = r * sqrt(1.0 + cc) * ep2;
-         h = sqrt(dd * dd + z * z) - nn;
-         cotPhi = dd / z;
-         ktr++;
-      } while (MKTR > ktr && fabs(h - hPrev) > desired_precision);
-      MESSAGE_LOG(m_logger, "computeElevation: point is near poles")
-   }
-
-   height = h;
-   achieved_precision = fabs(h - hPrev);
-   MESSAGE_LOG(m_logger, "computeElevation: height {} with achieved"
-                               "precision of {}",
-                                height, achieved_precision)
-}
-
-//***************************************************************************
 // UsgsAstroLsSensorModel::losEllipsoidIntersect
 //**************************************************************************
 void UsgsAstroLsSensorModel::losEllipsoidIntersect(
@@ -2173,7 +2105,7 @@ void UsgsAstroLsSensorModel::losEllipsoidIntersect(
    }
    double scale, scale1, h, slope;
    double sprev, hprev;
-   double aPrec, sTerm;
+   double sTerm;
    int ktr = 0;
 
    // Compute ground point vector
@@ -2187,7 +2119,7 @@ void UsgsAstroLsSensorModel::losEllipsoidIntersect(
    x = xc + scale * xl;
    y = yc + scale * yl;
    z = zc + scale * zl;
-   computeElevation(x, y, z, h, aPrec, desired_precision);
+   h = computeEllipsoidElevation(x, y, z, m_majorAxis, m_minorAxis, desired_precision);
    slope = -1;
 
    achieved_precision = fabs(height - h);
@@ -2515,9 +2447,10 @@ void UsgsAstroLsSensorModel::setLinearApproximation()
 
   csm::EcefCoord refPt = getReferencePoint();
 
-  double height, aPrec;
   double desired_precision = 0.01;
-  computeElevation(refPt.x, refPt.y, refPt.z, height, aPrec, desired_precision);
+  double height = computeEllipsoidElevation(
+        refPt.x, refPt.y, refPt.z,
+        m_majorAxis, m_minorAxis, desired_precision);
   if (std::isnan(height))
   {
     MESSAGE_LOG(m_logger, "setLinearApproximation: computeElevation of"

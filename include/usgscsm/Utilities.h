@@ -85,6 +85,15 @@ double secantRoot(
     double epsilon = 1e-10,
     int maxIterations = 30);
 
+double computeEllipsoidElevation(
+    double x,
+    double y,
+    double z,
+    double semiMajor,
+    double semiMinor,
+    double desired_precision = 0.001,
+    double* achieved_precision = nullptr);
+
 // Vector operations
 csm::EcefVector operator*(double scalar, const csm::EcefVector &vec);
 csm::EcefVector operator*(const csm::EcefVector &vec, double scalar);

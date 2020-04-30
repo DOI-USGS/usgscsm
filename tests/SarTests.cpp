@@ -48,12 +48,12 @@ TEST_F(SarSensorModel, Center) {
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
   // TODO these tolerances are bad
   EXPECT_NEAR(groundPt.x, 1737391.90602155, 1e-2);
-  EXPECT_NEAR(groundPt.y, 3749.98835331, 1e-2);
+  EXPECT_NEAR(groundPt.y, -3749.98835331, 1e-2);
   EXPECT_NEAR(groundPt.z, -3749.99708833, 1e-2);
 }
 
 TEST_F(SarSensorModel, GroundToImage) {
-  csm::EcefCoord groundPt(1737391.90602155, 3749.98835331, -3749.99708833);
+  csm::EcefCoord groundPt(1737391.90602155, -3749.98835331, -3749.99708833);
   csm::ImageCoord imagePt = sensorModel->groundToImage(groundPt, 0.001);
   EXPECT_NEAR(imagePt.line, 500.0, 0.001);
   // Due to position interpolation, the sample is slightly less accurate than the line
@@ -92,4 +92,27 @@ TEST_F(SarSensorModel, computeGroundPartials) {
   EXPECT_NEAR(partials[3], -1.0 / 7.5, 1e-8);
   EXPECT_NEAR(partials[4], -1.0 / 7.5, 1e-8);
   EXPECT_NEAR(partials[5], 0.0, 1e-8);
+}
+
+TEST_F(SarSensorModel, imageToProximateImagingLocus) {
+  csm::EcefLocus locus = sensorModel->imageToProximateImagingLocus(
+      csm::ImageCoord(500.0, 500.0),
+      csm::EcefCoord(1737291.90643026, -3750.17585202, -3749.78124955));
+  EXPECT_NEAR(locus.point.x, 1737391.90602155, 1e-2);
+  EXPECT_NEAR(locus.point.y, -3749.98835331, 1e-2);
+  EXPECT_NEAR(locus.point.z, -3749.99708833, 1e-2);
+  EXPECT_NEAR(locus.direction.x, 0.0018750001892442036, 1e-5);
+  EXPECT_NEAR(locus.direction.y, -0.9999982421774111, 1e-5);
+  EXPECT_NEAR(locus.direction.z, -4.047002203562211e-06, 1e-5);
+}
+
+TEST_F(SarSensorModel, imageToRemoteImagingLocus) {
+  csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(
+      csm::ImageCoord(500.0, 500.0));
+      EXPECT_NEAR(locus.point.x, 1737388.3904556315, 1e-2);
+      EXPECT_NEAR(locus.point.y, 0.0, 1e-2);
+      EXPECT_NEAR(locus.point.z, -3749.9807653094517, 1e-2);
+      EXPECT_NEAR(locus.direction.x, 0.0, 1e-8);
+      EXPECT_NEAR(locus.direction.y, -1.0, 1e-8);
+      EXPECT_NEAR(locus.direction.z, 0.0, 1e-8);
 }
