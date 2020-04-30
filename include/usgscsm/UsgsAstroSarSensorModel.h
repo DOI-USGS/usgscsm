@@ -215,14 +215,6 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
 
     std::vector<double> getRangeCoefficients(double time) const;
 
-    void computeElevation (
-       const double& x,
-       const double& y,
-       const double& z,
-       double&       height,
-       double*       achieved_precision = nullptr,
-       const double& desired_precision = 0.001) const;
-
     ////////////////////////////
     // Model static variables //
     ////////////////////////////

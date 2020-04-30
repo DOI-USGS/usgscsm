@@ -526,7 +526,9 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
       beta *= -1;
     }
     groundVec = alpha * tHat + beta * uHat + spacecraftPosition;
-    computeElevation(groundVec.x, groundVec.y, groundVec.z, pointHeight);
+    pointHeight = computeEllipsoidElevation(
+        groundVec.x, groundVec.y, groundVec.z,
+        m_majorAxis, m_minorAxis);
     pointRadius -= (pointHeight - height);
   } while(fabs(pointHeight - height) > desiredPrecision);
 
@@ -1135,65 +1137,4 @@ csm::EcefVector UsgsAstroSarSensorModel::getSunPosition(const double imageTime) 
       sunPosition.z = m_sunPosition[2];
   }
   return sunPosition;
-}
-
-void UsgsAstroSarSensorModel::computeElevation(
-   const double& x,
-   const double& y,
-   const double& z,
-   double&       height,
-   double*       achieved_precision,
-   const double& desired_precision) const
-{
-   // Compute elevation given xyz
-   // Requires semi-major-axis and eccentricity-square
-   const int MKTR = 10;
-   double ecc_sqr = 1.0 - m_minorAxis * m_minorAxis / m_majorAxis / m_majorAxis;
-   double ep2 = 1.0 - ecc_sqr;
-   double d2 = x * x + y * y;
-   double d = sqrt(d2);
-   double h = 0.0;
-   int ktr = 0;
-   double hPrev, r;
-
-   // Suited for points near equator
-   if (d >= z)
-   {
-      double tt, zz, n;
-      double tanPhi = z / d;
-      do
-      {
-         hPrev = h;
-         tt = tanPhi * tanPhi;
-         r = m_majorAxis / sqrt(1.0 + ep2 * tt);
-         zz = z + r * ecc_sqr * tanPhi;
-         n = r * sqrt(1.0 + tt);
-         h = sqrt(d2 + zz * zz) - n;
-         tanPhi = zz / d;
-         ktr++;
-      } while (MKTR > ktr && fabs(h - hPrev) > desired_precision);
-   }
-
-   // Suited for points near the poles
-   else
-   {
-      double cc, dd, nn;
-      double cotPhi = d / z;
-      do
-      {
-         hPrev = h;
-         cc = cotPhi * cotPhi;
-         r = m_majorAxis / sqrt(ep2 + cc);
-         dd = d - r * ecc_sqr * cotPhi;
-         nn = r * sqrt(1.0 + cc) * ep2;
-         h = sqrt(dd * dd + z * z) - nn;
-         cotPhi = dd / z;
-         ktr++;
-      } while (MKTR > ktr && fabs(h - hPrev) > desired_precision);
-   }
-
-   height = h;
-   if (achieved_precision) {
-     *achieved_precision = fabs(h - hPrev);
-   }
 }
