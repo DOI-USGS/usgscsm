@@ -81,3 +81,15 @@ TEST_F(SarSensorModel, getRangeCoefficients) {
   EXPECT_NEAR(coeffs[2], 5.377926500384916e-07, 1e-8);
   EXPECT_NEAR(coeffs[3], -1.3072206620088014e-15, 1e-8);
 }
+
+TEST_F(SarSensorModel, computeGroundPartials) {
+  csm::EcefCoord groundPt(1737391.90602155, 3749.98835331, -3749.99708833);
+  std::vector<double> partials = sensorModel->computeGroundPartials(groundPt);
+  ASSERT_EQ(partials.size(), 6);
+  EXPECT_NEAR(partials[0], 0.0, 1e-8);
+  EXPECT_NEAR(partials[1], 0.0, 1e-8);
+  EXPECT_NEAR(partials[2], -1.0 / 7.5, 1e-8);
+  EXPECT_NEAR(partials[3], -1.0 / 7.5, 1e-8);
+  EXPECT_NEAR(partials[4], -1.0 / 7.5, 1e-8);
+  EXPECT_NEAR(partials[5], 0.0, 1e-8);
+}

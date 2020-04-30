@@ -733,7 +733,26 @@ vector<csm::RasterGM::SensorPartials> UsgsAstroSarSensorModel::computeAllSensorP
 
 vector<double> UsgsAstroSarSensorModel::computeGroundPartials(const csm::EcefCoord& groundPt) const
 {
-  return vector<double>(6, 0.0);
+  double GND_DELTA = m_scaledPixelWidth;
+  // Partial of line, sample wrt X, Y, Z
+  double x = groundPt.x;
+  double y = groundPt.y;
+  double z = groundPt.z;
+
+  csm::ImageCoord ipB = groundToImage(groundPt);
+  csm::ImageCoord ipX = groundToImage(csm::EcefCoord(x + GND_DELTA, y, z));
+  csm::ImageCoord ipY = groundToImage(csm::EcefCoord(x, y + GND_DELTA, z));
+  csm::ImageCoord ipZ = groundToImage(csm::EcefCoord(x, y, z + GND_DELTA));
+
+  std::vector<double> partials(6, 0.0);
+  partials[0] = (ipX.line - ipB.line) / GND_DELTA;
+  partials[3] = (ipX.samp - ipB.samp) / GND_DELTA;
+  partials[1] = (ipY.line - ipB.line) / GND_DELTA;
+  partials[4] = (ipY.samp - ipB.samp) / GND_DELTA;
+  partials[2] = (ipZ.line - ipB.line) / GND_DELTA;
+  partials[5] = (ipZ.samp - ipB.samp) / GND_DELTA;
+
+  return partials;
 }
 
 const csm::CorrelationModel& UsgsAstroSarSensorModel::getCorrelationModel() const
