@@ -355,6 +355,7 @@ csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
   }
 }
 
+<<<<<<< HEAD
 
 csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
     const csm::EcefCoord& groundPt,
@@ -548,15 +549,29 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   double nadirComp = dot(spacecraftPosition, tHat);
   double inTrackComp = dot(spacecraftPosition, vHat);
 
-  // Compute the substituted values
-  // TODO properly handle ellipsoid radii
-  double radiusSqr = m_majorAxis * m_majorAxis;
-  double alpha = (radiusSqr - slantRange * slantRange - positionMag * positionMag) / (2 * nadirComp);
-  // TODO use right/left look to determine +/-
-  double beta = -sqrt(slantRange * slantRange - alpha * alpha);
-  csm::EcefVector groundVec = alpha * tHat + beta * uHat + spacecraftPosition;
+  // Iterate to find proper radius value
+  double pointRadius = m_majorAxis + height;
+  double radiusSqr;
+  double pointHeight;
+  csm::EcefVector groundVec;
+  do {
+    radiusSqr = pointRadius * pointRadius;
+    double alpha = (radiusSqr - slantRange * slantRange - positionMag * positionMag) / (2 * nadirComp);
+    double beta = sqrt(slantRange * slantRange - alpha * alpha);
+    if (m_lookDirection == LEFT) {
+      beta *= -1;
+    }
+    groundVec = alpha * tHat + beta * uHat + spacecraftPosition;
+    pointHeight = computeEllipsoidElevation(
+        groundVec.x, groundVec.y, groundVec.z,
+        m_majorAxis, m_minorAxis);
+    pointRadius -= (pointHeight - height);
+  } while(fabs(pointHeight - height) > desiredPrecision);
 
-  return csm::EcefCoord(groundVec.x, groundVec.y, groundVec.z);
+
+  csm::EcefCoord groundPt(groundVec.x, groundVec.y, groundVec.z);
+
+  return groundPt;
 }
 
 csm::EcefCoordCovar UsgsAstroSarSensorModel::imageToGround(
@@ -647,8 +662,33 @@ csm::EcefLocus UsgsAstroSarSensorModel::imageToProximateImagingLocus(
     double* achievedPrecision,
     csm::WarningList* warnings) const
 {
-  return csm::EcefLocus(0.0, 0.0, 0.0,
-                        0.0, 0.0, 0.0);
+  // Compute the slant range
+  double time = m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
+  double groundRange = imagePt.samp * m_scaledPixelWidth;
+  std::vector<double> coeffs = getRangeCoefficients(time);
+  double slantRange = groundRangeToSlantRange(groundRange, coeffs);
+
+  // Project the sensor to ground point vector onto the 0 doppler plane
+  // then compute the closest point at the slant range to that
+  csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
+  csm::EcefVector spacecraftVelocity = getSensorVelocity(time);
+  csm::EcefVector groundVec(groundPt.x, groundPt.y, groundPt.z);
+  csm::EcefVector lookVec = normalized(rejection(groundVec - spacecraftPosition, spacecraftVelocity));
+  csm::EcefVector closestVec = spacecraftPosition + slantRange * lookVec;
+
+
+  // Compute the tangent at the closest point
+  csm::EcefVector tangent;
+  if (m_lookDirection == LEFT) {
+    tangent = cross(spacecraftVelocity, lookVec);
+  }
+  else {
+    tangent = cross(lookVec, spacecraftVelocity);
+  }
+  tangent = normalized(tangent);
+
+  return csm::EcefLocus(closestVec.x, closestVec.y, closestVec.z,
+                        tangent.x,    tangent.y,    tangent.z);
 }
 
 csm::EcefLocus UsgsAstroSarSensorModel::imageToRemoteImagingLocus(
@@ -657,8 +697,32 @@ csm::EcefLocus UsgsAstroSarSensorModel::imageToRemoteImagingLocus(
     double* achievedPrecision,
     csm::WarningList* warnings) const
 {
-  return csm::EcefLocus(0.0, 0.0, 0.0,
-                        0.0, 0.0, 0.0);
+  // Compute the slant range
+  double time = m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
+  double groundRange = imagePt.samp * m_scaledPixelWidth;
+  std::vector<double> coeffs = getRangeCoefficients(time);
+  double slantRange = groundRangeToSlantRange(groundRange, coeffs);
+
+  // Project the negative sensor position vector onto the 0 doppler plane
+  // then compute the closest point at the slant range to that
+  csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
+  csm::EcefVector spacecraftVelocity = getSensorVelocity(time);
+  csm::EcefVector lookVec = normalized(rejection(-1 * spacecraftPosition, spacecraftVelocity));
+  csm::EcefVector closestVec = spacecraftPosition + slantRange * lookVec;
+
+
+  // Compute the tangent at the closest point
+  csm::EcefVector tangent;
+  if (m_lookDirection == LEFT) {
+    tangent = cross(spacecraftVelocity, lookVec);
+  }
+  else {
+    tangent = cross(lookVec, spacecraftVelocity);
+  }
+  tangent = normalized(tangent);
+
+  return csm::EcefLocus(closestVec.x, closestVec.y, closestVec.z,
+                        tangent.x,    tangent.y,    tangent.z);
 }
 
 csm::ImageCoord UsgsAstroSarSensorModel::getImageStart() const
@@ -696,19 +760,25 @@ double UsgsAstroSarSensorModel::getImageTime(const csm::ImageCoord& imagePt) con
   return m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
 }
 
+
 csm::EcefCoord UsgsAstroSarSensorModel::getSensorPosition(double time) const
 {
   csm::EcefVector sensorVector = getSpacecraftPosition(time);
   return csm::EcefCoord(sensorVector.x, sensorVector.y, sensorVector.z);
 }
 
-// HERE
-csm::EcefCoord UsgsAstroSarSensorModel::getAdjustedSensorPosition(double time) const
+csm::EcefCoord UsgsAstroSarSensorModel::getSensorPosition(const csm::ImageCoord& imagePt) const
 {
+  double time = getImageTime(imagePt);
+  return getSensorPosition(time);
+}
+
+csm::EcefCoord UsgsAstroSarSensorModel::getAdjustedSpacecraftPosition(double time) const
+{
+  // TOOD: fill in
   csm::EcefVector sensorVector = getSpacecraftPosition(time);
   return csm::EcefCoord(sensorVector.x, sensorVector.y, sensorVector.z);
 }
-
 
 csm::EcefVector UsgsAstroSarSensorModel::getSensorVelocity(const csm::ImageCoord& imagePt) const
 {
@@ -718,6 +788,28 @@ csm::EcefVector UsgsAstroSarSensorModel::getSensorVelocity(const csm::ImageCoord
 
 csm::EcefVector UsgsAstroSarSensorModel::getSensorVelocity(double time) const
 {
+  int numVelocities = m_velocities.size();
+  csm::EcefVector spacecraftVelocity = csm::EcefVector();
+
+  // If there are multiple positions, use Lagrange interpolation
+  if ((numVelocities/3) > 1) {
+    double velocity[3];
+    lagrangeInterp(numVelocities/3, &m_velocities[0], m_t0Ephem, m_dtEphem,
+                   time, 3, 8, velocity);
+    spacecraftVelocity.x = velocity[0];
+    spacecraftVelocity.y = velocity[1];
+    spacecraftVelocity.z = velocity[2];
+  }
+  else {
+    spacecraftVelocity.x = m_velocities[0];
+    spacecraftVelocity.y = m_velocities[1];
+    spacecraftVelocity.z = m_velocities[2];
+  }
+  return spacecraftVelocity;
+}
+
+csm::EcefVector UsgsAstroSarSensorModel::getAdjustedSensorVelocity(double time) const {
+  // TODO: fill in updated
   int numVelocities = m_velocities.size();
   csm::EcefVector spacecraftVelocity = csm::EcefVector();
 

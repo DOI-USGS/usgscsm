@@ -404,6 +404,68 @@ double secantRoot(double lowerBound, double upperBound, std::function<double(dou
   }
 }
 
+double computeEllipsoidElevation(
+  double x,
+  double y,
+  double z,
+  double semiMajor,
+  double semiMinor,
+  double desired_precision,
+  double* achieved_precision)
+{
+  // Compute elevation given xyz
+  // Requires semi-major-axis and eccentricity-square
+  const int MKTR = 10;
+  double ecc_sqr = 1.0 - semiMinor * semiMinor / semiMajor / semiMajor;
+  double ep2 = 1.0 - ecc_sqr;
+  double d2 = x * x + y * y;
+  double d = sqrt(d2);
+  double h = 0.0;
+  int ktr = 0;
+  double hPrev, r;
+
+  // Suited for points near equator
+  if (d >= z)
+  {
+     double tt, zz, n;
+     double tanPhi = z / d;
+     do
+     {
+        hPrev = h;
+        tt = tanPhi * tanPhi;
+        r = semiMajor / sqrt(1.0 + ep2 * tt);
+        zz = z + r * ecc_sqr * tanPhi;
+        n = r * sqrt(1.0 + tt);
+        h = sqrt(d2 + zz * zz) - n;
+        tanPhi = zz / d;
+        ktr++;
+     } while (MKTR > ktr && fabs(h - hPrev) > desired_precision);
+  }
+
+  // Suited for points near the poles
+  else
+  {
+     double cc, dd, nn;
+     double cotPhi = d / z;
+     do
+     {
+        hPrev = h;
+        cc = cotPhi * cotPhi;
+        r = semiMajor / sqrt(ep2 + cc);
+        dd = d - r * ecc_sqr * cotPhi;
+        nn = r * sqrt(1.0 + cc) * ep2;
+        h = sqrt(dd * dd + z * z) - nn;
+        cotPhi = dd / z;
+        ktr++;
+     } while (MKTR > ktr && fabs(h - hPrev) > desired_precision);
+  }
+
+  if (achieved_precision) {
+    *achieved_precision = fabs(h - hPrev);
+  }
+
+  return h;
+}
 
 csm::EcefVector operator*(double scalar, const csm::EcefVector &vec)
 {
