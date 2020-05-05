@@ -35,15 +35,9 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
 
     virtual csm::ImageCoord groundToImage(
         const csm::EcefCoord& groundPt,
-        const std::vector<double>& adjustments,
+        const std::vector<double> adjustments,
         double desired_precision = 0.001,
         double* achieved_precision = NULL,
-        csm::WarningList* warnings = NULL)
-
-    virtual csm::ImageCoord groundToImage(
-        const csm::EcefCoord& groundPt,
-        double desiredPrecision = 0.001,
-        double* achievedPrecision = NULL,
         csm::WarningList* warnings = NULL) const;
 
     virtual csm::ImageCoordCovar groundToImage(
@@ -92,13 +86,21 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
 
     virtual double getImageTime(const csm::ImageCoord& imagePt) const;
 
+    virtual csm::EcefVector getSpacecraftPosition(double time) const;
+
     virtual csm::EcefCoord getSensorPosition(const csm::ImageCoord& imagePt) const;
 
     virtual csm::EcefCoord getSensorPosition(double time) const;
 
+    virtual csm::EcefCoord getAdjustedSensorPosition(double time, 
+                                                     std::vector<double> adjustments) const;
+
     virtual csm::EcefVector getSensorVelocity(const csm::ImageCoord& imagePt) const;
 
     virtual csm::EcefVector getSensorVelocity(double time) const;
+
+    virtual csm::EcefVector getAdjustedSensorVelocity(double time, 
+                                                     std::vector<double> adjustments) const;
 
     virtual csm::RasterGM::SensorPartials computeSensorPartials(
         int index,
@@ -221,8 +223,6 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     double slantRangeToGroundRange(const csm::EcefCoord& groundPt, double time, double slantRange, double tolerance) const;
 
     double groundRangeToSlantRange(double groundRange, const std::vector<double> &coeffs) const;
-
-    csm::EcefVector getSpacecraftPosition(double time) const;
 
     csm::EcefVector getSunPosition(const double imageTime) const;
     std::vector<double> getRangeCoefficients(double time) const;
