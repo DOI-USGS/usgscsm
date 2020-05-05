@@ -340,6 +340,10 @@ double brentRoot(
         counterPoint = nextPoint;
         counterFunc = nextFunc;
       }
+      std::cerr << "Brent root iteration " << iteration << std::endl;
+      std::cerr << "Current point: " << currentPoint << std::endl;
+      std::cerr << "Counters point: " << counterPoint << std::endl;
+      std::cerr << "Next point: " << nextPoint << std::endl;
     } while (++iteration < 30 && fabs(counterPoint - currentPoint) > epsilon);
 
     return nextPoint;

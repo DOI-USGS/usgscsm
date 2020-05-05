@@ -335,14 +335,18 @@ csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
   // Find time of closest approach to groundPt and the corresponding slant range by finding
   // the root of the doppler shift frequency
   try {
+    cerr << setprecision(15) << "Computing 0 doppler shift time" << endl;
     double timeTolerance = m_exposureDuration * desiredPrecision / 2.0;
     double time = dopplerShift(groundPt, timeTolerance);
     double slantRangeValue = slantRange(groundPt, time);
+    cerr << "Slant range: " << slantRangeValue << endl;
 
     // Find the ground range, based on the ground-range-to-slant-range polynomial defined by the
     // range coefficient set, with a time closest to the calculated time of closest approach
+    cerr << "Computing ground range" << endl;
     double groundTolerance = m_scaledPixelWidth * desiredPrecision / 2.0;
     double groundRange = slantRangeToGroundRange(groundPt, time, slantRangeValue, groundTolerance);
+    cerr << "Ground range: " << groundRange << endl;
 
     double line = (time - m_startingEphemerisTime) / m_exposureDuration + 0.5;
     double sample = groundRange / m_scaledPixelWidth;
@@ -374,7 +378,8 @@ double UsgsAstroSarSensorModel::dopplerShift(
    };
 
   // Do root-finding for "dopplerShift"
-  return brentRoot(m_startingEphemerisTime, m_endingEphemerisTime, dopplerShiftFunction, tolerance);
+  double timePadding = m_exposureDuration * m_nLines * 0.25;
+  return brentRoot(m_startingEphemerisTime - timePadding, m_endingEphemerisTime + timePadding, dopplerShiftFunction, tolerance);
 }
 
 
@@ -412,7 +417,7 @@ double UsgsAstroSarSensorModel::slantRangeToGroundRange(
   double maxGroundRangeGuess = (1.25 * m_nSamples - 1.0) * m_scaledPixelWidth;
 
   // Tolerance to 1/20th of a pixel for now.
-  return brentRoot(minGroundRangeGuess, maxGroundRangeGuess, slantRangeToGroundRangeFunction, tolerance);
+  return secantRoot(minGroundRangeGuess, maxGroundRangeGuess, slantRangeToGroundRangeFunction, tolerance);
 }
 
 double UsgsAstroSarSensorModel::groundRangeToSlantRange(double groundRange, const std::vector<double> &coeffs) const
@@ -493,8 +498,10 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
 {
   double time = m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
   double groundRange = imagePt.samp * m_scaledPixelWidth;
+  cerr << setprecision(16) << "Ground range: " << groundRange << endl;
   std::vector<double> coeffs = getRangeCoefficients(time);
   double slantRange = groundRangeToSlantRange(groundRange, coeffs);
+  cerr << "Slant range: " << slantRange << endl;
 
   // Compute the in-track, cross-track, nadir, coordinate system to solve in
   csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
@@ -506,11 +513,16 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   csm::EcefVector tHat = normalized(rejection(spacecraftPosition, vHat));
   // Cross-track unit vector
   csm::EcefVector uHat = cross(vHat, tHat);
+  cerr << "V hat: " << vHat.x << ", " << vHat.y << ", " << vHat.z << endl;
+  cerr << "T hat: " << tHat.x << ", " << tHat.y << ", " << tHat.z << endl;
+  cerr << "U hat: " << uHat.x << ", " << uHat.y << ", " << uHat.z << endl;
 
   // Compute the spacecraft position in the new coordinate system
   //   The cross-track unit vector is orthogonal to the position so we ignore it
   double nadirComp = dot(spacecraftPosition, tHat);
   double inTrackComp = dot(spacecraftPosition, vHat);
+  cerr << "ct: " << nadirComp << endl;
+  cerr << "cv: " << inTrackComp << endl;
 
   // Compute the substituted values
   // Iterate to find proper radius value
@@ -525,6 +537,8 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
     if (m_lookDirection == LEFT) {
       beta *= -1;
     }
+    cerr << "alpha: " << alpha << endl;
+    cerr << "beta: " << beta << endl;
     groundVec = alpha * tHat + beta * uHat + spacecraftPosition;
     pointHeight = computeEllipsoidElevation(
         groundVec.x, groundVec.y, groundVec.z,
@@ -803,9 +817,13 @@ vector<double> UsgsAstroSarSensorModel::computeGroundPartials(const csm::EcefCoo
   double y = groundPt.y;
   double z = groundPt.z;
 
+  cerr << "Image to ground on base point" << endl;
   csm::ImageCoord ipB = groundToImage(groundPt);
+  cerr << "Image to ground on x offset point" << endl;
   csm::ImageCoord ipX = groundToImage(csm::EcefCoord(x + GND_DELTA, y, z));
+  cerr << "Image to ground on y offset point" << endl;
   csm::ImageCoord ipY = groundToImage(csm::EcefCoord(x, y + GND_DELTA, z));
+  cerr << "Image to ground on z offset point" << endl;
   csm::ImageCoord ipZ = groundToImage(csm::EcefCoord(x, y, z + GND_DELTA));
 
   std::vector<double> partials(6, 0.0);
