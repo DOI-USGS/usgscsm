@@ -9,17 +9,36 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
 {
 
   public:
+    enum LookDirection {
+      LEFT  = 0,
+      RIGHT = 1
+    };
 
     UsgsAstroSarSensorModel();
-    ~UsgsAstroSarSensorModel();
+    ~UsgsAstroSarSensorModel() {}
+
+    void reset();
 
     virtual void replaceModelState(const std::string& argState);
 
     virtual std::string getModelState() const;
 
-    std::string constructStateFromIsd(const std::string imageSupportData, csm::WarningList *list) const;
+    static std::string constructStateFromIsd(const std::string imageSupportData, csm::WarningList *list);
 
     static std::string getModelNameFromModelState(const std::string& model_state);
+
+    virtual csm::ImageCoord groundToImage(
+        const csm::EcefCoord& groundPt,
+        double desiredPrecision = 0.001,
+        double* achievedPrecision = NULL,
+        csm::WarningList* warnings = NULL) const;
+
+    virtual csm::ImageCoord groundToImage(
+        const csm::EcefCoord& groundPt,
+        const std::vector<double>& adjustments,
+        double desired_precision = 0.001,
+        double* achieved_precision = NULL,
+        csm::WarningList* warnings = NULL)
 
     virtual csm::ImageCoord groundToImage(
         const csm::EcefCoord& groundPt,
@@ -189,12 +208,30 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
 
     virtual void setEllipsoid(const csm::Ellipsoid &ellipsoid);
 
+    ////////////////////
+    // Helper methods //
+    ////////////////////
+    void determineSensorCovarianceInImageSpace(
+       csm::EcefCoord &gp,
+       double          sensor_cov[4]) const;
+    double dopplerShift(csm::EcefCoord groundPt, double tolerance) const;
+
+    double slantRange(csm::EcefCoord surfPt, double time) const;
+
+    double slantRangeToGroundRange(const csm::EcefCoord& groundPt, double time, double slantRange, double tolerance) const;
+
+    double groundRangeToSlantRange(double groundRange, const std::vector<double> &coeffs) const;
+
+    csm::EcefVector getSpacecraftPosition(double time) const;
+    csm::EcefVector getSunPosition(const double imageTime) const;
+    std::vector<double> getRangeCoefficients(double time) const;
+    double getValue(int index, const std::vector<double> &adjustments) const;
+
     ////////////////////////////
     // Model static variables //
     ////////////////////////////
 
     static const std::string      _SENSOR_MODEL_NAME;
-    static const std::string      _STATE_KEYWORD[];
     static const int              NUM_PARAM_TYPES;
     static const std::string      PARAM_STRING_ALL[];
     static const csm::param::Type PARAM_CHAR_ALL[];
@@ -207,6 +244,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     // Model state variables //
     ///////////////////////////
     std::string  m_imageIdentifier;
+    std::string  m_platformName;
     std::string  m_sensorName;
     int          m_nLines;
     int          m_nSamples;
@@ -214,9 +252,9 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     double       m_scaledPixelWidth;
     double       m_startingEphemerisTime;
     double       m_centerEphemerisTime;
+    double       m_endingEphemerisTime;
     double       m_majorAxis;
     double       m_minorAxis;
-    std::string  m_referenceDateAndTime;
     std::string  m_platformIdentifier;
     std::string  m_sensorIdentifier;
     std::string  m_trajectoryIdentifier;
@@ -227,6 +265,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     double       m_dtEphem;
     double       m_t0Ephem;
     std::vector<double> m_scaleConversionCoefficients;
+    std::vector<double> m_scaleConversionTimes;
     std::vector<double> m_positions;
     std::vector<double> m_velocities;
     std::vector<double> m_currentParameterValue;
@@ -235,6 +274,8 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     std::vector<double> m_covariance;
     std::vector<double> m_sunPosition;
     std::vector<double> m_sunVelocity;
+    double m_wavelength;
+    LookDirection m_lookDirection;
 };
 
 #endif

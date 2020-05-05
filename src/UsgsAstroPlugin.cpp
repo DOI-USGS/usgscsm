@@ -2,6 +2,7 @@
 
 #include "UsgsAstroFrameSensorModel.h"
 #include "UsgsAstroLsSensorModel.h"
+#include "UsgsAstroSarSensorModel.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -29,33 +30,7 @@ using json = nlohmann::json;
 const std::string UsgsAstroPlugin::_PLUGIN_NAME = "UsgsAstroPluginCSM";
 const std::string UsgsAstroPlugin::_MANUFACTURER_NAME = "UsgsAstrogeology";
 const std::string UsgsAstroPlugin::_RELEASE_DATE = "20190222";
-const int         UsgsAstroPlugin::_N_SENSOR_MODELS = 2;
-
-const std::string UsgsAstroPlugin::_ISD_KEYWORD[] =
-{
-   "name_model",
-   "center_ephemeris_time",
-   "dt_ephemeris",
-   "focal2pixel_lines",
-   "focal2pixel_samples",
-   "focal_length_model",
-   "image_lines",
-   "image_samples",
-   "interpolation_method",
-   "number_of_ephemerides",
-   "optical_distortion",
-   "radii",
-   "reference_height",
-   "sensor_location_unit",
-   "sensor_location",
-   "sensor_orientation",
-   "sensor_velocity",
-   "detector_center",
-   "starting_detector_line",
-   "starting_detector_sample",
-   "starting_ephemeris_time",
-   "sun_position"
-};
+const int         UsgsAstroPlugin::_N_SENSOR_MODELS = 3;
 
 // Static Instance of itself
 const UsgsAstroPlugin UsgsAstroPlugin::m_registeredPlugin;
@@ -96,7 +71,8 @@ size_t UsgsAstroPlugin::getNumModels() const {
 std::string UsgsAstroPlugin::getModelName(size_t modelIndex) const {
   std::vector<std::string> supportedModelNames = {
     UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME,
-    UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME
+    UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME,
+    UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME
   };
   return supportedModelNames[modelIndex];
 }
@@ -321,6 +297,23 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(const csm::Isd &imageSupportD
       }
       return model;
     }
+    else if (modelName == UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME) {
+      UsgsAstroSarSensorModel *model =  new UsgsAstroSarSensorModel();
+      try {
+        model->replaceModelState(model->constructStateFromIsd(stringIsd, warnings));
+      }
+      catch (std::exception& e) {
+        csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE;
+        std::string aMessage = "Could not construct model [";
+        aMessage += modelName;
+        aMessage += "] with error [";
+        aMessage += e.what();
+        aMessage += "]";
+        std::string aFunction = "UsgsAstroPlugin::constructModelFromISD()";
+        throw csm::Error(aErrorType, aMessage, aFunction);
+      }
+      return model;
+    }
     else {
       csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
       std::string aMessage = "Model [" + modelName + "] not supported: ";
@@ -343,6 +336,11 @@ csm::Model *UsgsAstroPlugin::constructModelFromState(const std::string& modelSta
     }
     else if (modelName == UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME) {
         UsgsAstroLsSensorModel* model = new UsgsAstroLsSensorModel();
+        model->replaceModelState(modelState);
+        return model;
+    }
+    else if (modelName == UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME) {
+        UsgsAstroSarSensorModel* model = new UsgsAstroSarSensorModel();
         model->replaceModelState(modelState);
         return model;
     }

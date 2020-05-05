@@ -311,3 +311,45 @@ TEST(ISDParsing, SensorOrientations) {
   std::vector<double> rotations = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
   EXPECT_EQ(rotations, getSensorOrientations(isd));
 }
+
+TEST(ISDParsing, getExposureDuration) {
+  json isd = {{"line_exposure_duration", 0.45}};
+  EXPECT_EQ(getExposureDuration(isd), 0.45);
+}
+
+TEST(ISDParsing, getScaledPixelWidth) {
+  json isd = {{"scaled_pixel_width", 7.5}};
+  EXPECT_EQ(getScaledPixelWidth(isd), 7.5);
+}
+
+TEST(ISDParsing, getScaleConversionCoefficients) {
+  json isd = {{"range_conversion_coefficients",
+               {{300, 1, 0.1, 0.01},
+                {400, 2, 0.2, 0.02},
+                {500, 3, 0.3, 0.03}}}};
+  std::vector<double> coefficients = getScaleConversionCoefficients(isd);
+  ASSERT_EQ(coefficients.size(), 12);
+  EXPECT_EQ(coefficients[0], 300);
+  EXPECT_EQ(coefficients[1], 1);
+  EXPECT_EQ(coefficients[2], 0.1);
+  EXPECT_EQ(coefficients[3], 0.01);
+  EXPECT_EQ(coefficients[4], 400);
+  EXPECT_EQ(coefficients[5], 2);
+  EXPECT_EQ(coefficients[6], 0.2);
+  EXPECT_EQ(coefficients[7], 0.02);
+  EXPECT_EQ(coefficients[8], 500);
+  EXPECT_EQ(coefficients[9], 3);
+  EXPECT_EQ(coefficients[10], 0.3);
+  EXPECT_EQ(coefficients[11], 0.03);
+}
+
+TEST(ISDParsing, getScaleConversionTimes) {
+  json isd = {{"range_conversion_times",
+               {100, 200, 300, -400}}};
+  std::vector<double> times = getScaleConversionTimes(isd);
+  ASSERT_EQ(times.size(), 4);
+  EXPECT_EQ(times[0], 100);
+  EXPECT_EQ(times[1], 200);
+  EXPECT_EQ(times[2], 300);
+  EXPECT_EQ(times[3], -400);
+}
