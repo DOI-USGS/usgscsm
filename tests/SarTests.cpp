@@ -46,18 +46,16 @@ TEST_F(SarSensorModel, State) {
 TEST_F(SarSensorModel, Center) {
   csm::ImageCoord imagePt(500.0, 500.0);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-  // TODO these tolerances are bad
-  EXPECT_NEAR(groundPt.x, 1737387.8590770673, 1e-2);
-  EXPECT_NEAR(groundPt.y, -5303.280537826621, 1e-2);
-  EXPECT_NEAR(groundPt.z, -3749.9796183814506, 1e-2);
+  EXPECT_NEAR(groundPt.x, 1737387.8590770673, 1e-3);
+  EXPECT_NEAR(groundPt.y, -5303.280537826621, 1e-3);
+  EXPECT_NEAR(groundPt.z, -3749.9796183814506, 1e-3);
 }
 
 TEST_F(SarSensorModel, GroundToImage) {
   csm::EcefCoord groundPt(1737387.8590770673, -5303.280537826621, -3749.9796183814506);
   csm::ImageCoord imagePt = sensorModel->groundToImage(groundPt, 0.001);
-  EXPECT_NEAR(imagePt.line, 500.0, 0.001);
-  // Due to position interpolation, the sample is slightly less accurate than the line
-  EXPECT_NEAR(imagePt.samp, 500.0, 0.002);
+  EXPECT_NEAR(imagePt.line, 500.0, 1e-3);
+  EXPECT_NEAR(imagePt.samp, 500.0, 1e-3);
 }
 
 TEST_F(SarSensorModel, spacecraftPosition) {
@@ -109,9 +107,9 @@ TEST_F(SarSensorModel, imageToProximateImagingLocus) {
 TEST_F(SarSensorModel, imageToRemoteImagingLocus) {
   csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(
       csm::ImageCoord(500.0, 500.0));
-      EXPECT_NEAR(locus.point.x, 1737380.8279381434, 1e-2);
-      EXPECT_NEAR(locus.point.y, 0.0, 1e-2);
-      EXPECT_NEAR(locus.point.z, -3749.964442364465, 1e-2);
+      EXPECT_NEAR(locus.point.x, 1737380.8279381434, 1e-3);
+      EXPECT_NEAR(locus.point.y, 0.0, 1e-3);
+      EXPECT_NEAR(locus.point.z, -3749.964442364465, 1e-3);
       EXPECT_NEAR(locus.direction.x, 0.0, 1e-8);
       EXPECT_NEAR(locus.direction.y, -1.0, 1e-8);
       EXPECT_NEAR(locus.direction.z, 0.0, 1e-8);
