@@ -33,6 +33,7 @@ endif(BUILD_CSM)
 #         PATH_SUFFIXES "ale"
 #         PATHS $ENV{CONDA_PREFIX}/include/)
 # find_library(ALE_LIBRARY ale PATHS $ENV{CONDA_PREFIX}/lib)
+find_package(nlohmann_json)
 find_package(ale)
 
 message("--Found ALE Library: ${ALE_LIBRARY}")
