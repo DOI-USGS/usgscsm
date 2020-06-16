@@ -15,7 +15,7 @@ install:
   - conda update -q conda
   - conda install conda-build anaconda-client
   - conda config --add channels usgs-astrogeology
-  - conda install -c usgs-astrogeology ale
+  - conda install -c conda-forge ale
 
 before_build:
   - mkdir build
