@@ -29,10 +29,11 @@ else()
   message("--Found CSM Include Directory: ${CSM_INCLUDE_DIR}")
 endif(BUILD_CSM)
 
-find_path(ALE_INCLUDE_DIR NAMES "Load.h"
-        PATH_SUFFIXES "ale"
-        PATHS $ENV{CONDA_PREFIX}/include/)
-find_library(ALE_LIBRARY ale PATHS $ENV{CONDA_PREFIX}/lib)
+# find_path(ALE_INCLUDE_DIR NAMES "Load.h"
+#         PATH_SUFFIXES "ale"
+#         PATHS $ENV{CONDA_PREFIX}/include/)
+# find_library(ALE_LIBRARY ale PATHS $ENV{CONDA_PREFIX}/lib)
+find_package(ale)
 
 message("--Found ALE Library: ${ALE_LIBRARY}")
 message("--Found ALE Include Directory: ${ALE_INCLUDE_DIR}")
@@ -57,12 +58,12 @@ target_include_directories(usgscsm
                            PUBLIC
                            ${USGSCSM_INCLUDE_DIRS}
                            ${CSM_INCLUDE_DIR}
-                           ${ALE_INCLUDE_DIR}
+#                            ${ALE_INCLUDE_DIR}
 )
 
 target_link_libraries(usgscsm
                       ${CSM_LIBRARY}
-                      ${ALE_LIBRARY})
+                      ale::ale)
 
 if(WIN32)
   install(TARGETS usgscsm RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
