@@ -21,21 +21,13 @@ else()
   message("--Found CSM Include Directory: ${CSM_INCLUDE_DIR}")
 endif(BUILD_CSM)
 
-# Optional build or link against ALE
-option (BUILD_ALE "Build the CSM library" ON)
-if(BUILD_ALE)
-  add_subdirectory(ale)
-  set(ALE_INCLUDE_DIR /ale/include)
-  set(ALE_LIBRARY ale)
-else()
-  find_path(ALE_INCLUDE_DIR NAMES "ale.h"
-			    PATH_SUFFIXES "ale"
-			    PATHS $ENV{CONDA_PREFIX}/include/)
-  find_library(ALE_LIBRARY ale PATHS $ENV{CONDA_PREFIX}/lib)
+find_path(ALE_INCLUDE_DIR NAMES "load.h"
+        PATH_SUFFIXES "ale"
+        PATHS $ENV{CONDA_PREFIX}/include/)
+find_library(ALE_LIBRARY ale PATHS $ENV{CONDA_PREFIX}/lib)
 
-  message("--Found ALE Library: ${ALE_LIBRARY}")
-  message("--Found ALE Include Directory: ${ALE_INCLUDE_DIR}")
-endif(BUILD_ALE)
+message("--Found ALE Library: ${ALE_LIBRARY}")
+message("--Found ALE Include Directory: ${ALE_INCLUDE_DIR}")
 
 add_library(usgscsm SHARED
             src/UsgsAstroPlugin.cpp

@@ -2720,13 +2720,13 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   ale::States sunState = stateIsd.sun_pos;
   std::vector<ale::State> sunStates = sunState.getStates();
   std::vector<double> ephemTime = sunState.getTimes();
-  ale::Orientations body_rotation = stateIsd.body_rotation;
+  ale::Orientations j2000_to_target = stateIsd.body_rotation;
   ale::State rotatedSunState;
   std::vector<double> sunPositions = {};
   std::vector<double> sunVelocities = {};
 
   for (int i = 0; i < ephemTime.size(); i++) {
-    rotatedSunState = body_rotation.rotateStateAt(ephemTime[i], sunStates[i]);
+    rotatedSunState = j2000_to_target.rotateStateAt(ephemTime[i], sunStates[i]);
     sunPositions.push_back(rotatedSunState.position.x);
     sunPositions.push_back(rotatedSunState.position.y);
     sunPositions.push_back(rotatedSunState.position.z);
@@ -2757,9 +2757,10 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
                         state["m_centerEphemerisTime"].dump(),
                         state["m_startingEphemerisTime"].dump())
 
-  state["m_intTimeLines"] = getIntegrationStartLines(stateIsd, parsingWarnings);
-  state["m_intTimeStartTimes"] = getIntegrationStartTimes(stateIsd, parsingWarnings);
-  state["m_intTimes"] = getIntegrationTimes(stateIsd, parsingWarnings);
+  std::vector<std::vector<double>> lineScanRate = stateIsd.line_scan_rate;
+  state["m_intTimeLines"] = getIntegrationStartLines(lineScanRate, parsingWarnings);
+  state["m_intTimeStartTimes"] = getIntegrationStartTimes(lineScanRate, parsingWarnings);
+  state["m_intTimes"] = getIntegrationTimes(lineScanRate, parsingWarnings);
   MESSAGE_LOG(m_logger, "m_intTimeLines: {} "
                         "m_intTimeStartTimes: {} "
                         "m_intTimes: {} ",
@@ -2815,8 +2816,8 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
     MESSAGE_LOG(m_logger, "t0_ephemeris not in ISD")
   }
 
-  ale::Orientations inst_pointing = stateIsd.inst_pointing;
-  ephemTime = inst_pointing.getTimes();
+  ale::Orientations j2000_to_sensor = stateIsd.inst_pointing;
+  ephemTime = j2000_to_sensor.getTimes();
   try{
     state["m_dtQuat"] =  (ephemTime[ephemTime.size() - 1] - ephemTime[0]) / (ephemTime.size() - 1);
     MESSAGE_LOG(m_logger, "dt_quaternion: {}", state["m_dtQuat"].dump())
@@ -2849,13 +2850,13 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   std::vector<double> velocities = {};
 
   for (int i = 0; i < ephemTime.size(); i++) {
-    rotatedInstState = body_rotation.rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
-    positions.push_back(rotatedInstState.position.x * 1000);
-    positions.push_back(rotatedInstState.position.y * 1000);
-    positions.push_back(rotatedInstState.position.z * 1000);
-    velocities.push_back(rotatedInstState.velocity.x * 1000);
-    velocities.push_back(rotatedInstState.velocity.y * 1000);
-    velocities.push_back(rotatedInstState.velocity.z * 1000);
+    rotatedInstState = j2000_to_target.rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
+    positions.push_back(rotatedInstState.position.x);
+    positions.push_back(rotatedInstState.position.y);
+    positions.push_back(rotatedInstState.position.z);
+    velocities.push_back(rotatedInstState.velocity.x);
+    velocities.push_back(rotatedInstState.velocity.y);
+    velocities.push_back(rotatedInstState.velocity.z);
   }
 
   state["m_positions"] = positions;
@@ -2869,11 +2870,13 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   MESSAGE_LOG(m_logger, "m_velocities: {}",
                         state["m_velocities"].dump())
 
-  inst_pointing *= body_rotation;
+  // j2000_to_target *= j2000_to_sensor;
+  // j2000_to_sensor *= j2000_to_target;
+  // ale::Orientations sensor_to_target = j2000_to_target * j2000_to_sensor.inverse();
   std::vector<double> quaternion;
   std::vector<double> quaternions = {};
 
-  for (ale::Rotation rotation : body_rotation.getRotations()) {
+  for (ale::Rotation rotation : j2000_to_target.getRotations()) {
     quaternion = rotation.toQuaternion();
     quaternions.push_back(quaternion[3]);
     quaternions.push_back(quaternion[0]);

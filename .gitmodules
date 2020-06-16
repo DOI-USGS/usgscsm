@@ -4,6 +4,3 @@
 [submodule "csm"]
 	path = csm
 	url = https://github.com/USGS-Astrogeology/csm
-[submodule "ale"]
-	path = ale
-	url = https://github.com/USGS-Astrogeology/ale.git
