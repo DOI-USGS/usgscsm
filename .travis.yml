@@ -46,7 +46,7 @@ script:
   - ls $CONDA_PREFIX/include/ale
   - mkdir build
   - cd build
-  - cmake -DCOVERAGE=ON ..
+  - cmake -DCOVERAGE=ON -DALE_USE_EXTERNAL_JSON=ON ..
   - cmake --build .
   - ctest -VV
   - cd ..
