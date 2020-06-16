@@ -42,6 +42,7 @@ install:
   - conda install -y -c conda-forge cmake ale
 
 script:
+  - conda activate
   - ls $CONDA_PREFIX/include
   - mkdir build
   - cd build
