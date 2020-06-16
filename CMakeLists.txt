@@ -29,7 +29,7 @@ else()
   message("--Found CSM Include Directory: ${CSM_INCLUDE_DIR}")
 endif(BUILD_CSM)
 
-find_path(ALE_INCLUDE_DIR NAMES "load.h"
+find_path(ALE_INCLUDE_DIR NAMES "Load.h"
         PATH_SUFFIXES "ale"
         PATHS $ENV{CONDA_PREFIX}/include/)
 find_library(ALE_LIBRARY ale PATHS $ENV{CONDA_PREFIX}/lib)
