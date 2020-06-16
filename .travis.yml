@@ -39,12 +39,12 @@ install:
     fi
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
-  - conda install -y -c conda-forge cmake
+  - conda install -y -c conda-forge cmake ale
 
 script:
   - mkdir build
   - cd build
-  - cmake -DCOVERAGE=ON -DALE_BUILD_TESTS=OFF ..
+  - cmake -DCOVERAGE=ON ..
   - cmake --build .
   - ctest -VV
   - cd ..
