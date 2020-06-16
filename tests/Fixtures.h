@@ -4,6 +4,7 @@
 #include "UsgsAstroPlugin.h"
 #include "UsgsAstroFrameSensorModel.h"
 #include "UsgsAstroLsSensorModel.h"
+#include "UsgsAstroSarSensorModel.h"
 
 #include <nlohmann/json.hpp>
 
@@ -305,6 +306,43 @@ class TwoLineScanSensorModels : public ::testing::Test {
       }
 };
 
+//////////////////
+// SAR Fixtures //
+//////////////////
 
+class SarIsdTest : public ::testing::Test {
+   protected:
+      csm::Isd isd;
+
+   virtual void SetUp() {
+      isd.setFilename("data/orbitalSar.img");
+   }
+};
+
+class SarSensorModel : public ::testing::Test {
+   protected:
+      csm::Isd isd;
+      UsgsAstroSarSensorModel *sensorModel;
+
+      void SetUp() override {
+         sensorModel = NULL;
+
+         isd.setFilename("data/orbitalSar.img");
+         UsgsAstroPlugin sarCameraPlugin;
+
+         csm::Model *model = sarCameraPlugin.constructModelFromISD(
+               isd,
+               "USGS_ASTRO_SAR_SENSOR_MODEL");
+         sensorModel = dynamic_cast<UsgsAstroSarSensorModel *>(model);
+         ASSERT_NE(sensorModel, nullptr);
+      }
+
+      void TearDown() override {
+         if (sensorModel) {
+            delete sensorModel;
+            sensorModel = NULL;
+         }
+      }
+};
 
 #endif
