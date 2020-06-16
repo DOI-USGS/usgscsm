@@ -43,7 +43,7 @@ install:
 
 script:
   - conda activate
-  - ls $CONDA_PREFIX/include
+  - ls $CONDA_PREFIX/include/ale
   - mkdir build
   - cd build
   - cmake -DCOVERAGE=ON ..
