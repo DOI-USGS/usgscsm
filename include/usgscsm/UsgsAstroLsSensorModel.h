@@ -32,6 +32,7 @@
 #include <CorrelationModel.h>
 #include "Distortion.h"
 
+#include "ale/Distortion.h"
 #include "ale/States.h"
 #include "ale/Orientations.h"
 #include "ale/Isd.h"

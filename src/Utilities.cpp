@@ -1069,6 +1069,40 @@ DistortionType getDistortionModel(json isd, csm::WarningList *list) {
 
 }
 
+DistortionType getDistortionModel(int aleDistortionModel, csm::WarningList *list) {
+  try {
+    ale::DistortionType aleDistortionType;
+    aleDistortionType = (ale::DistortionType) aleDistortionModel;
+
+    if (aleDistortionType == ale::DistortionType::TRANSVERSE) {
+      return DistortionType::TRANSVERSE;
+    }
+    else if (aleDistortionType == ale::DistortionType::RADIAL) {
+      return DistortionType::RADIAL;
+    }
+    else if (aleDistortionType == ale::DistortionType::KAGUYALISM) {
+      return DistortionType::KAGUYALISM;
+    }
+    else if (aleDistortionType == ale::DistortionType::DAWNFC) {
+      return DistortionType::DAWNFC;
+    }
+    else if (aleDistortionType == ale::DistortionType::LROLROCNAC) {
+      return DistortionType::LROLROCNAC;
+    }
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the distortion model.",
+          "Utilities::getDistortionModel()"));
+    }
+  }
+  return DistortionType::TRANSVERSE;
+
+}
+
 std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
   std::vector<double> coefficients;
 

@@ -728,8 +728,8 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
                 + m_iTransL[1] * distortedFocalX
                 + m_iTransL[2] * distortedFocalY;
    detectorSample = m_iTransS[0]
-                + m_iTransS[1] * distortedFocalX
-                + m_iTransS[2] * distortedFocalY;
+                  + m_iTransS[1] * distortedFocalX
+                  + m_iTransS[2] * distortedFocalY;
    // Convert to image sample line
    double finalUpdate = (detectorLine + m_detectorLineOrigin - m_startingDetectorLine)
                       / m_detectorLineSumming;
@@ -2637,7 +2637,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
                         state["m_platformFlag"].dump(), state["m_ikCode"].dump(),
                         state["m_zDirection"].dump())
 
-  state["m_distortionType"] = stateIsd.distortion_model;
+  state["m_distortionType"] = getDistortionModel(stateIsd.distortion_model);
   state["m_opticalDistCoeffs"] = stateIsd.distortion_coefficients;
   MESSAGE_LOG(m_logger, "m_distortionType: {} "
                         "m_opticalDistCoeffs: {} ",
@@ -2805,16 +2805,17 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
 
   // j2000_to_target *= j2000_to_sensor;
   // j2000_to_sensor *= j2000_to_target;
-  // ale::Orientations sensor_to_target = j2000_to_target * j2000_to_sensor.inverse();
+  ale::Orientations sensor_to_j2000 = j2000_to_sensor.inverse();
+  ale::Orientations sensor_to_target = j2000_to_target * sensor_to_j2000;
   std::vector<double> quaternion;
   std::vector<double> quaternions = {};
 
-  for (ale::Rotation rotation : j2000_to_target.getRotations()) {
+  for (ale::Rotation rotation : sensor_to_target.getRotations()) {
     quaternion = rotation.toQuaternion();
-    quaternions.push_back(quaternion[3]);
     quaternions.push_back(quaternion[0]);
     quaternions.push_back(quaternion[1]);
     quaternions.push_back(quaternion[2]);
+    quaternions.push_back(quaternion[3]);
   }
 
   state["m_quaternions"] = quaternions;

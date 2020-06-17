@@ -79,12 +79,12 @@ TEST_F(ConstVelocityLineScanSensorModel, RemoteImageLocus) {
    lookX /= lookMag;
    lookY /= lookMag;
    lookZ /= lookMag;
-   EXPECT_NEAR(locus.direction.x, lookX, 1e-12);
-   EXPECT_NEAR(locus.direction.y, lookY, 1e-12);
-   EXPECT_NEAR(locus.direction.z, lookZ, 1e-12);
-   EXPECT_NEAR(locus.point.x,     1000.0, 1e-12);
-   EXPECT_NEAR(locus.point.y,     0.0, 1e-12);
-   EXPECT_NEAR(locus.point.z,     0.0, 1e-12);
+   EXPECT_NEAR(locus.direction.x, lookX, 1e-10);
+   EXPECT_NEAR(locus.direction.y, lookY, 1e-10);
+   EXPECT_NEAR(locus.direction.z, lookZ, 1e-10);
+   EXPECT_NEAR(locus.point.x,     1000.0, 1e-10);
+   EXPECT_NEAR(locus.point.y,     0.0, 1e-10);
+   EXPECT_NEAR(locus.point.z,     0.0, 1e-10);
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, calculateAttitudeCorrection) {

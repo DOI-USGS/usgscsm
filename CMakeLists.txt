@@ -29,11 +29,6 @@ else()
   message("--Found CSM Include Directory: ${CSM_INCLUDE_DIR}")
 endif(BUILD_CSM)
 
-# find_path(ALE_INCLUDE_DIR NAMES "Load.h"
-#         PATH_SUFFIXES "ale"
-#         PATHS $ENV{CONDA_PREFIX}/include/)
-# find_library(ALE_LIBRARY ale PATHS $ENV{CONDA_PREFIX}/lib)
-find_package(nlohmann_json)
 find_package(ale)
 
 message("--Found ALE Library: ${ALE_LIBRARY}")
@@ -59,7 +54,6 @@ target_include_directories(usgscsm
                            PUBLIC
                            ${USGSCSM_INCLUDE_DIRS}
                            ${CSM_INCLUDE_DIR}
-#                            ${ALE_INCLUDE_DIR}
 )
 
 target_link_libraries(usgscsm
