@@ -724,6 +724,12 @@ std::vector<double> getIntegrationStartLines(std::vector<std::vector<double>> li
   std::vector<double> lines;
   try {
     for (auto& scanRate : lineScanRate) {
+      if (scanRate.size() != 3) {
+        throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
+                         "Unable to parse integration start lines from line "
+                         "scan rate due to malformed vector. Expected vector size of 3.",
+                         "Utilities::getIntegrationStartLines()");
+      }
       lines.push_back(scanRate[0]);
     }
   }
@@ -743,6 +749,12 @@ std::vector<double> getIntegrationStartTimes(std::vector<std::vector<double>> li
   std::vector<double> times;
   try {
     for (auto& scanRate : lineScanRate) {
+      if (scanRate.size() != 3) {
+        throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
+                         "Unable to parse integration start times from line "
+                         "scan rate due to malformed vector. Expected vector size of 3.",
+                         "Utilities::getIntegrationStartTimes()");
+      }
       times.push_back(scanRate[1]);
     }
   }
@@ -762,6 +774,12 @@ std::vector<double> getIntegrationTimes(std::vector<std::vector<double>> lineSca
   std::vector<double> times;
   try {
     for (auto& scanRate : lineScanRate) {
+      if (scanRate.size() != 3) {
+        throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
+                         "Unable to parse integration times from line "
+                         "scan rate due to malformed vector. Expected vector size of 3.",
+                         "Utilities::getIntegrationTimes()");
+      }
       times.push_back(scanRate[2]);
     }
   }
