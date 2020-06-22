@@ -2649,7 +2649,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   MESSAGE_LOG(m_logger, "m_referencePointXyz: {} ",
                         state["m_referencePointXyz"].dump())
 
-  // sun_position and velocity are required for getIlluminationDirection
+  // Sun position and velocity are required for getIlluminationDirection
   ale::States sunState = stateIsd.sun_pos;
   std::vector<ale::State> sunStates = sunState.getStates();
   std::vector<double> ephemTime = sunState.getTimes();
@@ -2660,12 +2660,12 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
 
   for (int i = 0; i < ephemTime.size(); i++) {
     rotatedSunState = j2000_to_target.rotateStateAt(ephemTime[i], sunStates[i]);
-    sunPositions.push_back(rotatedSunState.position.x);
-    sunPositions.push_back(rotatedSunState.position.y);
-    sunPositions.push_back(rotatedSunState.position.z);
-    sunVelocities.push_back(rotatedSunState.velocity.x);
-    sunVelocities.push_back(rotatedSunState.velocity.y);
-    sunVelocities.push_back(rotatedSunState.velocity.z);
+    sunPositions.push_back(rotatedSunState.position.x * 1000);
+    sunPositions.push_back(rotatedSunState.position.y * 1000);
+    sunPositions.push_back(rotatedSunState.position.z * 1000);
+    sunVelocities.push_back(rotatedSunState.velocity.x * 1000);
+    sunVelocities.push_back(rotatedSunState.velocity.y * 1000);
+    sunVelocities.push_back(rotatedSunState.velocity.z * 1000);
   }
 
   state["m_sunPosition"] = sunPositions;
@@ -2779,17 +2779,19 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   ephemTime = inst_state.getTimes();
   std::vector<ale::State> instStates = inst_state.getStates();
   ale::State rotatedInstState;
+  ale::State rotatedInstStateInv;
   std::vector<double> positions = {};
   std::vector<double> velocities = {};
 
   for (int i = 0; i < ephemTime.size(); i++) {
     rotatedInstState = j2000_to_target.rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
-    positions.push_back(rotatedInstState.position.x);
-    positions.push_back(rotatedInstState.position.y);
-    positions.push_back(rotatedInstState.position.z);
-    velocities.push_back(rotatedInstState.velocity.x);
-    velocities.push_back(rotatedInstState.velocity.y);
-    velocities.push_back(rotatedInstState.velocity.z);
+    rotatedInstStateInv = j2000_to_target.inverse().rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
+    positions.push_back(rotatedInstState.position.x * 1000);
+    positions.push_back(rotatedInstState.position.y * 1000);
+    positions.push_back(rotatedInstState.position.z * 1000);
+    velocities.push_back(rotatedInstState.velocity.x * 1000);
+    velocities.push_back(rotatedInstState.velocity.y * 1000);
+    velocities.push_back(rotatedInstState.velocity.z * 1000);
   }
 
   state["m_positions"] = positions;
@@ -2803,8 +2805,6 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   MESSAGE_LOG(m_logger, "m_velocities: {}",
                         state["m_velocities"].dump())
 
-  // j2000_to_target *= j2000_to_sensor;
-  // j2000_to_sensor *= j2000_to_target;
   ale::Orientations sensor_to_j2000 = j2000_to_sensor.inverse();
   ale::Orientations sensor_to_target = j2000_to_target * sensor_to_j2000;
   std::vector<double> quaternion;
@@ -2830,8 +2830,8 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
                         state["m_currentParameterValue"].dump())
 
   // get radii
-  state["m_minorAxis"] = stateIsd.semi_minor;
-  state["m_majorAxis"] = stateIsd.semi_major;
+  state["m_minorAxis"] = stateIsd.semi_minor * 1000;
+  state["m_majorAxis"] = stateIsd.semi_major * 1000;
   MESSAGE_LOG(m_logger, "m_minorAxis: {}"
                         "m_majorAxis: {}",
                         state["m_minorAxis"].dump(), state["m_majorAxis"].dump())
