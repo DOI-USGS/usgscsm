@@ -720,10 +720,16 @@ double getEndingTime(json isd, csm::WarningList *list) {
   return time;
 }
 
-std::vector<double> getIntegrationStartLines(json isd, csm::WarningList *list) {
+std::vector<double> getIntegrationStartLines(std::vector<std::vector<double>> lineScanRate, csm::WarningList *list) {
   std::vector<double> lines;
   try {
-    for (auto& scanRate : isd.at("line_scan_rate")) {
+    for (auto& scanRate : lineScanRate) {
+      if (scanRate.size() != 3) {
+        throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
+                         "Unable to parse integration start lines from line "
+                         "scan rate due to malformed vector. Expected vector size of 3.",
+                         "Utilities::getIntegrationStartLines()");
+      }
       lines.push_back(scanRate[0]);
     }
   }
@@ -739,10 +745,16 @@ std::vector<double> getIntegrationStartLines(json isd, csm::WarningList *list) {
   return lines;
 }
 
-std::vector<double> getIntegrationStartTimes(json isd, csm::WarningList *list) {
+std::vector<double> getIntegrationStartTimes(std::vector<std::vector<double>> lineScanRate, csm::WarningList *list) {
   std::vector<double> times;
   try {
-    for (auto& scanRate : isd.at("line_scan_rate")) {
+    for (auto& scanRate : lineScanRate) {
+      if (scanRate.size() != 3) {
+        throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
+                         "Unable to parse integration start times from line "
+                         "scan rate due to malformed vector. Expected vector size of 3.",
+                         "Utilities::getIntegrationStartTimes()");
+      }
       times.push_back(scanRate[1]);
     }
   }
@@ -758,10 +770,16 @@ std::vector<double> getIntegrationStartTimes(json isd, csm::WarningList *list) {
   return times;
 }
 
-std::vector<double> getIntegrationTimes(json isd, csm::WarningList *list) {
+std::vector<double> getIntegrationTimes(std::vector<std::vector<double>> lineScanRate, csm::WarningList *list) {
   std::vector<double> times;
   try {
-    for (auto& scanRate : isd.at("line_scan_rate")) {
+    for (auto& scanRate : lineScanRate) {
+      if (scanRate.size() != 3) {
+        throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
+                         "Unable to parse integration times from line "
+                         "scan rate due to malformed vector. Expected vector size of 3.",
+                         "Utilities::getIntegrationTimes()");
+      }
       times.push_back(scanRate[2]);
     }
   }
@@ -1053,6 +1071,40 @@ DistortionType getDistortionModel(json isd, csm::WarningList *list) {
       return DistortionType::DAWNFC;
     }
     else if (distortion.compare("lrolrocnac") == 0) {
+      return DistortionType::LROLROCNAC;
+    }
+  }
+  catch (...) {
+    if (list) {
+      list->push_back(
+        csm::Warning(
+          csm::Warning::DATA_NOT_AVAILABLE,
+          "Could not parse the distortion model.",
+          "Utilities::getDistortionModel()"));
+    }
+  }
+  return DistortionType::TRANSVERSE;
+
+}
+
+DistortionType getDistortionModel(int aleDistortionModel, csm::WarningList *list) {
+  try {
+    ale::DistortionType aleDistortionType;
+    aleDistortionType = (ale::DistortionType) aleDistortionModel;
+
+    if (aleDistortionType == ale::DistortionType::TRANSVERSE) {
+      return DistortionType::TRANSVERSE;
+    }
+    else if (aleDistortionType == ale::DistortionType::RADIAL) {
+      return DistortionType::RADIAL;
+    }
+    else if (aleDistortionType == ale::DistortionType::KAGUYALISM) {
+      return DistortionType::KAGUYALISM;
+    }
+    else if (aleDistortionType == ale::DistortionType::DAWNFC) {
+      return DistortionType::DAWNFC;
+    }
+    else if (aleDistortionType == ale::DistortionType::LROLROCNAC) {
       return DistortionType::LROLROCNAC;
     }
   }

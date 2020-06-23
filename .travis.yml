@@ -39,9 +39,11 @@ install:
     fi
   - bash miniconda.sh -b -p $HOME/miniconda
   - source $HOME/miniconda/etc/profile.d/conda.sh
-  - conda install -y -c conda-forge cmake
+  - conda install -y -c conda-forge cmake ale nlohmann_json
 
 script:
+  - conda activate
+  - ls $CONDA_PREFIX/include/ale
   - mkdir build
   - cd build
   - cmake -DCOVERAGE=ON ..

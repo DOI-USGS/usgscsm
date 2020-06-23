@@ -5,7 +5,7 @@
 #include "Warning.h"
 #include "Fixtures.h"
 
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 #include <gtest/gtest.h>
 
 #include <math.h>

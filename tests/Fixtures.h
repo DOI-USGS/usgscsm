@@ -6,7 +6,7 @@
 #include "UsgsAstroLsSensorModel.h"
 #include "UsgsAstroSarSensorModel.h"
 
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 
 #include <map>
 #include <sstream>

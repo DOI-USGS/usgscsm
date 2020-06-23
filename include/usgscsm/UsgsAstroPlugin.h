@@ -7,8 +7,10 @@
 #include <Plugin.h>
 #include <Version.h>
 
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 using json = nlohmann::json;
+
+#include "ale/Isd.h"
 
 class UsgsAstroPlugin : public csm::Plugin {
 

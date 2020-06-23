@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 
 #include <Error.h>
 #include <Version.h>
@@ -876,31 +876,49 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
 
 std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& jsonIsd, csm::WarningList* warnings) {
     MESSAGE_LOG(this->m_logger, "Constructing state from isd");
-    json isd = json::parse(jsonIsd);
+    ale::Isd stateIsd(jsonIsd);
     json state = {};
 
     csm::WarningList* parsingWarnings = new csm::WarningList;
 
-    state["m_modelName"] = getSensorModelName(isd, parsingWarnings);
-    state["m_imageIdentifier"] = getImageId(isd, parsingWarnings);
-    state["m_sensorName"] = getSensorName(isd, parsingWarnings);
-    state["m_platformName"] = getPlatformName(isd, parsingWarnings);
+    state["m_modelName"] = stateIsd.usgscsm_name_model;
+    state["m_imageIdentifier"] = stateIsd.image_id;
+    state["m_sensorName"] = stateIsd.name_sensor;
+    state["m_platformName"] = stateIsd.name_platform;
 
-    state["m_startingDetectorSample"] = getDetectorStartingSample(isd, parsingWarnings);
-    state["m_startingDetectorLine"] = getDetectorStartingLine(isd, parsingWarnings);
-    state["m_detectorSampleSumming"] = getSampleSumming(isd, parsingWarnings);
-    state["m_detectorLineSumming"] = getLineSumming(isd, parsingWarnings);
+    state["m_startingDetectorSample"] = stateIsd.starting_detector_sample;
+    state["m_startingDetectorLine"] = stateIsd.starting_detector_line;
+    state["m_detectorSampleSumming"] = stateIsd.detector_sample_summing;
+    state["m_detectorLineSumming"] = stateIsd.detector_line_summing;
 
     // get focal length
-    state["m_focalLength"] = getFocalLength(isd, parsingWarnings);
-    state["m_focalLengthEpsilon"] = getFocalLengthEpsilon(isd);
+    state["m_focalLength"] = stateIsd.focal_length;
+    // Not used anywhere?
+    state["m_focalLengthEpsilon"] = 0.0;
 
 
     state["m_currentParameterValue"] = json();
 
     // get sensor_position
-    std::vector<double> position = getSensorPositions(isd, parsingWarnings);
-    if (!position.empty() && position.size() != 3) {
+    ale::States inst_state = stateIsd.inst_pos;
+    std::vector<double> ephemTime = inst_state.getTimes();
+    std::vector<ale::State> instStates = inst_state.getStates();
+    ale::Orientations j2000_to_target = stateIsd.body_rotation;
+    ale::State rotatedInstState;
+    std::vector<double> positions = {};
+    std::vector<double> velocities = {};
+
+    for (int i = 0; i < ephemTime.size(); i++) {
+      rotatedInstState = j2000_to_target.rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
+      positions.push_back(rotatedInstState.position.x * 1000);
+      positions.push_back(rotatedInstState.position.y * 1000);
+      positions.push_back(rotatedInstState.position.z * 1000);
+      velocities.push_back(rotatedInstState.velocity.x * 1000);
+      velocities.push_back(rotatedInstState.velocity.y * 1000);
+      velocities.push_back(rotatedInstState.velocity.z * 1000);
+    }
+
+    if (!positions.empty() && positions.size() != 3) {
       parsingWarnings->push_back(
         csm::Warning(
           csm::Warning::DATA_NOT_AVAILABLE,
@@ -911,12 +929,11 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
       state["m_currentParameterValue"][2] = 0;
     }
     else {
-      state["m_currentParameterValue"] = position;
+      state["m_currentParameterValue"] = positions;
     }
 
     // get sensor_velocity
-    std::vector<double> velocity = getSensorVelocities(isd, parsingWarnings);
-    if (!velocity.empty() && velocity.size() != 3) {
+    if (!velocities.empty() && velocities.size() != 3) {
       parsingWarnings->push_back(
         csm::Warning(
           csm::Warning::DATA_NOT_AVAILABLE,
@@ -924,17 +941,43 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
           "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
     }
     else {
-      state["m_spacecraftVelocity"] = velocity;
+      state["m_spacecraftVelocity"] = velocities;
     }
 
 
     // get sun_position
     // sun position is not strictly necessary, but is required for getIlluminationDirection.
-    state["m_sunPosition"] = getSunPositions(isd);
+    ale::States sunState = stateIsd.sun_pos;
+    std::vector<ale::State> sunStates = sunState.getStates();
+    ephemTime = sunState.getTimes();
+    ale::State rotatedSunState;
+    std::vector<double> sunPositions = {};
+
+    for (int i = 0; i < ephemTime.size(); i++) {
+      rotatedSunState = j2000_to_target.rotateStateAt(ephemTime[i], sunStates[i]);
+      sunPositions.push_back(rotatedSunState.position.x * 1000);
+      sunPositions.push_back(rotatedSunState.position.y * 1000);
+      sunPositions.push_back(rotatedSunState.position.z * 1000);
+    }
+
+    state["m_sunPosition"] = sunPositions;
 
     // get sensor_orientation quaternion
-    std::vector<double> quaternion = getSensorOrientations(isd, parsingWarnings);
-    if (quaternion.size() != 4) {
+    ale::Orientations j2000_to_sensor = stateIsd.inst_pointing;
+    ale::Orientations sensor_to_j2000 = j2000_to_sensor.inverse();
+    ale::Orientations sensor_to_target = j2000_to_target * sensor_to_j2000;
+    std::vector<double> quaternion;
+    std::vector<double> quaternions = {};
+
+    for (ale::Rotation rotation : sensor_to_target.getRotations()) {
+      quaternion = rotation.toQuaternion();
+      quaternions.push_back(quaternion[0]);
+      quaternions.push_back(quaternion[1]);
+      quaternions.push_back(quaternion[2]);
+      quaternions.push_back(quaternion[3]);
+    }
+
+    if (quaternions.size() != 4) {
       parsingWarnings->push_back(
         csm::Warning(
           csm::Warning::DATA_NOT_AVAILABLE,
@@ -942,37 +985,37 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
           "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
     }
     else {
-      state["m_currentParameterValue"][3] = quaternion[0];
-      state["m_currentParameterValue"][4] = quaternion[1];
-      state["m_currentParameterValue"][5] = quaternion[2];
-      state["m_currentParameterValue"][6] = quaternion[3];
+      state["m_currentParameterValue"][3] = quaternions[0];
+      state["m_currentParameterValue"][4] = quaternions[1];
+      state["m_currentParameterValue"][5] = quaternions[2];
+      state["m_currentParameterValue"][6] = quaternions[3];
     }
 
     // get optical_distortion
-    state["m_distortionType"] = getDistortionModel(isd, warnings);
-    state["m_opticalDistCoeffs"] = getDistortionCoeffs(isd, warnings);
+    state["m_distortionType"] = getDistortionModel(stateIsd.distortion_model);
+    state["m_opticalDistCoeffs"] = stateIsd.distortion_coefficients;
 
     // get detector_center
-    state["m_ccdCenter"][0] = getDetectorCenterLine(isd, parsingWarnings);
-    state["m_ccdCenter"][1] = getDetectorCenterSample(isd, parsingWarnings);
+    state["m_ccdCenter"][0] = stateIsd.detector_center_line;
+    state["m_ccdCenter"][1] = stateIsd.detector_center_sample;
 
 
     // get radii
-    state["m_minorAxis"] = getSemiMinorRadius(isd, parsingWarnings);
-    state["m_majorAxis"] = getSemiMajorRadius(isd, parsingWarnings);
+    state["m_minorAxis"] = stateIsd.semi_minor * 1000;
+    state["m_majorAxis"] = stateIsd.semi_major * 1000;
 
 
     // get reference_height
-    state["m_minElevation"] = getMinHeight(isd, parsingWarnings);
-    state["m_maxElevation"] = getMaxHeight(isd, parsingWarnings);
+    state["m_minElevation"] = stateIsd.min_reference_height;
+    state["m_maxElevation"] = stateIsd.max_reference_height;
 
 
-    state["m_ephemerisTime"] = getCenterTime(isd, parsingWarnings);
-    state["m_nLines"] = getTotalLines(isd, parsingWarnings);
-    state["m_nSamples"] = getTotalSamples(isd, parsingWarnings);
+    state["m_ephemerisTime"] = stateIsd.center_ephemeris_time;
+    state["m_nLines"] = stateIsd.image_lines;
+    state["m_nSamples"] = stateIsd.image_samples;
 
-    state["m_iTransL"] = getFocal2PixelLines(isd, parsingWarnings);
-    state["m_iTransS"] = getFocal2PixelSamples(isd, parsingWarnings);
+    state["m_iTransL"] = stateIsd.focal2pixel_line;
+    state["m_iTransS"] = stateIsd.focal2pixel_sample;
 
     // We don't pass the pixel to focal plane transformation so invert the
     // focal plane to pixel transformation
