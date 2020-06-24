@@ -90,7 +90,10 @@ class FrameSensorModelLogging : public ::testing::Test {
          // logger name collisions. Use the sensor model's memory addresss.
          std::uintptr_t sensorId = reinterpret_cast<std::uintptr_t>(sensorModel);
          auto logger = std::make_shared<spdlog::logger>(std::to_string(sensorId), ostream_sink);
-         sensorModel->setLogger(logger);
+         try {
+           spdlog::register_logger(logger);
+         } catch (...) {}
+         sensorModel->setLogger(std::to_string(sensorId));
       }
 
       void TearDown() override {
