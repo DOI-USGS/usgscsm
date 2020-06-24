@@ -36,6 +36,18 @@ const int         UsgsAstroPlugin::_N_SENSOR_MODELS = 3;
 const UsgsAstroPlugin UsgsAstroPlugin::m_registeredPlugin;
 
 UsgsAstroPlugin::UsgsAstroPlugin() {
+
+  // Build and register the USGSCSM logger on pluggin creation
+  std::string logFile = getenv("ALE_LOG_FILE");
+  if (logFile != "") {
+    std::shared_ptr<spdlog::logger> logger = spdlog::get("usgscsm_logger");
+    if (!logger) {
+      logger = spdlog::basic_logger_mt("usgscsm_logger", logFile);
+      try {
+        spdlog::register_logger(logger);
+      } catch (...) {}
+    }
+  }
 }
 
 
@@ -264,8 +276,9 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(const csm::Isd &imageSupportD
       UsgsAstroFrameSensorModel *model =  new UsgsAstroFrameSensorModel();
       try {
         model->replaceModelState(model->constructStateFromIsd(stringIsd, warnings));
-        if (model->getLogger()) {
-          model->getLogger()->info("Constructed model: {}", modelName);
+        std::shared_ptr<spdlog::logger> logger = spdlog::get(model->getLogger());
+        if (logger) {
+          logger->info("Constructed model: {}", modelName);
         }
       }
       catch (std::exception& e) {

@@ -7,7 +7,10 @@
 #include <Plugin.h>
 #include <Version.h>
 
-#include <json/json.hpp>
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
+
+#include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
 class UsgsAstroPlugin : public csm::Plugin {
