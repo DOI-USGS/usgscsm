@@ -874,7 +874,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
     }
 
     MESSAGE_LOG("Constructing state from isd");
-    ale::Isd stateIsd(jsonIsd);
+    json isd = json::parse(jsonIsd);
 
     csm::WarningList* parsingWarnings = new csm::WarningList;
 
