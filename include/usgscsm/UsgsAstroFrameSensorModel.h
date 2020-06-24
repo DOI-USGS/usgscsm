@@ -384,7 +384,7 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM, virtual public csm::Sett
 
     csm::EcefCoord m_referencePointXyz;
 
-    std::string m_logName = "";
+    std::string m_logName = "usgscsm_logger";
 
     json _state;
     static const int         _NUM_STATE_KEYWORDS;
