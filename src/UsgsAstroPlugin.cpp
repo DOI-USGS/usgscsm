@@ -38,14 +38,17 @@ const UsgsAstroPlugin UsgsAstroPlugin::m_registeredPlugin;
 UsgsAstroPlugin::UsgsAstroPlugin() {
 
   // Build and register the USGSCSM logger on pluggin creation
-  std::string logFile = getenv("ALE_LOG_FILE");
-  if (logFile != "") {
-    std::shared_ptr<spdlog::logger> logger = spdlog::get("usgscsm_logger");
-    if (!logger) {
-      logger = spdlog::basic_logger_mt("usgscsm_logger", logFile);
-      try {
-        spdlog::register_logger(logger);
-      } catch (...) {}
+  char * logFilePtr = getenv("ALE_LOG_FILE");
+  if (logFilePtr != NULL) {
+    std::string logFile(logFilePtr);
+    if (logFile != "") {
+      std::shared_ptr<spdlog::logger> logger = spdlog::get("usgscsm_logger");
+      if (!logger) {
+        logger = spdlog::basic_logger_mt("usgscsm_logger", logFile);
+        try {
+          spdlog::register_logger(logger);
+        } catch (...) {}
+      }
     }
   }
 }
