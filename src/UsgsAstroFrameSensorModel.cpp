@@ -9,7 +9,7 @@
 #include <Error.h>
 #include <Version.h>
 
-#define MESSAGE_LOG(...) if (spdlog::get(m_logName)) { spdlog::get(m_logName)->info(__VA_ARGS__); }
+#define MESSAGE_LOG(...) if (m_logger) { m_logger->info(__VA_ARGS__); }
 
 using json = nlohmann::json;
 using namespace std;
@@ -77,7 +77,6 @@ void UsgsAstroFrameSensorModel::reset() {
     m_referencePointXyz.x = 0;
     m_referencePointXyz.y = 0;
     m_referencePointXyz.z = 0;
-    m_logName = "usgscsm_logger";
 }
 
 
@@ -737,8 +736,7 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_referencePointXyz", {m_referencePointXyz.x,
                                m_referencePointXyz.y,
                                m_referencePointXyz.z}},
-      {"m_currentParameterCovariance", m_currentParameterCovariance},
-      {"m_logName", m_logName}
+      {"m_currentParameterCovariance", m_currentParameterCovariance}
     };
 
     return state.dump();
@@ -854,7 +852,6 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
         // Set reference point to the center of the image
         m_referencePointXyz = imageToGround(csm::ImageCoord(m_nLines/2.0, m_nSamples/2.0));
         m_currentParameterCovariance = state.at("m_currentParameterCovariance").get<std::vector<double>>();
-        m_logName = state.at("m_logName").get<std::string>();
     }
     catch(std::out_of_range& e) {
       throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
@@ -867,11 +864,6 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
 std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& jsonIsd, csm::WarningList* warnings) {
 
     json state = {};
-    // Get the optional custom logger
-    state["m_logName"] = "usgscsm_logger";
-    if (m_logName != "usgscsm_logger" && m_logName != "") {
-      state["m_logName"] = m_logName;
-    }
 
     MESSAGE_LOG("Constructing state from isd");
     json isd = json::parse(jsonIsd);
@@ -1314,10 +1306,10 @@ double UsgsAstroFrameSensorModel::getValue(
    return m_currentParameterValue[index] + adjustments[index];
 }
 
-std::string UsgsAstroFrameSensorModel::getLogger() {
-  return m_logName;
+std::shared_ptr<spdlog::logger> UsgsAstroFrameSensorModel::getLogger() {
+  return m_logger;
 }
 
 void UsgsAstroFrameSensorModel::setLogger(std::string logName) {
-  m_logName = logName;
+  m_logger = spdlog::get(logName);
 }

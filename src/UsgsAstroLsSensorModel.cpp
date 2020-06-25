@@ -30,7 +30,7 @@
 #include <Error.h>
 #include <json/json.hpp>
 
-#define MESSAGE_LOG(...) if (spdlog::get(m_logName)) { spdlog::get(m_logName)->info(__VA_ARGS__); }
+#define MESSAGE_LOG(...) if (m_logger) { m_logger->info(__VA_ARGS__); }
 
 using json = nlohmann::json;
 using namespace std;
@@ -265,8 +265,6 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
    m_sunPosition = j["m_sunPosition"].get<std::vector<double>>();
    m_sunVelocity = j["m_sunVelocity"].get<std::vector<double>>();
 
-   m_logName = j["m_logName"].get<std::string>();
-
    for (int i = 0; i < num_params; i++) {
      for (int k = 0; k < NUM_PARAM_TYPES; k++) {
        if (j["m_parameterType"][i] == PARAM_STRING_ALL[k]) {
@@ -453,8 +451,6 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
       state["m_sunVelocity"] = m_sunVelocity;
       MESSAGE_LOG("num sun velocities: {} ", m_sunVelocity.size())
 
-      state["m_logName"] = m_logName;
-
       return state.dump();
  }
 
@@ -535,7 +531,6 @@ void UsgsAstroLsSensorModel::reset()
 
   m_covariance = std::vector<double>(NUM_PARAMETERS * NUM_PARAMETERS,0.0); // 52
 
-  m_logName = "usgscsm_logger";
 }
 
 //*****************************************************************************
@@ -2582,11 +2577,6 @@ double UsgsAstroLsSensorModel::determinant3x3(double mat[9]) const
 std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imageSupportData, csm::WarningList *warnings)
 {
   json state = {};
-  // Get the optional custom logger
-  state["m_logName"] = "usgscsm_logger";
-  if (m_logName != "usgscsm_logger" && m_logName != "") {
-    state["m_logName"] = m_logName;
-  }
   MESSAGE_LOG("Constructing state from Isd")
   // Instantiate UsgsAstroLineScanner sensor model
   json isd = json::parse(imageSupportData);
@@ -2827,14 +2817,14 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
 //***************************************************************************
 // UsgsAstroLineScannerSensorModel::getLogger
 //***************************************************************************
-std::string UsgsAstroLsSensorModel::getLogger() {
+std::shared_ptr<spdlog::logger> UsgsAstroLsSensorModel::getLogger() {
   // MESSAGE_LOG("Getting log pointer, logger is {}",
   //                             m_logger)
-  return m_logName;
+  return m_logger;
 }
 
 void UsgsAstroLsSensorModel::setLogger(std::string logName) {
-  m_logName = logName;
+  m_logger = spdlog::get(logName);
 }
 
 

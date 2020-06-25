@@ -279,7 +279,7 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(const csm::Isd &imageSupportD
       UsgsAstroFrameSensorModel *model =  new UsgsAstroFrameSensorModel();
       try {
         model->replaceModelState(model->constructStateFromIsd(stringIsd, warnings));
-        std::shared_ptr<spdlog::logger> logger = spdlog::get(model->getLogger());
+        std::shared_ptr<spdlog::logger> logger = model->getLogger();
         if (logger) {
           logger->info("Constructed model: {}", modelName);
         }

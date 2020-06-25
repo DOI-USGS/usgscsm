@@ -322,7 +322,7 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM, virtual public csm::Sett
         const GeometricModel &comparisonModel,
         csm::param::Set pSet = csm::param::VALID,
         const GeometricModelList &otherModels = GeometricModelList()) const;
-    virtual std::string getLogger();
+    virtual std::shared_ptr<spdlog::logger> getLogger();
     virtual void setLogger(std::string logName);
     double getValue(int index, const std::vector<double> &adjustments) const;
     void calcRotationMatrix(double m[3][3]) const;
@@ -384,7 +384,7 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM, virtual public csm::Sett
 
     csm::EcefCoord m_referencePointXyz;
 
-    std::string m_logName = "usgscsm_logger";
+    std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
 
     json _state;
     static const int         _NUM_STATE_KEYWORDS;

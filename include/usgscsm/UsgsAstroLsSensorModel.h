@@ -124,7 +124,7 @@ public:
 
 
    // Define logging pointer and file content
-   std::string m_logName = "usgscsm_logger";
+   std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
 
    // Hardcoded
    static const std::string      _SENSOR_MODEL_NAME; // state date element 0
@@ -694,7 +694,7 @@ public:
    //  reference by the given index.
    //<
 
-   virtual std::string getLogger();
+   virtual std::shared_ptr<spdlog::logger> getLogger();
    virtual void setLogger(std::string logName);
 
 
