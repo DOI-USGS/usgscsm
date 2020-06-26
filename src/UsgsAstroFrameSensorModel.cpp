@@ -1050,7 +1050,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
     state["m_collectionIdentifier"] = "";
 
     // Get the optional logging file
-    state["m_logFile"] = getLogFile(isd);
+    state["m_logFile"] = getLogFile(jsonIsd);
 
 
     if (!parsingWarnings->empty()) {

@@ -2750,32 +2750,6 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   }
 
   ale::Orientations j2000_to_sensor = stateIsd.inst_pointing;
-  ephemTime = j2000_to_sensor.getTimes();
-  try{
-    state["m_dtQuat"] =  (ephemTime[ephemTime.size() - 1] - ephemTime[0]) / (ephemTime.size() - 1);
-    MESSAGE_LOG(m_logger, "dt_quaternion: {}", state["m_dtQuat"].dump())
-  }
-  catch(...) {
-    parsingWarnings->push_back(
-      csm::Warning(
-        csm::Warning::DATA_NOT_AVAILABLE,
-        "dt_quaternion not in ISD",
-        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
-    MESSAGE_LOG(m_logger, "dt_quaternion not in ISD")
-  }
-
-  try{
-    state["m_t0Quat"] =  ephemTime[0] - stateIsd.center_ephemeris_time;
-    MESSAGE_LOG(m_logger, "m_t0Quat: {}", state["m_t0Quat"].dump())
-  }
-  catch(...) {
-    parsingWarnings->push_back(
-      csm::Warning(
-        csm::Warning::DATA_NOT_AVAILABLE,
-        "t0_quaternion not in ISD",
-        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
-    MESSAGE_LOG(m_logger, "t0_quaternion not in ISD")
-  }
   ephemTime = inst_state.getTimes();
   std::vector<ale::State> instStates = inst_state.getStates();
   ale::State rotatedInstState;
@@ -2807,15 +2781,43 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
 
   ale::Orientations sensor_to_j2000 = j2000_to_sensor.inverse();
   ale::Orientations sensor_to_target = j2000_to_target * sensor_to_j2000;
-  std::vector<double> quaternion;
-  std::vector<double> quaternions = {};
+  ephemTime = sensor_to_target.getTimes();
+  double quatStep = (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
+  try{
+    state["m_dtQuat"] =  quatStep;
+    MESSAGE_LOG(m_logger, "dt_quaternion: {}", state["m_dtQuat"].dump())
+  }
+  catch(...) {
+    parsingWarnings->push_back(
+      csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE,
+        "dt_quaternion not in ISD",
+        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    MESSAGE_LOG(m_logger, "dt_quaternion not in ISD")
+  }
 
-  for (ale::Rotation rotation : sensor_to_target.getRotations()) {
+  try{
+    state["m_t0Quat"] =  ephemTime[0] - stateIsd.center_ephemeris_time;
+    MESSAGE_LOG(m_logger, "m_t0Quat: {}", state["m_t0Quat"].dump())
+  }
+  catch(...) {
+    parsingWarnings->push_back(
+      csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE,
+        "t0_quaternion not in ISD",
+        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    MESSAGE_LOG(m_logger, "t0_quaternion not in ISD")
+  }
+  std::vector<double> quaternion;
+  std::vector<double> quaternions;
+
+  for (size_t i = 0 ; i < ephemTime.size(); i++) {
+    ale::Rotation rotation = sensor_to_target.interpolate(ephemTime.front() + quatStep * i, ale::SLERP);
     quaternion = rotation.toQuaternion();
-    quaternions.push_back(quaternion[0]);
     quaternions.push_back(quaternion[1]);
     quaternions.push_back(quaternion[2]);
     quaternions.push_back(quaternion[3]);
+    quaternions.push_back(quaternion[0]);
   }
 
   state["m_quaternions"] = quaternions;
