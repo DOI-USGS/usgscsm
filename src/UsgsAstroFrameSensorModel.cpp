@@ -369,7 +369,9 @@ csm::EcefVector UsgsAstroFrameSensorModel::getIlluminationDirection(const csm::E
 double UsgsAstroFrameSensorModel::getImageTime(const csm::ImageCoord &imagePt) const {
   MESSAGE_LOG(this->m_logger, "Accessing image time for image point {}, {}",
               imagePt.line, imagePt.samp);
-    return m_ephemerisTime;
+    // The entire image is aquired at once so image time for all pixels is the
+    // reference time
+    return 0.0;
 }
 
 
@@ -398,7 +400,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::getSensorPosition(const csm::ImageCoor
 
 csm::EcefCoord UsgsAstroFrameSensorModel::getSensorPosition(double time) const {
     MESSAGE_LOG(this->m_logger, "Accessing sensor position for time {}", time);
-    if (time == m_ephemerisTime){
+    if (time == 0.0){
         csm::EcefCoord sensorPosition;
         sensorPosition.x = m_currentParameterValue[0];
         sensorPosition.y = m_currentParameterValue[1];
@@ -406,7 +408,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::getSensorPosition(double time) const {
 
         return sensorPosition;
     } else {
-        std::string aMessage = "Valid image time is %d", m_ephemerisTime;
+        std::string aMessage = "Valid image time is 0.0";
         throw csm::Error(csm::Error::BOUNDS,
                          aMessage,
                          "UsgsAstroFrameSensorModel::getSensorPosition");
@@ -435,14 +437,14 @@ csm::EcefVector UsgsAstroFrameSensorModel::getSensorVelocity(const csm::ImageCoo
 
 csm::EcefVector UsgsAstroFrameSensorModel::getSensorVelocity(double time) const {
     MESSAGE_LOG(this->m_logger, "Accessing sensor position for time {}", time);
-    if (time == m_ephemerisTime){
+    if (time == 0.0){
         return csm::EcefVector {
           m_spacecraftVelocity[0],
           m_spacecraftVelocity[1],
           m_spacecraftVelocity[2]
         };
     } else {
-        std::string aMessage = "Valid image time is %d", m_ephemerisTime;
+        std::string aMessage = "Valid image time is 0.0";
         throw csm::Error(csm::Error::BOUNDS,
                          aMessage,
                          "UsgsAstroFrameSensorModel::getSensorVelocity");
@@ -678,9 +680,7 @@ std::string UsgsAstroFrameSensorModel::getSensorMode() const {
 
 std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
   MESSAGE_LOG(this->m_logger, "Accessing reference data and time");
-  csm::EcefCoord referencePointGround = UsgsAstroFrameSensorModel::getReferencePoint();
-  csm::ImageCoord referencePointImage = UsgsAstroFrameSensorModel::groundToImage(referencePointGround);
-  time_t ephemTime = UsgsAstroFrameSensorModel::getImageTime(referencePointImage);
+  time_t ephemTime = m_ephemerisTime;
   struct tm t = {0};  // Initalize to all 0's
   t.tm_year = 100;  // This is year-1900, so 100 = 2000
   t.tm_mday = 1;
