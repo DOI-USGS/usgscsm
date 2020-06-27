@@ -2759,7 +2759,6 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
 
   for (int i = 0; i < ephemTime.size(); i++) {
     rotatedInstState = j2000_to_target.rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
-    rotatedInstStateInv = j2000_to_target.inverse().rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
     positions.push_back(rotatedInstState.position.x * 1000);
     positions.push_back(rotatedInstState.position.y * 1000);
     positions.push_back(rotatedInstState.position.z * 1000);

@@ -966,15 +966,17 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
     ale::Orientations j2000_to_sensor = stateIsd.inst_pointing;
     ale::Orientations sensor_to_j2000 = j2000_to_sensor.inverse();
     ale::Orientations sensor_to_target = j2000_to_target * sensor_to_j2000;
+    ephemTime = sensor_to_target.getTimes();
     std::vector<double> quaternion;
-    std::vector<double> quaternions = {};
+    std::vector<double> quaternions;
 
-    for (ale::Rotation rotation : sensor_to_target.getRotations()) {
+    for (int i = 0; i < ephemTime.size(); i++) {
+      rotation = sensor_to_target.interpolate(ephemTime[i], ale::SLERP);
       quaternion = rotation.toQuaternion();
-      quaternions.push_back(quaternion[0]);
       quaternions.push_back(quaternion[1]);
       quaternions.push_back(quaternion[2]);
       quaternions.push_back(quaternion[3]);
+      quaternions.push_back(quaternion[0]);
     }
 
     if (quaternions.size() != 4) {
