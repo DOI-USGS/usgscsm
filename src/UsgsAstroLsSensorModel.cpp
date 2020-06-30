@@ -2750,9 +2750,40 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   }
 
   ale::Orientations j2000_to_sensor = stateIsd.inst_pointing;
-  ephemTime = j2000_to_sensor.getTimes();
+  ephemTime = inst_state.getTimes();
+  std::vector<ale::State> instStates = inst_state.getStates();
+  ale::State rotatedInstState;
+  ale::State rotatedInstStateInv;
+  std::vector<double> positions = {};
+  std::vector<double> velocities = {};
+
+  for (int i = 0; i < ephemTime.size(); i++) {
+    rotatedInstState = j2000_to_target.rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
+    positions.push_back(rotatedInstState.position.x * 1000);
+    positions.push_back(rotatedInstState.position.y * 1000);
+    positions.push_back(rotatedInstState.position.z * 1000);
+    velocities.push_back(rotatedInstState.velocity.x * 1000);
+    velocities.push_back(rotatedInstState.velocity.y * 1000);
+    velocities.push_back(rotatedInstState.velocity.z * 1000);
+  }
+
+  state["m_positions"] = positions;
+  state["m_numPositions"] = positions.size();
+  MESSAGE_LOG(m_logger, "m_positions: {}"
+                        "m_numPositions: {}",
+                        state["m_positions"].dump(),
+                        state["m_numPositions"].dump())
+
+  state["m_velocities"] = velocities;
+  MESSAGE_LOG(m_logger, "m_velocities: {}",
+                        state["m_velocities"].dump())
+
+  ale::Orientations sensor_to_j2000 = j2000_to_sensor.inverse();
+  ale::Orientations sensor_to_target = j2000_to_target * sensor_to_j2000;
+  ephemTime = sensor_to_target.getTimes();
+  double quatStep = (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
   try{
-    state["m_dtQuat"] =  (ephemTime[ephemTime.size() - 1] - ephemTime[0]) / (ephemTime.size() - 1);
+    state["m_dtQuat"] =  quatStep;
     MESSAGE_LOG(m_logger, "dt_quaternion: {}", state["m_dtQuat"].dump())
   }
   catch(...) {
@@ -2776,46 +2807,16 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
         "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
     MESSAGE_LOG(m_logger, "t0_quaternion not in ISD")
   }
-  ephemTime = inst_state.getTimes();
-  std::vector<ale::State> instStates = inst_state.getStates();
-  ale::State rotatedInstState;
-  ale::State rotatedInstStateInv;
-  std::vector<double> positions = {};
-  std::vector<double> velocities = {};
-
-  for (int i = 0; i < ephemTime.size(); i++) {
-    rotatedInstState = j2000_to_target.rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
-    rotatedInstStateInv = j2000_to_target.inverse().rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
-    positions.push_back(rotatedInstState.position.x * 1000);
-    positions.push_back(rotatedInstState.position.y * 1000);
-    positions.push_back(rotatedInstState.position.z * 1000);
-    velocities.push_back(rotatedInstState.velocity.x * 1000);
-    velocities.push_back(rotatedInstState.velocity.y * 1000);
-    velocities.push_back(rotatedInstState.velocity.z * 1000);
-  }
-
-  state["m_positions"] = positions;
-  state["m_numPositions"] = positions.size();
-  MESSAGE_LOG(m_logger, "m_positions: {}"
-                        "m_numPositions: {}",
-                        state["m_positions"].dump(),
-                        state["m_numPositions"].dump())
-
-  state["m_velocities"] = velocities;
-  MESSAGE_LOG(m_logger, "m_velocities: {}",
-                        state["m_velocities"].dump())
-
-  ale::Orientations sensor_to_j2000 = j2000_to_sensor.inverse();
-  ale::Orientations sensor_to_target = j2000_to_target * sensor_to_j2000;
   std::vector<double> quaternion;
-  std::vector<double> quaternions = {};
+  std::vector<double> quaternions;
 
-  for (ale::Rotation rotation : sensor_to_target.getRotations()) {
+  for (size_t i = 0 ; i < ephemTime.size(); i++) {
+    ale::Rotation rotation = sensor_to_target.interpolate(ephemTime.front() + quatStep * i, ale::SLERP);
     quaternion = rotation.toQuaternion();
-    quaternions.push_back(quaternion[0]);
     quaternions.push_back(quaternion[1]);
     quaternions.push_back(quaternion[2]);
     quaternions.push_back(quaternion[3]);
+    quaternions.push_back(quaternion[0]);
   }
 
   state["m_quaternions"] = quaternions;
