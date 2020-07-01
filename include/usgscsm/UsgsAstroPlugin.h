@@ -10,8 +10,6 @@
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
-#include "ale/Isd.h"
-
 class UsgsAstroPlugin : public csm::Plugin {
 
   public:
