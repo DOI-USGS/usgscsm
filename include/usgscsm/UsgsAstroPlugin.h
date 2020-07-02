@@ -8,6 +8,9 @@
 #include <Version.h>
 
 #include <nlohmann/json.hpp>
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
+
 using json = nlohmann::json;
 
 class UsgsAstroPlugin : public csm::Plugin {
