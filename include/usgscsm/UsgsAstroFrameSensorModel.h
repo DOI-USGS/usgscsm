@@ -12,6 +12,7 @@
 #include "Utilities.h"
 
 #include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
 
 using json = nlohmann::json;
 
@@ -321,7 +322,7 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM, virtual public csm::Sett
         csm::param::Set pSet = csm::param::VALID,
         const GeometricModelList &otherModels = GeometricModelList()) const;
     virtual std::shared_ptr<spdlog::logger> getLogger();
-    virtual void setLogger(std::string logName);
+    virtual void setLogger(std::shared_ptr<spdlog::logger> logger);
     double getValue(int index, const std::vector<double> &adjustments) const;
     void calcRotationMatrix(double m[3][3]) const;
     void calcRotationMatrix(double m[3][3], const std::vector<double> &adjustments) const;
@@ -382,7 +383,8 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM, virtual public csm::Sett
 
     csm::EcefCoord m_referencePointXyz;
 
-    std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
+    std::string m_logFile;
+    std::shared_ptr<spdlog::logger> m_logger;
 
     json _state;
     static const int         _NUM_STATE_KEYWORDS;
