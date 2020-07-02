@@ -7,9 +7,6 @@
 #include <Plugin.h>
 #include <Version.h>
 
-#include "spdlog/spdlog.h"
-#include "spdlog/sinks/basic_file_sink.h"
-
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
