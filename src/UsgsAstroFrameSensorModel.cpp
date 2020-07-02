@@ -9,6 +9,8 @@
 #include <Error.h>
 #include <Version.h>
 
+#include "ale/Util.h"
+
 #define MESSAGE_LOG(logger, ...) if (logger) { logger->info(__VA_ARGS__); }
 
 using json = nlohmann::json;
@@ -876,34 +878,36 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
 
 std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& jsonIsd, csm::WarningList* warnings) {
     MESSAGE_LOG(this->m_logger, "Constructing state from isd");
-    ale::Isd stateIsd(jsonIsd);
+    json parsedIsd = json::parse(jsonIsd);
     json state = {};
 
     csm::WarningList* parsingWarnings = new csm::WarningList;
 
-    state["m_modelName"] = stateIsd.usgscsm_name_model;
-    state["m_imageIdentifier"] = stateIsd.image_id;
-    state["m_sensorName"] = stateIsd.name_sensor;
-    state["m_platformName"] = stateIsd.name_platform;
+    state["m_modelName"] = ale::getSensorModelName(parsedIsd);
+    state["m_imageIdentifier"] = ale::getImageId(parsedIsd);
+    state["m_sensorName"] = ale::getSensorName(parsedIsd);
+    state["m_platformName"] = ale::getPlatformName(parsedIsd);
 
-    state["m_startingDetectorSample"] = stateIsd.starting_detector_sample;
-    state["m_startingDetectorLine"] = stateIsd.starting_detector_line;
-    state["m_detectorSampleSumming"] = stateIsd.detector_sample_summing;
-    state["m_detectorLineSumming"] = stateIsd.detector_line_summing;
+    state["m_startingDetectorSample"] = ale::getDetectorStartingSample(parsedIsd);
+    state["m_startingDetectorLine"] = ale::getDetectorStartingLine(parsedIsd);
+    state["m_detectorSampleSumming"] = ale::getSampleSumming(parsedIsd);
+    state["m_detectorLineSumming"] = ale::getLineSumming(parsedIsd);
 
-    // get focal length
-    state["m_focalLength"] = stateIsd.focal_length;
-    // Not used anywhere?
-    state["m_focalLengthEpsilon"] = 0.0;
+    state["m_focalLength"] = ale::getFocalLength(parsedIsd);
+    try {
+      state["m_focalLengthEpsilon"] = ale::getFocalLengthUncertainty(parsedIsd);
+    }
+    catch (std::runtime_error& e) {
+      state["m_focalLengthEpsilon"] = 0.0;
+    }
 
 
     state["m_currentParameterValue"] = json();
 
-    // get sensor_position
-    ale::States inst_state = stateIsd.inst_pos;
+    ale::States inst_state = ale::getInstrumentPosition(parsedIsd);
     std::vector<double> ephemTime = inst_state.getTimes();
     std::vector<ale::State> instStates = inst_state.getStates();
-    ale::Orientations j2000_to_target = stateIsd.body_rotation;
+    ale::Orientations j2000_to_target = ale::getBodyRotation(parsedIsd);
     ale::State rotatedInstState;
     std::vector<double> positions = {};
     std::vector<double> velocities = {};
@@ -947,7 +951,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
     // get sun_position
     // sun position is not strictly necessary, but is required for getIlluminationDirection.
-    ale::States sunState = stateIsd.sun_pos;
+    ale::States sunState = ale::getSunPosition(parsedIsd);
     std::vector<ale::State> sunStates = sunState.getStates();
     ephemTime = sunState.getTimes();
     ale::State rotatedSunState;
@@ -963,7 +967,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
     state["m_sunPosition"] = sunPositions;
 
     // get sensor_orientation quaternion
-    ale::Orientations j2000_to_sensor = stateIsd.inst_pointing;
+    ale::Orientations j2000_to_sensor = ale::getInstrumentPointing(parsedIsd);
     ale::Orientations sensor_to_j2000 = j2000_to_sensor.inverse();
     ale::Orientations sensor_to_target = j2000_to_target * sensor_to_j2000;
     ephemTime = sensor_to_target.getTimes();
@@ -994,30 +998,30 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
     }
 
     // get optical_distortion
-    state["m_distortionType"] = getDistortionModel(stateIsd.distortion_model);
-    state["m_opticalDistCoeffs"] = stateIsd.distortion_coefficients;
+    state["m_distortionType"] = getDistortionModel(ale::getDistortionModel(parsedIsd));
+    state["m_opticalDistCoeffs"] = ale::getDistortionCoeffs(parsedIsd);
 
     // get detector_center
-    state["m_ccdCenter"][0] = stateIsd.detector_center_line;
-    state["m_ccdCenter"][1] = stateIsd.detector_center_sample;
+    state["m_ccdCenter"][0] = ale::getDetectorCenterLine(parsedIsd);
+    state["m_ccdCenter"][1] = ale::getDetectorCenterSample(parsedIsd);
 
 
     // get radii
-    state["m_minorAxis"] = stateIsd.semi_minor * 1000;
-    state["m_majorAxis"] = stateIsd.semi_major * 1000;
+    state["m_minorAxis"] = ale::getSemiMinorRadius(parsedIsd) * 1000;
+    state["m_majorAxis"] = ale::getSemiMajorRadius(parsedIsd) * 1000;
 
 
     // get reference_height
-    state["m_minElevation"] = stateIsd.min_reference_height;
-    state["m_maxElevation"] = stateIsd.max_reference_height;
+    state["m_minElevation"] = ale::getMinHeight(parsedIsd);
+    state["m_maxElevation"] = ale::getMaxHeight(parsedIsd);
 
 
-    state["m_ephemerisTime"] = stateIsd.center_ephemeris_time;
-    state["m_nLines"] = stateIsd.image_lines;
-    state["m_nSamples"] = stateIsd.image_samples;
+    state["m_ephemerisTime"] = ale::getCenterTime(parsedIsd);
+    state["m_nLines"] = ale::getTotalLines(parsedIsd);
+    state["m_nSamples"] = ale::getTotalSamples(parsedIsd);
 
-    state["m_iTransL"] = stateIsd.focal2pixel_line;
-    state["m_iTransS"] = stateIsd.focal2pixel_sample;
+    state["m_iTransL"] = ale::getFocal2PixelLines(parsedIsd);
+    state["m_iTransS"] = ale::getFocal2PixelSamples(parsedIsd);
 
     // We don't pass the pixel to focal plane transformation so invert the
     // focal plane to pixel transformation

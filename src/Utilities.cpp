@@ -6,6 +6,8 @@
 #include <utility>
 #include <stdexcept>
 
+#include "ale/Distortion.h"
+
 using json = nlohmann::json;
 
 // Calculates a rotation matrix from Euler angles
