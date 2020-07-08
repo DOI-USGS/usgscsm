@@ -2612,7 +2612,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   state["m_iTransL"] = ale::getFocal2PixelLines(jsonIsd);
   MESSAGE_LOG("m_iTransS: {} "
               "m_iTransL: {} ",
-              state["m_iTransS"].dump(), state["m_iTransS"].dump())
+              state["m_iTransS"].dump(), state["m_iTransL"].dump())
 
   state["m_platformFlag"] = 1;
   state["m_ikCode"] = 0;
@@ -2646,6 +2646,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
 
   for (int i = 0; i < ephemTime.size(); i++) {
     rotatedSunState = j2000_to_target.rotateStateAt(ephemTime[i], sunStates[i]);
+    // ALE operates in Km and we want m
     sunPositions.push_back(rotatedSunState.position.x * 1000);
     sunPositions.push_back(rotatedSunState.position.y * 1000);
     sunPositions.push_back(rotatedSunState.position.z * 1000);
@@ -2745,6 +2746,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
 
   for (int i = 0; i < ephemTime.size(); i++) {
     rotatedInstState = j2000_to_target.rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
+    // ALE operates in Km and we want m
     positions.push_back(rotatedInstState.position.x * 1000);
     positions.push_back(rotatedInstState.position.y * 1000);
     positions.push_back(rotatedInstState.position.z * 1000);
@@ -2817,6 +2819,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
               state["m_currentParameterValue"].dump())
 
   // get radii
+  // ALE operates in Km and we want m
   state["m_minorAxis"] = ale::getSemiMinorRadius(jsonIsd) * 1000;
   state["m_majorAxis"] = ale::getSemiMajorRadius(jsonIsd) * 1000;
   MESSAGE_LOG("m_minorAxis: {}"
