@@ -4,10 +4,12 @@
 #include <iostream>
 #include <sstream>
 
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 
 #include <Error.h>
 #include <Version.h>
+
+#include "ale/Util.h"
 
 #define MESSAGE_LOG(...) if (m_logger) { m_logger->info(__VA_ARGS__); }
 
@@ -367,7 +369,9 @@ csm::EcefVector UsgsAstroFrameSensorModel::getIlluminationDirection(const csm::E
 double UsgsAstroFrameSensorModel::getImageTime(const csm::ImageCoord &imagePt) const {
   MESSAGE_LOG("Accessing image time for image point {}, {}",
               imagePt.line, imagePt.samp);
-    return m_ephemerisTime;
+    // The entire image is aquired at once so image time for all pixels is the
+    // reference time
+    return 0.0;
 }
 
 
@@ -396,7 +400,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::getSensorPosition(const csm::ImageCoor
 
 csm::EcefCoord UsgsAstroFrameSensorModel::getSensorPosition(double time) const {
     MESSAGE_LOG("Accessing sensor position for time {}", time);
-    if (time == m_ephemerisTime){
+    if (time == 0.0){
         csm::EcefCoord sensorPosition;
         sensorPosition.x = m_currentParameterValue[0];
         sensorPosition.y = m_currentParameterValue[1];
@@ -404,7 +408,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::getSensorPosition(double time) const {
 
         return sensorPosition;
     } else {
-        std::string aMessage = "Valid image time is %d", m_ephemerisTime;
+        std::string aMessage = "Valid image time is 0.0";
         throw csm::Error(csm::Error::BOUNDS,
                          aMessage,
                          "UsgsAstroFrameSensorModel::getSensorPosition");
@@ -433,14 +437,14 @@ csm::EcefVector UsgsAstroFrameSensorModel::getSensorVelocity(const csm::ImageCoo
 
 csm::EcefVector UsgsAstroFrameSensorModel::getSensorVelocity(double time) const {
     MESSAGE_LOG("Accessing sensor position for time {}", time);
-    if (time == m_ephemerisTime){
+    if (time == 0.0){
         return csm::EcefVector {
           m_spacecraftVelocity[0],
           m_spacecraftVelocity[1],
           m_spacecraftVelocity[2]
         };
     } else {
-        std::string aMessage = "Valid image time is %d", m_ephemerisTime;
+        std::string aMessage = "Valid image time is 0.0";
         throw csm::Error(csm::Error::BOUNDS,
                          aMessage,
                          "UsgsAstroFrameSensorModel::getSensorVelocity");
@@ -676,9 +680,7 @@ std::string UsgsAstroFrameSensorModel::getSensorMode() const {
 
 std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
   MESSAGE_LOG("Accessing reference data and time");
-  csm::EcefCoord referencePointGround = UsgsAstroFrameSensorModel::getReferencePoint();
-  csm::ImageCoord referencePointImage = UsgsAstroFrameSensorModel::groundToImage(referencePointGround);
-  time_t ephemTime = UsgsAstroFrameSensorModel::getImageTime(referencePointImage);
+  time_t ephemTime = m_ephemerisTime;
   struct tm t = {0};  // Initalize to all 0's
   t.tm_year = 100;  // This is year-1900, so 100 = 2000
   t.tm_mday = 1;
@@ -862,34 +864,55 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
 
 
 std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& jsonIsd, csm::WarningList* warnings) {
-
+    MESSAGE_LOG("Constructing state from isd");
+    json parsedIsd = json::parse(jsonIsd);
     json state = {};
 
     MESSAGE_LOG("Constructing state from isd");
-    json isd = json::parse(jsonIsd);
 
     csm::WarningList* parsingWarnings = new csm::WarningList;
 
-    state["m_modelName"] = getSensorModelName(isd, parsingWarnings);
-    state["m_imageIdentifier"] = getImageId(isd, parsingWarnings);
-    state["m_sensorName"] = getSensorName(isd, parsingWarnings);
-    state["m_platformName"] = getPlatformName(isd, parsingWarnings);
+    state["m_modelName"] = ale::getSensorModelName(parsedIsd);
+    state["m_imageIdentifier"] = ale::getImageId(parsedIsd);
+    state["m_sensorName"] = ale::getSensorName(parsedIsd);
+    state["m_platformName"] = ale::getPlatformName(parsedIsd);
 
-    state["m_startingDetectorSample"] = getDetectorStartingSample(isd, parsingWarnings);
-    state["m_startingDetectorLine"] = getDetectorStartingLine(isd, parsingWarnings);
-    state["m_detectorSampleSumming"] = getSampleSumming(isd, parsingWarnings);
-    state["m_detectorLineSumming"] = getLineSumming(isd, parsingWarnings);
+    state["m_startingDetectorSample"] = ale::getDetectorStartingSample(parsedIsd);
+    state["m_startingDetectorLine"] = ale::getDetectorStartingLine(parsedIsd);
+    state["m_detectorSampleSumming"] = ale::getSampleSumming(parsedIsd);
+    state["m_detectorLineSumming"] = ale::getLineSumming(parsedIsd);
 
-    // get focal length
-    state["m_focalLength"] = getFocalLength(isd, parsingWarnings);
-    state["m_focalLengthEpsilon"] = getFocalLengthEpsilon(isd);
+    state["m_focalLength"] = ale::getFocalLength(parsedIsd);
+    try {
+      state["m_focalLengthEpsilon"] = ale::getFocalLengthUncertainty(parsedIsd);
+    }
+    catch (std::runtime_error& e) {
+      state["m_focalLengthEpsilon"] = 0.0;
+    }
 
 
     state["m_currentParameterValue"] = json();
 
-    // get sensor_position
-    std::vector<double> position = getSensorPositions(isd, parsingWarnings);
-    if (!position.empty() && position.size() != 3) {
+    ale::States inst_state = ale::getInstrumentPosition(parsedIsd);
+    std::vector<double> ephemTime = inst_state.getTimes();
+    std::vector<ale::State> instStates = inst_state.getStates();
+    ale::Orientations j2000_to_target = ale::getBodyRotation(parsedIsd);
+    ale::State rotatedInstState;
+    std::vector<double> positions = {};
+    std::vector<double> velocities = {};
+
+    for (int i = 0; i < ephemTime.size(); i++) {
+      rotatedInstState = j2000_to_target.rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
+      // ALE operates in Km and we want m
+      positions.push_back(rotatedInstState.position.x * 1000);
+      positions.push_back(rotatedInstState.position.y * 1000);
+      positions.push_back(rotatedInstState.position.z * 1000);
+      velocities.push_back(rotatedInstState.velocity.x * 1000);
+      velocities.push_back(rotatedInstState.velocity.y * 1000);
+      velocities.push_back(rotatedInstState.velocity.z * 1000);
+    }
+
+    if (!positions.empty() && positions.size() != 3) {
       parsingWarnings->push_back(
         csm::Warning(
           csm::Warning::DATA_NOT_AVAILABLE,
@@ -900,12 +923,11 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
       state["m_currentParameterValue"][2] = 0;
     }
     else {
-      state["m_currentParameterValue"] = position;
+      state["m_currentParameterValue"] = positions;
     }
 
     // get sensor_velocity
-    std::vector<double> velocity = getSensorVelocities(isd, parsingWarnings);
-    if (!velocity.empty() && velocity.size() != 3) {
+    if (!velocities.empty() && velocities.size() != 3) {
       parsingWarnings->push_back(
         csm::Warning(
           csm::Warning::DATA_NOT_AVAILABLE,
@@ -913,17 +935,46 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
           "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
     }
     else {
-      state["m_spacecraftVelocity"] = velocity;
+      state["m_spacecraftVelocity"] = velocities;
     }
 
 
     // get sun_position
     // sun position is not strictly necessary, but is required for getIlluminationDirection.
-    state["m_sunPosition"] = getSunPositions(isd);
+    ale::States sunState = ale::getSunPosition(parsedIsd);
+    std::vector<ale::State> sunStates = sunState.getStates();
+    ephemTime = sunState.getTimes();
+    ale::State rotatedSunState;
+    std::vector<double> sunPositions = {};
+
+    for (int i = 0; i < ephemTime.size(); i++) {
+      rotatedSunState = j2000_to_target.rotateStateAt(ephemTime[i], sunStates[i]);
+      // ALE operates in Km and we want m
+      sunPositions.push_back(rotatedSunState.position.x * 1000);
+      sunPositions.push_back(rotatedSunState.position.y * 1000);
+      sunPositions.push_back(rotatedSunState.position.z * 1000);
+    }
+
+    state["m_sunPosition"] = sunPositions;
 
     // get sensor_orientation quaternion
-    std::vector<double> quaternion = getSensorOrientations(isd, parsingWarnings);
-    if (quaternion.size() != 4) {
+    ale::Orientations j2000_to_sensor = ale::getInstrumentPointing(parsedIsd);
+    ale::Orientations sensor_to_j2000 = j2000_to_sensor.inverse();
+    ale::Orientations sensor_to_target = j2000_to_target * sensor_to_j2000;
+    ephemTime = sensor_to_target.getTimes();
+    std::vector<double> quaternion;
+    std::vector<double> quaternions;
+
+    for (int i = 0; i < ephemTime.size(); i++) {
+      ale::Rotation rotation = sensor_to_target.interpolate(ephemTime[i], ale::SLERP);
+      quaternion = rotation.toQuaternion();
+      quaternions.push_back(quaternion[1]);
+      quaternions.push_back(quaternion[2]);
+      quaternions.push_back(quaternion[3]);
+      quaternions.push_back(quaternion[0]);
+    }
+
+    if (quaternions.size() != 4) {
       parsingWarnings->push_back(
         csm::Warning(
           csm::Warning::DATA_NOT_AVAILABLE,
@@ -931,37 +982,38 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
           "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
     }
     else {
-      state["m_currentParameterValue"][3] = quaternion[0];
-      state["m_currentParameterValue"][4] = quaternion[1];
-      state["m_currentParameterValue"][5] = quaternion[2];
-      state["m_currentParameterValue"][6] = quaternion[3];
+      state["m_currentParameterValue"][3] = quaternions[0];
+      state["m_currentParameterValue"][4] = quaternions[1];
+      state["m_currentParameterValue"][5] = quaternions[2];
+      state["m_currentParameterValue"][6] = quaternions[3];
     }
 
     // get optical_distortion
-    state["m_distortionType"] = getDistortionModel(isd, warnings);
-    state["m_opticalDistCoeffs"] = getDistortionCoeffs(isd, warnings);
+    state["m_distortionType"] = getDistortionModel(ale::getDistortionModel(parsedIsd));
+    state["m_opticalDistCoeffs"] = ale::getDistortionCoeffs(parsedIsd);
 
     // get detector_center
-    state["m_ccdCenter"][0] = getDetectorCenterLine(isd, parsingWarnings);
-    state["m_ccdCenter"][1] = getDetectorCenterSample(isd, parsingWarnings);
+    state["m_ccdCenter"][0] = ale::getDetectorCenterLine(parsedIsd);
+    state["m_ccdCenter"][1] = ale::getDetectorCenterSample(parsedIsd);
 
 
     // get radii
-    state["m_minorAxis"] = getSemiMinorRadius(isd, parsingWarnings);
-    state["m_majorAxis"] = getSemiMajorRadius(isd, parsingWarnings);
+    // ALE operates in Km and we want m
+    state["m_minorAxis"] = ale::getSemiMinorRadius(parsedIsd) * 1000;
+    state["m_majorAxis"] = ale::getSemiMajorRadius(parsedIsd) * 1000;
 
 
     // get reference_height
-    state["m_minElevation"] = getMinHeight(isd, parsingWarnings);
-    state["m_maxElevation"] = getMaxHeight(isd, parsingWarnings);
+    state["m_minElevation"] = ale::getMinHeight(parsedIsd);
+    state["m_maxElevation"] = ale::getMaxHeight(parsedIsd);
 
 
-    state["m_ephemerisTime"] = getCenterTime(isd, parsingWarnings);
-    state["m_nLines"] = getTotalLines(isd, parsingWarnings);
-    state["m_nSamples"] = getTotalSamples(isd, parsingWarnings);
+    state["m_ephemerisTime"] = ale::getCenterTime(parsedIsd);
+    state["m_nLines"] = ale::getTotalLines(parsedIsd);
+    state["m_nSamples"] = ale::getTotalSamples(parsedIsd);
 
-    state["m_iTransL"] = getFocal2PixelLines(isd, parsingWarnings);
-    state["m_iTransS"] = getFocal2PixelSamples(isd, parsingWarnings);
+    state["m_iTransL"] = ale::getFocal2PixelLines(parsedIsd);
+    state["m_iTransS"] = ale::getFocal2PixelSamples(parsedIsd);
 
     // We don't pass the pixel to focal plane transformation so invert the
     // focal plane to pixel transformation

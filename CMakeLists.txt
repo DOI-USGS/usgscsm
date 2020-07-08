@@ -29,6 +29,9 @@ else()
   message("--Found CSM Include Directory: ${CSM_INCLUDE_DIR}")
 endif(BUILD_CSM)
 
+find_package(nlohmann_json REQUIRED)
+find_package(ale REQUIRED)
+
 add_library(usgscsm SHARED
             src/UsgsAstroPlugin.cpp
             src/UsgsAstroFrameSensorModel.cpp
@@ -52,7 +55,9 @@ target_include_directories(usgscsm
 )
 
 target_link_libraries(usgscsm
-                      ${CSM_LIBRARY})
+                      ${CSM_LIBRARY}
+                      ale::ale
+                      nlohmann_json::nlohmann_json)
 
 if(WIN32)
   install(TARGETS usgscsm RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
@@ -63,8 +68,8 @@ install(DIRECTORY ${USGSCSM_INCLUDE_DIRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR
 
 
 # Optional build or link against CSM
-option (BUILD_TESTS "Build tests" ON)
-if(BUILD_TESTS)
+option (USGSCSM_BUILD_TESTS "Build tests" ON)
+if(USGSCSM_BUILD_TESTS)
 
   include(GoogleTest)
   include(cmake/gtest.cmake)

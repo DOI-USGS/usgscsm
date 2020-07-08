@@ -4,6 +4,8 @@
 
 #include "Fixtures.h"
 
+using json = nlohmann::json;
+
 TEST(MetricConversion, DistanceConversion) {
   EXPECT_EQ(1,     metric_conversion(1000, "m", "km"));
   EXPECT_EQ(1000,  metric_conversion(1000, "m", "m"));
@@ -76,39 +78,33 @@ TEST(ISDParsing, CenterTime) {
 }
 
 TEST(ISDParsing, IntegrationStartLines) {
-  json isd = {
-    {"line_scan_rate", {
-      {0, 1, 2},
-      {3, 4, 5},
-      {6, 7, 8}}
-    }
+  std::vector<std::vector<double>> lineScanRate = {
+    {0, 1, 2},
+    {3, 4, 5},
+    {6, 7, 8}
   };
   std::vector<double> startLines = {0, 3, 6};
-  EXPECT_EQ(startLines, getIntegrationStartLines(isd));
+  EXPECT_EQ(startLines, getIntegrationStartLines(lineScanRate));
 }
 
 TEST(ISDParsing, IntegrationStartTimes) {
-  json isd = {
-    {"line_scan_rate", {
-      {0, 1, 2},
-      {3, 4, 5},
-      {6, 7, 8}}
-    }
+  std::vector<std::vector<double>> lineScanRate = {
+    {0, 1, 2},
+    {3, 4, 5},
+    {6, 7, 8}
   };
   std::vector<double> startTimes = {1, 4, 7};
-  EXPECT_EQ(startTimes, getIntegrationStartTimes(isd));
+  EXPECT_EQ(startTimes, getIntegrationStartTimes(lineScanRate));
 }
 
 TEST(ISDParsing, IntegrationTimes) {
-  json isd = {
-    {"line_scan_rate", {
-      {0, 1, 2},
-      {3, 4, 5},
-      {6, 7, 8}}
-    }
+  std::vector<std::vector<double>> lineScanRate = {
+    {0, 1, 2},
+    {3, 4, 5},
+    {6, 7, 8}
   };
   std::vector<double> times = {2, 5, 8};
-  EXPECT_EQ(times, getIntegrationTimes(isd));
+  EXPECT_EQ(times, getIntegrationTimes(lineScanRate));
 }
 
 TEST(ISDParsing, SampleSumming) {

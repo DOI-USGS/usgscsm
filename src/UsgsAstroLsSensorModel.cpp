@@ -28,7 +28,9 @@
 
 #include <sstream>
 #include <Error.h>
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
+
+#include "ale/Util.h"
 
 #define MESSAGE_LOG(...) if (m_logger) { m_logger->info(__VA_ARGS__); }
 
@@ -132,7 +134,7 @@ const csm::param::Type
 //***************************************************************************
 // UsgsAstroLineScannerSensorModel::replaceModelState
 //***************************************************************************
-void UsgsAstroLsSensorModel::replaceModelState(const std::string &stateString )
+void UsgsAstroLsSensorModel::replaceModelState(const std::string& stateString)
 {
    MESSAGE_LOG("Replacing model state")
 
@@ -713,8 +715,8 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
                 + m_iTransL[1] * distortedFocalX
                 + m_iTransL[2] * distortedFocalY;
    detectorSample = m_iTransS[0]
-                + m_iTransS[1] * distortedFocalX
-                + m_iTransS[2] * distortedFocalY;
+                  + m_iTransS[1] * distortedFocalX
+                  + m_iTransS[2] * distortedFocalY;
    // Convert to image sample line
    double finalUpdate = (detectorLine + m_detectorLineOrigin - m_startingDetectorLine)
                       / m_detectorLineSumming;
@@ -2579,16 +2581,15 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   json state = {};
   MESSAGE_LOG("Constructing state from Isd")
   // Instantiate UsgsAstroLineScanner sensor model
-  json isd = json::parse(imageSupportData);
-
+  json jsonIsd = json::parse(imageSupportData);
   csm::WarningList* parsingWarnings = new csm::WarningList;
 
   int num_params = NUM_PARAMETERS;
 
-  state["m_modelName"] = getSensorModelName(isd, parsingWarnings);
-  state["m_imageIdentifier"] = getImageId(isd, parsingWarnings);
-  state["m_sensorName"] = getSensorName(isd, parsingWarnings);
-  state["m_platformName"] = getPlatformName(isd, parsingWarnings);
+  state["m_modelName"] = ale::getSensorModelName(jsonIsd);
+  state["m_imageIdentifier"] = ale::getImageId(jsonIsd);
+  state["m_sensorName"] = ale::getSensorName(jsonIsd);
+  state["m_platformName"] = ale::getPlatformName(jsonIsd);
   MESSAGE_LOG("m_modelName: {} "
               "m_imageIdentifier: {} "
               "m_sensorName: {} "
@@ -2598,17 +2599,17 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
               state["m_sensorName"].dump(),
               state["m_platformName"].dump())
 
-  state["m_focalLength"] = getFocalLength(isd, parsingWarnings);
+  state["m_focalLength"] = ale::getFocalLength(jsonIsd);
   MESSAGE_LOG("m_focalLength: {} ", state["m_focalLength"].dump())
 
-  state["m_nLines"] = getTotalLines(isd, parsingWarnings);
-  state["m_nSamples"] = getTotalSamples(isd, parsingWarnings);
+  state["m_nLines"] = ale::getTotalLines(jsonIsd);
+  state["m_nSamples"] = ale::getTotalSamples(jsonIsd);
   MESSAGE_LOG("m_nLines: {} "
               "m_nSamples: {} ",
               state["m_nLines"].dump(), state["m_nSamples"].dump())
 
-  state["m_iTransS"] = getFocal2PixelSamples(isd, parsingWarnings);
-  state["m_iTransL"] = getFocal2PixelLines(isd, parsingWarnings);
+  state["m_iTransS"] = ale::getFocal2PixelSamples(jsonIsd);
+  state["m_iTransL"] = ale::getFocal2PixelLines(jsonIsd);
   MESSAGE_LOG("m_iTransS: {} "
               "m_iTransL: {} ",
               state["m_iTransS"].dump(), state["m_iTransL"].dump())
@@ -2622,8 +2623,8 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
               state["m_platformFlag"].dump(), state["m_ikCode"].dump(),
               state["m_zDirection"].dump())
 
-  state["m_distortionType"] = getDistortionModel(isd, parsingWarnings);
-  state["m_opticalDistCoeffs"] = getDistortionCoeffs(isd, parsingWarnings);
+  state["m_distortionType"] = getDistortionModel(ale::getDistortionModel(jsonIsd));
+  state["m_opticalDistCoeffs"] = ale::getDistortionCoeffs(jsonIsd);
   MESSAGE_LOG("m_distortionType: {} "
               "m_opticalDistCoeffs: {} ",
               state["m_distortionType"].dump(),
@@ -2634,9 +2635,28 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   MESSAGE_LOG("m_referencePointXyz: {} ",
                         state["m_referencePointXyz"].dump())
 
-  // sun_position and velocity are required for getIlluminationDirection
-  state["m_sunPosition"]= getSunPositions(isd, parsingWarnings);
-  state["m_sunVelocity"]= getSunVelocities(isd, parsingWarnings);
+  // Sun position and velocity are required for getIlluminationDirection
+  ale::States sunState = ale::getSunPosition(jsonIsd);
+  std::vector<ale::State> sunStates = sunState.getStates();
+  std::vector<double> ephemTime = sunState.getTimes();
+  ale::Orientations j2000_to_target = ale::getBodyRotation(jsonIsd);
+  ale::State rotatedSunState;
+  std::vector<double> sunPositions = {};
+  std::vector<double> sunVelocities = {};
+
+  for (int i = 0; i < ephemTime.size(); i++) {
+    rotatedSunState = j2000_to_target.rotateStateAt(ephemTime[i], sunStates[i]);
+    // ALE operates in Km and we want m
+    sunPositions.push_back(rotatedSunState.position.x * 1000);
+    sunPositions.push_back(rotatedSunState.position.y * 1000);
+    sunPositions.push_back(rotatedSunState.position.z * 1000);
+    sunVelocities.push_back(rotatedSunState.velocity.x * 1000);
+    sunVelocities.push_back(rotatedSunState.velocity.y * 1000);
+    sunVelocities.push_back(rotatedSunState.velocity.z * 1000);
+  }
+
+  state["m_sunPosition"] = sunPositions;
+  state["m_sunVelocity"] = sunVelocities;
 
   // leave these be for now.
   state["m_gsd"] = 1.0;
@@ -2650,29 +2670,30 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
               state["m_gsd"].dump(), state["m_flyingHeight"].dump(),
               state["m_halfSwath"].dump(), state["m_halfTime"].dump())
 
-  state["m_centerEphemerisTime"] = getCenterTime(isd, parsingWarnings);
-  state["m_startingEphemerisTime"] = getStartingTime(isd, parsingWarnings);
+  state["m_centerEphemerisTime"] = ale::getCenterTime(jsonIsd);
+  state["m_startingEphemerisTime"] = ale::getStartingTime(jsonIsd);
   MESSAGE_LOG("m_centerEphemerisTime: {} "
               "m_startingEphemerisTime: {} ",
               state["m_centerEphemerisTime"].dump(),
               state["m_startingEphemerisTime"].dump())
 
-  state["m_intTimeLines"] = getIntegrationStartLines(isd, parsingWarnings);
-  state["m_intTimeStartTimes"] = getIntegrationStartTimes(isd, parsingWarnings);
-  state["m_intTimes"] = getIntegrationTimes(isd, parsingWarnings);
+  std::vector<std::vector<double>> lineScanRate = ale::getLineScanRate(jsonIsd);
+  state["m_intTimeLines"] = getIntegrationStartLines(lineScanRate, parsingWarnings);
+  state["m_intTimeStartTimes"] = getIntegrationStartTimes(lineScanRate, parsingWarnings);
+  state["m_intTimes"] = getIntegrationTimes(lineScanRate, parsingWarnings);
   MESSAGE_LOG("m_intTimeLines: {} "
-                        "m_intTimeStartTimes: {} "
-                        "m_intTimes: {} ",
-                        state["m_intTimeLines"].dump(),
-                        state["m_intTimeStartTimes"].dump(),
-                        state["m_intTimes"].dump())
+              "m_intTimeStartTimes: {} "
+              "m_intTimes: {} ",
+              state["m_intTimeLines"].dump(),
+              state["m_intTimeStartTimes"].dump(),
+              state["m_intTimes"].dump())
 
-  state["m_detectorSampleSumming"] = getSampleSumming(isd, parsingWarnings);
-  state["m_detectorLineSumming"] = getLineSumming(isd, parsingWarnings);
-  state["m_startingDetectorSample"] = getDetectorStartingSample(isd, parsingWarnings);
-  state["m_startingDetectorLine"] = getDetectorStartingLine(isd, parsingWarnings);
-  state["m_detectorSampleOrigin"] = getDetectorCenterSample(isd, parsingWarnings);
-  state["m_detectorLineOrigin"] = getDetectorCenterLine(isd, parsingWarnings);
+  state["m_detectorSampleSumming"] = ale::getSampleSumming(jsonIsd);
+  state["m_detectorLineSumming"] = ale::getLineSumming(jsonIsd);
+  state["m_startingDetectorSample"] = ale::getDetectorStartingSample(jsonIsd);
+  state["m_startingDetectorLine"] = ale::getDetectorStartingLine(jsonIsd);
+  state["m_detectorSampleOrigin"] = ale::getDetectorCenterSample(jsonIsd);
+  state["m_detectorLineOrigin"] = ale::getDetectorCenterLine(jsonIsd);
   MESSAGE_LOG("m_detectorSampleSumming: {} "
               "m_detectorLineSumming: {}"
               "m_startingDetectorSample: {} "
@@ -2686,10 +2707,11 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
               state["m_detectorSampleOrigin"].dump(),
               state["m_detectorLineOrigin"].dump())
 
-
+  ale::States inst_state = ale::getInstrumentPosition(jsonIsd);
   // These are exlusive to LineScanners, leave them here for now.
+  ephemTime = inst_state.getTimes();
   try {
-    state["m_dtEphem"] = isd.at("dt_ephemeris");
+    state["m_dtEphem"] = (ephemTime[ephemTime.size() - 1] - ephemTime[0]) / (ephemTime.size() - 1);
     MESSAGE_LOG("m_dtEphem: {} ", state["m_dtEphem"].dump())
   }
   catch(...) {
@@ -2702,7 +2724,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   }
 
   try {
-    state["m_t0Ephem"] = isd.at("t0_ephemeris");
+    state["m_t0Ephem"] = ephemTime[0] - ale::getCenterTime(jsonIsd);
     MESSAGE_LOG("t0_ephemeris: {}", state["m_t0Ephem"].dump())
   }
   catch(...) {
@@ -2714,8 +2736,42 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
     MESSAGE_LOG("t0_ephemeris not in ISD")
   }
 
+  ale::Orientations j2000_to_sensor = ale::getInstrumentPointing(jsonIsd);
+  ephemTime = inst_state.getTimes();
+  std::vector<ale::State> instStates = inst_state.getStates();
+  ale::State rotatedInstState;
+  ale::State rotatedInstStateInv;
+  std::vector<double> positions = {};
+  std::vector<double> velocities = {};
+
+  for (int i = 0; i < ephemTime.size(); i++) {
+    rotatedInstState = j2000_to_target.rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
+    // ALE operates in Km and we want m
+    positions.push_back(rotatedInstState.position.x * 1000);
+    positions.push_back(rotatedInstState.position.y * 1000);
+    positions.push_back(rotatedInstState.position.z * 1000);
+    velocities.push_back(rotatedInstState.velocity.x * 1000);
+    velocities.push_back(rotatedInstState.velocity.y * 1000);
+    velocities.push_back(rotatedInstState.velocity.z * 1000);
+  }
+
+  state["m_positions"] = positions;
+  state["m_numPositions"] = positions.size();
+  MESSAGE_LOG("m_positions: {}"
+              "m_numPositions: {}",
+              state["m_positions"].dump(),
+              state["m_numPositions"].dump())
+
+  state["m_velocities"] = velocities;
+  MESSAGE_LOG("m_velocities: {}",
+              state["m_velocities"].dump())
+
+  ale::Orientations sensor_to_j2000 = j2000_to_sensor.inverse();
+  ale::Orientations sensor_to_target = j2000_to_target * sensor_to_j2000;
+  ephemTime = sensor_to_target.getTimes();
+  double quatStep = (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
   try{
-    state["m_dtQuat"] = isd.at("dt_quaternion");
+    state["m_dtQuat"] =  quatStep;
     MESSAGE_LOG("dt_quaternion: {}", state["m_dtQuat"].dump())
   }
   catch(...) {
@@ -2728,7 +2784,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
   }
 
   try{
-    state["m_t0Quat"] =  isd.at("t0_quaternion");
+    state["m_t0Quat"] =  ephemTime[0] - ale::getCenterTime(jsonIsd);
     MESSAGE_LOG("m_t0Quat: {}", state["m_t0Quat"].dump())
   }
   catch(...) {
@@ -2739,20 +2795,18 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
         "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
     MESSAGE_LOG("t0_quaternion not in ISD")
   }
+  std::vector<double> quaternion;
+  std::vector<double> quaternions;
 
-  std::vector<double> positions = getSensorPositions(isd, parsingWarnings);
-  state["m_positions"] = positions;
-  state["m_numPositions"] = positions.size();
-  MESSAGE_LOG("m_positions: {}"
-              "m_numPositions: {}",
-              state["m_positions"].dump(),
-              state["m_numPositions"].dump())
+  for (size_t i = 0 ; i < ephemTime.size(); i++) {
+    ale::Rotation rotation = sensor_to_target.interpolate(ephemTime.front() + quatStep * i, ale::SLERP);
+    quaternion = rotation.toQuaternion();
+    quaternions.push_back(quaternion[1]);
+    quaternions.push_back(quaternion[2]);
+    quaternions.push_back(quaternion[3]);
+    quaternions.push_back(quaternion[0]);
+  }
 
-  state["m_velocities"] = getSensorVelocities(isd, parsingWarnings);
-  MESSAGE_LOG("m_velocities: {}",
-              state["m_velocities"].dump())
-
-  std::vector<double> quaternions = getSensorOrientations(isd, parsingWarnings);
   state["m_quaternions"] = quaternions;
   state["m_numQuaternions"] = quaternions.size();
   MESSAGE_LOG("m_quaternions: {}"
@@ -2765,23 +2819,24 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
               state["m_currentParameterValue"].dump())
 
   // get radii
-  state["m_minorAxis"] = getSemiMinorRadius(isd, parsingWarnings);
-  state["m_majorAxis"] = getSemiMajorRadius(isd, parsingWarnings);
+  // ALE operates in Km and we want m
+  state["m_minorAxis"] = ale::getSemiMinorRadius(jsonIsd) * 1000;
+  state["m_majorAxis"] = ale::getSemiMajorRadius(jsonIsd) * 1000;
   MESSAGE_LOG("m_minorAxis: {}"
               "m_majorAxis: {}",
               state["m_minorAxis"].dump(), state["m_majorAxis"].dump())
 
   // set identifiers
-  state["m_platformIdentifier"] = getPlatformName(isd, parsingWarnings);
-  state["m_sensorIdentifier"] = getSensorName(isd, parsingWarnings);
+  state["m_platformIdentifier"] = ale::getPlatformName(jsonIsd);
+  state["m_sensorIdentifier"] = ale::getSensorName(jsonIsd);
   MESSAGE_LOG("m_platformIdentifier: {}"
               "m_sensorIdentifier: {}",
               state["m_platformIdentifier"].dump(),
               state["m_sensorIdentifier"].dump())
 
   // get reference_height
-  state["m_minElevation"] = getMinHeight(isd, parsingWarnings);
-  state["m_maxElevation"] = getMaxHeight(isd, parsingWarnings);
+  state["m_minElevation"] = ale::getMinHeight(jsonIsd);
+  state["m_maxElevation"] = ale::getMaxHeight(jsonIsd);
   MESSAGE_LOG("m_minElevation: {}"
               "m_maxElevation: {}",
               state["m_minElevation"].dump(),

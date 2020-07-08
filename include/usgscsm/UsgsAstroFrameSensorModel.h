@@ -13,10 +13,6 @@
 
 #include "spdlog/spdlog.h"
 
-#include <json/json.hpp>
-
-using json = nlohmann::json;
-
 
 class UsgsAstroFrameSensorModel : public csm::RasterGM, virtual public csm::SettableEllipsoid {
   // UsgsAstroFramePlugin needs to access private members
@@ -386,7 +382,7 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM, virtual public csm::Sett
 
     std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
 
-    json _state;
+    nlohmann::json _state;
     static const int         _NUM_STATE_KEYWORDS;
     static const int         NUM_PARAMETERS;
     static const std::string _STATE_KEYWORD[];

@@ -8,7 +8,7 @@
 #include <tuple>
 #include <string>
 
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 
 #include <csm.h>
 #include <Warning.h>
@@ -122,9 +122,9 @@ int getTotalSamples(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getStartingTime(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getCenterTime(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getEndingTime(nlohmann::json isd, csm::WarningList *list=nullptr);
-std::vector<double> getIntegrationStartLines(nlohmann::json isd, csm::WarningList *list=nullptr);
-std::vector<double> getIntegrationStartTimes(nlohmann::json isd, csm::WarningList *list=nullptr);
-std::vector<double> getIntegrationTimes(nlohmann::json isd, csm::WarningList *list=nullptr);
+std::vector<double> getIntegrationStartLines(std::vector<std::vector<double>> lineScanRate, csm::WarningList *list=nullptr);
+std::vector<double> getIntegrationStartTimes(std::vector<std::vector<double>> lineScanRate, csm::WarningList *list=nullptr);
+std::vector<double> getIntegrationTimes(std::vector<std::vector<double>> lineScanRate, csm::WarningList *list=nullptr);
 double getExposureDuration(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getScaledPixelWidth(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::string getLookDirection(nlohmann::json isd, csm::WarningList *list=nullptr);
@@ -145,6 +145,7 @@ double getMaxHeight(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getSemiMajorRadius(nlohmann::json isd, csm::WarningList *list=nullptr);
 double getSemiMinorRadius(nlohmann::json isd, csm::WarningList *list=nullptr);
 DistortionType getDistortionModel(nlohmann::json isd, csm::WarningList *list=nullptr);
+DistortionType getDistortionModel(int aleDistortionModel, csm::WarningList *list=nullptr);
 std::vector<double> getDistortionCoeffs(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getRadialDistortion(nlohmann::json isd, csm::WarningList *list=nullptr);
 std::vector<double> getSunPositions(nlohmann::json isd, csm::WarningList *list=nullptr);

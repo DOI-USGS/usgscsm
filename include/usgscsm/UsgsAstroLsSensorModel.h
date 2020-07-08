@@ -32,6 +32,10 @@
 #include <CorrelationModel.h>
 #include "Distortion.h"
 
+#include "ale/Distortion.h"
+#include "ale/States.h"
+#include "ale/Orientations.h"
+
 #include "spdlog/spdlog.h"
 
 class UsgsAstroLsSensorModel : public csm::RasterGM, virtual public csm::SettableEllipsoid
@@ -43,7 +47,7 @@ public:
    void setState(const std::string &state);
 
 
-    virtual void replaceModelState(const std::string& argState);
+    virtual void replaceModelState(const std::string& stateString);
     //> This method attempts to initialize the current model with the state
     //  given by argState.  The argState argument can be a string previously
     //  retrieved from the getModelState method.
