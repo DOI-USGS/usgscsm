@@ -4,6 +4,8 @@
 
 #include "Fixtures.h"
 
+using json = nlohmann::json;
+
 TEST(MetricConversion, DistanceConversion) {
   EXPECT_EQ(1,     metric_conversion(1000, "m", "km"));
   EXPECT_EQ(1000,  metric_conversion(1000, "m", "m"));

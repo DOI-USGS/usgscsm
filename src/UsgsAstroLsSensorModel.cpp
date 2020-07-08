@@ -2755,14 +2755,14 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(const std::string imag
 
   state["m_positions"] = positions;
   state["m_numPositions"] = positions.size();
-  MESSAGE_LOG(m_logger, "m_positions: {}"
-                        "m_numPositions: {}",
-                        state["m_positions"].dump(),
-                        state["m_numPositions"].dump())
+  MESSAGE_LOG("m_positions: {}"
+              "m_numPositions: {}",
+              state["m_positions"].dump(),
+              state["m_numPositions"].dump())
 
   state["m_velocities"] = velocities;
-  MESSAGE_LOG(m_logger, "m_velocities: {}",
-                        state["m_velocities"].dump())
+  MESSAGE_LOG("m_velocities: {}",
+              state["m_velocities"].dump())
 
   ale::Orientations sensor_to_j2000 = j2000_to_sensor.inverse();
   ale::Orientations sensor_to_target = j2000_to_target * sensor_to_j2000;

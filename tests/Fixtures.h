@@ -17,12 +17,10 @@
 
 #include <spdlog/sinks/ostream_sink.h>
 
-using json = nlohmann::json;
-
 // Should this be positioned somewhere in the public API?
-inline void jsonToIsd(json &object, csm::Isd &isd, std::string prefix="") {
-  for (json::iterator it = object.begin(); it != object.end(); ++it) {
-     json jsonValue = it.value();
+inline void jsonToIsd(nlohmann::json &object, csm::Isd &isd, std::string prefix="") {
+  for (nlohmann::json::iterator it = object.begin(); it != object.end(); ++it) {
+     nlohmann::json jsonValue = it.value();
      if (jsonValue.is_array()) {
         for (int i = 0; i < jsonValue.size(); i++) {
            isd.addParam(prefix+it.key(), jsonValue[i].dump());
@@ -91,7 +89,7 @@ class FrameSensorModelLogging : public ::testing::Test {
          std::uintptr_t sensorId = reinterpret_cast<std::uintptr_t>(sensorModel);
          auto logger = std::make_shared<spdlog::logger>(std::to_string(sensorId), ostream_sink);
          spdlog::register_logger(logger);
-         
+
          sensorModel->setLogger(std::to_string(sensorId));
       }
 
@@ -202,7 +200,7 @@ class FrameStateTest : public ::testing::Test {
       if (sensorModel) {
         sensorModel->getModelState();
         std::string modelState = sensorModel->getModelState();
-        auto state = json::parse(modelState);
+        auto state = nlohmann::json::parse(modelState);
         state[key] = newValue;
         sensorModel->replaceModelState(state.dump());
 

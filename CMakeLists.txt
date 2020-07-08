@@ -29,10 +29,8 @@ else()
   message("--Found CSM Include Directory: ${CSM_INCLUDE_DIR}")
 endif(BUILD_CSM)
 
-find_package(ale)
-
-message("--Found ALE Library: ${ALE_LIBRARY}")
-message("--Found ALE Include Directory: ${ALE_INCLUDE_DIR}")
+find_package(nlohmann_json REQUIRED)
+find_package(ale REQUIRED)
 
 add_library(usgscsm SHARED
             src/UsgsAstroPlugin.cpp
