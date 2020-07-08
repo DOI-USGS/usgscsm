@@ -56,7 +56,8 @@ target_include_directories(usgscsm
 
 target_link_libraries(usgscsm
                       ${CSM_LIBRARY}
-                      ale::ale)
+                      ale::ale
+                      nlohmann_json::nlohmann_json)
 
 if(WIN32)
   install(TARGETS usgscsm RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
