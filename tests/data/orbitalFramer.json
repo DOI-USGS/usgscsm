@@ -43,15 +43,15 @@
     "ephemeris_times": [
       50
     ],
-		"reference_frame": 1
+    "reference_frame": 1
   },
   "instrument_pointing": {
     "quaternions": [
       [-0.707106781186547, 0.0, -0.707106781186547, 0]
     ],
-		"angular_velocities": [
-			[0, 0, 0]
-		],
+    "angular_velocities": [
+      [0, 0, 0]
+    ],
     "ephemeris_times": [
       50
     ],
@@ -87,6 +87,6 @@
       50
     ],
     "unit": "m",
-		"reference_frame": 1
+    "reference_frame": 1
   }
 }

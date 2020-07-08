@@ -1,95 +1,95 @@
 {
-	"name_model" : "USGS_ASTRO_FRAME_SENSOR_MODEL",
-	"name_sensor": "SENSOR",
-	"name_platform": "CarryMe",
-	"image_identifier": "TEST_IMAGE",
-	"center_ephemeris_time": 50,
-	"dt_ephemeris": 100,
+  "name_model" : "USGS_ASTRO_FRAME_SENSOR_MODEL",
+  "name_sensor": "SENSOR",
+  "name_platform": "CarryMe",
+  "image_identifier": "TEST_IMAGE",
+  "center_ephemeris_time": 50,
+  "dt_ephemeris": 100,
   "focal2pixel_lines": [0.0, 0.0, 10.0],
   "focal2pixel_samples": [0.0, 10.0, 0.0],
-	"focal_length_model": {
-		"focal_length": 50,
-		"focal_epsilon": 1.0
-	},
-	"image_lines": 15,
-	"image_samples": 15,
+  "focal_length_model": {
+    "focal_length": 50,
+    "focal_epsilon": 1.0
+  },
+  "image_lines": 15,
+  "image_samples": 15,
   "detector_center" : {
     "line" : 7.5,
     "sample" : 7.5
   },
-	"interpolation_method": "lagrange",
-	"number_of_ephemerides": 1,
-	"optical_distortion": {
-		"transverse": {
-			"x": [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-			"y": [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-		}
-	},
-	"radii": {
-		"semimajor": 0.01,
+  "interpolation_method": "lagrange",
+  "number_of_ephemerides": 1,
+  "optical_distortion": {
+    "transverse": {
+      "x": [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+      "y": [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    }
+  },
+  "radii": {
+    "semimajor": 0.01,
     "semiminor": 0.01,
     "unit":"km"
-	},
-	"reference_height": {
-		"maxheight": 1,
-		"minheight": -1,
-		"unit": "km"
-	},
-	"instrument_position": {
-		"unit": "km",
-		"positions": [
-			[1.0, 0.0, 0.0]
-		],
-		"velocities": [
-			[0.0, 0.0, 0.0]
-		],
-		"ephemeris_times": [
-			50
-		],
-		"reference_frame": 1
-	},
-	"instrument_pointing": {
-		"quaternions": [
-			[0.0, -0.707106781186547, 0.0, 0.707106781186547]
-		],
-		"angular_velocities": [
-			[0, 0, 0]
-		],
-		"ephemeris_times": [
-			50
-		],
-		"reference_frame": 1
-	},
-	"body_rotation": {
-		"quaternions": [
-			[1, 0, 0, 0]
-		],
-		"ephemeris_times": [
-			50
-		],
-		"angular_velocities": [
-			[0.0, 0.0, 0.0]
-		],
-		"reference_frame": 1,
-		"constant_frames": [1, 2, 3],
-		"time_dependent_frames": [4, 5, 6]
-	},
-	"starting_detector_line": 0,
-	"starting_detector_sample": 0,
-	"detector_sample_summing": 1.0,
-	"detector_line_summing": 1.0,
-	"starting_ephemeris_time": 0,
-	"sun_position": {
-		"unit": "km",
-		"positions": [
-			[0.1, 0.1, 0.0]
-		],
-		"velocities": [
-			[0.0, 0.0, 0.0]
-		],
-		"ephemeris_times": [
-			50
-		],
-		"reference_frame": 1
-	}
+  },
+  "reference_height": {
+    "maxheight": 1,
+    "minheight": -1,
+    "unit": "km"
+  },
+  "instrument_position": {
+    "unit": "km",
+    "positions": [
+      [1.0, 0.0, 0.0]
+    ],
+    "velocities": [
+      [0.0, 0.0, 0.0]
+    ],
+    "ephemeris_times": [
+      50
+    ],
+    "reference_frame": 1
+  },
+  "instrument_pointing": {
+    "quaternions": [
+      [0.0, -0.707106781186547, 0.0, 0.707106781186547]
+    ],
+    "angular_velocities": [
+      [0, 0, 0]
+    ],
+    "ephemeris_times": [
+      50
+    ],
+    "reference_frame": 1
+  },
+  "body_rotation": {
+    "quaternions": [
+      [1, 0, 0, 0]
+    ],
+    "ephemeris_times": [
+      50
+    ],
+    "angular_velocities": [
+      [0.0, 0.0, 0.0]
+    ],
+    "reference_frame": 1,
+    "constant_frames": [1, 2, 3],
+    "time_dependent_frames": [4, 5, 6]
+  },
+  "starting_detector_line": 0,
+  "starting_detector_sample": 0,
+  "detector_sample_summing": 1.0,
+  "detector_line_summing": 1.0,
+  "starting_ephemeris_time": 0,
+  "sun_position": {
+    "unit": "km",
+    "positions": [
+      [0.1, 0.1, 0.0]
+    ],
+    "velocities": [
+      [0.0, 0.0, 0.0]
+    ],
+    "ephemeris_times": [
+      50
+    ],
+    "reference_frame": 1
+  }
 }
