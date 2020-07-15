@@ -13,24 +13,43 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
       STRING "Choose the type of build." FORCE)
 endif()
 
-# Optional build or link against CSM
-option (BUILD_CSM "Build the CSM library" ON)
-if(BUILD_CSM)
+# Use external or embedded dependencies
+option(USGSCSM_EXTERNAL_DEPS "If the library should be built with external or embedded dependencies" OFF)
+
+if(USGSCSM_EXTERNAL_DEPS)
+  # CSM API library
+  find_path(CSM_INCLUDE_DIR NAMES "csm.h"
+                            PATH_SUFFIXES "csm"
+                            PATHS $ENV{CONDA_PREFIX}/include/)
+  find_library(CSM_LIBRARY csmapi PATHS $ENV{CONDA_PREFIX}/lib)
+  message("--Found external CSM Library: ${CSM_LIBRARY}")
+  message("--Found external CSM Include Directory: ${CSM_INCLUDE_DIR}")
+
+  # Nlohmann JSON
+  find_package(nlohmann_json REQUIRED)
+
+  # ALE
+  find_package(ale REQUIRED)
+  set(ALE_TARGET ale::ale)
+else()
+  # CSM API library
   add_subdirectory(csm)
   set(CSM_INCLUDE_DIR /csm)
   set(CSM_LIBRARY csmapi)
-else()
-  find_path(CSM_INCLUDE_DIR NAMES "csm.h"
-			    PATH_SUFFIXES "csm"
-			    PATHS $ENV{CONDA_PREFIX}/include/)
-  find_library(CSM_LIBRARY csmapi PATHS $ENV{CONDA_PREFIX}/lib)
 
-  message("--Found CSM Library: ${CSM_LIBRARY}")
-  message("--Found CSM Include Directory: ${CSM_INCLUDE_DIR}")
-endif(BUILD_CSM)
+  # Nlohmann JSON
+  set(JSON_BuildTests OFF CACHE INTERNAL "")
+  add_subdirectory(json)
 
-find_package(nlohmann_json REQUIRED)
-find_package(ale REQUIRED)
+  # ALE
+  set(ALE_USE_EXTERNAL_EIGEN OFF)
+  set(ALE_USE_EXTERNAL_JSON ON)
+  set(ALE_BUILD_LOAD OFF)
+  set(ALE_BUILD_TESTS OFF)
+  add_subdirectory(ale)
+  set(ALE_TARGET ale)
+endif(USGSCSM_EXTERNAL_DEPS)
+
 
 add_library(usgscsm SHARED
             src/UsgsAstroPlugin.cpp
@@ -38,7 +57,7 @@ add_library(usgscsm SHARED
             src/UsgsAstroLsSensorModel.cpp
             src/UsgsAstroSarSensorModel.cpp
             src/Distortion.cpp
-	    src/Utilities.cpp)
+            src/Utilities.cpp)
 
 set_target_properties(usgscsm PROPERTIES
     VERSION ${PROJECT_VERSION}
@@ -56,18 +75,15 @@ target_include_directories(usgscsm
 
 target_link_libraries(usgscsm
                       ${CSM_LIBRARY}
-                      ale::ale
+                      ${ALE_TARGET}
                       nlohmann_json::nlohmann_json)
 
-if(WIN32)
-  install(TARGETS usgscsm RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
-else()
-  install(TARGETS usgscsm LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
-endif()
+
+install(TARGETS usgscsm LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(DIRECTORY ${USGSCSM_INCLUDE_DIRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 
-# Optional build or link against CSM
+# Optional build tests
 option (USGSCSM_BUILD_TESTS "Build tests" ON)
 if(USGSCSM_BUILD_TESTS)
 
