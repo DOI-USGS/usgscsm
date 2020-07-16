@@ -302,10 +302,7 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(const csm::Isd &imageSupportD
     try {
       MESSAGE_LOG("Trying to construct a UsgsAstroFrameSensorModel");
       model->replaceModelState(model->constructStateFromIsd(stringIsd, warnings));
-      std::shared_ptr<spdlog::logger> logger = model->getLogger();
-      if (logger) {
-        logger->info("Constructed model: {}", modelName);
-      }
+      MESSAGE_LOG("Constructed model: {}", modelName);
     }
     catch (std::exception& e) {
       csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE;

@@ -15,28 +15,25 @@
 
 using json = nlohmann::json;
 
-// UsgsAstroSarSensorModel is the only sensor model with this function static. Static throws off the
-// logging
-// 
-//TEST(SarTests, stateFromIsd) {
-//  std::ifstream isdFile("data/orbitalSar.json");
-//  json isdJson;
-//  isdFile >> isdJson;
-//  std::string isdString = isdJson.dump();
-//  csm::WarningList warnings;
-//  std::string stateString;
-//  try {
-//    stateString = UsgsAstroSarSensorModel::constructStateFromIsd(isdString, &warnings);
-//  }
-//  catch(...) {
-//    for (auto &warn: warnings) {
-//      std::cerr << "Warning in " << warn.getFunction() << std::endl;
-//      std::cerr << "  " << warn.getMessage() << std::endl;
-//    }
-//    FAIL() << "constructStateFromIsd errored";
-//  }
-//  EXPECT_TRUE(warnings.empty());
-//}
+TEST_F(SarSensorModel, stateFromIsd) {
+  std::ifstream isdFile("data/orbitalSar.json");
+  json isdJson;
+  isdFile >> isdJson;
+  std::string isdString = isdJson.dump();
+  csm::WarningList warnings;
+  std::string stateString;
+  try {
+    stateString = sensorModel->constructStateFromIsd(isdString, &warnings);
+  }
+  catch(...) {
+    for (auto &warn: warnings) {
+      std::cerr << "Warning in " << warn.getFunction() << std::endl;
+      std::cerr << "  " << warn.getMessage() << std::endl;
+    }
+    FAIL() << "constructStateFromIsd errored";
+  }
+  EXPECT_TRUE(warnings.empty());
+}
 
 TEST_F(SarSensorModel, State) {
   std::string modelState = sensorModel->getModelState();
