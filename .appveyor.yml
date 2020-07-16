@@ -28,7 +28,7 @@ build_script:
 artifacts:
   - path: build\Release\usgscsm.dll
     name: usgscsm.dll
-  - path: build\Release\ale.dll
+  - path: build\ale\Release\ale.dll
     name: ale.dll
 
 on_success:
