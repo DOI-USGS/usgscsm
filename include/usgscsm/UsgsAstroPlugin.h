@@ -59,6 +59,7 @@ private:
 
     typedef csm::Model* (*sensorConstructor)(void);
     static std::map<std::string, sensorConstructor> MODELS;
+    std::shared_ptr<spdlog::logger> m_logger;
 };
 
 #endif

@@ -15,7 +15,7 @@
 
 using json = nlohmann::json;
 
-TEST(SarTests, stateFromIsd) {
+TEST_F(SarSensorModel, stateFromIsd) {
   std::ifstream isdFile("data/orbitalSar.json");
   json isdJson;
   isdFile >> isdJson;
@@ -23,7 +23,7 @@ TEST(SarTests, stateFromIsd) {
   csm::WarningList warnings;
   std::string stateString;
   try {
-    stateString = UsgsAstroSarSensorModel::constructStateFromIsd(isdString, &warnings);
+    stateString = sensorModel->constructStateFromIsd(isdString, &warnings);
   }
   catch(...) {
     for (auto &warn: warnings) {
