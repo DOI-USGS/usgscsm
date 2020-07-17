@@ -84,12 +84,12 @@ TEST_F(SarSensorModel, computeGroundPartials) {
   csm::EcefCoord groundPt(1737400.0, 0.0, 0.0);
   std::vector<double> partials = sensorModel->computeGroundPartials(groundPt);
   ASSERT_EQ(partials.size(), 6);
-  EXPECT_NEAR(partials[0], -0.00023385137104424322, 1e-8);
-  EXPECT_NEAR(partials[1], -3.3408269124235446e-05, 1e-8);
-  EXPECT_NEAR(partials[2], -1.0 / 7.5, 1e-8);
-  EXPECT_NEAR(partials[3], -33.057612335589731, 1e-8);
-  EXPECT_NEAR(partials[4], 6.3906252180458977e-05, 1e-8);
-  EXPECT_NEAR(partials[5], 0.0077565105242805047, 1e-8);
+  EXPECT_NEAR(partials[0], 6.5128150576280552e-09, 1e-8);
+  EXPECT_NEAR(partials[1], -5.1810407815840636e-15, 1e-8);
+  EXPECT_NEAR(partials[2], -0.13309947654685725, 1e-8);
+  EXPECT_NEAR(partials[3], -33.057625791698072, 1e-8);
+  EXPECT_NEAR(partials[4], 6.1985123841926308e-05, 1e-8);
+  EXPECT_NEAR(partials[5], 0.007743051337209989, 1e-8);
 }
 
 TEST_F(SarSensorModel, imageToProximateImagingLocus) {
