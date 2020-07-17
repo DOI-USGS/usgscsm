@@ -267,6 +267,25 @@ void UsgsAstroSarSensorModel::replaceModelState(const string& argState)
   m_covariance = stateJson["m_covariance"].get<vector<double>>();
   m_sunPosition = stateJson["m_sunPosition"].get<vector<double>>();
   m_sunVelocity = stateJson["m_sunVelocity"].get<vector<double>>();
+
+
+  // If sensor model is being created for the first time
+  // This routine will set some parameters not found in the ISD.
+  if (m_referencePointXyz.x == 0 && m_referencePointXyz.y == 0 && m_referencePointXyz.z == 0) {
+    MESSAGE_LOG("Updating State")
+    // Reference point (image center)
+    double lineCtr = m_nLines / 2.0;
+    double sampCtr = m_nSamples / 2.0;
+    csm::ImageCoord ip(lineCtr, sampCtr);
+    MESSAGE_LOG("updateState: center image coordinate set to {} {}",
+                              lineCtr, sampCtr)
+    
+    double refHeight = 0;
+    m_referencePointXyz = imageToGround(ip, refHeight);
+    MESSAGE_LOG("updateState: reference point (x, y, z) {} {} {}",
+                m_referencePointXyz.x, m_referencePointXyz.y,
+                m_referencePointXyz.z)
+  }
 }
 
 string UsgsAstroSarSensorModel::getModelState() const
