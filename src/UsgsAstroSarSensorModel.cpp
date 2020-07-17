@@ -384,7 +384,8 @@ double UsgsAstroSarSensorModel::dopplerShift(
    };
 
   // Do root-finding for "dopplerShift"
-  return brentRoot(m_startingEphemerisTime, m_endingEphemerisTime, dopplerShiftFunction, tolerance);
+  double timePadding = m_exposureDuration * m_nLines * 0.25;
+  return brentRoot(m_startingEphemerisTime - timePadding, m_endingEphemerisTime + timePadding, dopplerShiftFunction, tolerance);
 }
 
 
@@ -425,7 +426,7 @@ double UsgsAstroSarSensorModel::slantRangeToGroundRange(
   double maxGroundRangeGuess = (1.25 * m_nSamples - 1.0) * m_scaledPixelWidth;
 
   // Tolerance to 1/20th of a pixel for now.
-  return brentRoot(minGroundRangeGuess, maxGroundRangeGuess, slantRangeToGroundRangeFunction, tolerance);
+  return secantRoot(minGroundRangeGuess, maxGroundRangeGuess, slantRangeToGroundRangeFunction, tolerance);
 }
 
 double UsgsAstroSarSensorModel::groundRangeToSlantRange(double groundRange, const std::vector<double> &coeffs) const {
@@ -811,7 +812,26 @@ vector<csm::RasterGM::SensorPartials> UsgsAstroSarSensorModel::computeAllSensorP
 
 vector<double> UsgsAstroSarSensorModel::computeGroundPartials(const csm::EcefCoord& groundPt) const
 {
-  return vector<double>(6, 0.0);
+  double GND_DELTA = m_scaledPixelWidth;
+  // Partial of line, sample wrt X, Y, Z
+  double x = groundPt.x;
+  double y = groundPt.y;
+  double z = groundPt.z;
+
+  csm::ImageCoord ipB = groundToImage(groundPt);
+  csm::ImageCoord ipX = groundToImage(csm::EcefCoord(x + GND_DELTA, y, z));
+  csm::ImageCoord ipY = groundToImage(csm::EcefCoord(x, y + GND_DELTA, z));
+  csm::ImageCoord ipZ = groundToImage(csm::EcefCoord(x, y, z + GND_DELTA));
+
+  std::vector<double> partials(6, 0.0);
+  partials[0] = (ipX.line - ipB.line) / GND_DELTA;
+  partials[3] = (ipX.samp - ipB.samp) / GND_DELTA;
+  partials[1] = (ipY.line - ipB.line) / GND_DELTA;
+  partials[4] = (ipY.samp - ipB.samp) / GND_DELTA;
+  partials[2] = (ipZ.line - ipB.line) / GND_DELTA;
+  partials[5] = (ipZ.samp - ipB.samp) / GND_DELTA;
+
+  return partials;
 }
 
 const csm::CorrelationModel& UsgsAstroSarSensorModel::getCorrelationModel() const
