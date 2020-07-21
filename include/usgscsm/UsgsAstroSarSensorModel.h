@@ -121,21 +121,6 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
         double* achievedPrecision = NULL,
         csm::WarningList* warnings = NULL) const;
 
-    virtual std::vector<csm::RasterGM::SensorPartials> computeAllSensorPartials(
-        const csm::EcefCoord& groundPt,
-        csm::param::Set pSet = csm::param::VALID,
-        double desiredPrecision = 0.001,
-        double* achievedPrecision = NULL,
-        csm::WarningList* warnings = NULL) const;
-
-    virtual std::vector<csm::RasterGM::SensorPartials> computeAllSensorPartials(
-        const csm::ImageCoord& imagePt,
-        const csm::EcefCoord&  groundPt,
-        csm::param::Set pSet = csm::param::VALID,
-        double desired_precision = 0.001,
-        double* achieved_precision = NULL,
-        csm::WarningList* warnings = NULL) const;
-
     virtual std::vector<double> computeGroundPartials(const csm::EcefCoord& groundPt) const;
 
     virtual const csm::CorrelationModel& getCorrelationModel() const;

@@ -430,7 +430,7 @@ double UsgsAstroSarSensorModel::dopplerShift(
 
 
 double UsgsAstroSarSensorModel::slantRange(csm::EcefCoord surfPt,
-    double time) const {
+   double time, std::vector<double> adj) const {
   MESSAGE_LOG("Calculating slant range with: {}, {}, {}, and time {}.",
               surfPt.x, surfPt.y, surfPt.z, time);
   csm::EcefVector surfVec(surfPt.x ,surfPt.y, surfPt.z);
@@ -904,47 +904,6 @@ csm::RasterGM::SensorPartials UsgsAstroSarSensorModel::computeSensorPartials(
    double samplePartial = (adjImgPt.samp - imagePt.samp) / DELTA;
 
    return csm::RasterGM::SensorPartials(linePartial, samplePartial);
-}
-
-vector<csm::RasterGM::SensorPartials> UsgsAstroSarSensorModel::computeAllSensorPartials(
-    const csm::EcefCoord& groundPt,
-    csm::param::Set pSet,
-    double desiredPrecision,
-    double* achievedPrecision,
-    csm::WarningList* warnings) const
-{
-  MESSAGE_LOG("Computing computeAllSensorPartials for ground point {}, {}, {} with desired precision {}",
-                              groundPt.x, groundPt.y, groundPt.z, desiredPrecision)
-   csm::ImageCoord imagePt = groundToImage(
-      groundPt, desiredPrecision, achievedPrecision, warnings);
-
-   return computeAllSensorPartials(
-      imagePt, groundPt, pSet, desiredPrecision, achievedPrecision, warnings);
-}
-
-std::vector<csm::RasterGM::SensorPartials> UsgsAstroSarSensorModel::computeAllSensorPartials(
-   const csm::ImageCoord& imagePt,
-   const csm::EcefCoord&  groundPt,
-   csm::param::Set        pSet,
-   double                 desiredPrecision,
-   double*                achievedPrecision,
-   csm::WarningList*      warnings) const
-{
-
-   MESSAGE_LOG("Computing computeAllSensorPartials for image {} {} and ground {}, {}, {} with desired precision {}",
-                                imagePt.line, imagePt.samp, groundPt.x, groundPt.y, groundPt.z, desiredPrecision)
-
-   std::vector<int> indices = getParameterSetIndices(pSet);
-   size_t num = indices.size();
-   std::vector<csm::RasterGM::SensorPartials> partials;
-   for (int index = 0; index < num; index++)
-   {
-     partials.push_back(
-         computeSensorPartials(
-            indices[index], imagePt, groundPt,
-            desiredPrecision, achievedPrecision, warnings));
-   }
-   return partials;
 }
 
 
