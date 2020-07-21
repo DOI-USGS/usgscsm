@@ -389,7 +389,8 @@ double polynomialRoot(const std::vector<double> &coeffs,
     }
     polyDeriv = evaluatePolynomialDerivative(coeffs, root);
     if (fabs(polyDeriv) < 1e-15) {
-      throw std::invalid_argument("Derivative at guess is too close to 0.");
+      throw std::invalid_argument("Derivative at guess (" +
+                                  std::to_string(guess) + ") is too close to 0.");
     }
     root -= polyValue / polyDeriv;
     polyValue = evaluatePolynomial(coeffs, root);
