@@ -39,12 +39,13 @@ install:
     fi
   - bash miniconda.sh -b -p $HOME/miniconda
   - source $HOME/miniconda/etc/profile.d/conda.sh
-  - conda install -y -c conda-forge cmake
+  - conda env create -n usgscsm -f environment.yml
 
 script:
+  - conda activate usgscsm
   - mkdir build
   - cd build
-  - cmake -DCOVERAGE=ON ..
+  - cmake -DUSGSCSM_EXTERNAL_DEPS=ON -DCOVERAGE=ON ..
   - cmake --build .
   - ctest -VV
   - cd ..

@@ -7,8 +7,9 @@
 #include <Plugin.h>
 #include <Version.h>
 
-#include <json/json.hpp>
-using json = nlohmann::json;
+#include <nlohmann/json.hpp>
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
 
 class UsgsAstroPlugin : public csm::Plugin {
 
@@ -58,6 +59,7 @@ private:
 
     typedef csm::Model* (*sensorConstructor)(void);
     static std::map<std::string, sensorConstructor> MODELS;
+    std::shared_ptr<spdlog::logger> m_logger;
 };
 
 #endif

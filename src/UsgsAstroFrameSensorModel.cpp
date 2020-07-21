@@ -4,12 +4,14 @@
 #include <iostream>
 #include <sstream>
 
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 
 #include <Error.h>
 #include <Version.h>
 
-#define MESSAGE_LOG(logger, ...) if (logger) { logger->info(__VA_ARGS__); }
+#include "ale/Util.h"
+
+#define MESSAGE_LOG(...) if (m_logger) { m_logger->info(__VA_ARGS__); }
 
 using json = nlohmann::json;
 using namespace std;
@@ -29,10 +31,12 @@ const std::string UsgsAstroFrameSensorModel::m_parameterName[] = {
 };
 
 UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
-    reset();
+  MESSAGE_LOG("Creating UsgsAstroFrameSensorModel");
+  reset();
 }
 
 void UsgsAstroFrameSensorModel::reset() {
+  MESSAGE_LOG("Resetting UsgsAstroFrameSensorModel");
     m_modelName = _SENSOR_MODEL_NAME;
     m_platformName = "";
     m_sensorName = "";
@@ -77,8 +81,6 @@ void UsgsAstroFrameSensorModel::reset() {
     m_referencePointXyz.x = 0;
     m_referencePointXyz.y = 0;
     m_referencePointXyz.z = 0;
-    m_logFile = "";
-    m_logger.reset();
 }
 
 
@@ -97,7 +99,7 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(const csm::EcefCoord &g
                               double desiredPrecision,
                               double *achievedPrecision,
                               csm::WarningList *warnings) const {
-  MESSAGE_LOG(this->m_logger, "Computing groundToImage(No adjustments) for {}, {}, {}, with desired precision {}",
+  MESSAGE_LOG("Computing groundToImage(No adjustments) for {}, {}, {}, with desired precision {}",
               groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
 
   return groundToImage(groundPt, m_noAdjustments, desiredPrecision, achievedPrecision, warnings);
@@ -121,7 +123,7 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
     double*                    achieved_precision,
     csm::WarningList*          warnings ) const {
 
-  MESSAGE_LOG(this->m_logger, "Computing groundToImage for {}, {}, {}, with desired precision {}",
+  MESSAGE_LOG("Computing groundToImage for {}, {}, {}, with desired precision {}",
               groundPt.x, groundPt.y, groundPt.z, desired_precision);
 
   double x = groundPt.x;
@@ -161,6 +163,10 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
     &m_iTransS[0], &m_iTransL[0],
     line, sample);
 
+
+  MESSAGE_LOG("Computed groundToImage for {}, {}, {} as line, sample: {}, {}",
+              groundPt.x, groundPt.y, groundPt.z, line, sample);
+
   return csm::ImageCoord(line, sample);
 }
 
@@ -169,7 +175,7 @@ csm::ImageCoordCovar UsgsAstroFrameSensorModel::groundToImage(const csm::EcefCoo
                                    double desiredPrecision,
                                    double *achievedPrecision,
                                    csm::WarningList *warnings) const {
-    MESSAGE_LOG(this->m_logger, "Computeing groundToImage(Covar) for {}, {}, {}, with desired precision {}",
+    MESSAGE_LOG("Computing groundToImage(Covar) for {}, {}, {}, with desired precision {}",
                 groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
 
     csm::EcefCoord gp;
@@ -182,6 +188,8 @@ csm::ImageCoordCovar UsgsAstroFrameSensorModel::groundToImage(const csm::EcefCoo
    csm::ImageCoordCovar result(ip.line, ip.samp);
    // This is a partial, incorrect implementation to test if SocetGXP needs
    // this method implemented in order to load the sensor.
+    MESSAGE_LOG("Computed groundToImage(Covar) for {}, {}, {}, as line, sample: {}, {}",
+                groundPt.x, groundPt.y, groundPt.z, ip.line, ip.samp);
    return result;
 }
 
@@ -192,7 +200,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
                                                  double *achievedPrecision,
                                                  csm::WarningList *warnings) const {
 
-  MESSAGE_LOG(this->m_logger, "Computing imageToGround for {}, {}, {}, with desired precision {}",
+  MESSAGE_LOG("Computing imageToGround for {}, {}, {}, with desired precision {}",
                 imagePt.line, imagePt.samp, height, desiredPrecision);
 
   double sample = imagePt.samp;
@@ -201,7 +209,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   // Here is where we should be able to apply an adjustment to opk
   double m[3][3];
   calcRotationMatrix(m);
-  MESSAGE_LOG(this->m_logger, "Calculated rotation matrix [{}, {}, {}], [{}, {}, {}], [{}, {}, {}]",
+  MESSAGE_LOG("Calculated rotation matrix [{}, {}, {}], [{}, {}, {}], [{}, {}, {}]",
                 m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1], m[2][2]);
 
   // Apply the principal point offset, assuming the pp is given in pixels
@@ -222,25 +230,27 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoord &i
   removeDistortion(x_camera, y_camera, undistortedX, undistortedY,
                    m_opticalDistCoeffs,
                    m_distortionType);
-  MESSAGE_LOG(this->m_logger, "Found undistortedX: {}, and undistortedY: {}",
+  MESSAGE_LOG("Found undistortedX: {}, and undistortedY: {}",
                                undistortedX, undistortedY);
 
   // Now back from distorted mm to pixels
   xl = m[0][0] * undistortedX + m[0][1] * undistortedY - m[0][2] * - m_focalLength;
   yl = m[1][0] * undistortedX + m[1][1] * undistortedY - m[1][2] * - m_focalLength;
   zl = m[2][0] * undistortedX + m[2][1] * undistortedY - m[2][2] * - m_focalLength;
-  MESSAGE_LOG(this->m_logger, "Compute xl, yl, zl as {}, {}, {}", xl, yl, zl);
+  MESSAGE_LOG("Compute xl, yl, zl as {}, {}, {}", xl, yl, zl);
 
   double xc, yc, zc;
   xc = m_currentParameterValue[0];
   yc = m_currentParameterValue[1];
   zc = m_currentParameterValue[2];
-  MESSAGE_LOG(this->m_logger, "Set xc, yc, zc to {}, {}, {}",
+  MESSAGE_LOG("Set xc, yc, zc to {}, {}, {}",
                               m_currentParameterValue[0], m_currentParameterValue[1], m_currentParameterValue[2]);
 
   // Intersect with some height about the ellipsoid.
   double x, y, z;
   losEllipsoidIntersect(height, xc, yc, zc, xl, yl, zl, x, y, z);
+
+  MESSAGE_LOG("Resulting EcefCoordinate: {}, {}, {}", x, y, z);
 
   return csm::EcefCoord(x, y, z);
 }
@@ -251,9 +261,12 @@ csm::EcefCoordCovar UsgsAstroFrameSensorModel::imageToGround(const csm::ImageCoo
                                   double *achievedPrecision,
                                   csm::WarningList *warnings) const {
 
-    MESSAGE_LOG(this->m_logger, "Computeing imageToGround(Covar) for {}, {}, {}, with desired precision {}",
+    MESSAGE_LOG("Computing imageToGround(Covar) for {}, {}, {}, with desired precision {}",
                 imagePt.line, imagePt.samp, height, desiredPrecision);
     // This is an incomplete implementation to see if SocetGXP needs this method implemented.
+
+    MESSAGE_LOG("This is an incomplete implementation to see if SocetGXP needs this method implemented"); 
+
     csm::EcefCoordCovar result;
     return result;
 }
@@ -265,7 +278,7 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToProximateImagingLocus(const csm
                                                                 double *achievedPrecision,
                                                                 csm::WarningList *warnings) const {
   // Ignore the ground point?
-  MESSAGE_LOG(this->m_logger, "Computeing imageToProximateImagingLocus(No ground) for point {}, {}, {}, with desired precision {}",
+  MESSAGE_LOG("Computing imageToProximateImagingLocus(No ground) for point {}, {}, {}, with desired precision {}",
                                imagePt.line, imagePt.samp, desiredPrecision);
   return imageToRemoteImagingLocus(imagePt);
 }
@@ -275,7 +288,7 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(const csm::I
                                                              double desiredPrecision,
                                                              double *achievedPrecision,
                                                              csm::WarningList *warnings) const {
-  MESSAGE_LOG(this->m_logger, "Computeing imageToProximateImagingLocus for {}, {}, {}, with desired precision {}",
+  MESSAGE_LOG("Computing imageToProximateImagingLocus for {}, {}, {}, with desired precision {}",
                                imagePt.line, imagePt.samp, desiredPrecision);
   // Find the line,sample on the focal plane (mm)
   double focalPlaneX, focalPlaneY;
@@ -319,7 +332,7 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(const csm::I
 
 csm::ImageCoord UsgsAstroFrameSensorModel::getImageStart() const {
 
-  MESSAGE_LOG(this->m_logger, "Accessing Image Start line: {}, sample: {}",
+  MESSAGE_LOG("Accessing Image Start line: {}, sample: {}",
                               m_startingDetectorLine, m_startingDetectorSample);
   csm::ImageCoord start;
   start.samp = m_startingDetectorSample;
@@ -330,7 +343,7 @@ csm::ImageCoord UsgsAstroFrameSensorModel::getImageStart() const {
 
 csm::ImageVector UsgsAstroFrameSensorModel::getImageSize() const {
 
-  MESSAGE_LOG(this->m_logger, "Accessing Image Size line: {}, sample: {}",
+  MESSAGE_LOG("Accessing Image Size line: {}, sample: {}",
                               m_nLines, m_nSamples);
   csm::ImageVector size;
   size.line = m_nLines;
@@ -340,15 +353,17 @@ csm::ImageVector UsgsAstroFrameSensorModel::getImageSize() const {
 
 
 std::pair<csm::ImageCoord, csm::ImageCoord> UsgsAstroFrameSensorModel::getValidImageRange() const {
-    MESSAGE_LOG(this->m_logger, "Accessing Image Range");
+    MESSAGE_LOG("Accessing Image Range");
     csm::ImageCoord min_pt(m_startingDetectorLine, m_startingDetectorSample);
     csm::ImageCoord max_pt(m_nLines, m_nSamples);
+    MESSAGE_LOG("Valid image range: min {}, {} max: {}, {}", min_pt.samp, min_pt.line, 
+                max_pt.samp, max_pt.line)
     return std::pair<csm::ImageCoord, csm::ImageCoord>(min_pt, max_pt);
 }
 
 
 std::pair<double, double> UsgsAstroFrameSensorModel::getValidHeightRange() const {
-    MESSAGE_LOG(this->m_logger, "Accessing Image Height min: {}, max: {}",
+    MESSAGE_LOG("Accessing Image Height min: {}, max: {}",
                                 m_minElevation, m_maxElevation);
     return std::pair<double, double>(m_minElevation, m_maxElevation);
 }
@@ -356,7 +371,7 @@ std::pair<double, double> UsgsAstroFrameSensorModel::getValidHeightRange() const
 
 csm::EcefVector UsgsAstroFrameSensorModel::getIlluminationDirection(const csm::EcefCoord &groundPt) const {
   // ground (body-fixed) - sun (body-fixed) gives us the illumination direction.
-  MESSAGE_LOG(this->m_logger, "Accessing illumination direction for ground point {}, {}, {}",
+  MESSAGE_LOG("Accessing illumination direction for ground point {}, {}, {}",
               groundPt.x, groundPt.y, groundPt.z);
   return csm::EcefVector {
     groundPt.x - m_sunPosition[0],
@@ -367,14 +382,16 @@ csm::EcefVector UsgsAstroFrameSensorModel::getIlluminationDirection(const csm::E
 
 
 double UsgsAstroFrameSensorModel::getImageTime(const csm::ImageCoord &imagePt) const {
-  MESSAGE_LOG(this->m_logger, "Accessing image time for image point {}, {}",
+  MESSAGE_LOG("Accessing image time for image point {}, {}",
               imagePt.line, imagePt.samp);
-    return m_ephemerisTime;
+    // The entire image is aquired at once so image time for all pixels is the
+    // reference time
+    return 0.0;
 }
 
 
 csm::EcefCoord UsgsAstroFrameSensorModel::getSensorPosition(const csm::ImageCoord &imagePt) const {
-  MESSAGE_LOG(this->m_logger, "Accessing sensor position for image point {}, {}",
+  MESSAGE_LOG("Accessing sensor position for image point {}, {}",
               imagePt.line, imagePt.samp);
   // check if the image point is in range
   if (imagePt.samp >= m_startingDetectorSample &&
@@ -389,6 +406,9 @@ csm::EcefCoord UsgsAstroFrameSensorModel::getSensorPosition(const csm::ImageCoor
     return sensorPosition;
   }
   else {
+    MESSAGE_LOG("ERROR: UsgsAstroFrameSensorModel::getSensorPosition: "
+                "Image Coordinate {},{} out of Bounds",
+                imagePt.line, imagePt.samp);
     throw csm::Error(csm::Error::BOUNDS,
                      "Image Coordinate out of Bounds",
                      "UsgsAstroFrameSensorModel::getSensorPosition");
@@ -397,8 +417,8 @@ csm::EcefCoord UsgsAstroFrameSensorModel::getSensorPosition(const csm::ImageCoor
 
 
 csm::EcefCoord UsgsAstroFrameSensorModel::getSensorPosition(double time) const {
-    MESSAGE_LOG(this->m_logger, "Accessing sensor position for time {}", time);
-    if (time == m_ephemerisTime){
+    MESSAGE_LOG("Accessing sensor position for time {}", time);
+    if (time == 0.0){
         csm::EcefCoord sensorPosition;
         sensorPosition.x = m_currentParameterValue[0];
         sensorPosition.y = m_currentParameterValue[1];
@@ -406,7 +426,8 @@ csm::EcefCoord UsgsAstroFrameSensorModel::getSensorPosition(double time) const {
 
         return sensorPosition;
     } else {
-        std::string aMessage = "Valid image time is %d", m_ephemerisTime;
+      MESSAGE_LOG("ERROR: UsgsAstroFrameSensorModel::getSensorPosition: Valid image time is 0.0");
+        std::string aMessage = "Valid image time is 0.0";
         throw csm::Error(csm::Error::BOUNDS,
                          aMessage,
                          "UsgsAstroFrameSensorModel::getSensorPosition");
@@ -415,11 +436,12 @@ csm::EcefCoord UsgsAstroFrameSensorModel::getSensorPosition(double time) const {
 
 
 csm::EcefVector UsgsAstroFrameSensorModel::getSensorVelocity(const csm::ImageCoord &imagePt) const {
-  MESSAGE_LOG(this->m_logger, "Accessing sensor velocity for image point {}, {}",
+  MESSAGE_LOG("Accessing sensor velocity for image point {}, {}",
               imagePt.line, imagePt.samp);
   // Make sure the passed coordinate is with the image dimensions.
   if (imagePt.samp < 0.0 || imagePt.samp > m_nSamples ||
       imagePt.line < 0.0 || imagePt.line > m_nLines) {
+    MESSAGE_LOG("ERROR: Image coordinate out of bounds.")
     throw csm::Error(csm::Error::BOUNDS, "Image coordinate out of bounds.",
                      "UsgsAstroFrameSensorModel::getSensorVelocity");
   }
@@ -434,15 +456,15 @@ csm::EcefVector UsgsAstroFrameSensorModel::getSensorVelocity(const csm::ImageCoo
 
 
 csm::EcefVector UsgsAstroFrameSensorModel::getSensorVelocity(double time) const {
-    MESSAGE_LOG(this->m_logger, "Accessing sensor position for time {}", time);
-    if (time == m_ephemerisTime){
+    MESSAGE_LOG("Accessing sensor position for time {}", time);
+    if (time == 0.0){
         return csm::EcefVector {
           m_spacecraftVelocity[0],
           m_spacecraftVelocity[1],
           m_spacecraftVelocity[2]
         };
     } else {
-        std::string aMessage = "Valid image time is %d", m_ephemerisTime;
+        std::string aMessage = "Valid image time is 0.0";
         throw csm::Error(csm::Error::BOUNDS,
                          aMessage,
                          "UsgsAstroFrameSensorModel::getSensorVelocity");
@@ -455,7 +477,7 @@ csm::RasterGM::SensorPartials UsgsAstroFrameSensorModel::computeSensorPartials(i
                                            double desiredPrecision,
                                            double *achievedPrecision,
                                            csm::WarningList *warnings) const {
-    MESSAGE_LOG(this->m_logger, "Computing sensor partials image point from ground point {}, {}, {} \
+    MESSAGE_LOG("Computing sensor partials image point from ground point {}, {}, {} \
                                  and desiredPrecision: {}", groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
 
     csm::ImageCoord img_pt = groundToImage(groundPt, desiredPrecision, achievedPrecision);
@@ -485,7 +507,7 @@ csm::RasterGM::SensorPartials UsgsAstroFrameSensorModel::computeSensorPartials(i
                                           double *achievedPrecision,
                                           csm::WarningList *warnings) const {
 
-  MESSAGE_LOG(this->m_logger, "Computing sensor partials for ground point {}, {}, {}\
+  MESSAGE_LOG("Computing sensor partials for ground point {}, {}, {}\
                                with point: {}, {}, index: {}, and desiredPrecision: {}",
                                groundPt.x, groundPt.y, groundPt.z, imagePt.line, imagePt.samp,
                                index, desiredPrecision);
@@ -518,7 +540,7 @@ std::vector<csm::RasterGM::SensorPartials> UsgsAstroFrameSensorModel::computeAll
     double desiredPrecision,
     double *achievedPrecision,
     csm::WarningList *warnings) const {
-  MESSAGE_LOG(this->m_logger, "Computing all sensor partials for ground point {}, {}, {}\
+  MESSAGE_LOG("Computing all sensor partials for ground point {}, {}, {}\
                                with point: {}, {}, pset: {}, and desiredPrecision: {}",
                                groundPt.x, groundPt.y, groundPt.z, imagePt.line, imagePt.samp,
                                pset, desiredPrecision);
@@ -540,17 +562,17 @@ std::vector<csm::RasterGM::SensorPartials> UsgsAstroFrameSensorModel::computeAll
     double desiredPrecision,
     double *achievedPrecision,
     csm::WarningList *warnings) const {
-  MESSAGE_LOG(this->m_logger, "Computing all sensor partials image point from ground point {}, {}, {} \
+  MESSAGE_LOG("Computing all sensor partials image point from ground point {}, {}, {} \
                                and desiredPrecision: {}", groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
   csm::ImageCoord imagePt = groundToImage(groundPt,
                                           desiredPrecision, achievedPrecision, warnings);
   return computeAllSensorPartials(imagePt, groundPt,
                                   pset, desiredPrecision, achievedPrecision, warnings);
-    }
+  }
 
 std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::EcefCoord
                                                                      &groundPt) const {
-  MESSAGE_LOG(this->m_logger, "Computing ground partials for ground point {}, {}, {}",
+  MESSAGE_LOG("Computing ground partials for ground point {}, {}, {}",
                                groundPt.x, groundPt.y, groundPt.z);
   // Partial of line, sample wrt X, Y, Z
   double x = groundPt.x;
@@ -585,7 +607,7 @@ std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::
   partials[2] = (ipZ.line - ipB.line) / pixelGroundSize;
   partials[5] = (ipZ.samp - ipB.samp) / pixelGroundSize;
 
-  MESSAGE_LOG(this->m_logger, "Computing ground partials results:\nLine: {}, {}, {}\nSample: {}, {}, {}",
+  MESSAGE_LOG("Computing ground partials results:\nLine: {}, {}, {}\nSample: {}, {}, {}",
                                partials[0], partials[1], partials[2], partials[3], partials[4], partials[5]);
 
   return partials;
@@ -593,7 +615,7 @@ std::vector<double> UsgsAstroFrameSensorModel::computeGroundPartials(const csm::
 
 
 const csm::CorrelationModel& UsgsAstroFrameSensorModel::getCorrelationModel() const {
-  MESSAGE_LOG(this->m_logger, "Accessing correlation model");
+  MESSAGE_LOG("Accessing correlation model");
   return _no_corr_model;
 }
 
@@ -602,7 +624,7 @@ std::vector<double> UsgsAstroFrameSensorModel::getUnmodeledCrossCovariance(const
                                                 const csm::ImageCoord &pt2) const {
 
    // No unmodeled error
-   MESSAGE_LOG(this->m_logger, "Accessing unmodeled cross covar with \
+   MESSAGE_LOG("Accessing unmodeled cross covar with \
                                 point1: {}, {} and point2: {}, {}",
                                 pt1.line, pt1.samp, pt2.line, pt2.samp);
    return std::vector<double>(4, 0.0);
@@ -610,77 +632,75 @@ std::vector<double> UsgsAstroFrameSensorModel::getUnmodeledCrossCovariance(const
 
 
 csm::Version UsgsAstroFrameSensorModel::getVersion() const {
-  MESSAGE_LOG(this->m_logger, "Accessing CSM version");
+  MESSAGE_LOG("Accessing CSM version");
   return csm::Version(0,1,0);
 }
 
 
 std::string UsgsAstroFrameSensorModel::getModelName() const {
-  MESSAGE_LOG(this->m_logger, "Accessing CSM name {}", _SENSOR_MODEL_NAME);
+  MESSAGE_LOG("Accessing CSM name {}", _SENSOR_MODEL_NAME);
   return _SENSOR_MODEL_NAME;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getPedigree() const {
-  MESSAGE_LOG(this->m_logger, "Accessing CSM pedigree");
+  MESSAGE_LOG("Accessing CSM pedigree");
   return "USGS_FRAMER";
 }
 
 
 std::string UsgsAstroFrameSensorModel::getImageIdentifier() const {
-  MESSAGE_LOG(this->m_logger, "Accessing image ID {}", m_imageIdentifier);
+  MESSAGE_LOG("Accessing image ID {}", m_imageIdentifier);
   return m_imageIdentifier;
 }
 
 
 void UsgsAstroFrameSensorModel::setImageIdentifier(const std::string& imageId,
                                             csm::WarningList* warnings) {
-  MESSAGE_LOG(this->m_logger, "Setting image ID to {}", imageId);
+  MESSAGE_LOG("Setting image ID to {}", imageId);
   m_imageIdentifier = imageId;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getSensorIdentifier() const {
-  MESSAGE_LOG(this->m_logger, "Accessing sensor ID");
+  MESSAGE_LOG("Accessing sensor ID: {}", m_sensorName);
   return m_sensorName;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getPlatformIdentifier() const {
-  MESSAGE_LOG(this->m_logger, "Accessing platform ID");
+  MESSAGE_LOG("Accessing platform ID: {}", m_platformName);
   return m_platformName;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getCollectionIdentifier() const {
-  MESSAGE_LOG(this->m_logger, "Accessing collection ID");
+  MESSAGE_LOG("Accessing collection ID: {}", m_collectionIdentifier);
   return m_collectionIdentifier;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getTrajectoryIdentifier() const {
-  MESSAGE_LOG(this->m_logger, "Accessing trajectory ID");
+  MESSAGE_LOG("Accessing trajectory ID");
   return "";
 }
 
 
 std::string UsgsAstroFrameSensorModel::getSensorType() const {
-    MESSAGE_LOG(this->m_logger, "Accessing sensor type");
+    MESSAGE_LOG("Accessing sensor type");
     return CSM_SENSOR_TYPE_EO;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getSensorMode() const {
-    MESSAGE_LOG(this->m_logger, "Accessing sensor mode");
+    MESSAGE_LOG("Accessing sensor mode");
     return CSM_SENSOR_MODE_FRAME;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
-  MESSAGE_LOG(this->m_logger, "Accessing reference data and time");
-  csm::EcefCoord referencePointGround = UsgsAstroFrameSensorModel::getReferencePoint();
-  csm::ImageCoord referencePointImage = UsgsAstroFrameSensorModel::groundToImage(referencePointGround);
-  time_t ephemTime = UsgsAstroFrameSensorModel::getImageTime(referencePointImage);
+  MESSAGE_LOG("Accessing reference data and time");
+  time_t ephemTime = m_ephemerisTime;
   struct tm t = {0};  // Initalize to all 0's
   t.tm_year = 100;  // This is year-1900, so 100 = 2000
   t.tm_mday = 1;
@@ -695,7 +715,7 @@ std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
 
 
 std::string UsgsAstroFrameSensorModel::getModelState() const {
-    MESSAGE_LOG(this->m_logger, "Dumping model state");
+    MESSAGE_LOG("Dumping model state");
     json state = {
       {"m_modelName", _SENSOR_MODEL_NAME},
       {"m_sensorName", m_sensorName},
@@ -738,15 +758,14 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_referencePointXyz", {m_referencePointXyz.x,
                                m_referencePointXyz.y,
                                m_referencePointXyz.z}},
-      {"m_currentParameterCovariance", m_currentParameterCovariance},
-      {"m_logFile", m_logFile}
+      {"m_currentParameterCovariance", m_currentParameterCovariance}
     };
 
     return state.dump();
 }
 
 bool UsgsAstroFrameSensorModel::isValidModelState(const std::string& stringState, csm::WarningList *warnings) {
-  MESSAGE_LOG(this->m_logger, "Checking if model has valid state");
+  MESSAGE_LOG("Checking if model has valid state");
   std::vector<std::string> requiredKeywords = {
     "m_modelName",
     "m_majorAxis",
@@ -783,9 +802,12 @@ bool UsgsAstroFrameSensorModel::isValidModelState(const std::string& stringState
   if (!missingKeywords.empty() && warnings) {
     std::ostringstream oss;
     std::copy(missingKeywords.begin(), missingKeywords.end(), std::ostream_iterator<std::string>(oss, " "));
+
+    MESSAGE_LOG("State has missing keywords: {} ", oss.str()); 
+
     warnings->push_back(csm::Warning(
       csm::Warning::DATA_NOT_AVAILABLE,
-      "State has missing keywrods: " + oss.str(),
+      "State has missing keywords: " + oss.str(),
       "UsgsAstroFrameSensorModel::isValidModelState"
     ));
   }
@@ -793,6 +815,9 @@ bool UsgsAstroFrameSensorModel::isValidModelState(const std::string& stringState
   std::string modelName = jsonState.value<std::string>("m_modelName", "");
 
   if (modelName != _SENSOR_MODEL_NAME && warnings) {
+    MESSAGE_LOG("Incorrect model name in state, expected {} but got {}",
+                _SENSOR_MODEL_NAME, modelName);
+ 
     warnings->push_back(csm::Warning(
       csm::Warning::DATA_NOT_AVAILABLE,
       "Incorrect model name in state, expected " + _SENSOR_MODEL_NAME + " but got " + modelName,
@@ -809,7 +834,7 @@ bool UsgsAstroFrameSensorModel::isValidIsd(const std::string& Isd, csm::WarningL
   // or rather, it would be a pain to maintain, so just check if
   // we can get a valid state from ISD. Once ISD schema is 100% clear
   // we can change this.
-  MESSAGE_LOG(this->m_logger, "Building isd to check model state");
+  MESSAGE_LOG("Building isd to check model state");
    try {
      std::string state = constructStateFromIsd(Isd, warnings);
      return isValidModelState(state, warnings);
@@ -823,7 +848,7 @@ bool UsgsAstroFrameSensorModel::isValidIsd(const std::string& Isd, csm::WarningL
 void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState) {
 
     json state = json::parse(stringState);
-    MESSAGE_LOG(this->m_logger, "Replaceing model state");
+    MESSAGE_LOG("Replacing model state");
     // The json library's .at() will except if key is missing
     try {
         m_modelName = state.at("m_modelName").get<std::string>();
@@ -855,18 +880,9 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
         // Set reference point to the center of the image
         m_referencePointXyz = imageToGround(csm::ImageCoord(m_nLines/2.0, m_nSamples/2.0));
         m_currentParameterCovariance = state.at("m_currentParameterCovariance").get<std::vector<double>>();
-        m_logFile = state.at("m_logFile").get<std::string>();
-        if (m_logFile.empty()) {
-          m_logger.reset();
-        }
-        else {
-          m_logger = spdlog::get(m_logFile);
-          if (!m_logger) {
-            m_logger = spdlog::basic_logger_mt(m_logFile, m_logFile);
-          }
-        }
     }
     catch(std::out_of_range& e) {
+      MESSAGE_LOG("State keywords required to generate sensor model missing: " + std::string(e.what()) + "\nUsing model string: " + stringState + "UsgsAstroFrameSensorModel::replaceModelState");
       throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
                        "State keywords required to generate sensor model missing: " + std::string(e.what()) + "\nUsing model string: " + stringState,
                        "UsgsAstroFrameSensorModel::replaceModelState");
@@ -875,32 +891,57 @@ void UsgsAstroFrameSensorModel::replaceModelState(const std::string& stringState
 
 
 std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& jsonIsd, csm::WarningList* warnings) {
-    MESSAGE_LOG(this->m_logger, "Constructing state from isd");
-    json isd = json::parse(jsonIsd);
+    MESSAGE_LOG("Constructing state from isd");
+    json parsedIsd = json::parse(jsonIsd);
     json state = {};
+
+    MESSAGE_LOG("Constructing state from isd");
 
     csm::WarningList* parsingWarnings = new csm::WarningList;
 
-    state["m_modelName"] = getSensorModelName(isd, parsingWarnings);
-    state["m_imageIdentifier"] = getImageId(isd, parsingWarnings);
-    state["m_sensorName"] = getSensorName(isd, parsingWarnings);
-    state["m_platformName"] = getPlatformName(isd, parsingWarnings);
+    state["m_modelName"] = ale::getSensorModelName(parsedIsd);
+    state["m_imageIdentifier"] = ale::getImageId(parsedIsd);
+    state["m_sensorName"] = ale::getSensorName(parsedIsd);
+    state["m_platformName"] = ale::getPlatformName(parsedIsd);
 
-    state["m_startingDetectorSample"] = getDetectorStartingSample(isd, parsingWarnings);
-    state["m_startingDetectorLine"] = getDetectorStartingLine(isd, parsingWarnings);
-    state["m_detectorSampleSumming"] = getSampleSumming(isd, parsingWarnings);
-    state["m_detectorLineSumming"] = getLineSumming(isd, parsingWarnings);
+    state["m_startingDetectorSample"] = ale::getDetectorStartingSample(parsedIsd);
+    state["m_startingDetectorLine"] = ale::getDetectorStartingLine(parsedIsd);
+    state["m_detectorSampleSumming"] = ale::getSampleSumming(parsedIsd);
+    state["m_detectorLineSumming"] = ale::getLineSumming(parsedIsd);
 
-    // get focal length
-    state["m_focalLength"] = getFocalLength(isd, parsingWarnings);
-    state["m_focalLengthEpsilon"] = getFocalLengthEpsilon(isd);
+    state["m_focalLength"] = ale::getFocalLength(parsedIsd);
+    try {
+      state["m_focalLengthEpsilon"] = ale::getFocalLengthUncertainty(parsedIsd);
+    }
+    catch (std::runtime_error& e) {
+      state["m_focalLengthEpsilon"] = 0.0;
+    }
 
 
     state["m_currentParameterValue"] = json();
 
-    // get sensor_position
-    std::vector<double> position = getSensorPositions(isd, parsingWarnings);
-    if (!position.empty() && position.size() != 3) {
+    ale::States inst_state = ale::getInstrumentPosition(parsedIsd);
+    std::vector<double> ephemTime = inst_state.getTimes();
+    std::vector<ale::State> instStates = inst_state.getStates();
+    ale::Orientations j2000_to_target = ale::getBodyRotation(parsedIsd);
+    ale::State rotatedInstState;
+    std::vector<double> positions = {};
+    std::vector<double> velocities = {};
+
+    for (int i = 0; i < ephemTime.size(); i++) {
+      rotatedInstState = j2000_to_target.rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
+      // ALE operates in Km and we want m
+      positions.push_back(rotatedInstState.position.x * 1000);
+      positions.push_back(rotatedInstState.position.y * 1000);
+      positions.push_back(rotatedInstState.position.z * 1000);
+      velocities.push_back(rotatedInstState.velocity.x * 1000);
+      velocities.push_back(rotatedInstState.velocity.y * 1000);
+      velocities.push_back(rotatedInstState.velocity.z * 1000);
+    }
+
+    if (!positions.empty() && positions.size() != 3) {
+      MESSAGE_LOG("Sensor position does not have 3 values, "
+                  "UsgsAstroFrameSensorModel::constructStateFromIsd()");
       parsingWarnings->push_back(
         csm::Warning(
           csm::Warning::DATA_NOT_AVAILABLE,
@@ -911,12 +952,13 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
       state["m_currentParameterValue"][2] = 0;
     }
     else {
-      state["m_currentParameterValue"] = position;
+      state["m_currentParameterValue"] = positions;
     }
 
     // get sensor_velocity
-    std::vector<double> velocity = getSensorVelocities(isd, parsingWarnings);
-    if (!velocity.empty() && velocity.size() != 3) {
+    if (!velocities.empty() && velocities.size() != 3) {
+      MESSAGE_LOG("Sensor velocity does not have 3 values, "
+                  "UsgsAstroFrameSensorModel::constructStateFromIsd()");
       parsingWarnings->push_back(
         csm::Warning(
           csm::Warning::DATA_NOT_AVAILABLE,
@@ -924,17 +966,48 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
           "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
     }
     else {
-      state["m_spacecraftVelocity"] = velocity;
+      state["m_spacecraftVelocity"] = velocities;
     }
 
 
     // get sun_position
     // sun position is not strictly necessary, but is required for getIlluminationDirection.
-    state["m_sunPosition"] = getSunPositions(isd);
+    ale::States sunState = ale::getSunPosition(parsedIsd);
+    std::vector<ale::State> sunStates = sunState.getStates();
+    ephemTime = sunState.getTimes();
+    ale::State rotatedSunState;
+    std::vector<double> sunPositions = {};
+
+    for (int i = 0; i < ephemTime.size(); i++) {
+      rotatedSunState = j2000_to_target.rotateStateAt(ephemTime[i], sunStates[i]);
+      // ALE operates in Km and we want m
+      sunPositions.push_back(rotatedSunState.position.x * 1000);
+      sunPositions.push_back(rotatedSunState.position.y * 1000);
+      sunPositions.push_back(rotatedSunState.position.z * 1000);
+    }
+
+    state["m_sunPosition"] = sunPositions;
 
     // get sensor_orientation quaternion
-    std::vector<double> quaternion = getSensorOrientations(isd, parsingWarnings);
-    if (quaternion.size() != 4) {
+    ale::Orientations j2000_to_sensor = ale::getInstrumentPointing(parsedIsd);
+    ale::Orientations sensor_to_j2000 = j2000_to_sensor.inverse();
+    ale::Orientations sensor_to_target = j2000_to_target * sensor_to_j2000;
+    ephemTime = sensor_to_target.getTimes();
+    std::vector<double> quaternion;
+    std::vector<double> quaternions;
+
+    for (int i = 0; i < ephemTime.size(); i++) {
+      ale::Rotation rotation = sensor_to_target.interpolate(ephemTime[i], ale::SLERP);
+      quaternion = rotation.toQuaternion();
+      quaternions.push_back(quaternion[1]);
+      quaternions.push_back(quaternion[2]);
+      quaternions.push_back(quaternion[3]);
+      quaternions.push_back(quaternion[0]);
+    }
+
+    if (quaternions.size() != 4) {
+      MESSAGE_LOG("Sensor quaternion does not have 4 values, "
+                  "UsgsAstroFrameSensorModel::constructStateFromIsd()");
       parsingWarnings->push_back(
         csm::Warning(
           csm::Warning::DATA_NOT_AVAILABLE,
@@ -942,37 +1015,38 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
           "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
     }
     else {
-      state["m_currentParameterValue"][3] = quaternion[0];
-      state["m_currentParameterValue"][4] = quaternion[1];
-      state["m_currentParameterValue"][5] = quaternion[2];
-      state["m_currentParameterValue"][6] = quaternion[3];
+      state["m_currentParameterValue"][3] = quaternions[0];
+      state["m_currentParameterValue"][4] = quaternions[1];
+      state["m_currentParameterValue"][5] = quaternions[2];
+      state["m_currentParameterValue"][6] = quaternions[3];
     }
 
     // get optical_distortion
-    state["m_distortionType"] = getDistortionModel(isd, warnings);
-    state["m_opticalDistCoeffs"] = getDistortionCoeffs(isd, warnings);
+    state["m_distortionType"] = getDistortionModel(ale::getDistortionModel(parsedIsd));
+    state["m_opticalDistCoeffs"] = ale::getDistortionCoeffs(parsedIsd);
 
     // get detector_center
-    state["m_ccdCenter"][0] = getDetectorCenterLine(isd, parsingWarnings);
-    state["m_ccdCenter"][1] = getDetectorCenterSample(isd, parsingWarnings);
+    state["m_ccdCenter"][0] = ale::getDetectorCenterLine(parsedIsd);
+    state["m_ccdCenter"][1] = ale::getDetectorCenterSample(parsedIsd);
 
 
     // get radii
-    state["m_minorAxis"] = getSemiMinorRadius(isd, parsingWarnings);
-    state["m_majorAxis"] = getSemiMajorRadius(isd, parsingWarnings);
+    // ALE operates in Km and we want m
+    state["m_minorAxis"] = ale::getSemiMinorRadius(parsedIsd) * 1000;
+    state["m_majorAxis"] = ale::getSemiMajorRadius(parsedIsd) * 1000;
 
 
     // get reference_height
-    state["m_minElevation"] = getMinHeight(isd, parsingWarnings);
-    state["m_maxElevation"] = getMaxHeight(isd, parsingWarnings);
+    state["m_minElevation"] = ale::getMinHeight(parsedIsd);
+    state["m_maxElevation"] = ale::getMaxHeight(parsedIsd);
 
 
-    state["m_ephemerisTime"] = getCenterTime(isd, parsingWarnings);
-    state["m_nLines"] = getTotalLines(isd, parsingWarnings);
-    state["m_nSamples"] = getTotalSamples(isd, parsingWarnings);
+    state["m_ephemerisTime"] = ale::getCenterTime(parsedIsd);
+    state["m_nLines"] = ale::getTotalLines(parsedIsd);
+    state["m_nSamples"] = ale::getTotalSamples(parsedIsd);
 
-    state["m_iTransL"] = getFocal2PixelLines(isd, parsingWarnings);
-    state["m_iTransS"] = getFocal2PixelSamples(isd, parsingWarnings);
+    state["m_iTransL"] = ale::getFocal2PixelLines(parsedIsd);
+    state["m_iTransS"] = ale::getFocal2PixelSamples(parsedIsd);
 
     // We don't pass the pixel to focal plane transformation so invert the
     // focal plane to pixel transformation
@@ -991,6 +1065,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
                                state["m_transY"][2].get<double>() * state["m_iTransS"][0].get<double>());
     }
     catch (...) {
+      MESSAGE_LOG("Could not compute detector pixel to focal plane coordinate transformation.");
       parsingWarnings->push_back(
         csm::Warning(
           csm::Warning::DATA_NOT_AVAILABLE,
@@ -1006,16 +1081,14 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
     }
     state["m_collectionIdentifier"] = "";
 
-    // Get the optional logging file
-    state["m_logFile"] = getLogFile(isd);
-
-
     if (!parsingWarnings->empty()) {
       if (warnings) {
         warnings->insert(warnings->end(), parsingWarnings->begin(), parsingWarnings->end());
       }
       delete parsingWarnings;
       parsingWarnings = nullptr;
+      MESSAGE_LOG("ISD is invalid for creating the sensor model.");
+                  
       throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
                        "ISD is invalid for creating the sensor model.",
                        "UsgsAstroFrameSensorModel::constructStateFromIsd");
@@ -1030,33 +1103,33 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(const std::string& 
 
 
 csm::EcefCoord UsgsAstroFrameSensorModel::getReferencePoint() const {
-  MESSAGE_LOG(this->m_logger, "Accessing reference point x: {}, y: {}, z: {}",
+  MESSAGE_LOG("Accessing reference point x: {}, y: {}, z: {}",
                               m_referencePointXyz.x, m_referencePointXyz.y, m_referencePointXyz.z);
   return m_referencePointXyz;
 }
 
 
 void UsgsAstroFrameSensorModel::setReferencePoint(const csm::EcefCoord &groundPt) {
-  MESSAGE_LOG(this->m_logger, "Setting reference point to {}, {}, {}",
+  MESSAGE_LOG("Setting reference point to {}, {}, {}",
                                groundPt.x, groundPt.y, groundPt.z);
   m_referencePointXyz = groundPt;
 }
 
 
 int UsgsAstroFrameSensorModel::getNumParameters() const {
-  MESSAGE_LOG(this->m_logger, "Accessing num parameters: {}", NUM_PARAMETERS);
+  MESSAGE_LOG("Accessing num parameters: {}", NUM_PARAMETERS);
   return NUM_PARAMETERS;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getParameterName(int index) const {
-  MESSAGE_LOG(this->m_logger, "Setting parameter name to {}", index);
+  MESSAGE_LOG("Setting parameter name to {}", index);
   return m_parameterName[index];
 }
 
 
 std::string UsgsAstroFrameSensorModel::getParameterUnits(int index) const {
-  MESSAGE_LOG(this->m_logger, "Accessing parameter units for {}", index);
+  MESSAGE_LOG("Accessing parameter units for {}", index);
   if (index < 3) {
     return "m";
   }
@@ -1067,19 +1140,19 @@ std::string UsgsAstroFrameSensorModel::getParameterUnits(int index) const {
 
 
 bool UsgsAstroFrameSensorModel::hasShareableParameters() const {
-  MESSAGE_LOG(this->m_logger, "Checking for shareable parameters");
+  MESSAGE_LOG("Checking for shareable parameters");
   return false;
 }
 
 
 bool UsgsAstroFrameSensorModel::isParameterShareable(int index) const {
-  MESSAGE_LOG(this->m_logger, "Checking is parameter: {} is shareable", index);
+  MESSAGE_LOG("Checking is parameter: {} is shareable", index);
   return false;
 }
 
 
 csm::SharingCriteria UsgsAstroFrameSensorModel::getParameterSharingCriteria(int index) const {
-   MESSAGE_LOG(this->m_logger, "Checking sharing criteria for parameter {}. "
+   MESSAGE_LOG("Checking sharing criteria for parameter {}. "
                "Sharing is not supported, throwing exception", index);
    // Parameter sharing is not supported for this sensor,
    // all indices are out of range
@@ -1091,39 +1164,39 @@ csm::SharingCriteria UsgsAstroFrameSensorModel::getParameterSharingCriteria(int 
 
 
 double UsgsAstroFrameSensorModel::getParameterValue(int index) const {
-  MESSAGE_LOG(this->m_logger, "Accessing parameter value {} at index: {}", m_currentParameterValue[index], index);
+  MESSAGE_LOG("Accessing parameter value {} at index: {}", m_currentParameterValue[index], index);
   return m_currentParameterValue[index];
 
 }
 
 
 void UsgsAstroFrameSensorModel::setParameterValue(int index, double value) {
-  MESSAGE_LOG(this->m_logger, "Setting parameter value: {} at index: {}", value, index);
+  MESSAGE_LOG("Setting parameter value: {} at index: {}", value, index);
   m_currentParameterValue[index] = value;
 }
 
 
 csm::param::Type UsgsAstroFrameSensorModel::getParameterType(int index) const {
-  MESSAGE_LOG(this->m_logger, "Accessing parameter type: {} at index: {}", m_parameterType[index], index);
+  MESSAGE_LOG("Accessing parameter type: {} at index: {}", m_parameterType[index], index);
   return m_parameterType[index];
 }
 
 
 void UsgsAstroFrameSensorModel::setParameterType(int index, csm::param::Type pType) {
-    MESSAGE_LOG(this->m_logger, "Setting parameter type: {} at index: {}", pType, index);
+    MESSAGE_LOG("Setting parameter type: {} at index: {}", pType, index);
     m_parameterType[index] = pType;
 }
 
 
 double UsgsAstroFrameSensorModel::getParameterCovariance(int index1, int index2) const {
    int index = UsgsAstroFrameSensorModel::NUM_PARAMETERS * index1 + index2;
-   MESSAGE_LOG(this->m_logger, "Accessing parameter covar: {} between index1: {} and index2: {}", m_currentParameterCovariance[index], index1, index2);
+   MESSAGE_LOG("Accessing parameter covar: {} between index1: {} and index2: {}", m_currentParameterCovariance[index], index1, index2);
    return m_currentParameterCovariance[index];
 }
 
 
 void UsgsAstroFrameSensorModel::setParameterCovariance(int index1, int index2, double covariance) {
-   MESSAGE_LOG(this->m_logger, "Setting parameter covar: {} between index1: {} and index2: {}",
+   MESSAGE_LOG("Setting parameter covar: {} between index1: {} and index2: {}",
                                 covariance, index1, index2);
    int index = UsgsAstroFrameSensorModel::NUM_PARAMETERS * index1 + index2;
    m_currentParameterCovariance[index] = covariance;
@@ -1131,13 +1204,13 @@ void UsgsAstroFrameSensorModel::setParameterCovariance(int index1, int index2, d
 
 
 int UsgsAstroFrameSensorModel::getNumGeometricCorrectionSwitches() const {
-  MESSAGE_LOG(this->m_logger, "Accessing num geom correction switches");
+  MESSAGE_LOG("Accessing num geom correction switches");
   return 0;
 }
 
 
 std::string UsgsAstroFrameSensorModel::getGeometricCorrectionName(int index) const {
-   MESSAGE_LOG(this->m_logger, "Accessing name of geometric correction switch {}. "
+   MESSAGE_LOG("Accessing name of geometric correction switch {}. "
                "Geometric correction switches are not supported, throwing exception",
                index);
    // Since there are no geometric corrections, all indices are out of range
@@ -1151,7 +1224,7 @@ std::string UsgsAstroFrameSensorModel::getGeometricCorrectionName(int index) con
 void UsgsAstroFrameSensorModel::setGeometricCorrectionSwitch(int index,
                                                       bool value,
                                                       csm::param::Type pType) {
-   MESSAGE_LOG(this->m_logger, "Setting geometric correction switch {} to {} "
+   MESSAGE_LOG("Setting geometric correction switch {} to {} "
                "with parameter type {}. "
                "Geometric correction switches are not supported, throwing exception",
                index, value, pType);
@@ -1164,7 +1237,7 @@ void UsgsAstroFrameSensorModel::setGeometricCorrectionSwitch(int index,
 
 
 bool UsgsAstroFrameSensorModel::getGeometricCorrectionSwitch(int index) const {
-   MESSAGE_LOG(this->m_logger, "Accessing value of geometric correction switch {}. "
+   MESSAGE_LOG("Accessing value of geometric correction switch {}. "
                "Geometric correction switches are not supported, throwing exception",
                index);
    // Since there are no geometric corrections, all indices are out of range
@@ -1179,7 +1252,7 @@ std::vector<double> UsgsAstroFrameSensorModel::getCrossCovarianceMatrix(
     const GeometricModel &comparisonModel,
     csm::param::Set pSet,
     const GeometricModelList &otherModels) const {
-   MESSAGE_LOG(this->m_logger, "Accessing cross covariance matrix");
+   MESSAGE_LOG("Accessing cross covariance matrix");
 
    // No correlation between models.
    const std::vector<int>& indices = getParameterSetIndices(pSet);
@@ -1192,14 +1265,14 @@ std::vector<double> UsgsAstroFrameSensorModel::getCrossCovarianceMatrix(
 
 
 csm::Ellipsoid UsgsAstroFrameSensorModel::getEllipsoid() const {
-   MESSAGE_LOG(this->m_logger, "Accessing ellipsoid radii {} {}",
+   MESSAGE_LOG("Accessing ellipsoid radii {} {}",
                m_majorAxis, m_minorAxis);
    return csm::Ellipsoid(m_majorAxis, m_minorAxis);
 }
 
 
 void UsgsAstroFrameSensorModel::setEllipsoid(const csm::Ellipsoid &ellipsoid) {
-   MESSAGE_LOG(this->m_logger, "Setting ellipsoid radii {} {}",
+   MESSAGE_LOG("Setting ellipsoid radii {} {}",
                ellipsoid.getSemiMajorRadius(), ellipsoid.getSemiMinorRadius());
    m_majorAxis = ellipsoid.getSemiMajorRadius();
    m_minorAxis = ellipsoid.getSemiMinorRadius();
@@ -1208,7 +1281,7 @@ void UsgsAstroFrameSensorModel::setEllipsoid(const csm::Ellipsoid &ellipsoid) {
 
 void UsgsAstroFrameSensorModel::calcRotationMatrix(
     double m[3][3]) const {
-  MESSAGE_LOG(this->m_logger, "Calculating rotation matrix");
+  MESSAGE_LOG("Calculating rotation matrix");
   // Trigonometric functions for rotation matrix
   double x = m_currentParameterValue[3];
   double y = m_currentParameterValue[4];
@@ -1235,7 +1308,7 @@ void UsgsAstroFrameSensorModel::calcRotationMatrix(
 
 void UsgsAstroFrameSensorModel::calcRotationMatrix(
   double m[3][3], const std::vector<double> &adjustments) const {
-  MESSAGE_LOG(this->m_logger, "Calculating rotation matrix with adjustments");
+  MESSAGE_LOG("Calculating rotation matrix with adjustments");
   // Trigonometric functions for rotation matrix
   double x = getValue(3, adjustments);
   double y = getValue(4, adjustments);
@@ -1266,7 +1339,7 @@ void UsgsAstroFrameSensorModel::losEllipsoidIntersect(
       double&       y,
       double&       z ) const
 {
-   MESSAGE_LOG(this->m_logger, "Calculating losEllipsoidIntersect with height: {},\n\
+   MESSAGE_LOG("Calculating losEllipsoidIntersect with height: {},\n\
                                 xc: {}, yc: {}, zc: {}\n\
                                 xl: {}, yl: {}, zl: {}", height,
                                 xc, yc, zc,
@@ -1306,7 +1379,7 @@ void UsgsAstroFrameSensorModel::losEllipsoidIntersect(
    y = yc + scale * yl;
    z = zc + scale * zl;
 
-   MESSAGE_LOG(this->m_logger, "Calculated losEllipsoidIntersect at: {}, {}, {}",
+   MESSAGE_LOG("Calculated losEllipsoidIntersect at: {}, {}, {}",
                                 x, y, z);
 }
 
@@ -1317,7 +1390,7 @@ double UsgsAstroFrameSensorModel::getValue(
    int index,
    const std::vector<double> &adjustments) const
 {
-   MESSAGE_LOG(this->m_logger, "Accessing value: {} at index: {}, with adjustments", m_currentParameterValue[index] + adjustments[index], index);
+   MESSAGE_LOG("Accessing value: {} at index: {}, with adjustments", m_currentParameterValue[index] + adjustments[index], index);
    return m_currentParameterValue[index] + adjustments[index];
 }
 
@@ -1325,6 +1398,6 @@ std::shared_ptr<spdlog::logger> UsgsAstroFrameSensorModel::getLogger() {
   return m_logger;
 }
 
-void UsgsAstroFrameSensorModel::setLogger(std::shared_ptr<spdlog::logger> logger) {
-  m_logger = logger;
+void UsgsAstroFrameSensorModel::setLogger(std::string logName) {
+  m_logger = spdlog::get(logName);
 }

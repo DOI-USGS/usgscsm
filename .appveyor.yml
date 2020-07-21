@@ -15,18 +15,21 @@ install:
   - conda update -q conda
   - conda install conda-build anaconda-client
   - conda config --add channels usgs-astrogeology
+  - conda install -c conda-forge ale
 
 before_build:
   - mkdir build
   - cd build
-  
+
 build_script:
-  - cmake -G "Visual Studio 15 2017 Win64" -DBUILD_TESTS=OFF ..
+  - cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DUSGSCSM_BUILD_TESTS=OFF ..
   - cmake --build . --target ALL_BUILD --config Release
 
 artifacts:
   - path: build\Release\usgscsm.dll
     name: usgscsm.dll
+  - path: build\ale\Release\ale.dll
+    name: ale.dll
 
 on_success:
 - cd ../

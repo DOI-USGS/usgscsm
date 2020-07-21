@@ -32,8 +32,11 @@
 #include <CorrelationModel.h>
 #include "Distortion.h"
 
+#include "ale/Distortion.h"
+#include "ale/States.h"
+#include "ale/Orientations.h"
+
 #include "spdlog/spdlog.h"
-#include "spdlog/sinks/basic_file_sink.h"
 
 class UsgsAstroLsSensorModel : public csm::RasterGM, virtual public csm::SettableEllipsoid
 {
@@ -44,7 +47,7 @@ public:
    void setState(const std::string &state);
 
 
-    virtual void replaceModelState(const std::string& argState);
+    virtual void replaceModelState(const std::string& stateString);
     //> This method attempts to initialize the current model with the state
     //  given by argState.  The argState argument can be a string previously
     //  retrieved from the getModelState method.
@@ -64,7 +67,7 @@ public:
    static std::string getModelNameFromModelState(
       const std::string& model_state);
 
-  std::string constructStateFromIsd(const std::string imageSupportData, csm::WarningList *list) const;
+  std::string constructStateFromIsd(const std::string imageSupportData, csm::WarningList *list);
 
    // State data elements;
    std::string  m_imageIdentifier;
@@ -125,8 +128,7 @@ public:
 
 
    // Define logging pointer and file content
-   std::string m_logFile;
-   std::shared_ptr<spdlog::logger> m_logger;
+   std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
 
    // Hardcoded
    static const std::string      _SENSOR_MODEL_NAME; // state date element 0
@@ -697,7 +699,7 @@ public:
    //<
 
    virtual std::shared_ptr<spdlog::logger> getLogger();
-   virtual void setLogger(std::shared_ptr<spdlog::logger> logger);
+   virtual void setLogger(std::string logName);
 
 
    //---

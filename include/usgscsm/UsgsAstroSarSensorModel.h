@@ -5,6 +5,8 @@
 #include <SettableEllipsoid.h>
 #include <CorrelationModel.h>
 
+#include "spdlog/spdlog.h"
+
 class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::SettableEllipsoid
 {
 
@@ -23,9 +25,9 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
 
     virtual std::string getModelState() const;
 
-    static std::string constructStateFromIsd(const std::string imageSupportData, csm::WarningList *list);
+    std::string constructStateFromIsd(const std::string imageSupportData, csm::WarningList *list);
 
-    static std::string getModelNameFromModelState(const std::string& model_state);
+    std::string getModelNameFromModelState(const std::string& model_state);
 
     virtual csm::ImageCoord groundToImage(
         const csm::EcefCoord& groundPt,
@@ -277,6 +279,8 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     std::vector<double> m_sunVelocity;
     double m_wavelength;
     LookDirection m_lookDirection;
+    
+    std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
 };
 
 #endif
