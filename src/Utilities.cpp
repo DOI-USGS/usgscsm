@@ -404,6 +404,62 @@ double secantRoot(double lowerBound, double upperBound, std::function<double(dou
   }
 }
 
+double evaluatePolynomial(
+  const std::vector<double> &coeffs,
+  double x)
+{
+  if (coeffs.empty()) {
+    throw std::invalid_argument("Polynomial coeffs must be non-empty.");
+  }
+  auto revIt = coeffs.crbegin();
+  double value = *revIt;
+  ++revIt;
+  for (; revIt != coeffs.crend(); ++revIt) {
+    value *= x;
+    value += *revIt;
+  }
+  return value;
+}
+
+double evaluatePolynomialDerivative(
+  const std::vector<double> &coeffs,
+  double x)
+{
+  if (coeffs.empty()) {
+    throw std::invalid_argument("Polynomial coeffs must be non-empty.");
+  }
+  int i = coeffs.size() - 1;
+  double value = i * coeffs[i];
+  for (; i > 0; --i) {
+    value *= x;
+    value += i * coeffs[i];
+  }
+  return value;
+}
+
+double polynomialRoot(
+  const std::vector<double> &coeffs,
+  double guess,
+  double threshold,
+  int maxIterations)
+{
+  double root = guess;
+  double polyValue = evaluatePolynomial(coeffs, root);
+  double polyDeriv = 0.0;
+  for (int iteration = 0; iteration < maxIterations+1; iteration++) {
+    if (fabs(polyValue) < threshold) {
+      return root;
+    }
+    polyDeriv = evaluatePolynomialDerivative(coeffs, root);
+    if (fabs(polyDeriv) < 1e-15) {
+      throw std::invalid_argument("Derivative at guess is too close to 0.");
+    }
+    root -= polyValue / polyDeriv;
+    polyValue = evaluatePolynomial(coeffs, root);
+  }
+  throw std::invalid_argument("Root finder did not converge in given number of iterations");
+}
+
 double computeEllipsoidElevation(
   double x,
   double y,

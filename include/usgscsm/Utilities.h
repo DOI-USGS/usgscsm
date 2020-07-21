@@ -85,6 +85,20 @@ double secantRoot(
     double epsilon = 1e-10,
     int maxIterations = 30);
 
+double evaluatePolynomial(
+  const std::vector<double> &coeffs,
+  double x);
+
+double evaluatePolynomialDerivative(
+  const std::vector<double> &coeffs,
+  double x);
+
+double polynomialRoot(
+  const std::vector<double> &coeffs,
+  double guess,
+  double threshold = 1e-10,
+  int maxIterations = 30);
+
 double computeEllipsoidElevation(
     double x,
     double y,
