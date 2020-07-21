@@ -78,12 +78,25 @@ double brentRoot(
   std::function<double(double)> func,
   double epsilon = 1e-10);
 
-double secantRoot(
-    double lowerBound,
-    double upperBound,
-    std::function<double(double)> func,
-    double epsilon = 1e-10,
-    int maxIterations = 30);
+// Evaluate a polynomial function.
+// Coefficients should be ordered least order to greatest I.E. {1, 2, 3} is 1 + 2x + 3x^2
+double evaluatePolynomial(
+  const std::vector<double> &coeffs,
+  double x);
+
+// Evaluate the derivative of a polynomial function.
+// Coefficients should be ordered least order to greatest I.E. {1, 2, 3} is 1 + 2x + 3x^2
+double evaluatePolynomialDerivative(
+  const std::vector<double> &coeffs,
+  double x);
+
+// Find a root of a polynomial using Newton's method.
+// Coefficients should be ordered least order to greatest I.E. {1, 2, 3} is 1 + 2x + 3x^2
+double polynomialRoot(
+  const std::vector<double> &coeffs,
+  double guess,
+  double threshold = 1e-10,
+  int maxIterations = 30);
 
 double computeEllipsoidElevation(
     double x,
