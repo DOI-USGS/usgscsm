@@ -116,14 +116,14 @@ TEST_F(SarSensorModel, imageToRemoteImagingLocus) {
 }
 
 TEST_F(SarSensorModel, adjustedPositionVelocity) {
-  std::vector<double> adjustments = {0.1, 0.2, 0.3, 0.25, 0.5, 0.75};
+  std::vector<double> adjustments = {1000000.0, 0.2, -10.0, -20.0, 0.5, 2000000.0};
   csm::EcefCoord adjPosition = sensorModel->getAdjustedSensorPosition(0.0, adjustments);
   csm::EcefVector adjVelocity = sensorModel->getAdjustedSensorVelocity(0.0, adjustments);
   
-  EXPECT_NEAR(adjPosition.x, 3737400.1, 1e-2);
+  EXPECT_NEAR(adjPosition.x, 4737399.9991294323, 1e-2);
   EXPECT_NEAR(adjPosition.y, 0.2, 1e-2);
-  EXPECT_NEAR(adjPosition.z, 0.3, 1e-2);
-  EXPECT_NEAR(adjVelocity.x, 0.25, 1e-8);
+  EXPECT_NEAR(adjPosition.z, -18.0667951486008143, 1e-2);
+  EXPECT_NEAR(adjVelocity.x, -28.0667951486008143, 1e-8);
   EXPECT_NEAR(adjVelocity.y, 0.5, 1e-8);
-  EXPECT_NEAR(adjVelocity.z, -3737399.25, 1e-2);
+  EXPECT_NEAR(adjVelocity.z, -1737399.9991294323, 1e-2);
 }
