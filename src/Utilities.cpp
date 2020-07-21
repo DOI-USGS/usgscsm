@@ -279,12 +279,10 @@ void lagrangeInterp(
   }
 }
 
-double brentRoot(
-  double lowerBound,
-  double upperBound,
-  std::function<double(double)> func,
-  double epsilon)
-{
+double brentRoot(double lowerBound,
+                 double upperBound,
+                 std::function<double(double)> func,
+                 double epsilon) {
   double counterPoint = lowerBound;
   double currentPoint = upperBound;
   double counterFunc = func(counterPoint);
@@ -348,10 +346,8 @@ double brentRoot(
   return nextPoint;
 }
 
-double evaluatePolynomial(
-  const std::vector<double> &coeffs,
-  double x)
-{
+double evaluatePolynomial(const std::vector<double> &coeffs,
+                          double x) {
   if (coeffs.empty()) {
     throw std::invalid_argument("Polynomial coeffs must be non-empty.");
   }
@@ -365,15 +361,14 @@ double evaluatePolynomial(
   return value;
 }
 
-double evaluatePolynomialDerivative(
-  const std::vector<double> &coeffs,
-  double x)
-{
+double evaluatePolynomialDerivative(const std::vector<double> &coeffs,
+                                    double x) {
   if (coeffs.empty()) {
     throw std::invalid_argument("Polynomial coeffs must be non-empty.");
   }
   int i = coeffs.size() - 1;
   double value = i * coeffs[i];
+  --i;
   for (; i > 0; --i) {
     value *= x;
     value += i * coeffs[i];
@@ -381,12 +376,10 @@ double evaluatePolynomialDerivative(
   return value;
 }
 
-double polynomialRoot(
-  const std::vector<double> &coeffs,
-  double guess,
-  double threshold,
-  int maxIterations)
-{
+double polynomialRoot(const std::vector<double> &coeffs,
+                      double guess,
+                      double threshold,
+                      int maxIterations) {
   double root = guess;
   double polyValue = evaluatePolynomial(coeffs, root);
   double polyDeriv = 0.0;
@@ -401,7 +394,8 @@ double polynomialRoot(
     root -= polyValue / polyDeriv;
     polyValue = evaluatePolynomial(coeffs, root);
   }
-  throw std::invalid_argument("Root finder did not converge in given number of iterations");
+  throw std::invalid_argument("Root finder did not converge after " +
+                              std::to_string(maxIterations) + " iterations");
 }
 
 double computeEllipsoidElevation(

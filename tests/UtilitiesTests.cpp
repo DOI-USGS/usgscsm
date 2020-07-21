@@ -353,10 +353,15 @@ TEST(UtilitiesTests, brentRoot) {
 TEST(UtilitiesTests, polynomialEval) {
   std::vector<double> coeffs = {-12.0, 4.0, -3.0, 1.0};
   EXPECT_DOUBLE_EQ(evaluatePolynomial(coeffs, -1.0), -20.0);
-  EXPECT_DOUBLE_EQ(evaluatePolynomial(coeffs,  0.0), -12.0);
-  EXPECT_DOUBLE_EQ(evaluatePolynomial(coeffs,  2.0),  -8.0);
-  EXPECT_DOUBLE_EQ(evaluatePolynomial(coeffs,  3.5),   8.125);
+  EXPECT_DOUBLE_EQ(evaluatePolynomialDerivative(coeffs, -1.0), 13.0);
+  EXPECT_DOUBLE_EQ(evaluatePolynomial(coeffs, 0.0), -12.0);
+  EXPECT_DOUBLE_EQ(evaluatePolynomialDerivative(coeffs,  0.0), 4.0);
+  EXPECT_DOUBLE_EQ(evaluatePolynomial(coeffs, 2.0), -8.0);
+  EXPECT_DOUBLE_EQ(evaluatePolynomialDerivative(coeffs,  2.0), 4.0);
+  EXPECT_DOUBLE_EQ(evaluatePolynomial(coeffs, 3.5), 8.125);
+  EXPECT_DOUBLE_EQ(evaluatePolynomialDerivative(coeffs, 3.5), 19.75);
   EXPECT_THROW(evaluatePolynomial(std::vector<double>(), 0.0), std::invalid_argument);
+  EXPECT_THROW(evaluatePolynomialDerivative(std::vector<double>(), 0.0), std::invalid_argument);
 }
 
 TEST(UtilitiesTests, polynomialRoot) {
