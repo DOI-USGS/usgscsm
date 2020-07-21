@@ -426,26 +426,13 @@ double UsgsAstroSarSensorModel::slantRangeToGroundRange(
 
   std::vector<double> coeffs = getRangeCoefficients(time);
 
-  // Calculates the ground range from the slant range.
-  std::function<double(double)> slantRangeToGroundRangeFunction =
-    [this, coeffs, slantRange](double groundRange){
-   return slantRange - groundRangeToSlantRange(groundRange, coeffs);
-  };
-
   // Need to come up with an initial guess when solving for ground
-  // range given slant range. Compute the ground range at the
-  // near and far edges of the image by evaluating the sample-to-
-  // ground-range equation: groundRange=(sample-1)*scaled_pixel_width
-  // at the edges of the image. We also need to add some padding to
-  // allow for solving for coordinates that are slightly outside of
-  // the actual image area. Use sample=-0.25*image_samples and
-  // sample=1.25*image_samples.
-  double minGroundRangeGuess = (-0.25 * m_nSamples - 1.0) * m_scaledPixelWidth;
-  double maxGroundRangeGuess = (1.25 * m_nSamples - 1.0) * m_scaledPixelWidth;
+  // range given slant range. Naively use the middle of the image.
+  double guess = 0.5 * m_nSamples * m_scaledPixelWidth;
 
   // Tolerance to 1/20th of a pixel for now.
   coeffs[0] -= slantRange;
-  return polynomialRoot(coeffs, (maxGroundRangeGuess + minGroundRangeGuess) / 2.0, tolerance);
+  return polynomialRoot(coeffs, guess, tolerance);
 }
 
 double UsgsAstroSarSensorModel::groundRangeToSlantRange(double groundRange, const std::vector<double> &coeffs) const {
