@@ -462,7 +462,6 @@ double computeEllipsoidElevation(
   return h;
 }
 
-
 csm::EcefVector operator*(double scalar, const csm::EcefVector &vec)
 {
   return csm::EcefVector(

@@ -35,6 +35,13 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
         double* achievedPrecision = NULL,
         csm::WarningList* warnings = NULL) const;
 
+    virtual csm::ImageCoord groundToImage(
+        const csm::EcefCoord& groundPt,
+        const std::vector<double> adjustments,
+        double desired_precision = 0.001,
+        double* achieved_precision = NULL,
+        csm::WarningList* warnings = NULL) const;
+
     virtual csm::ImageCoordCovar groundToImage(
         const csm::EcefCoordCovar& groundPt,
         double desiredPrecision = 0.001,
@@ -81,13 +88,23 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
 
     virtual double getImageTime(const csm::ImageCoord& imagePt) const;
 
+    virtual csm::EcefVector getSpacecraftPosition(double time) const;
+
+    virtual csm::EcefVector getAdjustedSpacecraftPosition(double time, std::vector<double> adj) const;
+
     virtual csm::EcefCoord getSensorPosition(const csm::ImageCoord& imagePt) const;
 
     virtual csm::EcefCoord getSensorPosition(double time) const;
 
+    virtual csm::EcefCoord getAdjustedSensorPosition(double time, 
+                                                     std::vector<double> adjustments) const;
+
     virtual csm::EcefVector getSensorVelocity(const csm::ImageCoord& imagePt) const;
 
     virtual csm::EcefVector getSensorVelocity(double time) const;
+
+    virtual csm::EcefVector getAdjustedSensorVelocity(double time, 
+                                                     std::vector<double> adjustments) const;
 
     virtual csm::RasterGM::SensorPartials computeSensorPartials(
         int index,
@@ -100,13 +117,6 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
         int index,
         const csm::ImageCoord& imagePt,
         const csm::EcefCoord& groundPt,
-        double desiredPrecision = 0.001,
-        double* achievedPrecision = NULL,
-        csm::WarningList* warnings = NULL) const;
-
-    virtual std::vector<csm::RasterGM::SensorPartials> computeAllSensorPartials(
-        const csm::EcefCoord& groundPt,
-        csm::param::Set pSet = csm::param::VALID,
         double desiredPrecision = 0.001,
         double* achievedPrecision = NULL,
         csm::WarningList* warnings = NULL) const;
@@ -202,20 +212,18 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     ////////////////////
     void determineSensorCovarianceInImageSpace(
        csm::EcefCoord &gp,
-       double          sensor_cov[4]) const;
-    double dopplerShift(csm::EcefCoord groundPt, double tolerance) const;
+       double sensor_cov[4]) const;
+    double dopplerShift(csm::EcefCoord groundPt, double tolerance, std::vector<double> adj) const;
 
-    double slantRange(csm::EcefCoord surfPt, double time) const;
+    double slantRange(csm::EcefCoord surfPt, double time, std::vector<double> adj) const;
 
     double slantRangeToGroundRange(const csm::EcefCoord& groundPt, double time, double slantRange, double tolerance) const;
 
     double groundRangeToSlantRange(double groundRange, const std::vector<double> &coeffs) const;
 
-    csm::EcefVector getSpacecraftPosition(double time) const;
-
     csm::EcefVector getSunPosition(const double imageTime) const;
-
     std::vector<double> getRangeCoefficients(double time) const;
+    double getValue(int index, const std::vector<double> &adjustments) const;
 
     ////////////////////////////
     // Model static variables //
@@ -266,6 +274,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM, virtual public csm::Settab
     std::vector<double> m_sunVelocity;
     double m_wavelength;
     LookDirection m_lookDirection;
+    std::vector<double> m_noAdjustments;
     
     std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
 };
