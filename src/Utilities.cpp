@@ -283,125 +283,69 @@ double brentRoot(
   double lowerBound,
   double upperBound,
   std::function<double(double)> func,
-  double epsilon) {
-    double counterPoint = lowerBound;
-    double currentPoint = upperBound;
-    double counterFunc = func(counterPoint);
-    double currentFunc = func(currentPoint);
-    if (counterFunc * currentFunc > 0.0) {
-      throw std::invalid_argument("Function values at the boundaries have the same sign [brentRoot].");
+  double epsilon)
+{
+  double counterPoint = lowerBound;
+  double currentPoint = upperBound;
+  double counterFunc = func(counterPoint);
+  double currentFunc = func(currentPoint);
+  if (counterFunc * currentFunc > 0.0) {
+    throw std::invalid_argument("Function values at the boundaries have the same sign [brentRoot].");
+  }
+  if (fabs(counterFunc) < fabs(currentFunc)) {
+    std::swap(counterPoint, currentPoint);
+    std::swap(counterFunc, currentFunc);
+  }
+
+  double previousPoint = counterPoint;
+  double previousFunc = counterFunc;
+  double evenOlderPoint = previousPoint;
+  double nextPoint;
+  double nextFunc;
+  int iteration = 0;
+  bool bisected = true;
+
+  do {
+    // Inverse quadratic interpolation
+    if (counterFunc != previousFunc && counterFunc != currentFunc && currentFunc != previousFunc) {
+      nextPoint = (counterPoint * currentFunc * previousFunc) / ((counterFunc - currentFunc) * (counterFunc - previousFunc));
+      nextPoint += (currentPoint * counterFunc * previousFunc) / ((currentFunc - counterFunc) * (currentFunc - previousFunc));
+      nextPoint += (previousPoint * currentFunc * counterFunc) / ((previousFunc - counterFunc) * (previousFunc - currentFunc));
     }
-    if (fabs(counterFunc) < fabs(currentFunc)) {
-      std::swap(counterPoint, currentPoint);
-      std::swap(counterFunc, currentFunc);
+    // Secant method
+    else {
+      nextPoint = currentPoint - currentFunc * (currentPoint - counterPoint) / (currentFunc - counterFunc);
     }
 
-    double previousPoint = counterPoint;
-    double previousFunc = counterFunc;
-    double evenOlderPoint = previousPoint;
-    double nextPoint;
-    double nextFunc;
-    int iteration = 0;
-    bool bisected = true;
-
-    do {
-      // Inverse quadratic interpolation
-      if (counterFunc != previousFunc && counterFunc != currentFunc && currentFunc != previousFunc) {
-        nextPoint = (counterPoint * currentFunc * previousFunc) / ((counterFunc - currentFunc) * (counterFunc - previousFunc));
-        nextPoint += (currentPoint * counterFunc * previousFunc) / ((currentFunc - counterFunc) * (currentFunc - previousFunc));
-        nextPoint += (previousPoint * currentFunc * counterFunc) / ((previousFunc - counterFunc) * (previousFunc - currentFunc));
-      }
-      // Secant method
-      else {
-        nextPoint = currentPoint - currentFunc * (currentPoint - counterPoint) / (currentFunc - counterFunc);
-      }
-
-      // Bisection method
-      if (((currentPoint - nextPoint) * (nextPoint - (3 * counterPoint + currentPoint) / 4) < 0) ||
-          (bisected && fabs(nextPoint - currentPoint) >= fabs(currentPoint - previousPoint) / 2) ||
-          (!bisected && fabs(nextPoint - currentPoint) >= fabs(previousPoint - evenOlderPoint) / 2) ||
-          (bisected && fabs(currentPoint - previousPoint) < epsilon) ||
-          (!bisected && fabs(previousPoint - evenOlderPoint) < epsilon)) {
-        nextPoint = (currentPoint + counterPoint) / 2;
-        bisected = true;
-      }
-      else {
-        bisected = false;
-      }
-
-      // Setup for next iteration
-      evenOlderPoint = previousPoint;
-      previousPoint = currentPoint;
-      previousFunc = currentFunc;
-      nextFunc = func(nextPoint);
-      if (counterFunc * nextFunc < 0) {
-        currentPoint = nextPoint;
-        currentFunc = nextFunc;
-      }
-      else {
-        counterPoint = nextPoint;
-        counterFunc = nextFunc;
-      }
-    } while (++iteration < 30 && fabs(counterPoint - currentPoint) > epsilon);
-
-    return nextPoint;
-  }
-
-double secantRoot(double lowerBound, double upperBound, std::function<double(double)> func,
-                  double epsilon, int maxIters) {
-  bool found = false;
-
-  double x0 = lowerBound;
-  double x1 = upperBound;
-  double f0 = func(x0);
-  double f1 = func(x1);
-  double diff = 0;
-  double x2 = 0;
-  double f2 = 0;
-
-  // Make sure we bound the root (f = 0.0)
-  if (f0 * f1 > 0.0) {
-    throw std::invalid_argument("Function values at the boundaries have the same sign [secantRoot].");
-  }
-
-  // Order the bounds
-  if (f1 < f0) {
-    std::swap(x0, x1);
-    std::swap(f0, f1);
-  }
-
-  for (int iteration=0; iteration < maxIters; iteration++) {
-    x2 = x1 - f1 * (x1 - x0)/(f1 - f0);
-    f2 = func(x2);
-
-    // Update the bounds for the next iteration
-    if (f2 < 0.0) {
-      diff = x1 - x2;
-      x1 = x2;
-      f1 = f2;
+    // Bisection method
+    if (((currentPoint - nextPoint) * (nextPoint - (3 * counterPoint + currentPoint) / 4) < 0) ||
+        (bisected && fabs(nextPoint - currentPoint) >= fabs(currentPoint - previousPoint) / 2) ||
+        (!bisected && fabs(nextPoint - currentPoint) >= fabs(previousPoint - evenOlderPoint) / 2) ||
+        (bisected && fabs(currentPoint - previousPoint) < epsilon) ||
+        (!bisected && fabs(previousPoint - evenOlderPoint) < epsilon)) {
+      nextPoint = (currentPoint + counterPoint) / 2;
+      bisected = true;
     }
     else {
-      diff = x0 - x2;
-      x0 = x2;
-      f0 = f2;
+      bisected = false;
     }
 
-    // Check to see if we're done
-    if ((fabs(diff) <= epsilon) || (f2 == 0.0) ) {
-      found = true;
-      break;
+    // Setup for next iteration
+    evenOlderPoint = previousPoint;
+    previousPoint = currentPoint;
+    previousFunc = currentFunc;
+    nextFunc = func(nextPoint);
+    if (counterFunc * nextFunc < 0) {
+      currentPoint = nextPoint;
+      currentFunc = nextFunc;
     }
-  }
+    else {
+      counterPoint = nextPoint;
+      counterFunc = nextFunc;
+    }
+  } while (++iteration < 30 && fabs(counterPoint - currentPoint) > epsilon);
 
-  if (found) {
-   return x2;
-  }
-  else {
-    throw csm::Error(
-    csm::Error::UNKNOWN_ERROR,
-    "Could not find a root of the function using the secant method",
-    "secantRoot");
-  }
+  return nextPoint;
 }
 
 double evaluatePolynomial(

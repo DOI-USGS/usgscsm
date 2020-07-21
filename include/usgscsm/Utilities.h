@@ -78,13 +78,6 @@ double brentRoot(
   std::function<double(double)> func,
   double epsilon = 1e-10);
 
-double secantRoot(
-    double lowerBound,
-    double upperBound,
-    std::function<double(double)> func,
-    double epsilon = 1e-10,
-    int maxIterations = 30);
-
 double evaluatePolynomial(
   const std::vector<double> &coeffs,
   double x);

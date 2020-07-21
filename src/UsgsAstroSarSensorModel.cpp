@@ -45,7 +45,7 @@ const csm::param::Type
 string UsgsAstroSarSensorModel::constructStateFromIsd(
     const string imageSupportData,
     csm::WarningList *warnings){
-  
+
   MESSAGE_LOG("UsgsAstroSarSensorModel constructing state from ISD, with {}", imageSupportData);
   json isd = json::parse(imageSupportData);
   json state = {};
@@ -227,7 +227,7 @@ void UsgsAstroSarSensorModel::reset() {
 
 void UsgsAstroSarSensorModel::replaceModelState(const string& argState){
   reset();
-  
+
   MESSAGE_LOG("Replacing model state with: {}", argState);
   auto stateJson = json::parse(argState);
 
@@ -286,7 +286,7 @@ void UsgsAstroSarSensorModel::replaceModelState(const string& argState){
     csm::ImageCoord ip(lineCtr, sampCtr);
     MESSAGE_LOG("updateState: center image coordinate set to {} {}",
                               lineCtr, sampCtr)
-    
+
     double refHeight = 0;
     m_referencePointXyz = imageToGround(ip, refHeight);
     MESSAGE_LOG("updateState: reference point (x, y, z) {} {} {}",
@@ -386,18 +386,18 @@ csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
 double UsgsAstroSarSensorModel::dopplerShift(
     csm::EcefCoord groundPt,
     double tolerance) const {
-  MESSAGE_LOG("Calculating doppler shift with: {}, {}, {}, and tolerance {}.", 
+  MESSAGE_LOG("Calculating doppler shift with: {}, {}, {}, and tolerance {}.",
               groundPt.x, groundPt.y, groundPt.z, tolerance);
   csm::EcefVector groundVec(groundPt.x ,groundPt.y, groundPt.z);
   std::function<double(double)> dopplerShiftFunction = [this, groundVec](double time) {
     csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
     csm::EcefVector spacecraftVelocity = getSensorVelocity(time);
     csm::EcefVector lookVector = spacecraftPosition - groundVec;
-    
+
     double slantRange = norm(lookVector);
-    
+
     double dopplerShift = -2.0 * dot(lookVector, spacecraftVelocity) / (slantRange * m_wavelength);
-    
+
     return dopplerShift;
    };
 
@@ -409,7 +409,7 @@ double UsgsAstroSarSensorModel::dopplerShift(
 
 double UsgsAstroSarSensorModel::slantRange(csm::EcefCoord surfPt,
     double time) const {
-  MESSAGE_LOG("Calculating slant range with: {}, {}, {}, and time {}.", 
+  MESSAGE_LOG("Calculating slant range with: {}, {}, {}, and time {}.",
               surfPt.x, surfPt.y, surfPt.z, time);
   csm::EcefVector surfVec(surfPt.x ,surfPt.y, surfPt.z);
   csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
@@ -444,11 +444,12 @@ double UsgsAstroSarSensorModel::slantRangeToGroundRange(
   double maxGroundRangeGuess = (1.25 * m_nSamples - 1.0) * m_scaledPixelWidth;
 
   // Tolerance to 1/20th of a pixel for now.
-  return secantRoot(minGroundRangeGuess, maxGroundRangeGuess, slantRangeToGroundRangeFunction, tolerance);
+  coeffs[0] -= slantRange;
+  return polynomialRoot(coeffs, (maxGroundRangeGuess + minGroundRangeGuess) / 2.0, tolerance);
 }
 
 double UsgsAstroSarSensorModel::groundRangeToSlantRange(double groundRange, const std::vector<double> &coeffs) const {
-  return coeffs[0] + groundRange * (coeffs[1] + groundRange * (coeffs[2] + groundRange * coeffs[3]));
+  return evaluatePolynomial(coeffs, groundRange);
 }
 
 
@@ -578,7 +579,7 @@ csm::EcefCoordCovar UsgsAstroSarSensorModel::imageToGround(
     double desiredPrecision,
     double* achievedPrecision,
     csm::WarningList* warnings) const {
-  MESSAGE_LOG("Calculating imageToGroundWith: {}, {}, {}, {}, {}", imagePt.samp, imagePt.line, 
+  MESSAGE_LOG("Calculating imageToGroundWith: {}, {}, {}, {}, {}", imagePt.samp, imagePt.line,
               height, heightVariance, desiredPrecision);
   // Image to ground with error propagation
   // Use numerical partials
