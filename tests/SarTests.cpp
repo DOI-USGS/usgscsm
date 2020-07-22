@@ -2,16 +2,16 @@
 
 #include "UsgsAstroSarSensorModel.h"
 
-#include "Warning.h"
 #include "Fixtures.h"
+#include "Warning.h"
 
-#include <nlohmann/json.hpp>
 #include <gtest/gtest.h>
+#include <nlohmann/json.hpp>
 
 #include <math.h>
-#include <string>
 #include <fstream>
 #include <iostream>
+#include <string>
 
 using json = nlohmann::json;
 
@@ -24,9 +24,8 @@ TEST_F(SarSensorModel, stateFromIsd) {
   std::string stateString;
   try {
     stateString = sensorModel->constructStateFromIsd(isdString, &warnings);
-  }
-  catch(...) {
-    for (auto &warn: warnings) {
+  } catch (...) {
+    for (auto &warn : warnings) {
       std::cerr << "Warning in " << warn.getFunction() << std::endl;
       std::cerr << "  " << warn.getMessage() << std::endl;
     }
@@ -37,9 +36,7 @@ TEST_F(SarSensorModel, stateFromIsd) {
 
 TEST_F(SarSensorModel, State) {
   std::string modelState = sensorModel->getModelState();
-  EXPECT_NO_THROW(
-      sensorModel->replaceModelState(modelState)
-      );
+  EXPECT_NO_THROW(sensorModel->replaceModelState(modelState));
   EXPECT_EQ(sensorModel->getModelState(), modelState);
 }
 
@@ -52,7 +49,8 @@ TEST_F(SarSensorModel, Center) {
 }
 
 TEST_F(SarSensorModel, GroundToImage) {
-  csm::EcefCoord groundPt(1737387.8590770673, -5303.280537826621, -3749.9796183814506);
+  csm::EcefCoord groundPt(1737387.8590770673, -5303.280537826621,
+                          -3749.9796183814506);
   csm::ImageCoord imagePt = sensorModel->groundToImage(groundPt, 0.001);
   EXPECT_NEAR(imagePt.line, 500.0, 1e-3);
   EXPECT_NEAR(imagePt.samp, 500.0, 1e-3);
@@ -95,7 +93,8 @@ TEST_F(SarSensorModel, computeGroundPartials) {
 TEST_F(SarSensorModel, imageToProximateImagingLocus) {
   csm::EcefLocus locus = sensorModel->imageToProximateImagingLocus(
       csm::ImageCoord(500.0, 500.0),
-      csm::EcefCoord(1737287.8590770673, -5403.280537826621, -3849.9796183814506));
+      csm::EcefCoord(1737287.8590770673, -5403.280537826621,
+                     -3849.9796183814506));
   EXPECT_NEAR(locus.point.x, 1737388.1260092105, 1e-2);
   EXPECT_NEAR(locus.point.y, -5403.0102509726485, 1e-2);
   EXPECT_NEAR(locus.point.z, -3749.9801945280433, 1e-2);
@@ -105,23 +104,26 @@ TEST_F(SarSensorModel, imageToProximateImagingLocus) {
 }
 
 TEST_F(SarSensorModel, imageToRemoteImagingLocus) {
-  csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(
-      csm::ImageCoord(500.0, 500.0));
-      EXPECT_NEAR(locus.point.x, 1737380.8279381434, 1e-3);
-      EXPECT_NEAR(locus.point.y, 0.0, 1e-3);
-      EXPECT_NEAR(locus.point.z, -3749.964442364465, 1e-3);
-      EXPECT_NEAR(locus.direction.x, 0.0, 1e-8);
-      EXPECT_NEAR(locus.direction.y, -1.0, 1e-8);
-      EXPECT_NEAR(locus.direction.z, 0.0, 1e-8);
+  csm::EcefLocus locus =
+      sensorModel->imageToRemoteImagingLocus(csm::ImageCoord(500.0, 500.0));
+  EXPECT_NEAR(locus.point.x, 1737380.8279381434, 1e-3);
+  EXPECT_NEAR(locus.point.y, 0.0, 1e-3);
+  EXPECT_NEAR(locus.point.z, -3749.964442364465, 1e-3);
+  EXPECT_NEAR(locus.direction.x, 0.0, 1e-8);
+  EXPECT_NEAR(locus.direction.y, -1.0, 1e-8);
+  EXPECT_NEAR(locus.direction.z, 0.0, 1e-8);
 }
 
 TEST_F(SarSensorModel, adjustedPositionVelocity) {
-  std::vector<double> adjustments = {1000000.0, 0.2, -10.0, -20.0, 0.5, 2000000.0};
+  std::vector<double> adjustments = {1000000.0, 0.2, -10.0,
+                                     -20.0,     0.5, 2000000.0};
   csm::EcefCoord sensorPosition = sensorModel->getSensorPosition(0.0);
   csm::EcefVector sensorVelocity = sensorModel->getSensorVelocity(0.0);
-  csm::EcefCoord adjPosition = sensorModel->getAdjustedSensorPosition(0.0, adjustments);
-  csm::EcefVector adjVelocity = sensorModel->getAdjustedSensorVelocity(0.0, adjustments);
-  
+  csm::EcefCoord adjPosition =
+      sensorModel->getAdjustedSensorPosition(0.0, adjustments);
+  csm::EcefVector adjVelocity =
+      sensorModel->getAdjustedSensorVelocity(0.0, adjustments);
+
   EXPECT_NEAR(adjPosition.x, sensorPosition.x + adjustments[0], 1e-2);
   EXPECT_NEAR(adjPosition.y, sensorPosition.y + adjustments[1], 1e-2);
   EXPECT_NEAR(adjPosition.z, sensorPosition.z + adjustments[2], 1e-2);

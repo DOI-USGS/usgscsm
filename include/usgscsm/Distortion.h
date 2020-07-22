@@ -1,19 +1,12 @@
 #ifndef Distortion_h
 #define Distortion_h
 
-#include <vector>
 #include <math.h>
-#include <tuple>
 #include <iostream>
+#include <tuple>
+#include <vector>
 
-enum DistortionType {
-  RADIAL,
-  TRANSVERSE,
-  KAGUYALISM,
-  DAWNFC,
-  LROLROCNAC
-};
-
+enum DistortionType { RADIAL, TRANSVERSE, KAGUYALISM, DAWNFC, LROLROCNAC };
 
 // Transverse Distortion
 void distortionJacobian(double x, double y, double *jacobian,
@@ -30,5 +23,6 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
 void applyDistortion(double ux, double uy, double &dx, double &dy,
                      const std::vector<double> opticalDistCoeffs,
                      DistortionType distortionType,
-                     const double desiredPrecision = 1.0E-6, const double tolerance = 1.0E-6);
+                     const double desiredPrecision = 1.0E-6,
+                     const double tolerance = 1.0E-6);
 #endif
