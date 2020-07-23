@@ -521,7 +521,6 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   // Compute the spacecraft position in the new coordinate system
   //   The cross-track unit vector is orthogonal to the position so we ignore it
   double nadirComp = dot(spacecraftPosition, tHat);
-  double inTrackComp = dot(spacecraftPosition, vHat);
 
   // Iterate to find proper radius value
   double pointRadius = m_majorAxis + height;

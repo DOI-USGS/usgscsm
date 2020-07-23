@@ -131,7 +131,6 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string& stateString) {
   reset();
   auto j = json::parse(stateString);
   int num_params = NUM_PARAMETERS;
-  int num_paramsSq = num_params * num_params;
 
   m_imageIdentifier = j["m_imageIdentifier"].get<std::string>();
   m_sensorName = j["m_sensorName"];
@@ -699,8 +698,6 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
       (detectorSample + m_detectorSampleOrigin - m_startingDetectorSample) /
       m_detectorSampleSumming;
 
-  double precision =
-      detectorLine + m_detectorLineOrigin - m_startingDetectorLine;
   if (achievedPrecision) {
     *achievedPrecision = finalUpdate;
   }
@@ -1410,83 +1407,6 @@ csm::ImageVector UsgsAstroLsSensorModel::getImageSize() const {
 }
 
 //---------------------------------------------------------------------------
-// Sensor Model State
-//---------------------------------------------------------------------------
-//
-// //***************************************************************************
-// // UsgsAstroLsSensorModel::getSensorModelState
-// //***************************************************************************
-// std::string UsgsAstroLsSensorModel::setModelState(std::string stateString)
-// const
-// {
-//   auto j = json::parse(stateString);
-//   int num_params    = NUM_PARAMETERS;
-//   int num_paramsSq = num_params * num_params;
-//
-//   m_imageIdentifier = j["m_imageIdentifier"];
-//   m_sensorName = j["m_sensorName"];
-//   m_nLines = j["m_nLines"];
-//   m_nSamples = j["m_nSamples"];
-//   m_platformFlag = j["m_platformFlag"];
-//   m_intTimeLines = j["m_intTimeLines"].get<std::vector<double>>();
-//   m_intTimeStartTimes = j["m_intTimeStartTimes"].get<std::vector<double>>();
-//   m_intTimes = j["m_intTimes"].get<std::vector<double>>();
-//   m_startingEphemerisTime = j["m_startingEphemerisTime"];
-//   m_centerEphemerisTime = j["m_centerEphemerisTime"];
-//   m_detectorSampleSumming = j["m_detectorSampleSumming"];
-//   m_startingDetectorSample = j["m_startingDetectorSample"];
-//   m_ikCode = j["m_ikCode"];
-//   m_focalLength = j["m_focalLength"];
-//   m_isisZDirection = j["m_isisZDirection"];
-//   for (int i = 0; i < 3; i++) {
-//     m_opticalDistCoef[i] = j["m_opticalDistCoef"][i];
-//     m_iTransS[i] = j["m_iTransS"][i];
-//     m_iTransL[i] = j["m_iTransL"][i];
-//   }
-//   m_detectorSampleOrigin = j["m_detectorSampleOrigin"];
-//   m_detectorLineOrigin = j["m_detectorLineOrigin"];
-//   for (int i = 0; i < 9; i++) {
-//       m_mountingMatrix[i] = j["m_mountingMatrix"][i];
-//   }
-//   m_majorAxis = j["m_majorAxis"];
-//   m_minorAxis = j["m_minorAxis"];
-//   m_platformIdentifier = j["m_platformIdentifier"];
-//   m_sensorIdentifier = j["m_sensorIdentifier"];
-//   m_minElevation = j["m_minElevation"];
-//   m_maxElevation = j["m_maxElevation"];
-//   m_dtEphem = j["m_dtEphem"];
-//   m_t0Ephem = j["m_t0Ephem"];
-//   m_dtQuat = j["m_dtQuat"];
-//   m_t0Quat = j["m_t0Quat"];
-//   m_numPositions = j["m_numPositions"];
-//   m_numQuaternions = j["m_numQuaternions"];
-//   m_referencePointXyz.x = j["m_referencePointXyz"][0];
-//   m_referencePointXyz.y = j["m_referencePointXyz"][1];
-//   m_referencePointXyz.z = j["m_referencePointXyz"][2];
-//   m_gsd = j["m_gsd"];
-//   m_flyingHeight = j["m_flyingHeight"];
-//   m_halfSwath = j["m_halfSwath"];
-//   m_halfTime = j["m_halfTime"];
-//   // Vector = is overloaded so explicit get with type required.
-//   m_positions = j["m_positions"].get<std::vector<double>>();
-//   m_velocities = j["m_velocities"].get<std::vector<double>>();
-//   m_quaternions = j["m_quaternions"].get<std::vector<double>>();
-//   m_currentParameterValue =
-//   j["m_currentParameterValue"].get<std::vector<double>>(); m_covariance =
-//   j["m_covariance"].get<std::vector<double>>();
-//
-//   for (int i = 0; i < num_params; i++) {
-//     for (int k = 0; k < NUM_PARAM_TYPES; k++) {
-//       if (j["m_parameterType"][i] == PARAM_STRING_ALL[k]) {
-//         m_parameterType[i] = PARAM_CHAR_ALL[k];
-//         break;
-//     }
-//    }
-//   }
-//
-// }
-
-//---------------------------------------------------------------------------
 //  Monoscopic Mensuration
 //---------------------------------------------------------------------------
 
@@ -1954,7 +1874,7 @@ void UsgsAstroLsSensorModel::losEllipsoidIntersect(
   if (0.0 > quadTerm) {
     quadTerm = 0.0;
   }
-  double scale, scale1, h, slope;
+  double scale, scale1, h;
   double sprev, hprev;
   double sTerm;
   int ktr = 0;
@@ -1971,104 +1891,12 @@ void UsgsAstroLsSensorModel::losEllipsoidIntersect(
   z = zc + scale * zl;
   h = computeEllipsoidElevation(x, y, z, m_majorAxis, m_minorAxis,
                                 desired_precision);
-  slope = -1;
 
   achieved_precision = fabs(height - h);
   MESSAGE_LOG(
       "losEllipsoidIntersect: found intersect at {} {} {}"
       "with achieved precision of {}",
       x, y, z, achieved_precision)
-}
-
-//***************************************************************************
-// UsgsAstroLsSensorModel::losPlaneIntersect
-//**************************************************************************
-void UsgsAstroLsSensorModel::losPlaneIntersect(
-    const double& xc,  // input: camera x coordinate
-    const double& yc,  // input: camera y coordinate
-    const double& zc,  // input: camera z coordinate
-    const double& xl,  // input: component x image ray
-    const double& yl,  // input: component y image ray
-    const double& zl,  // input: component z image ray
-    double& x,         // input/output: ground x coordinate
-    double& y,         // input/output: ground y coordinate
-    double& z,         // input/output: ground z coordinate
-    int& mode) const   // input: -1 fixed component to be computed
-                       //         0(X), 1(Y), or 2(Z) fixed
-                       // output: 0(X), 1(Y), or 2(Z) fixed
-{
-  MESSAGE_LOG(
-      "Calculating losPlaneIntersect for camera position"
-      "{} {} {} and image ray {} {} {}",
-      xc, yc, zc, xl, yl, zl)
-  //# func_description
-  //  Computes 2 of the 3 coordinates of a ground point given the 3rd
-  //  coordinate.  The 3rd coordinate that is held fixed corresponds
-  //  to the largest absolute component of the image ray.
-
-  // Define fixed or largest component
-
-  if (-1 == mode) {
-    if (fabs(xl) > fabs(yl) && fabs(xl) > fabs(zl)) {
-      mode = 0;
-    } else if (fabs(yl) > fabs(xl) && fabs(yl) > fabs(zl)) {
-      mode = 1;
-    } else {
-      mode = 2;
-    }
-  }
-  MESSAGE_LOG(
-      "losPlaneIntersect: largest/fixed image ray component"
-      "{} (1-x, 2-y, 3-z)",
-      mode)
-  // X is the fixed or largest component
-
-  if (0 == mode) {
-    y = yc + (x - xc) * yl / xl;
-    z = zc + (x - xc) * zl / xl;
-  }
-
-  // Y is the fixed or largest component
-
-  else if (1 == mode) {
-    x = xc + (y - yc) * xl / yl;
-    z = zc + (y - yc) * zl / yl;
-  }
-
-  // Z is the fixed or largest component
-
-  else {
-    x = xc + (z - zc) * xl / zl;
-    y = yc + (z - zc) * yl / zl;
-  }
-  MESSAGE_LOG("ground coordinate {} {} {}", x, y, z)
-}
-
-//***************************************************************************
-// UsgsAstroLsSensorModel::imageToPlane
-//***************************************************************************
-void UsgsAstroLsSensorModel::imageToPlane(
-    const double& line,    // CSM Origin UL corner of UL pixel
-    const double& sample,  // CSM Origin UL corner of UL pixel
-    const double& height, const std::vector<double>& adj, double& x, double& y,
-    double& z, int& mode) const {
-  MESSAGE_LOG("Computing imageToPlane")
-  //# func_description
-  //  Computes ground coordinates by intersecting image ray with
-  //  a plane perpendicular to the coordinate axis with the largest
-  //  image ray component.  This routine is primarily called by
-  //  groundToImage().
-
-  // *** Computes camera position and image ray in ecf cs.
-
-  double xc, yc, zc;
-  double vx, vy, vz;
-  double xl, yl, zl;
-  double dxl, dyl, dzl;
-
-  losToEcf(line, sample, adj, xc, yc, zc, vx, vy, vz, xl, yl, zl);
-
-  losPlaneIntersect(xc, yc, zc, xl, yl, zl, x, y, z, mode);
 }
 
 //***************************************************************************

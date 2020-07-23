@@ -41,7 +41,7 @@ const UsgsAstroPlugin UsgsAstroPlugin::m_registeredPlugin;
 
 UsgsAstroPlugin::UsgsAstroPlugin() {
   // Build and register the USGSCSM logger on plugin creation
-  char *logFilePtr = getenv("ALE_LOG_FILE");
+  char *logFilePtr = getenv("USGSCSM_LOG_FILE");
 
   if (logFilePtr != NULL) {
     std::string logFile(logFilePtr);

@@ -297,7 +297,7 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(
   computeDistortedFocalPlaneCoordinates(
       imagePt.line, imagePt.samp, m_ccdCenter[1], m_ccdCenter[0],
       m_detectorSampleSumming, m_detectorLineSumming, m_startingDetectorSample,
-      m_startingDetectorLine, &m_iTransS[0], &m_iTransL[0], focalPlaneY,
+      m_startingDetectorLine, &m_iTransS[0], &m_iTransL[0], focalPlaneX,
       focalPlaneY);
 
   // Distort
