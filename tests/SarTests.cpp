@@ -12,8 +12,40 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <vector>
 
 using json = nlohmann::json;
+
+std::vector<std::string> compareJson(json &leftJson, json &rightJson) {
+  std::vector<std::string> differences;
+  for (json::iterator it = leftJson.begin(); it != leftJson.end(); ++it) {
+    std::string key = it.key();
+    if (!rightJson.contains(key)) {
+      differences.push_back("Right JSON object is missing key [" + key +
+          "] which is present in the left JSON object.");
+    }
+    else if (leftJson[key].type() != rightJson[key].type()) {
+      differences.push_back("Different types for key [" + key + "].");
+    }
+    else if (leftJson[key].is_object() && rightJson[key].is_object()) {
+      differences.push_back("Difference(s) in object for key [" + key + "].");
+      std::vector<std::string> deeperDiffs = compareJson(leftJson[key], rightJson[key]);
+      differences.insert(differences.end(), deeperDiffs.begin() , deeperDiffs.end());
+    }
+    else if (leftJson[key] != rightJson[key]) {
+      differences.push_back("Different values for key [" + key + "].");
+    }
+  }
+
+  for (json::iterator it = rightJson.begin(); it != rightJson.end(); ++it) {
+    std::string key = it.key();
+    if (!leftJson.contains(key)) {
+      differences.push_back("Left JSON object is missing key [" + key +
+          "] which is present in the right JSON object.");
+    }
+  }
+  return differences;
+}
 
 TEST_F(SarSensorModel, stateFromIsd) {
   std::ifstream isdFile("data/orbitalSar.json");
@@ -37,7 +69,14 @@ TEST_F(SarSensorModel, stateFromIsd) {
 TEST_F(SarSensorModel, State) {
   std::string modelState = sensorModel->getModelState();
   EXPECT_NO_THROW(sensorModel->replaceModelState(modelState));
-  EXPECT_EQ(sensorModel->getModelState(), modelState);
+  std::string newModelState = sensorModel->getModelState();
+  json oldJson = json::parse(modelState);
+  json newJson = json::parse(newModelState);
+  std::vector<std::string> differences = compareJson(oldJson, newJson);
+  EXPECT_TRUE(differences.empty());
+  for (std::string &difference : differences) {
+    std::cerr << difference << std::endl;
+  }
 }
 
 TEST_F(SarSensorModel, Center) {

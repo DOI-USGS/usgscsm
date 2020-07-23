@@ -8,6 +8,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include "ale/Util.h"
+
 using json = nlohmann::json;
 using namespace std;
 
@@ -44,59 +46,86 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
 
   std::shared_ptr<csm::WarningList> parsingWarnings(new csm::WarningList);
 
-  state["m_modelName"] = getSensorModelName(isd, parsingWarnings.get());
-  state["m_imageIdentifier"] = getImageId(isd, parsingWarnings.get());
-  state["m_sensorName"] = getSensorName(isd, parsingWarnings.get());
-  state["m_platformName"] = getPlatformName(isd, parsingWarnings.get());
-
-  state["m_nLines"] = getTotalLines(isd, parsingWarnings.get());
-  state["m_nSamples"] = getTotalSamples(isd, parsingWarnings.get());
-
   // Zero computed state values
   state["m_referencePointXyz"] = vector<double>(3, 0.0);
 
-  // sun_position and velocity are required for getIlluminationDirection
-  state["m_sunPosition"] = getSunPositions(isd, parsingWarnings.get());
-  state["m_sunVelocity"] = getSunVelocities(isd, parsingWarnings.get());
+  state["m_modelName"] = ale::getSensorModelName(isd);
+  state["m_imageIdentifier"] = ale::getImageId(isd);
+  state["m_sensorName"] = ale::getSensorName(isd);
+  state["m_platformName"] = ale::getPlatformName(isd);
 
-  state["m_centerEphemerisTime"] = getCenterTime(isd, parsingWarnings.get());
-  state["m_startingEphemerisTime"] = getStartingTime(isd, parsingWarnings.get());
-  state["m_endingEphemerisTime"] = getEndingTime(isd, parsingWarnings.get());
+  state["m_nLines"] = ale::getTotalLines(isd);
+  state["m_nSamples"] = ale::getTotalSamples(isd);
 
-  state["m_exposureDuration"] = getExposureDuration(isd, parsingWarnings.get());
+  ale::Orientations j2000_to_target = ale::getBodyRotation(isd);
 
-  try {
-    state["m_dtEphem"] = isd.at("dt_ephemeris");
-  } catch (...) {
-    std::string msg = "dt_ephemeris not in ISD";
-    MESSAGE_LOG(msg);
-    parsingWarnings->push_back(
-        csm::Warning(csm::Warning::DATA_NOT_AVAILABLE, msg,
-                     "UsgsAstroSarSensorModel::constructStateFromIsd()"));
+  ale::States instState = ale::getInstrumentPosition(isd);
+  ale::States sunState = ale::getSunPosition(isd);
+  std::vector<double> ephemTime = instState.getTimes();
+  if (ephemTime.size() < 2) {
+    parsingWarnings->push_back(csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE, "Instrument position has less than 2 states.",
+        "UsgsAstroSarSensorModel::constructStateFromIsd()"));
+    MESSAGE_LOG("m_dtEphem not in ISD")
   }
-
-  try {
-    state["m_t0Ephem"] = isd.at("t0_ephemeris");
-  } catch (...) {
-    std::string msg = "t0_ephemeris not in ISD";
-    MESSAGE_LOG(msg);
-    parsingWarnings->push_back(
-        csm::Warning(csm::Warning::DATA_NOT_AVAILABLE, msg,
-                     "UsgsAstroSarSensorModel::constructStateFromIsd()"));
+  else {
+    // Re-compute times so that they are linearly spaced
+    double startTime = ephemTime.front();
+    double timeStep = (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
+    state["m_t0Ephem"] = startTime;
+    state["m_dtEphem"] = timeStep;
+    for (int i = 0; i < ephemTime.size(); i++) {
+      ephemTime[i] = startTime + i * timeStep;
+    }
   }
+  std::vector<double> instPositions = {};
+  std::vector<double> instVelocities = {};
+  std::vector<double> sunPositions = {};
+  std::vector<double> sunVelocities = {};
+  for (int i = 0; i < ephemTime.size(); i++) {
+    ale::State j2000InstState = instState.getState(ephemTime[i], ale::SPLINE);
+    ale::State rotatedInstState =
+        j2000_to_target.rotateStateAt(ephemTime[i], j2000InstState, ale::SLERP);
+    // ALE operates in Km and we want m
+    instPositions.push_back(rotatedInstState.position.x * 1000);
+    instPositions.push_back(rotatedInstState.position.y * 1000);
+    instPositions.push_back(rotatedInstState.position.z * 1000);
+    instVelocities.push_back(rotatedInstState.velocity.x * 1000);
+    instVelocities.push_back(rotatedInstState.velocity.y * 1000);
+    instVelocities.push_back(rotatedInstState.velocity.z * 1000);
 
-  state["m_positions"] = getSensorPositions(isd, parsingWarnings.get());
-  state["m_velocities"] = getSensorVelocities(isd, parsingWarnings.get());
+    ale::State j2000SunState = sunState.getState(ephemTime[i], ale::SPLINE);
+    ale::State rotatedSunState =
+        j2000_to_target.rotateStateAt(ephemTime[i], j2000SunState, ale::SLERP);
+    // ALE operates in Km and we want m
+    sunPositions.push_back(rotatedSunState.position.x * 1000);
+    sunPositions.push_back(rotatedSunState.position.y * 1000);
+    sunPositions.push_back(rotatedSunState.position.z * 1000);
+    sunVelocities.push_back(rotatedSunState.velocity.x * 1000);
+    sunVelocities.push_back(rotatedSunState.velocity.y * 1000);
+    sunVelocities.push_back(rotatedSunState.velocity.z * 1000);
+  }
+  state["m_positions"] = instPositions;
+  state["m_velocities"] = instVelocities;
+
+  state["m_sunPosition"] = sunPositions;
+  state["m_sunVelocity"] = sunVelocities;
+
+  state["m_centerEphemerisTime"] = ale::getCenterTime(isd);
+  state["m_startingEphemerisTime"] = ale::getStartingTime(isd);
+  state["m_endingEphemerisTime"] = getEndingTime(isd, parsingWarnings);
+
+  state["m_exposureDuration"] = getExposureDuration(isd, parsingWarnings);
 
   state["m_currentParameterValue"] = vector<double>(NUM_PARAMETERS, 0.0);
 
   // get radii
-  state["m_minorAxis"] = getSemiMinorRadius(isd, parsingWarnings.get());
-  state["m_majorAxis"] = getSemiMajorRadius(isd, parsingWarnings.get());
+  state["m_minorAxis"] = ale::getSemiMinorRadius(isd);
+  state["m_majorAxis"] = ale::getSemiMajorRadius(isd);
 
   // set identifiers
-  state["m_platformIdentifier"] = getPlatformName(isd, parsingWarnings.get());
-  state["m_sensorIdentifier"] = getSensorName(isd, parsingWarnings.get());
+  state["m_platformIdentifier"] = ale::getPlatformName(isd);
+  state["m_sensorIdentifier"] = ale::getSensorName(isd);
 
   // get reference_height
   state["m_minElevation"] = -1000;
@@ -501,8 +530,11 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   double time =
     m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
   double groundRange = (imagePt.samp - 0.5) * m_scaledPixelWidth;
+  MESSAGE_LOG("Ground range: {}", groundRange);
+
   std::vector<double> coeffs = getRangeCoefficients(time);
   double slantRange = groundRangeToSlantRange(groundRange, coeffs);
+  MESSAGE_LOG("Slant range: {}", slantRange);
 
   // Compute the in-track, cross-track, nadir, coordinate system to solve in
   csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
@@ -514,6 +546,9 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   csm::EcefVector tHat = normalized(rejection(spacecraftPosition, vHat));
   // Cross-track unit vector
   csm::EcefVector uHat = cross(vHat, tHat);
+  MESSAGE_LOG("In track vector: {}, {}, {}", vHat.x, vHat.y, vHat.z);
+  MESSAGE_LOG("Nadir vector: {}, {}, {}", tHat.x, tHat.y, tHat.z);
+  MESSAGE_LOG("In track vector: {}, {}, {}", uHat.x, uHat.y, uHat.z);
 
   // Compute the spacecraft position in the new coordinate system
   //   The cross-track unit vector is orthogonal to the position so we ignore it
@@ -533,10 +568,12 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
     double alpha =
         (radiusSqr - slantRange * slantRange - positionMag * positionMag) /
         (2 * nadirComp);
+    MESSAGE_LOG("Iteration alpha: {}", alpha);
     double beta = sqrt(slantRange * slantRange - alpha * alpha);
     if (m_lookDirection == LEFT) {
       beta *= -1;
     }
+    MESSAGE_LOG("Iteration beta: {}", beta);
     groundVec = alpha * tHat + beta * uHat + spacecraftPosition;
     pointHeight = computeEllipsoidElevation(
         groundVec.x, groundVec.y, groundVec.z, m_majorAxis, m_minorAxis);
@@ -549,6 +586,8 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   if (achievedPrecision) {
     *achievedPrecision = fabs(pointHeight - height);
   }
+
+  MESSAGE_LOG("Iteration ground point: {}, {}, {}", groundVec.x, groundVec.y, groundVec.z);
 
   csm::EcefCoord groundPt(groundVec.x, groundVec.y, groundVec.z);
 
@@ -779,6 +818,8 @@ csm::EcefCoord UsgsAstroSarSensorModel::getAdjustedSensorPosition(
     spacecraftPosition.y = m_positions[1] + getValue(1, adj);
     spacecraftPosition.z = m_positions[2] + getValue(2, adj);
   }
+  MESSAGE_LOG("Adjusted sensor positions is {}, {}, {}.",
+      spacecraftPosition.x, spacecraftPosition.y, spacecraftPosition.z);
   return csm::EcefCoord(spacecraftPosition.x, spacecraftPosition.y,
                         spacecraftPosition.z);
 }
@@ -817,6 +858,8 @@ csm::EcefVector UsgsAstroSarSensorModel::getAdjustedSensorVelocity(
     spacecraftVelocity.y = m_velocities[1] + getValue(4, adj);
     spacecraftVelocity.z = m_velocities[2] + getValue(5, adj);
   }
+  MESSAGE_LOG("Adjusted sensor velocity is {}, {}, {}",
+      spacecraftVelocity.x, spacecraftVelocity.y, spacecraftVelocity.z);
   return spacecraftVelocity;
 }
 
