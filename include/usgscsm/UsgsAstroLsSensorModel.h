@@ -941,27 +941,6 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
                              double& achieved_precision,
                              const double& desired_precision) const;
 
-  // Intersects the los with a specified plane.
-  void losPlaneIntersect(
-      const double& xc,  // input: camera x coordinate
-      const double& yc,  // input: camera y coordinate
-      const double& zc,  // input: camera z coordinate
-      const double& xl,  // input: component x image ray
-      const double& yl,  // input: component y image ray
-      const double& zl,  // input: component z image ray
-      double& x,         // input/output: ground x coordinate
-      double& y,         // input/output: ground y coordinate
-      double& z,         // input/output: ground z coordinate
-      int& mode) const;  // input: -1 fixed component to be computed
-                         //         0(X), 1(Y), or 2(Z) fixed
-                         // output: 0(X), 1(Y), or 2(Z) fixed
-  // Intersects a los associated with an image coordinate with a specified
-  // plane.
-  void imageToPlane(const double& line,    // CSM Origin UL corner of UL pixel
-                    const double& sample,  // CSM Origin UL corner of UL pixel
-                    const double& height, const std::vector<double>& adj,
-                    double& x, double& y, double& z, int& mode) const;
-
   // determines the sensor velocity accounting for parameter adjustments.
   void getAdjSensorPosVel(const double& time, const std::vector<double>& adj,
                           double& xc, double& yc, double& zc, double& vx,
