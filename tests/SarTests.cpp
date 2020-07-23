@@ -12,8 +12,40 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <vector>
 
 using json = nlohmann::json;
+
+std::vector<std::string> compareJson(json &leftJson, json &rightJson) {
+  std::vector<std::string> differences;
+  for (json::iterator it = leftJson.begin(); it != leftJson.end(); ++it) {
+    std::string key = it.key();
+    if (!rightJson.contains(key)) {
+      differences.push_back("Right JSON object is missing key [" + key +
+          "] which is present in the left JSON object.");
+    }
+    else if (leftJson[key].type() != rightJson[key].type()) {
+      differences.push_back("Different types for key [" + key + "].");
+    }
+    else if (leftJson[key].is_object() && rightJson[key].is_object()) {
+      differences.push_back("Difference(s) in object for key [" + key + "].");
+      std::vector<std::string> deeperDiffs = compareJson(leftJson[key], rightJson[key]);
+      differences.insert(differences.end(), deeperDiffs.begin() , deeperDiffs.end());
+    }
+    else if (leftJson[key] != rightJson[key]) {
+      differences.push_back("Different values for key [" + key + "].");
+    }
+  }
+
+  for (json::iterator it = rightJson.begin(); it != rightJson.end(); ++it) {
+    std::string key = it.key();
+    if (!leftJson.contains(key)) {
+      differences.push_back("Left JSON object is missing key [" + key +
+          "] which is present in the right JSON object.");
+    }
+  }
+  return differences;
+}
 
 TEST_F(SarSensorModel, stateFromIsd) {
   std::ifstream isdFile("data/orbitalSar.json");
@@ -37,7 +69,14 @@ TEST_F(SarSensorModel, stateFromIsd) {
 TEST_F(SarSensorModel, State) {
   std::string modelState = sensorModel->getModelState();
   EXPECT_NO_THROW(sensorModel->replaceModelState(modelState));
-  EXPECT_EQ(sensorModel->getModelState(), modelState);
+  std::string newModelState = sensorModel->getModelState();
+  json oldJson = json::parse(modelState);
+  json newJson = json::parse(newModelState);
+  std::vector<std::string> differences = compareJson(oldJson, newJson);
+  EXPECT_TRUE(differences.empty());
+  for (std::string &difference : differences) {
+    std::cerr << difference << std::endl;
+  }
 }
 
 TEST_F(SarSensorModel, Center) {
@@ -82,12 +121,12 @@ TEST_F(SarSensorModel, computeGroundPartials) {
   csm::EcefCoord groundPt(1737400.0, 0.0, 0.0);
   std::vector<double> partials = sensorModel->computeGroundPartials(groundPt);
   ASSERT_EQ(partials.size(), 6);
-  EXPECT_NEAR(partials[0], 6.5128150576280552e-09, 1e-8);
-  EXPECT_NEAR(partials[1], -5.1810407815840636e-15, 1e-8);
-  EXPECT_NEAR(partials[2], -0.13309947654685725, 1e-8);
-  EXPECT_NEAR(partials[3], -33.057625791698072, 1e-8);
-  EXPECT_NEAR(partials[4], 6.1985123841926308e-05, 1e-8);
-  EXPECT_NEAR(partials[5], 0.007743051337209989, 1e-8);
+  EXPECT_NEAR(partials[0], -0.00023385137107532946, 1e-8);
+  EXPECT_NEAR(partials[1], -0.00023385788390593021, 1e-8);
+  EXPECT_NEAR(partials[2], -0.13339937076082886, 1e-8);
+  EXPECT_NEAR(partials[3], -33.05761233362206, 1e-8);
+  EXPECT_NEAR(partials[4], 7.5445337157968123e-05, 1e-8);
+  EXPECT_NEAR(partials[5], 0.0077604615628256903, 1e-8);
 }
 
 TEST_F(SarSensorModel, imageToProximateImagingLocus) {
