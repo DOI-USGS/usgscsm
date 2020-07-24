@@ -1,11 +1,14 @@
+#ifndef INCLUDE_USGSCSM_USGSASTROFRAMESENSORMODEL_H_
+#define INCLUDE_USGSCSM_USGSASTROFRAMESENSORMODEL_H_
 
-#ifndef UsgsAstroFrameSensorModel_h
-#define UsgsAstroFrameSensorModel_h
-
-#include <SettableEllipsoid.h>
 #include <cmath>
 #include <iostream>
 #include <vector>
+#include <utility>
+#include <memory>
+#include <string>
+
+#include "SettableEllipsoid.h"
 #include "CorrelationModel.h"
 #include "Distortion.h"
 #include "RasterGM.h"
@@ -331,8 +334,8 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM,
 
   void losEllipsoidIntersect(double height, double xc, double yc, double zc,
                              double xl, double yl, double zl, double &x,
-                             double &y, double &z, 
-                             csm::WarningList *warnings=NULL) const;
+                             double &y, double &z,
+                             csm::WarningList *warnings = NULL) const;
 
   static const std::string _SENSOR_MODEL_NAME;
 
@@ -394,4 +397,4 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM,
   csm::NoCorrelationModel _no_corr_model;
 };
 
-#endif
+#endif  // INCLUDE_USGSCSM_USGSASTROFRAMESENSORMODEL_H_

@@ -800,9 +800,7 @@ csm::EcefCoord UsgsAstroLsSensorModel::imageToGround(
         csm::Warning::PRECISION_NOT_MET, "Desired precision not achieved.",
         "UsgsAstroLsSensorModel::imageToGround()"));
   }
-  MESSAGE_LOG("imageToGround for {} {} {} achieved precision",// {}",
-              image_pt.line, image_pt.samp, height)//, achieved_precision)
-  
+  MESSAGE_LOG("imageToGround for {} {} {}", image_pt.line, image_pt.samp, height);
   return csm::EcefCoord(x, y, z);
 }
 

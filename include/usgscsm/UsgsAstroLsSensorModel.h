@@ -25,13 +25,18 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __USGS_ASTRO_LINE_SCANNER_SENSORMODEL_H
-#define __USGS_ASTRO_LINE_SCANNER_SENSORMODEL_H
+#ifndef INCLUDE_USGSCSM_USGSASTROLSSENSORMODEL_H_
+#define INCLUDE_USGSCSM_USGSASTROLSSENSORMODEL_H_
 
 #include <CorrelationModel.h>
 #include <RasterGM.h>
 #include <SettableEllipsoid.h>
 #include "Distortion.h"
+
+#include<utility>
+#include<memory>
+#include<string>
+#include<vector>
 
 #include "ale/Distortion.h"
 #include "ale/Orientations.h"
@@ -952,8 +957,8 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
   std::vector<double> computeDetectorView(
       const double& time,                 // The time to use the EO at
       const csm::EcefCoord& groundPoint,  // The ground coordinate
-      const std::vector<double>& adj      // Parameter Adjustments for partials
-      ) const;
+      const std::vector<double>& adj)      // Parameter Adjustments for partials
+      const;
 
   // The linear approximation for the sensor model is used as the starting point
   // for iterative rigorous calculations.
@@ -983,4 +988,4 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
   bool _linear;  // flag indicating if linear approximation is useful.
 };
 
-#endif
+#endif  // INCLUDE_USGSCSM_USGSASTROLSSENSORMODEL_H_
