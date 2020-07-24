@@ -64,3 +64,21 @@ and are run via ctest. To run all of the tests simply run `ctest` in the build.
 
 All of the tests are purposefully written to use generic data that values have
 been hand validated for. This data can be found under `tests/data`.
+
+## Code Style
+
+This software package uses a modified form of the 
+[Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html). 
+
+Here are some exceptions:
+
+1. Non-const pass-by-reference is allowed.
+2. No copyright notice is necessary
+3. Static/global string constants are allowed to be std::strings, rather than C-style strings
+
+To attempt to automatically format any new code to this style, run:
+`clang-format -style=Google -i file.cpp`
+For more information see: [ClangFormat](https://clang.llvm.org/docs/ClangFormat.html)
+
+To check for compliance, run: `cpplint file.cpp` and ignore errors in the list of exclusions above.
+For more information, see: [cpplint](https://github.com/cpplint/cpplint)
