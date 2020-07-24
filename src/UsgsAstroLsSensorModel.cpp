@@ -791,7 +791,7 @@ csm::EcefCoord UsgsAstroLsSensorModel::imageToGround(
   double aPrec;
   double x, y, z;
   losEllipsoidIntersect(height, xc, yc, zc, xl, yl, zl, x, y, z, aPrec,
-                        desired_precision);
+                        desired_precision, warnings);
 
   if (achieved_precision) *achieved_precision = aPrec;
 
@@ -800,13 +800,9 @@ csm::EcefCoord UsgsAstroLsSensorModel::imageToGround(
         csm::Warning::PRECISION_NOT_MET, "Desired precision not achieved.",
         "UsgsAstroLsSensorModel::imageToGround()"));
   }
-
-  /*
-      MESSAGE_LOG("imageToGround for {} {} {} achieved precision {}",
-                                  image_pt.line, image_pt.samp, height,
-     achieved_precision)
-  */
-
+  MESSAGE_LOG("imageToGround for {} {} {} achieved precision",// {}",
+              image_pt.line, image_pt.samp, height)//, achieved_precision)
+  
   return csm::EcefCoord(x, y, z);
 }
 
@@ -1827,12 +1823,12 @@ void UsgsAstroLsSensorModel::losEllipsoidIntersect(
     const double& height, const double& xc, const double& yc, const double& zc,
     const double& xl, const double& yl, const double& zl, double& x, double& y,
     double& z, double& achieved_precision,
-    const double& desired_precision) const {
+    const double& desired_precision, csm::WarningList* warnings) const {
   MESSAGE_LOG(
       "Computing losEllipsoidIntersect for camera position "
-      "{} {} {} looking {} {} {} with desired precision"
-      "{}",
+      "{} {} {} looking {} {} {} with desired precision {}",
       xc, yc, zc, xl, yl, zl, desired_precision)
+
   // Helper function which computes the intersection of the image ray
   // with the ellipsoid.  All vectors are in earth-centered-fixed
   // coordinate system with origin at the center of the earth.
@@ -1860,6 +1856,12 @@ void UsgsAstroLsSensorModel::losEllipsoidIntersect(
 
   if (0.0 > quadTerm) {
     quadTerm = 0.0;
+    std::string message = "Image ray does not intersect ellipsoid";
+    if (warnings) {
+      warnings->push_back(csm::Warning(
+          csm::Warning::NO_INTERSECTION, message, "UsgsAstroLsSensorModel::losElliposidIntersect"));
+    }
+    MESSAGE_LOG(message)
   }
   double scale, scale1, h;
   double sprev, hprev;

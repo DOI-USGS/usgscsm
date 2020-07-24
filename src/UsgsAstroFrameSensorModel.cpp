@@ -246,7 +246,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(
 
   // Intersect with some height about the ellipsoid.
   double x, y, z;
-  losEllipsoidIntersect(height, xc, yc, zc, xl, yl, zl, x, y, z);
+  losEllipsoidIntersect(height, xc, yc, zc, xl, yl, zl, x, y, z, warnings);
 
   MESSAGE_LOG("Resulting EcefCoordinate: {}, {}, {}", x, y, z);
 
@@ -1285,7 +1285,7 @@ void UsgsAstroFrameSensorModel::calcRotationMatrix(
 void UsgsAstroFrameSensorModel::losEllipsoidIntersect(
     const double height, const double xc, const double yc, const double zc,
     const double xl, const double yl, const double zl, double &x, double &y,
-    double &z) const {
+    double &z, csm::WarningList *warnings) const {
   MESSAGE_LOG(
       "Calculating losEllipsoidIntersect with height: {},\n\
                                 xc: {}, yc: {}, zc: {}\n\
@@ -1316,7 +1316,15 @@ void UsgsAstroFrameSensorModel::losEllipsoidIntersect(
 
   if (0.0 > quadTerm) {
     quadTerm = 0.0;
+    std::string message = "Image ray does not intersect ellipsoid";
+    if (warnings) {
+      warnings->push_back(
+          csm::Warning(csm::Warning::NO_INTERSECTION, message,
+                       "UsgsAstroFrameSensorModel::losEllipsoidIntersect"));
+    }
+    MESSAGE_LOG(message);
   }
+
   double scale;
   scale = (-bt - sqrt(quadTerm)) / (2.0 * at);
   // Compute ground point vector

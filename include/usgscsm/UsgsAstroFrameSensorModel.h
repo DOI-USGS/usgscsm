@@ -331,7 +331,8 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM,
 
   void losEllipsoidIntersect(double height, double xc, double yc, double zc,
                              double xl, double yl, double zl, double &x,
-                             double &y, double &z) const;
+                             double &y, double &z, 
+                             csm::WarningList *warnings=NULL) const;
 
   static const std::string _SENSOR_MODEL_NAME;
 

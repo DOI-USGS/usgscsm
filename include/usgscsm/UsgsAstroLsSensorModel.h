@@ -939,7 +939,8 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
                              const double& xl, const double& yl,
                              const double& zl, double& x, double& y, double& z,
                              double& achieved_precision,
-                             const double& desired_precision) const;
+                             const double& desired_precision,
+                             csm::WarningList* warnings = NULL) const;
 
   // determines the sensor velocity accounting for parameter adjustments.
   void getAdjSensorPosVel(const double& time, const std::vector<double>& adj,
