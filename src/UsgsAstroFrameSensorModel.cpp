@@ -524,15 +524,9 @@ UsgsAstroFrameSensorModel::computeAllSensorPartials(
                                with point: {}, {}, pset: {}, and desiredPrecision: {}",
       groundPt.x, groundPt.y, groundPt.z, imagePt.line, imagePt.samp, pset,
       desiredPrecision);
-  std::vector<int> indices = getParameterSetIndices(pset);
-  size_t num = indices.size();
-  std::vector<csm::RasterGM::SensorPartials> partials;
-  for (int index = 0; index < num; index++) {
-    partials.push_back(computeSensorPartials(indices[index], imagePt, groundPt,
-                                             desiredPrecision,
-                                             achievedPrecision, warnings));
-  }
-  return partials;
+
+  return RasterGM::computeAllSensorPartials(imagePt, groundPt, pset, desiredPrecision, 
+                                            achievedPrecision, warnings);
 }
 
 std::vector<csm::RasterGM::SensorPartials>
