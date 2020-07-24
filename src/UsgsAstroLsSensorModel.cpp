@@ -29,7 +29,6 @@
 
 #include <Error.h>
 #include <nlohmann/json.hpp>
-#include <sstream>
 
 #include "ale/Util.h"
 
@@ -39,7 +38,6 @@
   }
 
 using json = nlohmann::json;
-using namespace std;
 
 const std::string UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME =
     "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL";
@@ -1244,9 +1242,7 @@ csm::EcefCoord UsgsAstroLsSensorModel::getSensorPosition(
 //***************************************************************************
 // UsgsAstroLsSensorModel::getSensorPosition
 //***************************************************************************
-csm::EcefCoord UsgsAstroLsSensorModel::getSensorPosition(double time) const
-
-{
+csm::EcefCoord UsgsAstroLsSensorModel::getSensorPosition(double time) const {
   double x, y, z, vx, vy, vz;
   getAdjSensorPosVel(time, _no_adjustment, x, y, z, vx, vy, vz);
 
@@ -1484,9 +1480,7 @@ std::string UsgsAstroLsSensorModel::getGeometricCorrectionName(
 // UsgsAstroLsSensorModel::setGeometricCorrectionSwitch
 //***************************************************************************
 void UsgsAstroLsSensorModel::setGeometricCorrectionSwitch(
-    int index, bool value, csm::param::Type pType)
-
-{
+    int index, bool value, csm::param::Type pType) {
   MESSAGE_LOG(
       "Setting geometric correction switch {} to {} "
       "with parameter type {}. "
@@ -2173,8 +2167,8 @@ void UsgsAstroLsSensorModel::setLinearApproximation() {
 
   double denom = determinant3x3(mat3x3);
 
-  if (fabs(denom) < 1.0e-8)  // can not get derivatives this way
-  {
+  // Can not get derivatives this way
+  if (fabs(denom) < 1.0e-8) {
     MESSAGE_LOG(
         "setLinearApproximation: determinant3x3 of"
         "matrix of partials is {}; nonlinear",

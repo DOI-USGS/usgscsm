@@ -17,7 +17,6 @@
   }
 
 using json = nlohmann::json;
-using namespace std;
 
 // Declaration of static variables
 const std::string UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME =
