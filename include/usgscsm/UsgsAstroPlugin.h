@@ -1,7 +1,9 @@
-#ifndef UsgsAstroPlugin_h
-#define UsgsAstroPlugin_h
+#ifndef INCLUDE_USGSCSM_USGSASTROPLUGIN_H_
+#define INCLUDE_USGSCSM_USGSASTROPLUGIN_H_
 
 #include <string>
+#include<map>
+#include<memory>
 
 #include <Plugin.h>
 #include <Version.h>
@@ -47,8 +49,6 @@ class UsgsAstroPlugin : public csm::Plugin {
   std::string loadImageSupportData(
       const csm::Isd &imageSupportDataOriginal) const;
 
-  // TODO when implementing, add any other necessary members.
-
  private:
   static const UsgsAstroPlugin m_registeredPlugin;
   static const std::string _PLUGIN_NAME;
@@ -61,4 +61,4 @@ class UsgsAstroPlugin : public csm::Plugin {
   std::shared_ptr<spdlog::logger> m_logger;
 };
 
-#endif
+#endif   // INCLUDE_USGSCSM_USGSASTROPLUGIN_H_

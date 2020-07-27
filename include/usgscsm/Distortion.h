@@ -1,5 +1,5 @@
-#ifndef Distortion_h
-#define Distortion_h
+#ifndef INCLUDE_USGSCSM_DISTORTION_H_
+#define INCLUDE_USGSCSM_DISTORTION_H_
 
 #include <math.h>
 #include <iostream>
@@ -25,4 +25,4 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
                      DistortionType distortionType,
                      const double desiredPrecision = 1.0E-6,
                      const double tolerance = 1.0E-6);
-#endif
+#endif  // INCLUDE_USGSCSM_DISTORTION_H_

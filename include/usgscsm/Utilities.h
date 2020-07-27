@@ -1,5 +1,5 @@
-#ifndef Utilities_h
-#define Utilities_h
+#ifndef INCLUDE_USGSCSM_UTILITIES_H_
+#define INCLUDE_USGSCSM_UTILITIES_H_
 
 #include "Distortion.h"
 
@@ -12,10 +12,7 @@
 
 #include <Warning.h>
 #include <csm.h>
-// methods pulled out of los2ecf and computeViewingPixel
 
-// for now, put everything in here.
-// TODO: later, consider if it makes sense to pull sample/line offsets out
 // Compute distorted focalPlane coordinates in mm
 void computeDistortedFocalPlaneCoordinates(
     const double &line, const double &sample, const double &sampleOrigin,
@@ -169,4 +166,4 @@ std::vector<double> getSensorVelocities(nlohmann::json isd,
 std::vector<double> getSensorOrientations(nlohmann::json isd,
                                           csm::WarningList *list = nullptr);
 double getWavelength(nlohmann::json isd, csm::WarningList *list = nullptr);
-#endif
+#endif  // INCLUDE_USGSCSM_UTILITIES_H_

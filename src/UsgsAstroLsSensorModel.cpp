@@ -29,7 +29,6 @@
 
 #include <Error.h>
 #include <nlohmann/json.hpp>
-#include <sstream>
 
 #include "ale/Util.h"
 
@@ -39,7 +38,6 @@
   }
 
 using json = nlohmann::json;
-using namespace std;
 
 const std::string UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME =
     "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL";
@@ -793,7 +791,7 @@ csm::EcefCoord UsgsAstroLsSensorModel::imageToGround(
   double aPrec;
   double x, y, z;
   losEllipsoidIntersect(height, xc, yc, zc, xl, yl, zl, x, y, z, aPrec,
-                        desired_precision);
+                        desired_precision, warnings);
 
   if (achieved_precision) *achieved_precision = aPrec;
 
@@ -802,13 +800,7 @@ csm::EcefCoord UsgsAstroLsSensorModel::imageToGround(
         csm::Warning::PRECISION_NOT_MET, "Desired precision not achieved.",
         "UsgsAstroLsSensorModel::imageToGround()"));
   }
-
-  /*
-      MESSAGE_LOG("imageToGround for {} {} {} achieved precision {}",
-                                  image_pt.line, image_pt.samp, height,
-     achieved_precision)
-  */
-
+  MESSAGE_LOG("imageToGround for {} {} {}", image_pt.line, image_pt.samp, height);
   return csm::EcefCoord(x, y, z);
 }
 
@@ -1135,15 +1127,8 @@ UsgsAstroLsSensorModel::computeAllSensorPartials(
       image_pt.line, image_pt.samp, ground_pt.x, ground_pt.y, ground_pt.z,
       desired_precision)
 
-  std::vector<int> indices = getParameterSetIndices(pSet);
-  size_t num = indices.size();
-  std::vector<csm::RasterGM::SensorPartials> partials;
-  for (int index = 0; index < num; index++) {
-    partials.push_back(computeSensorPartials(indices[index], image_pt,
-                                             ground_pt, desired_precision,
-                                             achieved_precision, warnings));
-  }
-  return partials;
+  return RasterGM::computeAllSensorPartials(image_pt, ground_pt, pSet, desired_precision,
+                                            achieved_precision, warnings);
 }
 
 //***************************************************************************
@@ -1244,9 +1229,7 @@ csm::EcefCoord UsgsAstroLsSensorModel::getSensorPosition(
 //***************************************************************************
 // UsgsAstroLsSensorModel::getSensorPosition
 //***************************************************************************
-csm::EcefCoord UsgsAstroLsSensorModel::getSensorPosition(double time) const
-
-{
+csm::EcefCoord UsgsAstroLsSensorModel::getSensorPosition(double time) const {
   double x, y, z, vx, vy, vz;
   getAdjSensorPosVel(time, _no_adjustment, x, y, z, vx, vy, vz);
 
@@ -1484,9 +1467,7 @@ std::string UsgsAstroLsSensorModel::getGeometricCorrectionName(
 // UsgsAstroLsSensorModel::setGeometricCorrectionSwitch
 //***************************************************************************
 void UsgsAstroLsSensorModel::setGeometricCorrectionSwitch(
-    int index, bool value, csm::param::Type pType)
-
-{
+    int index, bool value, csm::param::Type pType) {
   MESSAGE_LOG(
       "Setting geometric correction switch {} to {} "
       "with parameter type {}. "
@@ -1840,12 +1821,12 @@ void UsgsAstroLsSensorModel::losEllipsoidIntersect(
     const double& height, const double& xc, const double& yc, const double& zc,
     const double& xl, const double& yl, const double& zl, double& x, double& y,
     double& z, double& achieved_precision,
-    const double& desired_precision) const {
+    const double& desired_precision, csm::WarningList* warnings) const {
   MESSAGE_LOG(
       "Computing losEllipsoidIntersect for camera position "
-      "{} {} {} looking {} {} {} with desired precision"
-      "{}",
+      "{} {} {} looking {} {} {} with desired precision {}",
       xc, yc, zc, xl, yl, zl, desired_precision)
+
   // Helper function which computes the intersection of the image ray
   // with the ellipsoid.  All vectors are in earth-centered-fixed
   // coordinate system with origin at the center of the earth.
@@ -1873,6 +1854,12 @@ void UsgsAstroLsSensorModel::losEllipsoidIntersect(
 
   if (0.0 > quadTerm) {
     quadTerm = 0.0;
+    std::string message = "Image ray does not intersect ellipsoid";
+    if (warnings) {
+      warnings->push_back(csm::Warning(
+          csm::Warning::NO_INTERSECTION, message, "UsgsAstroLsSensorModel::losElliposidIntersect"));
+    }
+    MESSAGE_LOG(message)
   }
   double scale, scale1, h;
   double sprev, hprev;
@@ -2173,8 +2160,8 @@ void UsgsAstroLsSensorModel::setLinearApproximation() {
 
   double denom = determinant3x3(mat3x3);
 
-  if (fabs(denom) < 1.0e-8)  // can not get derivatives this way
-  {
+  // Can not get derivatives this way
+  if (fabs(denom) < 1.0e-8) {
     MESSAGE_LOG(
         "setLinearApproximation: determinant3x3 of"
         "matrix of partials is {}; nonlinear",

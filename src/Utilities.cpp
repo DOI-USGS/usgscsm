@@ -85,7 +85,7 @@ void computeDistortedFocalPlaneCoordinates(
 
   distortedX = p11 * t1 + p12 * t2;
   distortedY = p21 * t1 + p22 * t2;
-};
+}
 
 // Compue the image pixel for a distorted focal plane coordinate
 // in - line
@@ -110,7 +110,7 @@ void computePixel(const double &distortedX, const double &distortedY,
   double detLine = centeredLine + lineOrigin;
   sample = (detSample - startingSample) / sampleSumming;
   line = (detLine - startingLine) / lineSumming;
-};
+}
 
 // Define imaging ray in image space (In other words, create a look vector in
 // camera space) in - undistortedFocalPlaneX in - undistortedFocalPlaneY in -
@@ -150,7 +150,7 @@ void lagrangeInterp(const int &numTime, const double *valueArray,
   // Compute index
 
   double fndex = (time - startTime) / delTime;
-  int index = int(fndex);
+  int index = static_cast<int>(fndex);
 
   if (index < 0) {
     index = 0;
@@ -269,9 +269,8 @@ double brentRoot(double lowerBound, double upperBound,
       nextPoint +=
           (previousPoint * currentFunc * counterFunc) /
           ((previousFunc - counterFunc) * (previousFunc - currentFunc));
-    }
-    // Secant method
-    else {
+    } else {
+      // Secant method
       nextPoint = currentPoint - currentFunc * (currentPoint - counterPoint) /
                                      (currentFunc - counterFunc);
     }
@@ -388,10 +387,8 @@ double computeEllipsoidElevation(double x, double y, double z, double semiMajor,
       tanPhi = zz / d;
       ktr++;
     } while (MKTR > ktr && fabs(h - hPrev) > desired_precision);
-  }
-
-  // Suited for points near the poles
-  else {
+  } else {
+    // Suited for points near the poles
     double cc, dd, nn;
     double cotPhi = d / z;
     do {

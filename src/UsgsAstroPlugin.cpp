@@ -110,7 +110,7 @@ bool UsgsAstroPlugin::canModelBeConstructedFromState(
     csm::WarningList *warnings) const {
   try {
     csm::Model *model = constructModelFromState(modelState, warnings);
-    return (bool)model;
+    return static_cast<bool>(model);
   } catch (std::exception &e) {
     std::string msg = "Could not create model [";
     msg += modelName;
@@ -144,7 +144,7 @@ bool UsgsAstroPlugin::canModelBeConstructedFromISD(
   try {
     csm::Model *model =
         constructModelFromISD(imageSupportData, modelName, warnings);
-    return (bool)model;
+    return static_cast<bool>(model);
   } catch (std::exception &e) {
     if (warnings) {
       std::string msg = "Could not create model [";
@@ -191,7 +191,6 @@ std::string UsgsAstroPlugin::loadImageSupportData(
     isd_sidecar >> jsonisd;
     jsonisd["image_identifier"] = filename;
     return jsonisd.dump();
-
   } catch (std::exception &e) {
     std::string errorMessage =
         "Could not read metadata file associated with image [";
