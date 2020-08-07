@@ -27,9 +27,9 @@ TEST_F(ConstVelocityLineScanSensorModel, State) {
 TEST_F(ConstVelocityLineScanSensorModel, Center) {
   csm::ImageCoord imagePt(8.0, 8.0);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-  EXPECT_NEAR(groundPt.x, 9.99999500000, 1e-10);
+  EXPECT_NEAR(groundPt.x, 9.9999950045, 1e-10);
   EXPECT_NEAR(groundPt.y, 0.0, 1e-10);
-  EXPECT_NEAR(groundPt.z, 0.00999999500, 1e-10);
+  EXPECT_NEAR(groundPt.z, 0.0099954885, 1e-10);
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, Inversion) {
@@ -47,9 +47,9 @@ TEST_F(ConstVelocityLineScanSensorModel, Inversion) {
 TEST_F(ConstVelocityLineScanSensorModel, OffBody) {
   csm::ImageCoord imagePt(0.0, 4.0);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-  EXPECT_NEAR(groundPt.x, 0.04799688020, 1e-10);
-  EXPECT_NEAR(groundPt.y, -7.99961602495, 1e-10);
-  EXPECT_NEAR(groundPt.z, 16.00004799688, 1e-10);
+  EXPECT_NEAR(groundPt.x, 0.0479969548, 1e-10);
+  EXPECT_NEAR(groundPt.y, -7.9996153855, 1e-10);
+  EXPECT_NEAR(groundPt.z, 15.9999682261, 1e-10);
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, ProximateImageLocus) {
@@ -74,6 +74,7 @@ TEST_F(ConstVelocityLineScanSensorModel, RemoteImageLocus) {
   csm::ImageCoord imagePt(8.5, 8.0);
   csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(imagePt);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+  csm::EcefCoord instPos = sensorModel->getSensorPosition(imagePt);
   double lookX = groundPt.x - locus.point.x;
   double lookY = groundPt.y - locus.point.y;
   double lookZ = groundPt.z - locus.point.z;
@@ -84,9 +85,9 @@ TEST_F(ConstVelocityLineScanSensorModel, RemoteImageLocus) {
   EXPECT_NEAR(locus.direction.x, lookX, 1e-10);
   EXPECT_NEAR(locus.direction.y, lookY, 1e-10);
   EXPECT_NEAR(locus.direction.z, lookZ, 1e-10);
-  EXPECT_NEAR(locus.point.x, 1000.0, 1e-10);
-  EXPECT_NEAR(locus.point.y, 0.0, 1e-10);
-  EXPECT_NEAR(locus.point.z, 0.0, 1e-10);
+  EXPECT_NEAR(locus.point.x, instPos.x, 1e-10);
+  EXPECT_NEAR(locus.point.y, instPos.y, 1e-10);
+  EXPECT_NEAR(locus.point.z, instPos.z, 1e-10);
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, calculateAttitudeCorrection) {

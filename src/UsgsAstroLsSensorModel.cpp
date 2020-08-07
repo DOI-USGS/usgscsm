@@ -2387,15 +2387,17 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(
 
   ale::Orientations j2000_to_sensor = ale::getInstrumentPointing(jsonIsd);
   ephemTime = inst_state.getTimes();
-  std::vector<ale::State> instStates = inst_state.getStates();
   ale::State rotatedInstState;
   ale::State rotatedInstStateInv;
   std::vector<double> positions = {};
   std::vector<double> velocities = {};
+  double interpStep = (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
 
   for (int i = 0; i < ephemTime.size(); i++) {
+    double interpTime = ephemTime.front() * i * interpStep;
+    ale::State j2000InstState = inst_state.getState(ephemTime[i], ale::SPLINE);
     rotatedInstState =
-        j2000_to_target.rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
+        j2000_to_target.rotateStateAt(interpTime, j2000InstState, ale::SLERP);
     // ALE operates in Km and we want m
     positions.push_back(rotatedInstState.position.x * 1000);
     positions.push_back(rotatedInstState.position.y * 1000);
