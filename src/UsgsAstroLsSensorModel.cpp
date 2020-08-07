@@ -2394,8 +2394,8 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(
   double interpStep = (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
 
   for (int i = 0; i < ephemTime.size(); i++) {
-    double interpTime = ephemTime.front() * i * interpStep;
-    ale::State j2000InstState = inst_state.getState(ephemTime[i], ale::SPLINE);
+    double interpTime = ephemTime.front() + i * interpStep;
+    ale::State j2000InstState = inst_state.getState(interpTime, ale::SPLINE);
     rotatedInstState =
         j2000_to_target.rotateStateAt(interpTime, j2000InstState, ale::SLERP);
     // ALE operates in Km and we want m
