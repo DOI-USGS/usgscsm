@@ -1147,7 +1147,6 @@ std::vector<double> getSunVelocities(json isd, csm::WarningList *list) {
                                              unit.get<std::string>()));
     }
   } catch (...) {
-    std::cout << "Could not parse sun velocity" << std::endl;
     if (list) {
       list->push_back(csm::Warning(csm::Warning::DATA_NOT_AVAILABLE,
                                    "Could not parse the sun velocities.",
