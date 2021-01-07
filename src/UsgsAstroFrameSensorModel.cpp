@@ -525,7 +525,7 @@ UsgsAstroFrameSensorModel::computeAllSensorPartials(
       groundPt.x, groundPt.y, groundPt.z, imagePt.line, imagePt.samp, pset,
       desiredPrecision);
 
-  return RasterGM::computeAllSensorPartials(imagePt, groundPt, pset, desiredPrecision, 
+  return RasterGM::computeAllSensorPartials(imagePt, groundPt, pset, desiredPrecision,
                                             achievedPrecision, warnings);
 }
 
@@ -1125,12 +1125,9 @@ csm::SharingCriteria UsgsAstroFrameSensorModel::getParameterSharingCriteria(
     int index) const {
   MESSAGE_LOG(
       "Checking sharing criteria for parameter {}. "
-      "Sharing is not supported, throwing exception",
+      "Sharing is not supported.",
       index);
-  // Parameter sharing is not supported for this sensor,
-  // all indices are out of range
-  throw csm::Error(csm::Error::INDEX_OUT_OF_RANGE, "Index out of range.",
-                   "UsgsAstroLsSensorModel::getParameterSharingCriteria");
+  return csm::SharingCriteria();
 }
 
 double UsgsAstroFrameSensorModel::getParameterValue(int index) const {

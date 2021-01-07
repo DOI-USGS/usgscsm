@@ -624,11 +624,7 @@ TEST_F(FrameSensorModelLogging, IsParameterShareable) {
 }
 
 TEST_F(FrameSensorModelLogging, GetParameterSharingCriteria) {
-  try {
-    sensorModel->getParameterSharingCriteria(0);
-  } catch (...) {
-    // Just testing logging, so do nothing, it should still log
-  }
+  sensorModel->getParameterSharingCriteria(0);
 }
 
 TEST_F(FrameSensorModelLogging, GetParameterValue) {
