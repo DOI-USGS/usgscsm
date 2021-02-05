@@ -130,6 +130,52 @@ TEST_F(OrbitalFrameSensorModel, GroundPartials) {
   EXPECT_DOUBLE_EQ(partials[5], 0.0);
 }
 
+TEST_F(OrbitalFrameSensorModel, ImageToRemoteImagingLocus) {
+  csm::ImageCoord imagePt(8.0, 8.0);
+  double precision;
+  csm::WarningList warnings;
+  csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(
+      imagePt, 0.001, &precision, &warnings);
+  csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+  double lookX = groundPt.x - locus.point.x;
+  double lookY = groundPt.y - locus.point.y;
+  double lookZ = groundPt.z - locus.point.z;
+  double lookMag = sqrt(lookX * lookX + lookY * lookY + lookZ * lookZ);
+  lookX /= lookMag;
+  lookY /= lookMag;
+  lookZ /= lookMag;
+  EXPECT_NEAR(locus.direction.x, lookX, 1e-10);
+  EXPECT_NEAR(locus.direction.y, lookY, 1e-10);
+  EXPECT_NEAR(locus.direction.z, lookZ, 1e-10);
+  EXPECT_NEAR(locus.point.x, 1050000.0, 1e-10);
+  EXPECT_NEAR(locus.point.y, 0.0, 1e-10);
+  EXPECT_NEAR(locus.point.z, 0.0, 1e-10);
+  EXPECT_LT(precision, 0.001);
+  EXPECT_TRUE(warnings.empty());
+}
+
+TEST_F(OrbitalFrameSensorModel, ImageToProximateImagingLocus) {
+  csm::ImageCoord imagePt(8.0, 8.0);
+  csm::EcefCoord groundPt(1005000.0, 1000.0, 2000.0);
+  double precision;
+  csm::WarningList warnings;
+  csm::EcefLocus remoteLocus = sensorModel->imageToRemoteImagingLocus(imagePt);
+  csm::EcefLocus locus = sensorModel->imageToProximateImagingLocus(
+      imagePt, groundPt, 0.001, &precision, &warnings);
+  // The locus is a straight line so the proximate and remote should have the
+  // same direction
+  EXPECT_DOUBLE_EQ(locus.direction.x, remoteLocus.direction.x);
+  EXPECT_DOUBLE_EQ(locus.direction.y, remoteLocus.direction.y);
+  EXPECT_DOUBLE_EQ(locus.direction.z, remoteLocus.direction.z);
+  // The locus is the X-axis so the closest point is just the X component of
+  // the ground point.
+  EXPECT_NEAR(locus.point.x, 1005000.0, 1e-10);
+  EXPECT_NEAR(locus.point.y, 0.0, 1e-10);
+  EXPECT_NEAR(locus.point.z, 0.0, 1e-10);
+  EXPECT_LT(precision, 0.001);
+  EXPECT_TRUE(warnings.empty());
+}
+
 // ****************************************************************************
 //   Modified sensor model tests
 // ****************************************************************************

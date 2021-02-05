@@ -658,6 +658,10 @@ csm::EcefLocus UsgsAstroSarSensorModel::imageToProximateImagingLocus(
   }
   tangent = normalized(tangent);
 
+  if (achievedPrecision) {
+    *achievedPrecision = 0.0;
+  }
+
   return csm::EcefLocus(closestVec.x, closestVec.y, closestVec.z, tangent.x,
                         tangent.y, tangent.z);
 }
@@ -688,6 +692,10 @@ csm::EcefLocus UsgsAstroSarSensorModel::imageToRemoteImagingLocus(
     tangent = cross(lookVec, spacecraftVelocity);
   }
   tangent = normalized(tangent);
+
+  if (achievedPrecision) {
+    *achievedPrecision = 0.0;
+  }
 
   return csm::EcefLocus(closestVec.x, closestVec.y, closestVec.z, tangent.x,
                         tangent.y, tangent.z);

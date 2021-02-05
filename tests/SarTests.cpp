@@ -91,27 +91,41 @@ TEST_F(SarSensorModel, computeGroundPartials) {
 }
 
 TEST_F(SarSensorModel, imageToProximateImagingLocus) {
+  double precision;
+  csm::WarningList warnings;
   csm::EcefLocus locus = sensorModel->imageToProximateImagingLocus(
       csm::ImageCoord(500.0, 500.0),
       csm::EcefCoord(1737287.8590770673, -5403.280537826621,
-                     -3849.9796183814506));
+                     -3849.9796183814506),
+      0.001,
+      &precision,
+      &warnings);
   EXPECT_NEAR(locus.point.x, 1737388.1260092105, 1e-2);
   EXPECT_NEAR(locus.point.y, -5403.0102509726485, 1e-2);
   EXPECT_NEAR(locus.point.z, -3749.9801945280433, 1e-2);
   EXPECT_NEAR(locus.direction.x, 0.002701478402694769, 1e-5);
   EXPECT_NEAR(locus.direction.y, -0.9999963509835628, 1e-5);
   EXPECT_NEAR(locus.direction.z, -5.830873570731962e-06, 1e-5);
+  EXPECT_LT(precision, 0.001);
+  EXPECT_TRUE(warnings.empty());
 }
 
 TEST_F(SarSensorModel, imageToRemoteImagingLocus) {
-  csm::EcefLocus locus =
-      sensorModel->imageToRemoteImagingLocus(csm::ImageCoord(500.0, 500.0));
+  double precision;
+  csm::WarningList warnings;
+  csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(
+      csm::ImageCoord(500.0, 500.0),
+      0.001,
+      &precision,
+      &warnings);
   EXPECT_NEAR(locus.point.x, 1737380.8279381434, 1e-3);
   EXPECT_NEAR(locus.point.y, 0.0, 1e-3);
   EXPECT_NEAR(locus.point.z, -3749.964442364465, 1e-3);
   EXPECT_NEAR(locus.direction.x, 0.0, 1e-8);
   EXPECT_NEAR(locus.direction.y, -1.0, 1e-8);
   EXPECT_NEAR(locus.direction.z, 0.0, 1e-8);
+  EXPECT_LT(precision, 0.001);
+  EXPECT_TRUE(warnings.empty());
 }
 
 TEST_F(SarSensorModel, adjustedPositionVelocity) {
