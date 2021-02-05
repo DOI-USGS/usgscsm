@@ -241,7 +241,7 @@ TEST_F(OrbitalLineScanSensorModel, InversionReallyHigh) {
 
 TEST_F(OrbitalLineScanSensorModel, ReferenceDateTime) {
   std::string date = sensorModel->getReferenceDateAndTime();
-  EXPECT_EQ(date, "20000101T001639");
+  EXPECT_EQ(date, "2000-01-01T00:16:39Z");
 }
 
 TEST_F(TwoLineScanSensorModels, CrossCovariance) {

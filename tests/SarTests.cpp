@@ -131,3 +131,8 @@ TEST_F(SarSensorModel, adjustedPositionVelocity) {
   EXPECT_NEAR(adjVelocity.y, sensorVelocity.y + adjustments[4], 1e-8);
   EXPECT_NEAR(adjVelocity.z, sensorVelocity.z + adjustments[5], 1e-2);
 }
+
+TEST_F(SarSensorModel, ReferenceDateTime) {
+  std::string date = sensorModel->getReferenceDateAndTime();
+  EXPECT_EQ(date, "2000-01-01T00:00:04Z");
+}
