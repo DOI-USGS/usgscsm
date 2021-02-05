@@ -1,14 +1,14 @@
 #define _USE_MATH_DEFINES
 
+#include <gtest/gtest.h>
+#include <math.h>
+
+#include <iostream>
+#include <nlohmann/json.hpp>
+
 #include "Fixtures.h"
 #include "UsgsAstroLsSensorModel.h"
 #include "UsgsAstroPlugin.h"
-
-#include <gtest/gtest.h>
-#include <nlohmann/json.hpp>
-
-#include <math.h>
-#include <iostream>
 
 using json = nlohmann::json;
 

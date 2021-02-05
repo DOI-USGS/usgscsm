@@ -1,12 +1,13 @@
 #include "UsgsAstroSarSensorModel.h"
-#include "Utilities.h"
 
 #include <string.h>
+
 #include <cmath>
 #include <functional>
 #include <iomanip>
-
 #include <nlohmann/json.hpp>
+
+#include "Utilities.h"
 
 using json = nlohmann::json;
 using namespace std;

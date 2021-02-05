@@ -1,17 +1,16 @@
 #define _USE_MATH_DEFINES
 
-#include "UsgsAstroSarSensorModel.h"
-
-#include "Fixtures.h"
-#include "Warning.h"
-
 #include <gtest/gtest.h>
-#include <nlohmann/json.hpp>
-
 #include <math.h>
+
 #include <fstream>
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <string>
+
+#include "Fixtures.h"
+#include "UsgsAstroSarSensorModel.h"
+#include "Warning.h"
 
 using json = nlohmann::json;
 
@@ -97,9 +96,7 @@ TEST_F(SarSensorModel, imageToProximateImagingLocus) {
       csm::ImageCoord(500.0, 500.0),
       csm::EcefCoord(1737287.8590770673, -5403.280537826621,
                      -3849.9796183814506),
-      0.001,
-      &precision,
-      &warnings);
+      0.001, &precision, &warnings);
   EXPECT_NEAR(locus.point.x, 1737388.1260092105, 1e-2);
   EXPECT_NEAR(locus.point.y, -5403.0102509726485, 1e-2);
   EXPECT_NEAR(locus.point.z, -3749.9801945280433, 1e-2);
@@ -114,10 +111,7 @@ TEST_F(SarSensorModel, imageToRemoteImagingLocus) {
   double precision;
   csm::WarningList warnings;
   csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(
-      csm::ImageCoord(500.0, 500.0),
-      0.001,
-      &precision,
-      &warnings);
+      csm::ImageCoord(500.0, 500.0), 0.001, &precision, &warnings);
   EXPECT_NEAR(locus.point.x, 1737380.8279381434, 1e-3);
   EXPECT_NEAR(locus.point.y, 0.0, 1e-3);
   EXPECT_NEAR(locus.point.z, -3749.964442364465, 1e-3);

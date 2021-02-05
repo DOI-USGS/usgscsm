@@ -1,10 +1,10 @@
-#include "UsgsAstroFrameSensorModel.h"
-#include "UsgsAstroPlugin.h"
-
 #include <gtest/gtest.h>
+
 #include <nlohmann/json.hpp>
 
 #include "Fixtures.h"
+#include "UsgsAstroFrameSensorModel.h"
+#include "UsgsAstroPlugin.h"
 
 using json = nlohmann::json;
 // NOTE: The imagePt format is (Lines,Samples)

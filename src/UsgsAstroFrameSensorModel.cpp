@@ -1,13 +1,12 @@
 #include "UsgsAstroFrameSensorModel.h"
 
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-
-#include <nlohmann/json.hpp>
-
 #include <Error.h>
 #include <Version.h>
+
+#include <iomanip>
+#include <iostream>
+#include <nlohmann/json.hpp>
+#include <sstream>
 
 #include "ale/Util.h"
 
@@ -288,20 +287,17 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToProximateImagingLocus(
 
   // Find the point on the locus closest to the input ground point
   // The direction vector is already normalized so we can skip a division
-  csm::EcefVector positionToGround(
-      groundPt.x - remoteLocus.point.x,
-      groundPt.y - remoteLocus.point.y,
-      groundPt.z - remoteLocus.point.z);
+  csm::EcefVector positionToGround(groundPt.x - remoteLocus.point.x,
+                                   groundPt.y - remoteLocus.point.y,
+                                   groundPt.z - remoteLocus.point.z);
   csm::EcefVector positionToClosest =
       dot(remoteLocus.direction, positionToGround) * remoteLocus.direction;
 
-  return csm::EcefLocus(
-      remoteLocus.point.x + positionToClosest.x,
-      remoteLocus.point.y + positionToClosest.y,
-      remoteLocus.point.z + positionToClosest.z,
-      remoteLocus.direction.x,
-      remoteLocus.direction.y,
-      remoteLocus.direction.z);
+  return csm::EcefLocus(remoteLocus.point.x + positionToClosest.x,
+                        remoteLocus.point.y + positionToClosest.y,
+                        remoteLocus.point.z + positionToClosest.z,
+                        remoteLocus.direction.x, remoteLocus.direction.y,
+                        remoteLocus.direction.z);
 }
 
 csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(
@@ -549,8 +545,8 @@ UsgsAstroFrameSensorModel::computeAllSensorPartials(
       groundPt.x, groundPt.y, groundPt.z, imagePt.line, imagePt.samp, pset,
       desiredPrecision);
 
-  return RasterGM::computeAllSensorPartials(imagePt, groundPt, pset, desiredPrecision,
-                                            achievedPrecision, warnings);
+  return RasterGM::computeAllSensorPartials(
+      imagePt, groundPt, pset, desiredPrecision, achievedPrecision, warnings);
 }
 
 std::vector<csm::RasterGM::SensorPartials>

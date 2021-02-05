@@ -18,18 +18,18 @@
 //  24-OCT-2017 BAE Systems  Update for CSM 3.0.3
 //-----------------------------------------------------------------------------
 #include "UsgsAstroLsSensorModel.h"
-#include "Distortion.h"
-#include "Utilities.h"
-
-#include <float.h>
-#include <math.h>
-#include <algorithm>
-#include <iostream>
-#include <sstream>
 
 #include <Error.h>
-#include <nlohmann/json.hpp>
+#include <float.h>
+#include <math.h>
 
+#include <algorithm>
+#include <iostream>
+#include <nlohmann/json.hpp>
+#include <sstream>
+
+#include "Distortion.h"
+#include "Utilities.h"
 #include "ale/Util.h"
 
 #define MESSAGE_LOG(...)         \
@@ -800,7 +800,8 @@ csm::EcefCoord UsgsAstroLsSensorModel::imageToGround(
         csm::Warning::PRECISION_NOT_MET, "Desired precision not achieved.",
         "UsgsAstroLsSensorModel::imageToGround()"));
   }
-  MESSAGE_LOG("imageToGround for {} {} {}", image_pt.line, image_pt.samp, height);
+  MESSAGE_LOG("imageToGround for {} {} {}", image_pt.line, image_pt.samp,
+              height);
   return csm::EcefCoord(x, y, z);
 }
 
@@ -1131,7 +1132,8 @@ UsgsAstroLsSensorModel::computeAllSensorPartials(
       image_pt.line, image_pt.samp, ground_pt.x, ground_pt.y, ground_pt.z,
       desired_precision)
 
-  return RasterGM::computeAllSensorPartials(image_pt, ground_pt, pSet, desired_precision,
+  return RasterGM::computeAllSensorPartials(image_pt, ground_pt, pSet,
+                                            desired_precision,
                                             achieved_precision, warnings);
 }
 
@@ -1821,8 +1823,8 @@ void UsgsAstroLsSensorModel::lightAberrationCorr(
 void UsgsAstroLsSensorModel::losEllipsoidIntersect(
     const double& height, const double& xc, const double& yc, const double& zc,
     const double& xl, const double& yl, const double& zl, double& x, double& y,
-    double& z, double& achieved_precision,
-    const double& desired_precision, csm::WarningList* warnings) const {
+    double& z, double& achieved_precision, const double& desired_precision,
+    csm::WarningList* warnings) const {
   MESSAGE_LOG(
       "Computing losEllipsoidIntersect for camera position "
       "{} {} {} looking {} {} {} with desired precision {}",
@@ -1857,8 +1859,9 @@ void UsgsAstroLsSensorModel::losEllipsoidIntersect(
     quadTerm = 0.0;
     std::string message = "Image ray does not intersect ellipsoid";
     if (warnings) {
-      warnings->push_back(csm::Warning(
-          csm::Warning::NO_INTERSECTION, message, "UsgsAstroLsSensorModel::losElliposidIntersect"));
+      warnings->push_back(
+          csm::Warning(csm::Warning::NO_INTERSECTION, message,
+                       "UsgsAstroLsSensorModel::losElliposidIntersect"));
     }
     MESSAGE_LOG(message)
   }
