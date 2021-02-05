@@ -55,9 +55,11 @@ TEST_F(ConstVelocityLineScanSensorModel, OffBody) {
 TEST_F(ConstVelocityLineScanSensorModel, ProximateImageLocus) {
   csm::ImageCoord imagePt(8.0, 8.0);
   csm::EcefCoord groundPt(10, 2, 1);
+  double precision;
+  csm::WarningList warnings;
   csm::EcefLocus remoteLocus = sensorModel->imageToRemoteImagingLocus(imagePt);
-  csm::EcefLocus locus =
-      sensorModel->imageToProximateImagingLocus(imagePt, groundPt);
+  csm::EcefLocus locus = sensorModel->imageToProximateImagingLocus(
+      imagePt, groundPt, 0.001, &precision, &warnings);
   double locusToGroundX = locus.point.x - groundPt.x;
   double locusToGroundY = locus.point.y - groundPt.y;
   double locusToGroundZ = locus.point.z - groundPt.z;
@@ -68,11 +70,16 @@ TEST_F(ConstVelocityLineScanSensorModel, ProximateImageLocus) {
                   locusToGroundY * locus.direction.y +
                   locusToGroundZ * locus.direction.z,
               0.0, 1e-10);
+  EXPECT_LT(precision, 0.001);
+  EXPECT_TRUE(warnings.empty());
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, RemoteImageLocus) {
   csm::ImageCoord imagePt(8.5, 8.0);
-  csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(imagePt);
+  double precision;
+  csm::WarningList warnings;
+  csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(
+      imagePt, 0.001, &precision, &warnings);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
   double lookX = groundPt.x - locus.point.x;
   double lookY = groundPt.y - locus.point.y;
@@ -87,6 +94,8 @@ TEST_F(ConstVelocityLineScanSensorModel, RemoteImageLocus) {
   EXPECT_NEAR(locus.point.x, 1000.0, 1e-10);
   EXPECT_NEAR(locus.point.y, 0.0, 1e-10);
   EXPECT_NEAR(locus.point.z, 0.0, 1e-10);
+  EXPECT_LT(precision, 0.001);
+  EXPECT_TRUE(warnings.empty());
 }
 
 TEST_F(ConstVelocityLineScanSensorModel, calculateAttitudeCorrection) {

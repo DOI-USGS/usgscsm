@@ -276,12 +276,32 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToProximateImagingLocus(
     const csm::ImageCoord &imagePt, const csm::EcefCoord &groundPt,
     double desiredPrecision, double *achievedPrecision,
     csm::WarningList *warnings) const {
-  // Ignore the ground point?
   MESSAGE_LOG(
       "Computing imageToProximateImagingLocus(No ground) for point {}, {}, {}, "
       "with desired precision {}",
       imagePt.line, imagePt.samp, desiredPrecision);
-  return imageToRemoteImagingLocus(imagePt);
+
+  // The locus is a straight line so we can just use the remote locus to
+  // get the direction
+  csm::EcefLocus remoteLocus = imageToRemoteImagingLocus(
+      imagePt, desiredPrecision, achievedPrecision, warnings);
+
+  // Find the point on the locus closest to the input ground point
+  // The direction vector is already normalized so we can skip a division
+  csm::EcefVector positionToGround(
+      groundPt.x - remoteLocus.point.x,
+      groundPt.y - remoteLocus.point.y,
+      groundPt.z - remoteLocus.point.z);
+  csm::EcefVector positionToClosest =
+      dot(remoteLocus.direction, positionToGround) * remoteLocus.direction;
+
+  return csm::EcefLocus(
+      remoteLocus.point.x + positionToClosest.x,
+      remoteLocus.point.y + positionToClosest.y,
+      remoteLocus.point.z + positionToClosest.z,
+      remoteLocus.direction.x,
+      remoteLocus.direction.y,
+      remoteLocus.direction.z);
 }
 
 csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(
@@ -319,6 +339,10 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(
   double mag =
       sqrt(lookB[0] * lookB[0] + lookB[1] * lookB[1] + lookB[2] * lookB[2]);
   std::vector<double> lookBUnit{lookB[0] / mag, lookB[1] / mag, lookB[2] / mag};
+
+  if (achievedPrecision) {
+    *achievedPrecision = 0.0;
+  }
 
   return csm::EcefLocus(m_currentParameterValue[0], m_currentParameterValue[1],
                         m_currentParameterValue[2], lookBUnit[0], lookBUnit[1],

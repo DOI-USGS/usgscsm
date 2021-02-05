@@ -1009,6 +1009,10 @@ csm::EcefLocus UsgsAstroLsSensorModel::imageToRemoteImagingLocus(
   locus.direction.x = -locus.direction.x;
   locus.direction.y = -locus.direction.y;
   locus.direction.z = -locus.direction.z;
+
+  if (achieved_precision) {
+    *achieved_precision = 0.0;
+  }
   return locus;
 }
 
