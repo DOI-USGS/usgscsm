@@ -2412,6 +2412,29 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(
   state["m_velocities"] = velocities;
   MESSAGE_LOG("m_velocities: {}", state["m_velocities"].dump())
 
+  // Work-around for issues in ALE <=0.8.5 where Orientations without angular
+  // velocities seg fault when you multiply them. This will make the angular
+  // velocities in the final Orientations dubious but they are not used
+  // in any calculations so this is okay.
+  if (j2000_to_sensor.getAngularVelocities().empty()) {
+    j2000_to_sensor = ale::Orientations(
+        j2000_to_sensor.getRotations(),
+        j2000_to_sensor.getTimes(),
+        std::vector<ale::Vec3d>(j2000_to_sensor.getTimes().size()),
+        j2000_to_sensor.getConstantRotation(),
+        j2000_to_sensor.getConstantFrames(),
+        j2000_to_sensor.getTimeDependentFrames());
+  }
+  if (j2000_to_target.getAngularVelocities().empty()) {
+    j2000_to_target = ale::Orientations(
+        j2000_to_target.getRotations(),
+        j2000_to_target.getTimes(),
+        std::vector<ale::Vec3d>(j2000_to_target.getTimes().size()),
+        j2000_to_target.getConstantRotation(),
+        j2000_to_target.getConstantFrames(),
+        j2000_to_target.getTimeDependentFrames());
+  }
+
   ale::Orientations sensor_to_j2000 = j2000_to_sensor.inverse();
   ale::Orientations sensor_to_target = j2000_to_target * sensor_to_j2000;
   ephemTime = sensor_to_target.getTimes();
