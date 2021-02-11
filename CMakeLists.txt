@@ -17,6 +17,7 @@ endif()
 option(USGSCSM_EXTERNAL_DEPS "If the library should be built with external or embedded dependencies" OFF)
 
 if(USGSCSM_EXTERNAL_DEPS)
+  message(STATUS "Using external dependencies")
   # CSM API library
   find_path(CSM_INCLUDE_DIR NAMES "csm.h"
                             PATH_SUFFIXES "csm"
@@ -32,6 +33,7 @@ if(USGSCSM_EXTERNAL_DEPS)
   find_package(ale REQUIRED)
   set(ALE_TARGET ale::ale)
 else()
+  message(STATUS "Using embedded dependencies")
   # CSM API library
   add_subdirectory(csm)
   set(CSM_INCLUDE_DIR /csm)
