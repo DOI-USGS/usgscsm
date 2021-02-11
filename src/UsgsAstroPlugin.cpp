@@ -16,6 +16,9 @@
 #include <csm.h>
 #include <math.h>
 
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
@@ -50,8 +53,18 @@ UsgsAstroPlugin::UsgsAstroPlugin() {
       std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
 
       if (!m_logger) {
-        std::shared_ptr<spdlog::logger> m_logger =
-            spdlog::basic_logger_mt("usgscsm_logger", logFile);
+        if (logFile == "stdout") {
+          std::shared_ptr<spdlog::logger> m_logger =
+              spdlog::stdout_color_mt("usgscsm_logger");
+        }
+        else if (logFile == "stderr") {
+          std::shared_ptr<spdlog::logger> m_logger =
+              spdlog::stderr_color_mt("usgscsm_logger");
+        }
+        else {
+          std::shared_ptr<spdlog::logger> m_logger =
+              spdlog::basic_logger_mt("usgscsm_logger", logFile);
+        }
       }
     }
   }

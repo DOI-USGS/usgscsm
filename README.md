@@ -1,14 +1,14 @@
-# CSM-CameraModel
+# USGSCSM
 
 Community Sensor Model (CSM) compliant sensor models created by USGS Astrogeology
 Science Center.
 
-CSM-CameraModel contains two different sensor models. The first, is a generic
+USGSCSM contains three different sensor models. The first, is a generic
 framing camera model written from scratch. The second is a generic line scan
 camera model based on code from BAE Systems Information and Electronic Systems
-Integration Inc.
+Integration Inc. The third is a generic SAR sensor model.
 
-## Using CSM-CameraModel
+## Using USGSCSM
 
 This library is a CSM plugin library that is intended to be dynamically loaded
 at run time along side the
@@ -30,6 +30,16 @@ server for generating these,
 [pfeffernusse](https://github.com/USGS-Astrogeology/pfeffernusse). The swagger
 specification is located on
 [swaggerhub](https://app.swaggerhub.com/apis/USGS-Astro/pfeffernusse2/0.1.4-oas3).
+You can also use [ALE](https://github.com/USGS-Astrogeology/ale) directly with
+metakernels to generate the auxiliary JSON file.
+
+## Enabling logging
+
+You can enable logging of the internal operations in the sensor models by setting
+the `USGSCSM_LOG_FILE` environment variable to the file you would like to log to.
+You can also log to standard out by setting it to `stdout` or standard error
+by setting it to `stderr`. Note that these logs can become quite large, multiple
+GBs.
 
 ---
 
@@ -42,33 +52,48 @@ specification is located on
 This repository has all of its external c++ dependencies included in it. The
 excellent header-only JSON library
 [JSON for Modern C++](https://github.com/nlohmann/json) is included directly in
-the source code. The other two dependencies, the CSM API library, and gtest
-are included as git submodules. When you clone this library make sure you add
-the `--recursive` flag to your `git clone` command. Alaterntively, you can run
-`git submodule update --init --recursive` after cloning. The library can also be
-compiled against an installed versions of the CSM API by setting the BUILD_CSM
-flag to OFF during cmake configuration.
+the source code. The other three dependencies, The Abstraction Library for
+Ephemerides, the CSM API library, and googletest are included as git submodules.
+When you clone this library make sure you add the `--recursive` flag to your
+`git clone` command. Alterntively, you can run
+`git submodule update --init --recursive` after cloning.
 
-## Building CSM-CameraModel
+You can also install the build requirements using Conda with the provided
+`environment.yml` file. The following commands will create a new environment
+to build against. Note that googletest cannot be installed via anaconda and must
+be available within the source code. You can remove the googletest dependency
+by disabling the tests.
 
-CSM-CameraModel uses a standard cmake build system. To compile the library, and
+```
+conda env create -n usgscsm -f environment.yml -y
+```
+
+## Building USGSCSM
+
+USGSCSM uses a standard cmake build system. To compile the library and
 tests use the following commands:
 
 1. `mkdir build && cd build`
 2. `cmake .. && cmake --build .`
 
-## Testing CSM-CameraModel
+If you are using external dependencies via Conda or system level installations
+add the `-DUSGSCSM_EXTERNAL_DEPS=ON` flag to the cmake command.
 
-All of the tests for CSM-CameraModel are written in the googletests framework
+You can also disable the tests and the googletest dependency by adding the
+`-DUSGSCSM_BUILD_TESTS=OFF` flag to the cmake command.
+
+## Testing USGSCSM
+
+All of the tests for USGSCSM are written in the googletests framework
 and are run via ctest. To run all of the tests simply run `ctest` in the build.
 
 All of the tests are purposefully written to use generic data that values have
-been hand validated for. This data can be found under `tests/data`.
+been hand validated. This data can be found under `tests/data`.
 
 ## Code Style
 
-This software package uses a modified form of the 
-[Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html). 
+This software package uses a modified form of the
+[Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html).
 
 Here are some exceptions:
 
