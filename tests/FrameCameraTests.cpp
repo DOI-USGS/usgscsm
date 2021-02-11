@@ -693,6 +693,11 @@ TEST_F(FrameSensorModelLogging, IsValidModelState) {
   sensorModel->isValidModelState("{\"test_key\" : \"test_string\"}", nullptr);
 }
 
+
+TEST_F(FrameSensorModelLogging, IsValidModelStateNew) {
+  sensorModel->isValidModelState(sensorModel->getModelState(), nullptr);
+}
+
 TEST_F(FrameSensorModelLogging, IsValidIsd) {
   sensorModel->isValidIsd("{\"test_key\" : \"test_string\"}", nullptr);
 }

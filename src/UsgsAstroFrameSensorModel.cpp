@@ -728,7 +728,8 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
        {m_referencePointXyz.x, m_referencePointXyz.y, m_referencePointXyz.z}},
       {"m_currentParameterCovariance", m_currentParameterCovariance}};
 
-  return state.dump();
+  std::string stateString = getModelName() + "\n" + state.dump();
+  return stateString;
 }
 
 bool UsgsAstroFrameSensorModel::isValidModelState(
@@ -756,7 +757,7 @@ bool UsgsAstroFrameSensorModel::isValidModelState(
                                                "m_iTransS",
                                                "m_iTransL"};
 
-  json jsonState = json::parse(stringState);
+  json jsonState = stateAsJson(stringState);
   std::vector<std::string> missingKeywords;
 
   for (auto &key : requiredKeywords) {
@@ -811,7 +812,9 @@ bool UsgsAstroFrameSensorModel::isValidIsd(const std::string &Isd,
 
 void UsgsAstroFrameSensorModel::replaceModelState(
     const std::string &stringState) {
-  json state = json::parse(stringState);
+
+  json state = stateAsJson(stringState);
+
   MESSAGE_LOG("Replacing model state");
   // The json library's .at() will except if key is missing
   try {

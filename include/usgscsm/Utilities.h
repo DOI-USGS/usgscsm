@@ -166,4 +166,6 @@ std::vector<double> getSensorVelocities(nlohmann::json isd,
 std::vector<double> getSensorOrientations(nlohmann::json isd,
                                           csm::WarningList *list = nullptr);
 double getWavelength(nlohmann::json isd, csm::WarningList *list = nullptr);
+nlohmann::json stateAsJson(std::string modelState);
+
 #endif  // INCLUDE_USGSCSM_UTILITIES_H_

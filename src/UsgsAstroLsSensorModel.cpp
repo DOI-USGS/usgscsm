@@ -127,7 +127,7 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string& stateString) {
   MESSAGE_LOG("Replacing model state")
 
   reset();
-  auto j = json::parse(stateString);
+  auto j = stateAsJson(stateString);
   int num_params = NUM_PARAMETERS;
 
   m_imageIdentifier = j["m_imageIdentifier"].get<std::string>();
@@ -282,7 +282,7 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string& stateString) {
 std::string UsgsAstroLsSensorModel::getModelNameFromModelState(
     const std::string& model_state) {
   // Parse the string to JSON
-  auto j = json::parse(model_state);
+  auto j = stateAsJson(model_state);
   // If model name cannot be determined, return a blank string
   std::string model_name;
 
@@ -437,7 +437,8 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
   state["m_sunVelocity"] = m_sunVelocity;
   MESSAGE_LOG("num sun velocities: {} ", m_sunVelocity.size())
 
-  return state.dump();
+  std::string stateString = getModelName() + "\n" + state.dump();
+  return stateString;
 }
 
 //***************************************************************************

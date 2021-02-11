@@ -116,7 +116,7 @@ TEST_F(OrbitalLineScanSensorModel, getIlluminationDirectionStationary) {
   // Get state information, replace sun position / velocity to hit third case:
   //  One position, no velocity.
   std::string state = sensorModel->getModelState();
-  json jState = json::parse(state);
+  json jState = stateAsJson(state);
   jState["m_sunPosition"] = std::vector<double>{100.0, 100.0, 100.0};
   jState["m_sunVelocity"] = std::vector<double>{};
   sensorModel->replaceModelState(jState.dump());
@@ -154,7 +154,7 @@ TEST_F(OrbitalLineScanSensorModel, getSunPositionLinear) {
   // Get state information, replace sun position / velocity to hit third case:
   //  One position, no velocity.
   std::string state = sensorModel->getModelState();
-  json jState = json::parse(state);
+  json jState = stateAsJson(state);
   jState["m_sunPosition"] = std::vector<double>{100.0, 100.0, 100.0};
   jState["m_sunVelocity"] = std::vector<double>{50.0, 50.0, 50.0};
   sensorModel->replaceModelState(jState.dump());
@@ -169,7 +169,7 @@ TEST_F(OrbitalLineScanSensorModel, getSunPositionStationary) {
   // Get state information, replace sun position / velocity to hit third case:
   //  One position, no velocity.
   std::string state = sensorModel->getModelState();
-  json jState = json::parse(state);
+  json jState = stateAsJson(state);
   jState["m_sunPosition"] = std::vector<double>{100.0, 100.0, 100.0};
   jState["m_sunVelocity"] = std::vector<double>{};
   sensorModel->replaceModelState(jState.dump());

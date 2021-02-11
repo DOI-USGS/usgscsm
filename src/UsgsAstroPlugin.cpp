@@ -206,7 +206,7 @@ std::string UsgsAstroPlugin::loadImageSupportData(
 
 std::string UsgsAstroPlugin::getModelNameFromModelState(
     const std::string &modelState, csm::WarningList *warnings) const {
-  auto state = json::parse(modelState);
+  auto state = stateAsJson(modelState);
 
   std::string name = state.value<std::string>("name_model", "");
   MESSAGE_LOG("Get model name from model state. State: {}, Name: {}",
@@ -340,7 +340,7 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(
 csm::Model *UsgsAstroPlugin::constructModelFromState(
     const std::string &modelState, csm::WarningList *warnings) const {
   MESSAGE_LOG("Runing constructModelFromState with modelState: {}", modelState);
-  json state = json::parse(modelState);
+  json state = stateAsJson(modelState);
   std::string modelName = state["m_modelName"];
   MESSAGE_LOG("Using model name: {}", modelName);
 
