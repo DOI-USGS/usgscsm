@@ -58,7 +58,7 @@ When you clone this library make sure you add the `--recursive` flag to your
 `git clone` command. Alterntively, you can run
 `git submodule update --init --recursive` after cloning.
 
-You can also install of the build requirements using Conda with the provided
+You can also install the build requirements using Conda with the provided
 `environment.yml` file. The following commands will create a new environment
 to build against. Note that googletest cannot be installed via anaconda and must
 be available within the source code. You can remove the googletest dependency
@@ -70,7 +70,7 @@ conda env create -n usgscsm -f environment.yml -y
 
 ## Building USGSCSM
 
-USGSCSM uses a standard cmake build system. To compile the library, and
+USGSCSM uses a standard cmake build system. To compile the library and
 tests use the following commands:
 
 1. `mkdir build && cd build`
