@@ -146,7 +146,7 @@ string UsgsAstroSarSensorModel::getModelNameFromModelState(
     const string& model_state) {
   MESSAGE_LOG("Getting model name from model state: {}", model_state);
   // Parse the string to JSON
-  auto j = json::parse(model_state);
+  auto j = stateAsJson(model_state);
   // If model name cannot be determined, return a blank string
   string model_name;
 
@@ -219,7 +219,7 @@ void UsgsAstroSarSensorModel::replaceModelState(const string& argState) {
   reset();
 
   MESSAGE_LOG("Replacing model state with: {}", argState);
-  auto stateJson = json::parse(argState);
+  auto stateJson = stateAsJson(argState);
 
   m_imageIdentifier = stateJson["m_imageIdentifier"].get<string>();
   m_platformIdentifier = stateJson["m_platformIdentifier"].get<string>();
@@ -330,7 +330,8 @@ string UsgsAstroSarSensorModel::getModelState() const {
   state["m_scaleConversionTimes"] = m_scaleConversionTimes;
   state["m_covariance"] = m_covariance;
 
-  return state.dump();
+  std::string stateString = getModelName() + "\n" + state.dump();
+  return stateString;
 }
 
 csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(

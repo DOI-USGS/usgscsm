@@ -194,7 +194,7 @@ class FrameStateTest : public ::testing::Test {
     if (sensorModel) {
       sensorModel->getModelState();
       std::string modelState = sensorModel->getModelState();
-      auto state = nlohmann::json::parse(modelState);
+      auto state = stateAsJson(modelState);
       state[key] = newValue;
       sensorModel->replaceModelState(state.dump());
 

@@ -1314,3 +1314,12 @@ double getWavelength(json isd, csm::WarningList *list) {
   }
   return wavelength;
 }
+
+json stateAsJson(std::string modelState) {
+  std::size_t found = modelState.find_first_of("\n");
+
+  if (found == std::string::npos) {
+    found = 0;
+  }
+  return json::parse(modelState.begin() + found, modelState.end());
+}

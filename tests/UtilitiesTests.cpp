@@ -465,3 +465,15 @@ TEST(UtilitiesTests, vectorProjection) {
   EXPECT_DOUBLE_EQ(rejectZ.y, 2.0);
   EXPECT_DOUBLE_EQ(rejectZ.z, 0.0);
 }
+
+TEST(UtilitiesTests, stateAsJsonWithModel) {
+  std::string modelState = "{\"test_key\":\"test_string\"}";
+  json state = stateAsJson("MODEL_NAME\n"+modelState);
+  EXPECT_STREQ(modelState.c_str(), state.dump().c_str());
+}
+
+TEST(UtilitiesTests, stateAsJsonWithoutModel) {
+  std::string modelState = "{\"test_key\":\"test_string\"}";
+  json state = stateAsJson(modelState);
+  EXPECT_STREQ(modelState.c_str(), state.dump().c_str());
+}
