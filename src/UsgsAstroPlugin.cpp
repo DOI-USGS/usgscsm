@@ -123,7 +123,10 @@ bool UsgsAstroPlugin::canModelBeConstructedFromState(
     csm::WarningList *warnings) const {
   try {
     csm::Model *model = constructModelFromState(modelState, warnings);
-    return static_cast<bool>(model);
+    if (model) {
+      delete model;
+      return true;
+    }
   } catch (std::exception &e) {
     std::string msg = "Could not create model [";
     msg += modelName;
@@ -157,7 +160,10 @@ bool UsgsAstroPlugin::canModelBeConstructedFromISD(
   try {
     csm::Model *model =
         constructModelFromISD(imageSupportData, modelName, warnings);
-    return static_cast<bool>(model);
+    if (model) {
+      delete model;
+      return true;
+    }
   } catch (std::exception &e) {
     if (warnings) {
       std::string msg = "Could not create model [";
@@ -273,7 +279,9 @@ std::string UsgsAstroPlugin::convertISDToModelState(
   MESSAGE_LOG("Running convertISDToModelState");
   csm::Model *sensor_model =
       constructModelFromISD(imageSupportData, modelName, warnings);
-  return sensor_model->getModelState();
+  std::string stateString = sensor_model->getModelState();
+  delete sensor_model;
+  return stateString;
 }
 
 csm::Model *UsgsAstroPlugin::constructModelFromISD(
@@ -291,6 +299,7 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(
           model->constructStateFromIsd(stringIsd, warnings));
       MESSAGE_LOG("Constructed model: {}", modelName);
     } catch (std::exception &e) {
+      delete model;
       csm::Error::ErrorType aErrorType =
           csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE;
       std::string aMessage = "Could not construct model [";
@@ -310,6 +319,7 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(
       model->replaceModelState(
           model->constructStateFromIsd(stringIsd, warnings));
     } catch (std::exception &e) {
+      delete model;
       csm::Error::ErrorType aErrorType =
           csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE;
       std::string aMessage = "Could not construct model [";
@@ -329,6 +339,7 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(
       model->replaceModelState(
           model->constructStateFromIsd(stringIsd, warnings));
     } catch (std::exception &e) {
+      delete model;
       csm::Error::ErrorType aErrorType =
           csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE;
       std::string aMessage = "Could not construct model [";
