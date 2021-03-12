@@ -1,4 +1,4 @@
-:mod:`Utilities` --- USGSCSM Utilities Class
+USGSCSM Utilities Class
 ==============================================
 
 .. doxygenfile:: Utilities.h

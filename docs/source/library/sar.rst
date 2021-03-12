@@ -1,4 +1,4 @@
-:mod:`SAR` --- USGSCSM Astro SAR Sensor Model Class
+USGSCSM Astro SAR Sensor Model Class
 =============================================================
 
 .. doxygenfile:: UsgsAstroSarSensorModel.h

@@ -1,4 +1,4 @@
-:mod:`UsgsAstroPlugin` --- USGSCSM Astro Plugin Class
+USGSCSM Astro Plugin Class
 =====================================================
 
 .. doxygenfile:: UsgsAstroPlugin.h

@@ -1,4 +1,4 @@
-:mod:`Distortion` --- USGSCSM Distortion Class
+USGSCSM Distortion Class
 ==============================================
 
 .. doxygenfile:: Distortion.h

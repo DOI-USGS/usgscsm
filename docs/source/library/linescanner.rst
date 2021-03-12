@@ -1,4 +1,4 @@
-:mod:`LineScan` --- USGSCSM Astro Linescan Sensor Model Class
+USGSCSM Astro Linescan Sensor Model Class
 =============================================================
 
 .. doxygenfile:: UsgsAstroLsSensorModel.h

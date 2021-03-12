@@ -1,4 +1,4 @@
-:mod:`Frame` --- USGSCSM Astro Frame Sensor Model Class
+USGSCSM Astro Frame Sensor Model Class
 =======================================================
 
 .. doxygenfile:: UsgsAstroFrameSensorModel.h
