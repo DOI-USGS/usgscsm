@@ -1,0 +1,11 @@
+name: usgscsm
+channels:
+  - conda-forge
+  - default
+
+dependencies:
+  - cmake>=3.12
+  - ale
+  - csm
+  - nlohmann_json
+  - breathe
