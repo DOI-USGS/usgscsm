@@ -27,7 +27,7 @@ author = 'USGS Astrogeology Software Team'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['breathe', 'exhale']
+extensions = ['breathe'] #, 'exhale']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -62,19 +62,19 @@ if read_the_docs_build:
     subprocess.call('cd ..; doxygen Doxyfile', shell=True)
 
 # Setup the exhale extension
-exhale_args = {
-    # These arguments are required
-    "containmentFolder":     "./library",
-    "rootFileName":          "index.rst",
-    "rootFileTitle":         "USGSCSM API",
-    "doxygenStripFromPath":  "..",
-    # Suggested optional arguments
-    "createTreeView":        True,
-    # TIP: if using the sphinx-bootstrap-theme, you need
-    # "treeViewIsBootstrap": True,
-    "exhaleExecutesDoxygen": True,
-    "exhaleDoxygenStdin":    "INPUT = ../../include"
-}
+#exhale_args = {
+#    # These arguments are required
+#    "containmentFolder":     "./library",
+#    "rootFileName":          "index.rst",
+#    "rootFileTitle":         "USGSCSM API",
+#    "doxygenStripFromPath":  "..",
+#    # Suggested optional arguments
+#    "createTreeView":        True,
+#    # TIP: if using the sphinx-bootstrap-theme, you need
+#    # "treeViewIsBootstrap": True,
+#    "exhaleExecutesDoxygen": True,
+#    "exhaleDoxygenStdin":    "INPUT = ../../include"
+#}
 
 # Tell sphinx what the primary language being documented is.
 primary_domain = 'cpp'
