@@ -54,7 +54,7 @@ html_static_path = ['_static']
 breathe_projects = { "usgscsm": "../xml/" }
 breathe_default_project = "usgscsm"
 
-#import subprocess, os
+import subprocess, os
 
 # build doxygen on readthedocs
 read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
