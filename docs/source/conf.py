@@ -57,10 +57,12 @@ breathe_default_project = "usgscsm"
 #import subprocess, os
 
 # build doxygen on readthedocs
-#read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
-#if read_the_docs_build:
-#    subprocess.call('cd ../doxygen; doxygen', shell=True)
-
+read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
+if read_the_docs_build:
+    print("I'm RUNNING)
+    subprocess.call('cd ../doxygen; doxygen', shell=True)
+else:
+    print("I'M NOT RUNNING")
 
 # Setup the exhale extension
 exhale_args = {
