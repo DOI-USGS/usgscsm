@@ -2286,17 +2286,50 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(
   state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
   MESSAGE_LOG("m_referencePointXyz: {} ", state["m_referencePointXyz"].dump())
 
-  // Sun position and velocity are required for getIlluminationDirection
+  // Sun position and sensor position use the same times so compute that now
+  ale::States inst_state = ale::getInstrumentPosition(jsonIsd);
+  std::vector<double> ephemTime = inst_state.getTimes();
+  double startTime = ephemTime.front();
+  double stopTime = ephemTime.back();
+  // Force at least 25 nodes to help with lagrange interpolation
+  // These also have to be equally spaced for lagrange interpolation
+  if (ephemTime.size() < 25) {
+    ephemTime.resize(25);
+  }
+  double timeStep = (stopTime - startTime) / (ephemTime.size() - 1);
+  for (size_t i = 0; i < ephemTime.size(); i++) {
+    ephemTime[i] = startTime + i * timeStep;
+  }
+
+  try {
+    state["m_dtEphem"] = timeStep;
+    MESSAGE_LOG("m_dtEphem: {} ", state["m_dtEphem"].dump())
+  } catch (...) {
+    parsingWarnings->push_back(csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE, "dt_ephemeris not in ISD",
+        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    MESSAGE_LOG("m_dtEphem not in ISD")
+  }
+
+  try {
+    state["m_t0Ephem"] = startTime - ale::getCenterTime(jsonIsd);
+    MESSAGE_LOG("t0_ephemeris: {}", state["m_t0Ephem"].dump())
+  } catch (...) {
+    parsingWarnings->push_back(csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE, "t0_ephemeris not in ISD",
+        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    MESSAGE_LOG("t0_ephemeris not in ISD")
+  }
+
   ale::States sunState = ale::getSunPosition(jsonIsd);
-  std::vector<ale::State> sunStates = sunState.getStates();
-  std::vector<double> ephemTime = sunState.getTimes();
   ale::Orientations j2000_to_target = ale::getBodyRotation(jsonIsd);
-  ale::State rotatedSunState;
+  ale::State interpSunState, rotatedSunState;
   std::vector<double> sunPositions = {};
   std::vector<double> sunVelocities = {};
 
   for (int i = 0; i < ephemTime.size(); i++) {
-    rotatedSunState = j2000_to_target.rotateStateAt(ephemTime[i], sunStates[i]);
+    interpSunState = sunState.getState(ephemTime[i], ale::SPLINE);
+    rotatedSunState = j2000_to_target.rotateStateAt(ephemTime[i], interpSunState);
     // ALE operates in Km and we want m
     sunPositions.push_back(rotatedSunState.position.x * 1000);
     sunPositions.push_back(rotatedSunState.position.y * 1000);
@@ -2363,41 +2396,17 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(
       state["m_detectorSampleOrigin"].dump(),
       state["m_detectorLineOrigin"].dump())
 
-  ale::States inst_state = ale::getInstrumentPosition(jsonIsd);
-  // These are exlusive to LineScanners, leave them here for now.
-  ephemTime = inst_state.getTimes();
-  try {
-    state["m_dtEphem"] = (ephemTime[ephemTime.size() - 1] - ephemTime[0]) /
-                         (ephemTime.size() - 1);
-    MESSAGE_LOG("m_dtEphem: {} ", state["m_dtEphem"].dump())
-  } catch (...) {
-    parsingWarnings->push_back(csm::Warning(
-        csm::Warning::DATA_NOT_AVAILABLE, "dt_ephemeris not in ISD",
-        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
-    MESSAGE_LOG("m_dtEphem not in ISD")
-  }
 
-  try {
-    state["m_t0Ephem"] = ephemTime[0] - ale::getCenterTime(jsonIsd);
-    MESSAGE_LOG("t0_ephemeris: {}", state["m_t0Ephem"].dump())
-  } catch (...) {
-    parsingWarnings->push_back(csm::Warning(
-        csm::Warning::DATA_NOT_AVAILABLE, "t0_ephemeris not in ISD",
-        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
-    MESSAGE_LOG("t0_ephemeris not in ISD")
-  }
 
   ale::Orientations j2000_to_sensor = ale::getInstrumentPointing(jsonIsd);
-  ephemTime = inst_state.getTimes();
-  std::vector<ale::State> instStates = inst_state.getStates();
-  ale::State rotatedInstState;
-  ale::State rotatedInstStateInv;
+  ale::State interpInstState, rotatedInstState;
   std::vector<double> positions = {};
   std::vector<double> velocities = {};
 
   for (int i = 0; i < ephemTime.size(); i++) {
+    interpInstState = inst_state.getState(ephemTime[i], ale::SPLINE);
     rotatedInstState =
-        j2000_to_target.rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
+        j2000_to_target.rotateStateAt(ephemTime[i], interpInstState, ale::SLERP);
     // ALE operates in Km and we want m
     positions.push_back(rotatedInstState.position.x * 1000);
     positions.push_back(rotatedInstState.position.y * 1000);
@@ -2562,10 +2571,8 @@ csm::EcefVector UsgsAstroLsSensorModel::getSunPosition(
   // If there are multiple positions, use Lagrange interpolation
   if ((numSunPositions / 3) > 1) {
     double sunPos[3];
-    double endTime = m_t0Ephem + (m_dtEphem * ((m_numPositions / 3)));
-    double sun_dtEphem = (endTime - m_t0Ephem) / (numSunPositions / 3);
     lagrangeInterp(numSunPositions / 3, &m_sunPosition[0], m_t0Ephem,
-                   sun_dtEphem, imageTime, 3, 8, sunPos);
+                   m_dtEphem, imageTime, 3, 8, sunPos);
     sunPosition.x = sunPos[0];
     sunPosition.y = sunPos[1];
     sunPosition.z = sunPos[2];
