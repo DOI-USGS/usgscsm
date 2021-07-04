@@ -2233,8 +2233,6 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(
   json jsonIsd = json::parse(imageSupportData);
   csm::WarningList* parsingWarnings = new csm::WarningList;
 
-  int num_params = NUM_PARAMETERS;
-
   state["m_modelName"] = ale::getSensorModelName(jsonIsd);
   state["m_imageIdentifier"] = ale::getImageId(jsonIsd);
   state["m_sensorName"] = ale::getSensorName(jsonIsd);
@@ -2590,4 +2588,33 @@ csm::EcefVector UsgsAstroLsSensorModel::getSunPosition(
     sunPosition.z = m_sunPosition[2];
   }
   return sunPosition;
+}
+
+void UsgsAstroLsSensorModel::applyTransformToState(ale::Rotation const& r, ale::Vec3d const& t,
+                                                   std::string& stateString) const {
+
+  nlohmann::json j = stateAsJson(stateString);
+
+  // Apply rotation to quaternions
+  std::vector<double> quaternions = j["m_quaternions"].get<std::vector<double>>();
+  applyRotationToQuatVec(r, quaternions);
+  j["m_quaternions"] = quaternions;
+  
+  // Apply rotation and translation to positions
+  std::vector<double> positions = j["m_positions"].get<std::vector<double>>();;
+  applyRotationTranslationToXyzVec(r, t, positions);
+  j["m_positions"] = positions;
+  
+  // Apply rotation to velocities. The translation does not get applied. 
+  ale::Vec3d zero_t(0, 0, 0);
+  std::vector<double> velocities = j["m_velocities"].get<std::vector<double>>();;
+  applyRotationTranslationToXyzVec(r, zero_t, velocities);
+  j["m_velocities"] = velocities;
+  
+  // We do not change the Sun position or velocity. The idea is that
+  // the Sun is so far, that minor camera adjustments won't affect
+  // where the Sun is.
+
+  // Update the state string
+  stateString = getModelName() + "\n" + j.dump();
 }
