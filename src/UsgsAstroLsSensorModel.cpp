@@ -652,28 +652,65 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
   // applied to the line until we achieve the desired precision.
 
   csm::ImageCoord approxPt;
-  computeLinearApproximation(groundPt, approxPt);
-
   std::vector<double> detectorView;
-  double detectorLine = m_nLines;
-  double detectorSample = 0;
-  double count = 0;
+  double detectorLine;
+  double detectorSample;
+  double count;
   double timei;
 
-  while (abs(detectorLine) > desiredPrecision && ++count < 15) {
-    timei = getImageTime(approxPt);
-    detectorView = computeDetectorView(timei, groundPt, adj);
 
-    // Convert to detector line
-    detectorLine = m_iTransL[0] + m_iTransL[1] * detectorView[0] +
-                   m_iTransL[2] * detectorView[1] + m_detectorLineOrigin -
-                   m_startingDetectorLine;
-    detectorLine /= m_detectorLineSumming;
+  // The linescan sensor has a camera orientation for every given
+  // time. Normally, given a point on the ground, as it gets projected
+  // into this sensor using the camera orientation at various times,
+  // the row at which it gets projected should decrease as time
+  // increases, which intuitively corresponds to the ground point
+  // being seen further "behind" as the camera moves forward in time
+  // and hence forward in space along the orbit. Yet for some LRO
+  // cameras there's a quirky scanning pattern when this does not
+  // hold.
 
-    // Convert to image line
-    approxPt.line += detectorLine;
+  // I could not find in reasonable time a way of figuring out in
+  // advance how to adjust the algorithm below due to this
+  // quick. Hence first the algorithm is run as usual, and if it
+  // fails, it is run with flipping the sign of the update at each
+  // iteration.
+
+  bool success = false;
+  for (int pass = 0; pass <= 1; pass++) {
+
+    if (success)
+      break;
+    
+    detectorLine = m_nLines;
+    detectorSample = 0;
+    count = 0;
+    computeLinearApproximation(groundPt, approxPt);
+    
+    double sign = 1.0;
+    if (pass == 1) 
+      sign = -1.0;
+    
+    while (++count < 15) {
+      timei = getImageTime(approxPt);
+      detectorView = computeDetectorView(timei, groundPt, adj);
+      
+      // Convert to detector line
+      detectorLine = m_iTransL[0] + sign * m_iTransL[1] * detectorView[0] +
+        m_iTransL[2] * detectorView[1] + m_detectorLineOrigin -
+        m_startingDetectorLine;
+      detectorLine /= m_detectorLineSumming;
+      
+      // Convert to image line
+      approxPt.line += detectorLine;
+
+      double err = abs(detectorLine);
+      if (std::abs(detectorLine) <= desiredPrecision) {
+        success = true;
+        break;
+      }
+    }
   }
-
+  
   timei = getImageTime(approxPt);
   detectorView = computeDetectorView(timei, groundPt, adj);
 
@@ -2014,7 +2051,7 @@ std::vector<double> UsgsAstroLsSensorModel::computeDetectorView(
                        bodyToCamera[5] * bodyLookY +
                        bodyToCamera[8] * bodyLookZ;
   MESSAGE_LOG(
-      "computeDetectorView: look vector (camrea ref frame)"
+      "computeDetectorView: look vector (camera ref frame)"
       "{} {} {}",
       cameraLookX, cameraLookY, cameraLookZ)
 
