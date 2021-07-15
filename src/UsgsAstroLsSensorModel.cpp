@@ -2591,7 +2591,7 @@ csm::EcefVector UsgsAstroLsSensorModel::getSunPosition(
 }
 
 void UsgsAstroLsSensorModel::applyTransformToState(ale::Rotation const& r, ale::Vec3d const& t,
-                                                   std::string& stateString) const {
+                                                   std::string& stateString) {
 
   nlohmann::json j = stateAsJson(stateString);
 
@@ -2616,5 +2616,5 @@ void UsgsAstroLsSensorModel::applyTransformToState(ale::Rotation const& r, ale::
   // where the Sun is.
 
   // Update the state string
-  stateString = getModelName() + "\n" + j.dump();
+  stateString = getModelNameFromModelState(stateString) + "\n" + j.dump();
 }
