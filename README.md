@@ -45,9 +45,9 @@ GBs.
 
 ## Build Requirements
 
-* cmake 3.10 or newer
+* cmake 3.15 or newer
 * GNU-compatible Make
-* a c++11 compliant compiler
+* a C++11 compliant compiler
 
 This repository has all of its external c++ dependencies included in it. The
 excellent header-only JSON library
@@ -65,7 +65,7 @@ be available within the source code. You can remove the googletest dependency
 by disabling the tests.
 
 ```
-conda env create -n usgscsm -f environment.yml -y
+conda env create -n usgscsm -f environment.yml
 ```
 
 ## Building USGSCSM
