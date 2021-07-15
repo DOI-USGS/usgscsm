@@ -11,6 +11,7 @@
 #include <nlohmann/json.hpp>
 
 #include <ale/Rotation.h>
+#include <ale/Vectors.h>
 
 #include <Warning.h>
 #include <csm.h>
