@@ -626,8 +626,8 @@ void UsgsAstroLsSensorModel::updateState() {
   // precision, even when neither of them is smaller than the desired
   // precision.
   
-  lineCtr = m_nLines / 2.0 + 0.5;
-  sampCtr = m_nSamples / 2.0 + 0.5;
+  lineCtr = round(m_nLines / 2.0) + 0.5;
+  sampCtr = round(m_nSamples / 2.0) + 0.5;
 
   double desiredPrecision = 0.001;
   ip = csm::ImageCoord(lineCtr, sampCtr);
