@@ -619,12 +619,12 @@ void UsgsAstroLsSensorModel::updateState() {
   m_covariance[15 * num_params + 15] = positionVariance;
 
   // Test if a pixel projected to the ground and projected back
-  // returns to the original location. If not, adjust m_iTransL. It is
-  // very important here to pick a pixel which is not an integer, as
-  // this test may succeed for integer pixels and fail for non-integer
-  // ones. Also, need to pick the answer with the smallest achieved
-  // precision, even when neither of them is smaller than the desired
-  // precision.
+  // returns to the original location. If not, flip the sign of
+  // m_iTransL. It is very important here to pick a pixel which is not
+  // an integer, as this test may succeed for integer pixels and fail
+  // for non-integer ones. Also, need to pick the answer with the
+  // smallest achieved precision, even when neither of them is smaller
+  // than the desired precision.
   
   lineCtr = round(m_nLines / 2.0) + 0.5;
   sampCtr = round(m_nSamples / 2.0) + 0.5;
@@ -633,27 +633,20 @@ void UsgsAstroLsSensorModel::updateState() {
   ip = csm::ImageCoord(lineCtr, sampCtr);
   csm::EcefCoord xyz = imageToGround(ip, refHeight);
 
-  double sign1 = 1.0;
-  for (int it = 0; it < 3; it++) 
-    m_iTransL[it] = std::abs(m_iTransL[it]) * sign1;
-  double achievedPrecision1 = 1.0; // will be updated at the next line
+  double achievedPrecision1 = 1.0;
+  // Will use m_iTransL on the next line
   ip = groundToImage(xyz, desiredPrecision, &achievedPrecision1);
   
-  double sign2 = -1.0;
-  for (int it = 0; it < 3; it++) 
-    m_iTransL[it] = std::abs(m_iTransL[it]) * sign2;
-  double achievedPrecision2 = 1.0; // will be updated at the next line
+  double achievedPrecision2 = 1.0;
+  for (int it = 0; it < sizeof(m_iTransL)/sizeof(double); it++) 
+    m_iTransL[it] = -m_iTransL[it]; // use a flipped m_iTransL
   ip = groundToImage(xyz, desiredPrecision, &achievedPrecision2);
 
-  double chosen_sign;
-  if (std::abs(achievedPrecision1) <= std::abs(achievedPrecision2)) 
-    chosen_sign = sign1;
-  else
-    chosen_sign = sign2;
-  
-  for (int it = 0; it < 3; it++) 
-    m_iTransL[it] = std::abs(m_iTransL[it]) * chosen_sign;
-  
+  if (std::abs(achievedPrecision1) <= std::abs(achievedPrecision2)) {
+    // Flip back m_iTransL as the original was better
+    for (int it = 0; it < sizeof(m_iTransL)/sizeof(double); it++) 
+      m_iTransL[it] = -m_iTransL[it];
+  }
 }
 
 //---------------------------------------------------------------------------
