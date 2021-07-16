@@ -621,10 +621,10 @@ void UsgsAstroLsSensorModel::updateState() {
   // Test if a pixel projected to the ground and projected back
   // returns to the original location. If not, adjust m_iTransL. It is
   // very important here to pick a pixel which is not an integer, as
-  // then this test is more likely to succeed while still failing for
-  // other pixels. Also need to pick the answer with the smallest
-  // achieved precision, even when neither of them is smaller
-  // than the desired precision.
+  // this test may succeed for integer pixels and fail for non-integer
+  // ones. Also, need to pick the answer with the smallest achieved
+  // precision, even when neither of them is smaller than the desired
+  // precision.
   
   lineCtr = m_nLines / 2.0 + 0.5;
   sampCtr = m_nSamples / 2.0 + 0.5;
