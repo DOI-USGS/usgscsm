@@ -39,7 +39,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake -DCMAKE_BUILD_TYPE=RELEASE -DUSGSCSM_EXTERNAL_DEPS=${{ internal-deps }} ..
+          cmake -DCMAKE_BUILD_TYPE=RELEASE -DUSGSCSM_EXTERNAL_DEPS=${{ external-deps }} ..
           cmake --build .
       - name: Test Package
         run: |
