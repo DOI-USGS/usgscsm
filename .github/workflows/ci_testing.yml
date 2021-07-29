@@ -16,7 +16,7 @@ jobs:
       matrix:
        os: [ubuntu-latest, macos-latest]
        python-version: ["3.7", "3.8", "3.9"]
-       internal-deps: [ON, OFF]
+       external-deps: ["ON", "OFF"]
     defaults:
       run:
         shell: bash -l {0}
