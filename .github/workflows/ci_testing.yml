@@ -16,7 +16,7 @@ jobs:
       matrix:
        os: [ubuntu-latest, macos-latest]
        python-version: ["3.7", "3.8", "3.9"]
-       external-deps: ["ON", "OFF"]
+       external-deps:
     defaults:
       run:
         shell: bash -l {0}
@@ -39,7 +39,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake -DCMAKE_BUILD_TYPE=RELEASE -DUSGSCSM_EXTERNAL_DEPS=${{ matrix.external-deps }} ..
+          cmake -DCMAKE_BUILD_TYPE=RELEASE -DUSGSCSM_EXTERNAL_DEPS=ON ..
           cmake --build .
       - name: Test Package
         run: |
