@@ -38,16 +38,9 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake -DCMAKE_BUILD_TYPE=RELEASE -DCOVERAGE=ON ..
+          cmake -DCMAKE_BUILD_TYPE=RELEASE -DUSGSCSM_EXTERNAL_DEPS=ON ..
           cmake --build .
       - name: Test Package
         run: |
           cd build
           ctest -VV
-      - name: Upload Coverage
-        uses: codecov/codecov-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: true
-          verbose: true
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9'
