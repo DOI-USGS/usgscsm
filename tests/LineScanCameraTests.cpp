@@ -22,6 +22,29 @@ TEST_F(ConstVelocityLineScanSensorModel, State) {
   EXPECT_EQ(sensorModel->getModelState(), modelState);
 }
 
+// Apply the identity transform to a state
+TEST_F(ConstVelocityLineScanSensorModel, ApplyTransformToState) {
+  std::string modelState = sensorModel->getModelState();
+
+  ale::Rotation r; // identity rotation
+  ale::Vec3d t;    // zero translation
+
+  // The input state has some "-0" values which get transformed by
+  // applying the identity transform into "0", which results in the
+  // state string changing. Hence, for this test, compare the results
+  // of applying the identity transform once vs twice, which are the
+  // same.
+
+  // First application
+  UsgsAstroLsSensorModel::applyTransformToState(r, t, modelState);
+
+  // Second application
+  std::string modelState2 = modelState;
+  UsgsAstroLsSensorModel::applyTransformToState(r, t, modelState2);
+
+  EXPECT_EQ(modelState, modelState2);
+}
+
 // Fly by tests
 
 TEST_F(ConstVelocityLineScanSensorModel, Center) {

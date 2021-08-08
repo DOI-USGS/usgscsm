@@ -1323,3 +1323,49 @@ json stateAsJson(std::string modelState) {
   }
   return json::parse(modelState.begin() + found, modelState.end());
 }
+
+// Apply a rotation to a vector of quaternions.
+void applyRotationToQuatVec(ale::Rotation const& r, std::vector<double> & quaternions) {
+  int num_quat = quaternions.size();
+  
+  for (int it = 0; it < num_quat/4; it++) {
+
+    double * q = &quaternions[4*it];
+
+    // Note that quaternion in q is stored in order x, y, z, w, while
+    // the rotation matrix wants it as w, x, y, z.
+    
+    std::vector<double> trans_q = (r * ale::Rotation(q[3], q[0], q[1], q[2])).toQuaternion();
+
+    // Modify in-place
+    q[0] = trans_q[1];
+    q[1] = trans_q[2];
+    q[2] = trans_q[3];
+    q[3] = trans_q[0];
+  }
+}
+
+// Apply a rotation and translation to a vector of xyz vectors.
+void applyRotationTranslationToXyzVec(ale::Rotation const& r, ale::Vec3d const& t,
+                                      std::vector<double> & xyz) {
+  
+  int num_xyz = xyz.size();
+  for (int it = 0; it < num_xyz/3; it++) {
+    
+    double * p = &xyz[3*it];
+
+    ale::Vec3d p_vec(p[0], p[1], p[2]);
+    
+    // Apply the rotation
+    p_vec = r(p_vec);
+
+    // Apply the translation
+    p_vec += t;
+
+    // Modify in-place
+    p[0] = p_vec.x;
+    p[1] = p_vec.y;
+    p[2] = p_vec.z;
+    
+  }
+}

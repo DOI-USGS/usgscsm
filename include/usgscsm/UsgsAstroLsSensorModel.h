@@ -154,6 +154,12 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
 
   virtual std::string getModelState() const;
 
+  // Apply a rotation and translation to a state string. The effect is
+  // to transform the position and orientation of the camera in ECEF
+  // coordinates.
+  static void applyTransformToState(ale::Rotation const& r, ale::Vec3d const& t,
+                                    std::string& stateString);
+  
   // Set the sensor model based on the input state data
   void set(const std::string& state_data);
 

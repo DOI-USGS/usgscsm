@@ -10,6 +10,9 @@
 
 #include <nlohmann/json.hpp>
 
+#include <ale/Rotation.h>
+#include <ale/Vectors.h>
+
 #include <Warning.h>
 #include <csm.h>
 
@@ -167,5 +170,10 @@ std::vector<double> getSensorOrientations(nlohmann::json isd,
                                           csm::WarningList *list = nullptr);
 double getWavelength(nlohmann::json isd, csm::WarningList *list = nullptr);
 nlohmann::json stateAsJson(std::string modelState);
+
+// Apply transforms to orientations and vectors
+void applyRotationToQuatVec(ale::Rotation const& r, std::vector<double> & quaternions);
+void applyRotationTranslationToXyzVec(ale::Rotation const& r, ale::Vec3d const& t,
+                                      std::vector<double> & xyz);
 
 #endif  // INCLUDE_USGSCSM_UTILITIES_H_
