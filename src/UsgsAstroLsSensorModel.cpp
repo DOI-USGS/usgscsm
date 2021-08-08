@@ -625,7 +625,7 @@ void UsgsAstroLsSensorModel::updateState() {
   // for non-integer ones. Also, need to pick the answer with the
   // smallest achieved precision, even when neither of them is smaller
   // than the desired precision.
-  
+
   lineCtr = round(m_nLines / 2.0) + 0.5;
   sampCtr = round(m_nSamples / 2.0) + 0.5;
 
@@ -636,15 +636,15 @@ void UsgsAstroLsSensorModel::updateState() {
   double achievedPrecision1 = 1.0;
   // Will use m_iTransL on the next line
   ip = groundToImage(xyz, desiredPrecision, &achievedPrecision1);
-  
+
   double achievedPrecision2 = 1.0;
-  for (int it = 0; it < sizeof(m_iTransL)/sizeof(double); it++) 
+  for (int it = 0; it < sizeof(m_iTransL)/sizeof(double); it++)
     m_iTransL[it] = -m_iTransL[it]; // use a flipped m_iTransL
   ip = groundToImage(xyz, desiredPrecision, &achievedPrecision2);
 
   if (std::abs(achievedPrecision1) <= std::abs(achievedPrecision2)) {
     // Flip back m_iTransL as the original was better
-    for (int it = 0; it < sizeof(m_iTransL)/sizeof(double); it++) 
+    for (int it = 0; it < sizeof(m_iTransL)/sizeof(double); it++)
       m_iTransL[it] = -m_iTransL[it];
   }
 }
