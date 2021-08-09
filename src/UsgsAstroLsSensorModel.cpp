@@ -648,6 +648,36 @@ void UsgsAstroLsSensorModel::updateState() {
 
   // Set focal length variance
   m_covariance[15 * num_params + 15] = positionVariance;
+
+  // Test if a pixel projected to the ground and projected back
+  // returns to the original location. If not, flip the sign of
+  // m_iTransL. It is very important here to pick a pixel which is not
+  // an integer, as this test may succeed for integer pixels and fail
+  // for non-integer ones. Also, need to pick the answer with the
+  // smallest achieved precision, even when neither of them is smaller
+  // than the desired precision.
+
+  lineCtr = round(m_nLines / 2.0) + 0.5;
+  sampCtr = round(m_nSamples / 2.0) + 0.5;
+
+  double desiredPrecision = 0.001;
+  ip = csm::ImageCoord(lineCtr, sampCtr);
+  csm::EcefCoord xyz = imageToGround(ip, refHeight);
+
+  double achievedPrecision1 = 1.0;
+  // Will use m_iTransL on the next line
+  ip = groundToImage(xyz, desiredPrecision, &achievedPrecision1);
+
+  double achievedPrecision2 = 1.0;
+  for (int it = 0; it < sizeof(m_iTransL)/sizeof(double); it++)
+    m_iTransL[it] = -m_iTransL[it]; // use a flipped m_iTransL
+  ip = groundToImage(xyz, desiredPrecision, &achievedPrecision2);
+
+  if (std::abs(achievedPrecision1) <= std::abs(achievedPrecision2)) {
+    // Flip back m_iTransL as the original was better
+    for (int it = 0; it < sizeof(m_iTransL)/sizeof(double); it++)
+      m_iTransL[it] = -m_iTransL[it];
+  }
 }
 
 //---------------------------------------------------------------------------
@@ -2045,7 +2075,7 @@ std::vector<double> UsgsAstroLsSensorModel::computeDetectorView(
                        bodyToCamera[5] * bodyLookY +
                        bodyToCamera[8] * bodyLookZ;
   MESSAGE_LOG(
-      "computeDetectorView: look vector (camrea ref frame)"
+      "computeDetectorView: look vector (camera ref frame)"
       "{} {} {}",
       cameraLookX, cameraLookY, cameraLookZ)
 

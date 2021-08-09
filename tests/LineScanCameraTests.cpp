@@ -276,6 +276,14 @@ TEST_F(OrbitalLineScanSensorModel, ReferenceDateTime) {
   EXPECT_EQ(date, "2000-01-01T00:16:39Z");
 }
 
+TEST_F(FlippedOrbitalLineScanSensorModel, OppositeFlightDetector) {
+  csm::ImageCoord imagePt(8.7, 8.0);
+  csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
+  csm::ImageCoord backProjImagePt = sensorModel->groundToImage(groundPt);
+  EXPECT_NEAR(imagePt.line, backProjImagePt.line, 0.001);
+  EXPECT_NEAR(imagePt.samp, backProjImagePt.samp, 0.001);
+}
+
 TEST_F(TwoLineScanSensorModels, CrossCovariance) {
   std::vector<double> crossCovars =
       sensorModel1->getCrossCovarianceMatrix(*sensorModel2);
