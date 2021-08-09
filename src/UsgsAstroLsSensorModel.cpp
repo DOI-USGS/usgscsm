@@ -437,7 +437,7 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
   state["m_sunVelocity"] = m_sunVelocity;
   MESSAGE_LOG("num sun velocities: {} ", m_sunVelocity.size())
 
-  std::string stateString = getModelName() + "\n" + state.dump();
+  std::string stateString = getModelName() + "\n" + state.dump(2);
   return stateString;
 }
 
