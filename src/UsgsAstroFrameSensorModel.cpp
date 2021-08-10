@@ -752,7 +752,7 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
        {m_referencePointXyz.x, m_referencePointXyz.y, m_referencePointXyz.z}},
       {"m_currentParameterCovariance", m_currentParameterCovariance}};
 
-  std::string stateString = getModelName() + "\n" + state.dump();
+  std::string stateString = getModelName() + "\n" + state.dump(2);
   return stateString;
 }
 
