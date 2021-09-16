@@ -34,8 +34,16 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM,
       double *achievedPrecision = NULL,
       csm::WarningList *warnings = NULL) const;
 
+  static std::string getModelNameFromModelState(const std::string& model_state);
+
   std::string constructStateFromIsd(const std::string &jsonIsd,
                                     csm::WarningList *warnings);
+  
+  // Apply a rotation and translation to a state string. The effect is
+  // to transform the position and orientation of the camera in ECEF
+  // coordinates.
+  static void applyTransformToState(ale::Rotation const& r, ale::Vec3d const& t,
+                                    std::string& stateString);
   void reset();
 
   virtual csm::ImageCoordCovar groundToImage(
