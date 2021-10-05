@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/USGSCSM_Logo.svg" alt="USGSCSM" width=200> 
+</p>
+
 # USGSCSM
 
 Community Sensor Model (CSM) compliant sensor models created by USGS Astrogeology
