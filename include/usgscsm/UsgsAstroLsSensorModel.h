@@ -125,6 +125,7 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
   double m_halfTime;
   std::vector<double> m_covariance;
   int m_imageFlipFlag;
+  double m_stepSizeFactor;
 
   std::vector<double> m_sunPosition;
   std::vector<double> m_sunVelocity;
