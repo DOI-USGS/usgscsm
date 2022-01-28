@@ -666,8 +666,9 @@ void UsgsAstroLsSensorModel::updateState() {
   csm::EcefCoord xyz = imageToGround(ip, refHeight);
 
   // Normally this succeeds on the first attempt, and if not, then on
-  // the second.
-  for (int attempt = 1; attempt <= 10; attempt++) {
+  // the second. For some sensors the desired precision is never
+  // achieved, so don't try this too hard.
+  for (int attempt = 1; attempt <= 2; attempt++) {
 
     // First try with existing m_iTransL, and return achievedPrecision1
     double achievedPrecision1 = 1.0;
