@@ -651,11 +651,12 @@ void UsgsAstroLsSensorModel::updateState() {
 
   // Test if a pixel projected to the ground and projected back
   // returns to the original location. If not, flip the sign of
-  // m_iTransL. It is very important here to pick a pixel which is not
-  // an integer, as this test may succeed for integer pixels and fail
-  // for non-integer ones. Also, need to pick the answer with the
-  // smallest achieved precision, even when neither of them is smaller
-  // than the desired precision.
+  // m_iTransL. If in either case there is no luck with convergence,
+  // double m_detectorLineSumming, to make the steps smaller.
+
+  // It is very important here to pick a pixel which is not an
+  // integer, as this test may succeed for integer pixels and fail for
+  // non-integer ones.
 
   lineCtr = round(m_nLines / 2.0) + 0.5;
   sampCtr = round(m_nSamples / 2.0) + 0.5;
@@ -664,19 +665,32 @@ void UsgsAstroLsSensorModel::updateState() {
   ip = csm::ImageCoord(lineCtr, sampCtr);
   csm::EcefCoord xyz = imageToGround(ip, refHeight);
 
-  double achievedPrecision1 = 1.0;
-  // Will use m_iTransL on the next line
-  ip = groundToImage(xyz, desiredPrecision, &achievedPrecision1);
+  // Normally this succeeds on the first attempt, and if not, then on
+  // the second.
+  for (int attempt = 1; attempt <= 10; attempt++) {
 
-  double achievedPrecision2 = 1.0;
-  for (int it = 0; it < sizeof(m_iTransL)/sizeof(double); it++)
-    m_iTransL[it] = -m_iTransL[it]; // use a flipped m_iTransL
-  ip = groundToImage(xyz, desiredPrecision, &achievedPrecision2);
-
-  if (std::abs(achievedPrecision1) <= std::abs(achievedPrecision2)) {
-    // Flip back m_iTransL as the original was better
+    // First try with existing m_iTransL, and return achievedPrecision1
+    double achievedPrecision1 = 1.0;
+    ip = groundToImage(xyz, desiredPrecision, &achievedPrecision1);
+    
+    // Then try with flipped m_iTransL
+    double achievedPrecision2 = 1.0;
     for (int it = 0; it < sizeof(m_iTransL)/sizeof(double); it++)
-      m_iTransL[it] = -m_iTransL[it];
+      m_iTransL[it] = -m_iTransL[it]; // use a flipped m_iTransL
+    ip = groundToImage(xyz, desiredPrecision, &achievedPrecision2);
+
+    // Flip back m_iTransL as the original was better
+    if (std::abs(achievedPrecision1) <= std::abs(achievedPrecision2)) {
+      for (int it = 0; it < sizeof(m_iTransL)/sizeof(double); it++)
+        m_iTransL[it] = -m_iTransL[it];
+    }
+
+    if (std::abs(achievedPrecision1) <= desiredPrecision ||
+        std::abs(achievedPrecision2) <= desiredPrecision) 
+      break; // it converged
+
+    // Next time smaller steps will be made
+    m_detectorLineSumming *= 2.0;
   }
 }
 
@@ -712,6 +726,13 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
   // Then the detector offset for the line is continuously computed and
   // applied to the line until we achieve the desired precision.
 
+  // The idea is that if we found the correct line, the ground pixel
+  // will project in the pinhole camera at that line at row 0. If it
+  // projects at a different row, use that row value to advance the
+  // line. This is based on how the linescan imaging system works: at
+  // each line there's a virtual pinhole camera with given orientation
+  // whose center pixel is on that line.
+  
   csm::ImageCoord approxPt;
   computeLinearApproximation(groundPt, approxPt);
 
@@ -721,7 +742,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
   double count = 0;
   double timei;
 
-  while (abs(detectorLine) > desiredPrecision && ++count < 15) {
+  while (std::abs(detectorLine) > desiredPrecision && ++count < 15) {
     timei = getImageTime(approxPt);
     detectorView = computeDetectorView(timei, groundPt, adj);
 
@@ -766,7 +787,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
               approxPt.samp)
 
   if (warnings && (desiredPrecision > 0.0) &&
-      (abs(finalUpdate) > desiredPrecision)) {
+      (std::abs(finalUpdate) > desiredPrecision)) {
     warnings->push_back(csm::Warning(
         csm::Warning::PRECISION_NOT_MET, "Desired precision not achieved.",
         "UsgsAstroLsSensorModel::groundToImage()"));
