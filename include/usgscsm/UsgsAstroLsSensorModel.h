@@ -125,7 +125,6 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
   double m_halfTime;
   std::vector<double> m_covariance;
   int m_imageFlipFlag;
-  double m_stepSizeFactor;
 
   std::vector<double> m_sunPosition;
   std::vector<double> m_sunVelocity;
@@ -977,7 +976,14 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
 
   // Compute the determinant of a 3x3 matrix
   double determinant3x3(double mat[9]) const;
-
+  
+  // A function whose value will be 0 when the line a given ground
+  // point projects into is found. The obtained line will be
+  // approxPt.line + t.
+  double calcDetectorLineErr(double t, csm::ImageCoord const& approxPt,
+                             const csm::EcefCoord& groundPt,
+                             const std::vector<double>& adj) const;
+  
   csm::NoCorrelationModel _no_corr_model;  // A way to report no correlation
                                            // between images is supported
   std::vector<double>

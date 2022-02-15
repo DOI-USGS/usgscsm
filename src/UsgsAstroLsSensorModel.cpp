@@ -545,7 +545,6 @@ void UsgsAstroLsSensorModel::reset() {
   m_flyingHeight = 1000.0;
   m_halfSwath = 1000.0;
   m_halfTime = 10.0;
-  m_stepSizeFactor = 1.0;
 
   m_covariance =
       std::vector<double>(NUM_PARAMETERS * NUM_PARAMETERS, 0.0);  // 52
@@ -649,46 +648,6 @@ void UsgsAstroLsSensorModel::updateState() {
 
   // Set focal length variance
   m_covariance[15 * num_params + 15] = positionVariance;
-
-  // Test if a pixel projected to the ground and projected back
-  // returns to the original location. If not, flip the sign of
-  // m_iTransL.
-
-  // It is very important here to pick a pixel which is not an
-  // integer, as this test may succeed for integer pixels and fail for
-  // non-integer ones.
-
-  lineCtr = round(m_nLines / 2.0) + 0.5;
-  sampCtr = round(m_nSamples / 2.0) + 0.5;
-
-  double desiredPrecision = 0.001;
-  ip = csm::ImageCoord(lineCtr, sampCtr);
-  csm::EcefCoord xyz = imageToGround(ip, refHeight);
-
-  // First try with existing m_iTransL, and return achievedPrecision1
-  double achievedPrecision1 = 1.0;
-  ip = groundToImage(xyz, desiredPrecision, &achievedPrecision1);
-
-  // Then try with flipped m_iTransL
-  double achievedPrecision2 = 1.0;
-  for (int it = 0; it < sizeof(m_iTransL)/sizeof(double); it++)
-    m_iTransL[it] = -m_iTransL[it]; // use a flipped m_iTransL
-  ip = groundToImage(xyz, desiredPrecision, &achievedPrecision2);
-
-  // Flip back m_iTransL as the original was better
-  if (std::abs(achievedPrecision1) <= std::abs(achievedPrecision2)) {
-    for (int it = 0; it < sizeof(m_iTransL)/sizeof(double); it++)
-      m_iTransL[it] = -m_iTransL[it];
-  }
-
-  if (std::abs(achievedPrecision1) > desiredPrecision &&
-      std::abs(achievedPrecision2) > desiredPrecision) {
-    // This is a fix for the step size in groundToImage() being too
-    // big on occasion, which results in failure to converge. Do not
-    // try this more than once, as for some datasets the desired
-    // precision is never achieved.
-    m_stepSizeFactor *= 0.5;
-  }
 }
 
 //---------------------------------------------------------------------------
@@ -718,44 +677,38 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
     const csm::EcefCoord& groundPt, const std::vector<double>& adj,
     double desiredPrecision, double* achievedPrecision,
     csm::WarningList* warnings) const {
-  // Search for the line, sample coordinate that viewed a given ground point.
-  // This method first uses a linear approximation to get an initial point.
-  // Then the detector offset for the line is continuously computed and
-  // applied to the line until we achieve the desired precision.
-
-  // The idea is that if we found the correct line, the ground pixel
-  // will project in the pinhole camera at that line at row 0. If it
-  // projects at a different row, use that row value to advance the
-  // line. This is based on how the linescan imaging system works: at
-  // each line there's a virtual pinhole camera with given orientation
-  // whose center pixel is on that line.
   
   csm::ImageCoord approxPt;
   computeLinearApproximation(groundPt, approxPt);
 
-  std::vector<double> detectorView;
-  double detectorLine = m_nLines;
-  double detectorSample = 0;
-  double count = 0;
-  double timei;
+  // Search for the (line, sample) coordinate that views a given
+  // ground point. Set this up as a root-finding problem and use the
+  // secant method.
+  int count = 0;
+  double t0 = 0.0;
+  double lineErr0 = calcDetectorLineErr(t0, approxPt, groundPt, adj);
+  double t1 = lineErr0 * 0.1; // need to stay close or else there's overshooting
+  double lineErr1 = calcDetectorLineErr(t1, approxPt, groundPt, adj);
+  while (std::abs(lineErr1) > desiredPrecision && ++count < 15) {
 
-  while (std::abs(detectorLine) > desiredPrecision && ++count < 15) {
-    timei = getImageTime(approxPt);
-    detectorView = computeDetectorView(timei, groundPt, adj);
-
-    // Convert to detector line
-    detectorLine = m_iTransL[0] + m_iTransL[1] * detectorView[0] +
-                   m_iTransL[2] * detectorView[1] + m_detectorLineOrigin -
-                   m_startingDetectorLine;
-    detectorLine /= m_detectorLineSumming;
-    detectorLine *= m_stepSizeFactor;
-
-    // Convert to image line
-    approxPt.line += detectorLine;
+    if (lineErr1 == lineErr0) 
+      break; // avoid division by 0
+    
+    // Secant method update
+    // https://en.wikipedia.org/wiki/Secant_method
+    double t2 = t1 - lineErr1 * (t1 - t0) / (lineErr1 - lineErr0);
+    double lineErr2 = calcDetectorLineErr(t2, approxPt, groundPt, adj);
+    
+    // Update for the next step
+    t0 = t1; lineErr0 = lineErr1;
+    t1 = t2; lineErr1 = lineErr2;
   }
 
-  timei = getImageTime(approxPt);
-  detectorView = computeDetectorView(timei, groundPt, adj);
+  // Update the line with the found value
+  approxPt.line += t1;
+
+  double timei = getImageTime(approxPt);
+  std::vector<double> detectorView = computeDetectorView(timei, groundPt, adj);
 
   // Invert distortion
   double distortedFocalX, distortedFocalY;
@@ -764,10 +717,10 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
                   desiredPrecision);
 
   // Convert to detector line and sample
-  detectorLine = m_iTransL[0] + m_iTransL[1] * distortedFocalX +
-                 m_iTransL[2] * distortedFocalY;
-  detectorSample = m_iTransS[0] + m_iTransS[1] * distortedFocalX +
-                   m_iTransS[2] * distortedFocalY;
+  double detectorLine = m_iTransL[0] + m_iTransL[1] * distortedFocalX +
+                        m_iTransL[2] * distortedFocalY;
+  double detectorSample = m_iTransS[0] + m_iTransS[1] * distortedFocalX +
+                          m_iTransS[2] * distortedFocalY;
   // Convert to image sample line
   double finalUpdate =
       (detectorLine + m_detectorLineOrigin - m_startingDetectorLine) /
@@ -2669,3 +2622,26 @@ csm::EcefVector UsgsAstroLsSensorModel::getSunPosition(
   }
   return sunPosition;
 }
+
+// A function whose value will be 0 when the line a given ground point
+// projects into is found. The obtained line will be approxPt.line +
+// t.
+double UsgsAstroLsSensorModel::calcDetectorLineErr(double t, csm::ImageCoord const& approxPt,
+                                                   const csm::EcefCoord& groundPt,
+                                                   const std::vector<double>& adj) const {
+  
+  csm::ImageCoord currPt = approxPt;
+  currPt.line += t;
+    
+  double timei = getImageTime(currPt);
+  std::vector<double> detectorView = computeDetectorView(timei, groundPt, adj);
+  
+  // Convert to detector line
+  double detectorLine = m_iTransL[0] + m_iTransL[1] * detectorView[0] +
+    m_iTransL[2] * detectorView[1] + m_detectorLineOrigin -
+    m_startingDetectorLine;
+  detectorLine /= m_detectorLineSumming;
+    
+  return detectorLine;
+}
+  
