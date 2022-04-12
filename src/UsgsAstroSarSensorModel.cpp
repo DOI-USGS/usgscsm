@@ -673,10 +673,9 @@ csm::EcefLocus UsgsAstroSarSensorModel::imageToProximateImagingLocus(
 csm::EcefLocus UsgsAstroSarSensorModel::imageToRemoteImagingLocus(
     const csm::ImageCoord& imagePt, double desiredPrecision,
     double* achievedPrecision, csm::WarningList* warnings) const {
-  // Compute the slant range
-  double time =
-      m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
-  csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
+
+  // Find the sensor coordinates
+  csm::EcefCoord sensorPt = getSensorPosition(imagePt);
 
   // Compute the intersection of the ray traced through the
   // current pixel with the datum.  
@@ -686,8 +685,10 @@ csm::EcefLocus UsgsAstroSarSensorModel::imageToRemoteImagingLocus(
 
   // Normalized direction from camera to ground
   csm::EcefVector dir
-    = normalized(csm::EcefVector(groundPt.x, groundPt.y, groundPt.z) - spacecraftPosition);
-  
+    = normalized(csm::EcefVector(groundPt.x - sensorPt.x,
+                                 groundPt.y - sensorPt.y,
+                                 groundPt.z - sensorPt.z));
+                 
   return csm::EcefLocus(groundPt.x, groundPt.y, groundPt.z,
                         dir.x, dir.y, dir.z);
 }
