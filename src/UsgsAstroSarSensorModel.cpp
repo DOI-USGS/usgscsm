@@ -543,6 +543,10 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
     pointRadius -= (pointHeight - height);
   } while (fabs(pointHeight - height) > desiredPrecision);
 
+  if (achievedPrecision) {
+    *achievedPrecision = fabs(pointHeight - height);
+  }
+
   csm::EcefCoord groundPt(groundVec.x, groundVec.y, groundVec.z);
 
   return groundPt;
@@ -672,33 +676,20 @@ csm::EcefLocus UsgsAstroSarSensorModel::imageToRemoteImagingLocus(
   // Compute the slant range
   double time =
       m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
-  double groundRange = imagePt.samp * m_scaledPixelWidth;
-  std::vector<double> coeffs = getRangeCoefficients(time);
-  double slantRange = groundRangeToSlantRange(groundRange, coeffs);
-
-  // Project the negative sensor position vector onto the 0 doppler plane
-  // then compute the closest point at the slant range to that
   csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
-  csm::EcefVector spacecraftVelocity = getSensorVelocity(time);
-  csm::EcefVector lookVec =
-      normalized(rejection(-1 * spacecraftPosition, spacecraftVelocity));
-  csm::EcefVector closestVec = spacecraftPosition + slantRange * lookVec;
 
-  // Compute the tangent at the closest point
-  csm::EcefVector tangent;
-  if (m_lookDirection == LEFT) {
-    tangent = cross(spacecraftVelocity, lookVec);
-  } else {
-    tangent = cross(lookVec, spacecraftVelocity);
-  }
-  tangent = normalized(tangent);
+  // Compute the intersection of the ray traced through the
+  // current pixel with the datum.  
+  double height = 0.0; 
+  csm::EcefCoord groundPt = imageToGround(imagePt, height, desiredPrecision,
+                                        achievedPrecision, warnings);
 
-  if (achievedPrecision) {
-    *achievedPrecision = 0.0;
-  }
-
-  return csm::EcefLocus(closestVec.x, closestVec.y, closestVec.z, tangent.x,
-                        tangent.y, tangent.z);
+  // Normalized direction from camera to ground
+  csm::EcefVector dir
+    = normalized(csm::EcefVector(groundPt.x, groundPt.y, groundPt.z) - spacecraftPosition);
+  
+  return csm::EcefLocus(groundPt.x, groundPt.y, groundPt.z,
+                        dir.x, dir.y, dir.z);
 }
 
 csm::ImageCoord UsgsAstroSarSensorModel::getImageStart() const {
