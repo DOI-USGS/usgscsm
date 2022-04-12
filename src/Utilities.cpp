@@ -296,7 +296,7 @@ double brentRoot(double lowerBound, double upperBound,
     previousPoint = currentPoint;
     previousFunc = currentFunc;
     nextFunc = func(nextPoint);
-    if (counterFunc * nextFunc < 0) {
+    if (counterFunc * nextFunc <= 0) {
       currentPoint = nextPoint;
       currentFunc = nextFunc;
     } else {
