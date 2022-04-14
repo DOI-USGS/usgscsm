@@ -296,6 +296,12 @@ double brentRoot(double lowerBound, double upperBound,
     previousPoint = currentPoint;
     previousFunc = currentFunc;
     nextFunc = func(nextPoint);
+
+    // This is a bugfix. Without it, the code gets lost and can't find the solution.
+    // See also the implementation at https://en.wikipedia.org/wiki/Brent%27s_method
+    if (nextFunc == 0)
+      return nextPoint;
+
     if (counterFunc * nextFunc < 0) {
       currentPoint = nextPoint;
       currentFunc = nextFunc;

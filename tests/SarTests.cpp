@@ -84,10 +84,10 @@ TEST_F(SarSensorModel, computeGroundPartials) {
   ASSERT_EQ(partials.size(), 6);
   EXPECT_NEAR(partials[0], 6.5128150576280552e-09, 1e-8);
   EXPECT_NEAR(partials[1], -5.1810407815840636e-15, 1e-8);
-  EXPECT_NEAR(partials[2], -0.13309947654685725, 1e-8);
+  EXPECT_NEAR(partials[2], -0.13333333443071135, 1e-8);
   EXPECT_NEAR(partials[3], -33.057625791698072, 1e-8);
   EXPECT_NEAR(partials[4], 6.1985123841926308e-05, 1e-8);
-  EXPECT_NEAR(partials[5], 0.007743051337209989, 1e-8);
+  EXPECT_NEAR(partials[5], 0.0077565105243007169, 1e-8);
 }
 
 TEST_F(SarSensorModel, imageToProximateImagingLocus) {
