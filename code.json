@@ -10,31 +10,29 @@
       "usageType": "openSource",
       "licenses": [
         {
-          "name": "CopyLeft",
+          "name": "BSD 3-Clause",
           "URL": "https://github.com/USGS-Astrogeology/usgscsm/blob/dev/LICENSE.md"
         }
       ]
     },
 
-    "homepageURL": "https://github.com/USGS-Astrogeology/ale/releases/tag/0.8.7",
-    "downloadURL": "https://github.com/USGS-Astrogeology/ale/archive/refs/tags/0.8.7.zip",
-    "disclaimerURL": "https://github.com/USGS-Astrogeology/ale/blob/master/LICENSE.md",
-    "repositoryURL": "https://github.com/USGS-Astrogeology/ale",
+    "homepageURL": "https://github.com/USGS-Astrogeology/usgscsm/releases/tag/1.5.3",
+    "downloadURL": "https://github.com/USGS-Astrogeology/usgscsm/archive/refs/tags/1.5.3.zip",
+    "disclaimerURL": "https://github.com/USGS-Astrogeology/usgscsm/blob/dev/DISCLAIMER.md",
+    "repositoryURL": "https://github.com/USGS-Astrogeology/usgscsm",
     "vcs": "git",
 
-    "laborHours": 40,
+    "laborHours": 60,
 
     "tags": [
       "Planetary",
       "Remote Sensing",
       "Data Processing",
-      "Ephemerides",
       "Community Sensor Model"
     ],
 
     "languages": [
-      "C++",
-      "Python"
+      "C++"
     ],
 
     "contact": {
@@ -43,7 +41,7 @@
     },
 
     "date": {
-      "metadataLastUpdated": "2022-03-04"
+      "metadataLastUpdated": "2022-04-15"
     }
   }
 ]
