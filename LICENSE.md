@@ -1,4 +1,4 @@
-Copyright  © 2017 BAE Systems Information and Electronic Systems Integration Inc. 
+Copyright  © 2017-2022 BAE Systems Information and Electronic Systems Integration Inc.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
