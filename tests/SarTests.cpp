@@ -49,17 +49,7 @@ TEST_F(SarSensorModel, Center) {
 }
 
 TEST_F(SarSensorModel, GroundToImage) {
-  csm::ImageCoord I;
-  I.samp = 500.0; 
-  I.line = 500.0;
-  double height = 0;
-  double desiredPrecision = 1e-8;
-  csm::EcefCoord G = sensorModel->imageToGround(I, height, desiredPrecision);
-  std::cout.precision(17);
-  std::cout << "G is " << G.x << ' ' << G.y << ' ' << G.z << std::endl;
   csm::EcefCoord groundPt(1737387.8671710272, -5300.6282306119301, -3749.9796358514604);
-  std::cout << "G2 is " << groundPt.x << ' ' << groundPt.y << ' ' << groundPt.z << std::endl;
-  
   csm::ImageCoord imagePt = sensorModel->groundToImage(groundPt, 0.001);
   EXPECT_NEAR(imagePt.line, 500.0, 1e-3);
   EXPECT_NEAR(imagePt.samp, 500.0, 1e-3);
