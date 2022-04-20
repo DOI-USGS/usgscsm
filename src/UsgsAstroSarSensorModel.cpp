@@ -374,7 +374,7 @@ csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
         groundPt, time, slantRangeValue, groundTolerance);
 
     double line = (time - m_startingEphemerisTime) / m_exposureDuration + 0.5;
-    double sample = groundRange / m_scaledPixelWidth;
+    double sample = groundRange / m_scaledPixelWidth + 0.5;
     return csm::ImageCoord(line, sample);
   } catch (std::exception& error) {
     std::string message = "Could not calculate groundToImage, with error [";
@@ -504,7 +504,7 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
               imagePt.line, height, desiredPrecision);
   double time =
       m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
-  double groundRange = imagePt.samp * m_scaledPixelWidth;
+  double groundRange = (imagePt.samp - 0.5) * m_scaledPixelWidth;
   std::vector<double> coeffs = getRangeCoefficients(time);
   double slantRange = groundRangeToSlantRange(groundRange, coeffs);
 
@@ -640,7 +640,7 @@ csm::EcefLocus UsgsAstroSarSensorModel::imageToProximateImagingLocus(
   // Compute the slant range
   double time =
       m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
-  double groundRange = imagePt.samp * m_scaledPixelWidth;
+  double groundRange = (imagePt.samp - 0.5) * m_scaledPixelWidth;
   std::vector<double> coeffs = getRangeCoefficients(time);
   double slantRange = groundRangeToSlantRange(groundRange, coeffs);
 
