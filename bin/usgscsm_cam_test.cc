@@ -30,6 +30,7 @@ int main(int argc, char **argv) {
                                           "USGS_ASTRO_SAR_SENSOR_MODEL"};
 
   // Try to load the model
+  bool success = false;
   UsgsAstroPlugin plugin;
   std::shared_ptr<csm::RasterGM> model;
   csm::WarningList* warnings = NULL;
@@ -42,13 +43,20 @@ int main(int argc, char **argv) {
       if (modelPtr == NULL) {
         std::cerr << "Could not load correctly a CSM model of type: "
                   << model_types[it] << std::endl;
+        return 1;
       } else {
         // Assign it to a smart pointer which will handle its deallocation
         model = std::shared_ptr<csm::RasterGM>(modelPtr);
+        success = true;
         std::cout << "Loaded CSM model of type " << model_types[it]
                   << " from " << model_file << ".\n";
       }
     }
+  }
+
+  if (!success) {
+    std::cerr << "Failed to load a CSM model from: " << model_file << ".\n";
+    return 1;
   }
 
   return 0;
