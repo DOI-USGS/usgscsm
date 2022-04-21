@@ -30,10 +30,13 @@ int main(int argc, char **argv) {
   // Load the isd
   std::string model_file = argv[1];
   csm::Isd isd(model_file);
+  std::cout << "Loading model: " << model_file << std::endl;
   
   // Check if loading the model worked
   bool success = false;
 
+  std::shared_ptr<csm::RasterGM> model;
+  
   // Try all detected plugins and models for each plugin
   csm::PluginList plugins = csm::Plugin::getList();
   for (auto iter = plugins.begin(); iter != plugins.end(); iter++) {
@@ -48,14 +51,13 @@ int main(int argc, char **argv) {
 
       std::string model_name = (*iter)->getModelName(i);
 
-      std::shared_ptr<csm::RasterGM> model;
       csm::WarningList* warnings = NULL;
 
       if (csm_plugin->canModelBeConstructedFromISD(isd, model_name)) {
 
         csm::Model *csm = csm_plugin->constructModelFromISD(isd, model_name, warnings);
         csm::RasterGM *modelPtr = dynamic_cast<csm::RasterGM*>(csm);
-        
+
         if (modelPtr == NULL) {
           std::cerr << "Could not load correctly a CSM model of type: "
                     << model_name << "\n";
@@ -75,6 +77,10 @@ int main(int argc, char **argv) {
     std::cerr << "Failed to load a CSM model from: " << model_file << ".\n";
     return 1;
   }
+
+  csm::ImageVector image_size = model->getImageSize();
+  std::cout << "Camera image rows and columns: "
+            << image_size.samp << ' ' << image_size.line << "\n";
 
   return 0;
 }

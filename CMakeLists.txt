@@ -103,4 +103,10 @@ if(USGSCSM_BUILD_TESTS)
   include(CTest)
   enable_testing()
   add_subdirectory(tests)
+
+  # Test the test_usgscsm_cam_test program
+  add_test(NAME test_usgscsm_cam_test_linescan
+      COMMAND usgscsm_cam_test data/orbitalLineScan.json
+      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
+      
 endif()
