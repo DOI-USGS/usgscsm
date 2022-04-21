@@ -80,10 +80,13 @@ target_link_libraries(usgscsm
                       ${ALE_TARGET}
                       nlohmann_json::nlohmann_json)
 
+add_executable(usgscsm_cam_test bin/usgscsm_cam_test.cc)
+target_link_libraries(usgscsm_cam_test
+    usgscsm)
 
 install(TARGETS usgscsm LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(DIRECTORY ${USGSCSM_INCLUDE_DIRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
+install(TARGETS usgscsm_cam_test RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Optional build tests
 option (USGSCSM_BUILD_TESTS "Build tests" ON)
@@ -100,4 +103,5 @@ if(USGSCSM_BUILD_TESTS)
   include(CTest)
   enable_testing()
   add_subdirectory(tests)
+
 endif()

@@ -6,9 +6,6 @@ include/csm/*
 # iPython checkpoint items
 .ipynb_checkpoints
 
-# Ignore any executables
-bin/*
-
 # Ignore any Mac stuff
 .DS_Store
 
