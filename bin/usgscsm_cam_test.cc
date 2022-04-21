@@ -1,18 +1,18 @@
 // A tool to perform some basic tests and operations on a CSM camera model.
-// 
+//
 // Functionality:
 //
 // - Load a CSM model in ISD format.
 //
 // Future functionality:
-// 
+//
 // - Test projecting rays from the camera to ground and vice-versa.
 // - Load a CSM model state (stored in a .json file, just like
 //   an ISD model).
-// - Ability to export a CSM model in ISD format to a CSM model state file. 
+// - Ability to export a CSM model in ISD format to a CSM model state file.
 
 #include <usgscsm/UsgsAstroPlugin.h>
-#include <csm/RasterGM.h>
+#include <RasterGM.h>
 #include <UsgsAstroLsSensorModel.h>
 
 #include <iostream>
@@ -31,16 +31,16 @@ int main(int argc, char **argv) {
   std::string model_file = argv[1];
   csm::Isd isd(model_file);
   std::cout << "Loading model: " << model_file << std::endl;
-  
+
   // Check if loading the model worked
   bool success = false;
 
   std::shared_ptr<csm::RasterGM> model;
-  
+
   // Try all detected plugins and models for each plugin
   csm::PluginList plugins = csm::Plugin::getList();
   for (auto iter = plugins.begin(); iter != plugins.end(); iter++) {
-    
+
     const csm::Plugin* csm_plugin = (*iter);
 
     std::cout << "Detected CSM plugin: " << csm_plugin->getPluginName()  << "\n";
@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
       }
     }
   }
-  
+
   if (!success) {
     std::cerr << "Failed to load a CSM model from: " << model_file << ".\n";
     return 1;
