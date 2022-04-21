@@ -56,6 +56,7 @@ endif(USGSCSM_EXTERNAL_DEPS)
 add_library(usgscsm SHARED
             src/UsgsAstroPlugin.cpp
             src/UsgsAstroFrameSensorModel.cpp
+            src/UsgsAstroPushFrameSensorModel.cpp
             src/UsgsAstroLsSensorModel.cpp
             src/UsgsAstroSarSensorModel.cpp
             src/Distortion.cpp
