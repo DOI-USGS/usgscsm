@@ -12,8 +12,8 @@
 // - Test projecting rays from the camera to ground, then back,
 //   and compare with the original pixel values.  
 
-#include <usgscsm/UsgsAstroPlugin.h>
-#include <csm/RasterGM.h>
+#include <UsgsAstroPlugin.h>
+#include <RasterGM.h>
 #include <UsgsAstroLsSensorModel.h>
 
 #include <iostream>
