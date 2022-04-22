@@ -51,7 +51,7 @@ bool parseOptions(int argc, char **argv, Options & opt) {
     printUsage(argv[0]);
     return false;
   }
-  
+
   // Collect the parsed options in a map
   std::map<std::string, std::string> parsed_options;
   int num = params.size() / 2;
@@ -84,13 +84,13 @@ bool parseOptions(int argc, char **argv, Options & opt) {
     printUsage(argv[0]);
     return false;
   }
-  
+
   // Collect all other option values. If not set, the values will default to 0.
   opt.output_model_state = parsed_options["output-model-state"];
   opt.sample_rate        = sample_rate_double;
   opt.subpixel_offset    = atof(parsed_options["subpixel-offset"].c_str());
   opt.height_above_datum = atof(parsed_options["height-above-datum"].c_str());
-  
+
   return true;
 }
 
