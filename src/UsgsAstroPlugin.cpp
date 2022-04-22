@@ -125,10 +125,9 @@ bool UsgsAstroPlugin::canModelBeConstructedFromState(
   try {
     // Use a shared_ptr to not have to manually deallocate the pointer
     std::shared_ptr<csm::Model> model(constructModelFromState(modelState, warnings));
-    std::string createdModelName;
     if (model) {
       // The created model name
-      createdModelName = model->getModelName();
+      std::string createdModelName = model->getModelName();
 
       // If the model is of expected type, all is good
       if (createdModelName == modelName)
