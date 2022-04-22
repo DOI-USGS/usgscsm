@@ -18,7 +18,7 @@
 
 #include <iostream>
 #include <fstream>
-#include <getopt.h> // for parsing command-line options
+#include <getopt.h> // For parsing command-line options
 
 struct Options {
   std::string model;              // the .json file in isd or model state format
