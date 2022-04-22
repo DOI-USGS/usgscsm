@@ -16,6 +16,9 @@ endif()
 # Use external or embedded dependencies
 option(USGSCSM_EXTERNAL_DEPS "If the library should be built with external or embedded dependencies" OFF)
 
+# To find JSON's config file
+set (CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/cmake;${CMAKE_PREFIX_PATH}")
+
 if(USGSCSM_EXTERNAL_DEPS)
   message(STATUS "Using external dependencies")
   # CSM API library

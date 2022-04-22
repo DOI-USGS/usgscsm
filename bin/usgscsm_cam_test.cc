@@ -11,7 +11,7 @@
 //   an ISD model).
 // - Ability to export a CSM model in ISD format to a CSM model state file.
 
-#include <usgscsm/UsgsAstroPlugin.h>
+#include <UsgsAstroPlugin.h>
 #include <RasterGM.h>
 #include <UsgsAstroLsSensorModel.h>
 
