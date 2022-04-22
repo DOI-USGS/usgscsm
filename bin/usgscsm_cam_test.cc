@@ -18,7 +18,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <getopt.h> // For parsing command-line options
 
 struct Options {
   std::string model;              // the .json file in isd or model state format
@@ -27,86 +26,71 @@ struct Options {
   double subpixel_offset, height_above_datum;
   Options(): sample_rate(0), subpixel_offset(0.0), height_above_datum(0.0) {}
 };
-  
-// Parse the input options with getopt.
+
+void printUsage(std::string const& progName) {
+  std::cout << "Usage: " << progName << " --model <model file> [other options]"
+            << "\nSee the documentation for more information.\n";
+}
+
+// Do some naive parsing. Every option is assumed to start with two
+// dashes and have a string value.  The --help option is handled
+// separately.
 bool parseOptions(int argc, char **argv, Options & opt) {
 
-  // Collect the parsed options in a map
-  std::map<std::string, std::string> parsed_options;
-  
-  int digit_optind = 0;
-  while (1) {
-    int this_option_optind = optind ? optind : 1;
-    std::string short_options = ""; // no short options
-    int option_index = 0;
-    static struct option long_options[] = {
-      {"model",              required_argument, 0,  0},
-      {"output-model-state", required_argument, 0,  0},
-      {"sample-rate",        required_argument, 0,  0},
-      {"subpixel-offset",    required_argument, 0,  0},
-      {"height-above-datum", required_argument, 0,  0},
-      {"help",               no_argument,       0,  0}
-    };
-
-    int c = getopt_long(argc, argv, short_options.c_str(), long_options, &option_index);
-    if (c == -1) // done parsing all options
-      break;
-
-    std::string opt_name = long_options[option_index].name;
-    if (c == 0) {
-      if (optarg) {
-        // The option has a value
-        parsed_options[opt_name] = optarg;
-      } else {
-        // The option has no value
-        parsed_options[opt_name] = "";
-      }
-    } else {
-      // Something went wrong in parsing. The parser will print a message. Just add to it.
-      std::cout << "Cannot continue.\n";
+  std::vector<std::string> params;
+  for (int it = 1; it < argc; it++) {
+    if (std::string(argv[it]) == std::string("--help")) {
+      printUsage(argv[0]);
       return false;
     }
+    params.push_back(argv[it]);
   }
 
-  // Print unexpected input arguments
-  if (optind < argc) {
-    printf("Unexpected argument: ");
-    while (optind < argc)
-      printf("%s ", argv[optind++]);
-    printf("\n");
-
+  if (params.size() %2 != 0 || params.empty()) {
+    std::cout << "Could not parse correctly the input arguments.\n";
+    printUsage(argv[0]);
     return false;
   }
-
-  // See if the user asked for help
-  bool print_help_and_exit = (parsed_options.find("help") != parsed_options.end());
+  
+  // Collect the parsed options in a map
+  std::map<std::string, std::string> parsed_options;
+  int num = params.size() / 2;
+  for (int it = 0; it < num; it++) {
+    std::string opt = params[2*it + 0];
+    std::string val = params[2*it + 1];
+    if (opt.size() <= 2 || opt[0] != '-' || opt[1] != '-' || val.empty() || val[0] == '-' ) {
+      std::cout << "Could not parse correctly the input arguments.\n";
+      printUsage(argv[0]);
+      return false;
+    }
+    opt = opt.substr(2); // wipe the dashes
+    parsed_options[opt] = val;
+  }
   
   // It is safe to access non-existent values from a map, the result
   // will be an empty string
   opt.model = parsed_options["model"];
-  if (opt.model == "") 
-    print_help_and_exit = true;
-
-  // Enforce that the sample rate is an integer
-  double sample_rate_double = atof(parsed_options["sample-rate"].c_str());
-  if (sample_rate_double != round(sample_rate_double)) {
-    std::cout << "The value of --sample-rate must be an integer.\n";
-    print_help_and_exit = true;
-  }
-  
-  // Print the help and exit
-  if (print_help_and_exit) {
-    std::cout << "Usage: " << argv[0] << " --model <model file> [other options]"
-              << "\nSee the documentation for more information.\n";
+  if (opt.model == "") {
+    std::cout << "The input model file is empty.\n";
+    printUsage(argv[0]);
     return false;
   }
 
-  // Collect all other option values. If not set the values will default to 0.
+  // Enforce that the sample rate is an integer. Later the user can add
+  // a subpixel offset to each sampled pixel, if desired.
+  double sample_rate_double = atof(parsed_options["sample-rate"].c_str());
+  if (sample_rate_double != round(sample_rate_double)) {
+    std::cout << "The value of --sample-rate must be an integer.\n";
+    printUsage(argv[0]);
+    return false;
+  }
+  
+  // Collect all other option values. If not set, the values will default to 0.
   opt.output_model_state = parsed_options["output-model-state"];
   opt.sample_rate        = sample_rate_double;
   opt.subpixel_offset    = atof(parsed_options["subpixel-offset"].c_str());
   opt.height_above_datum = atof(parsed_options["height-above-datum"].c_str());
-
+  
   return true;
 }
 
