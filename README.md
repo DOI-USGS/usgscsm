@@ -7,10 +7,11 @@
 Community Sensor Model (CSM) compliant sensor models created by USGS Astrogeology
 Science Center.
 
-USGSCSM contains three different sensor models. The first, is a generic
-framing camera model written from scratch. The second is a generic line scan
-camera model based on code from BAE Systems Information and Electronic Systems
-Integration Inc. The third is a generic SAR sensor model.
+USGSCSM contains three different sensor models. The first, is a
+generic framing camera model written from scratch. The second is a
+generic line scan camera model based on code from BAE Systems
+Information and Electronic Systems Integration Inc. The third is a
+generic synthetic-aperture radar (SAR) sensor model.
 
 ## Using USGSCSM
 
@@ -19,23 +20,49 @@ at run time along side the
 [CSM API library](https://github.com/USGS-Astrogeology/csm).
 
 Once, the library is loaded, it can be accessed through the CSM Plugin interface.
-For an example of how to do through the CSM c++ interface see the SensorModelFactory
+For an example of how to do through the CSM C++ interface see the SensorModelFactory
 class in [SensorUtils](https://github.com/USGS-Astrogeology/SensorUtils).
 For an example of how to do this through the CSM Python bindings see this
 [notebook](http://nbviewer.jupyter.org/gist/thareUSGS/4c0eb72799edc33ff4816b2587027148).
 
-From the CSM Plugin interface, a generic framing camera model
-(USGS_ASTRO_FRAME_SENSOR_MODEL) or generic line scan camera model
-(USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL) can be instantiated from suitable Image
-Support Data (ISD). Under the CSM standard, each plugin library can define its
-own ISD format. This library uses an auxiliary JSON formatted file that must be
-next to the image file passed to the CSM::ISD class. We provide an OpenAPI
-server for generating these,
-[pfeffernusse](https://github.com/USGS-Astrogeology/pfeffernusse). The swagger
-specification is located on
+From the CSM plugin interface, a generic framing camera model
+(USGS_ASTRO_FRAME_SENSOR_MODEL), line scan camera model
+(USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL), or a SAR model
+(USGS_ASTRO_SAR_SENSOR_MODEL) can be instantiated from suitable Image
+Support Data (ISD) file.
+
+## Camera model format
+
+Under the CSM standard, each plugin library can define its own ISD
+camera model format. This library uses an auxiliary JSON formatted file that must
+be next to the image file passed to the CSM::ISD class. We provide an
+OpenAPI server for generating these,
+[pfeffernusse](https://github.com/USGS-Astrogeology/pfeffernusse). The
+swagger specification is located on
 [swaggerhub](https://app.swaggerhub.com/apis/USGS-Astro/pfeffernusse2/0.1.4-oas3).
-You can also use [ALE](https://github.com/USGS-Astrogeology/ale) directly with
-metakernels to generate the auxiliary JSON file.
+You can also use [ALE](https://github.com/USGS-Astrogeology/ale)
+directly with metakernels to generate the auxiliary JSON file.
+
+The camera model read from an ISD file is converted at load time to an
+internal representation which makes camera operations more
+efficient. This optimized ``model state`` can be saved to disk to a
+JSON-formatted file, which can be read back and used instead of the
+original ISD model, and also shared among various photogrammetric
+packages.
+
+The camera model state can be modified by an application of a rotation
+and translation, which is necessary in order to refine a camera's
+position and orientation in Photogrammetry, while these operations are
+not easy to express in the original ISD format.
+
+## Inspection of a camera model
+
+This library ships with a tool named ``usgscsm_cam_test``, which is
+able to load a camera model, whether in the original ISD format or its
+model state representation, export the model state, and perform basic
+sanity checks, such as projections from the camera to the ground and
+back, as described in its
+[documentation](source/tools/usgscsm_cam_test.rst).
 
 ## Enabling logging
 
@@ -53,13 +80,13 @@ GBs.
 * GNU-compatible Make
 * a C++11 compliant compiler
 
-This repository has all of its external c++ dependencies included in it. The
+This repository has all of its external C++ dependencies included in it. The
 excellent header-only JSON library
 [JSON for Modern C++](https://github.com/nlohmann/json) is included directly in
 the source code. The other three dependencies, The Abstraction Library for
 Ephemerides, the CSM API library, and googletest are included as git submodules.
 When you clone this library make sure you add the `--recursive` flag to your
-`git clone` command. Alterntively, you can run
+`git clone` command. Alternatively, you can run
 `git submodule update --init --recursive` after cloning.
 
 You can also install the build requirements using Conda with the provided
@@ -88,7 +115,7 @@ You can also disable the tests and the googletest dependency by adding the
 
 ## Testing USGSCSM
 
-All of the tests for USGSCSM are written in the googletests framework
+All of the tests for USGSCSM are written in the googletest framework
 and are run via ctest. To run all of the tests simply run `ctest` in the build.
 
 All of the tests are purposefully written to use generic data that values have
@@ -110,4 +137,4 @@ To attempt to automatically format any new code to this style, run:
 For more information see: [ClangFormat](https://clang.llvm.org/docs/ClangFormat.html)
 
 To check for compliance, run: `cpplint file.cpp` and ignore errors in the list of exclusions above.
-For more information, see: [cpplint](https://github.com/cpplint/cpplint)
+For more information, see: [cpplint](https://github.com/cpplint/cpplint).

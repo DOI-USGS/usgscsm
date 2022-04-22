@@ -330,7 +330,8 @@ string UsgsAstroSarSensorModel::getModelState() const {
   state["m_scaleConversionTimes"] = m_scaleConversionTimes;
   state["m_covariance"] = m_covariance;
 
-  std::string stateString = getModelName() + "\n" + state.dump();
+  // Use dump(2) to avoid creating the model string as a single long line
+  std::string stateString = getModelName() + "\n" + state.dump(2);
   return stateString;
 }
 
@@ -503,7 +504,7 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   MESSAGE_LOG("Calculating imageToGround with: {}, {}, {}, {}", imagePt.samp,
               imagePt.line, height, desiredPrecision);
   double time =
-      m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
+    m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
   double groundRange = (imagePt.samp - 0.5) * m_scaledPixelWidth;
   std::vector<double> coeffs = getRangeCoefficients(time);
   double slantRange = groundRangeToSlantRange(groundRange, coeffs);
