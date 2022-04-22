@@ -62,7 +62,7 @@ able to load a camera model, whether in the original ISD format or its
 model state representation, export the model state, and perform basic
 sanity checks, such as projections from the camera to the ground and
 back, as described in its
-[documentation](source/tools/usgscsm_cam_test.rst).
+[documentation](docs/source/tools/usgscsm_cam_test.rst).
 
 ## Enabling logging
 
