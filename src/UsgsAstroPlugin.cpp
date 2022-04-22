@@ -2,6 +2,7 @@
 
 #include "UsgsAstroFrameSensorModel.h"
 #include "UsgsAstroLsSensorModel.h"
+#include "UsgsAstroPushFrameSensorModel.h"
 #include "UsgsAstroSarSensorModel.h"
 
 #include <algorithm>
@@ -37,7 +38,7 @@ using json = nlohmann::json;
 const std::string UsgsAstroPlugin::_PLUGIN_NAME = "UsgsAstroPluginCSM";
 const std::string UsgsAstroPlugin::_MANUFACTURER_NAME = "UsgsAstrogeology";
 const std::string UsgsAstroPlugin::_RELEASE_DATE = "20190222";
-const int UsgsAstroPlugin::_N_SENSOR_MODELS = 3;
+const int UsgsAstroPlugin::_N_SENSOR_MODELS = 4;
 
 // Static Instance of itself
 const UsgsAstroPlugin UsgsAstroPlugin::m_registeredPlugin;
@@ -101,7 +102,8 @@ std::string UsgsAstroPlugin::getModelName(size_t modelIndex) const {
   std::vector<std::string> supportedModelNames = {
       UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME,
       UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME,
-      UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME};
+      UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME,
+      UsgsAstroPushFrameSensorModel::_SENSOR_MODEL_NAME};
   MESSAGE_LOG("Get Model Name: {}. Used index: {}",
               supportedModelNames[modelIndex], modelIndex);
   return supportedModelNames[modelIndex];
@@ -340,6 +342,26 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(
   } else if (modelName == UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME) {
     UsgsAstroSarSensorModel *model = new UsgsAstroSarSensorModel();
     MESSAGE_LOG("Trying to construct a UsgsAstroSarSensorModel");
+    try {
+      model->replaceModelState(
+          model->constructStateFromIsd(stringIsd, warnings));
+    } catch (std::exception &e) {
+      delete model;
+      csm::Error::ErrorType aErrorType =
+          csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE;
+      std::string aMessage = "Could not construct model [";
+      aMessage += modelName;
+      aMessage += "] with error [";
+      aMessage += e.what();
+      aMessage += "]";
+      std::string aFunction = "UsgsAstroPlugin::constructModelFromISD()";
+      MESSAGE_LOG(aMessage);
+      throw csm::Error(aErrorType, aMessage, aFunction);
+    }
+    return model;
+  } else if (modelName == UsgsAstroPushFrameSensorModel::_SENSOR_MODEL_NAME) {
+    UsgsAstroPushFrameSensorModel *model = new UsgsAstroPushFrameSensorModel();
+    MESSAGE_LOG("Trying to construct a UsgsAstroPushFrameSensorModel");
     try {
       model->replaceModelState(
           model->constructStateFromIsd(stringIsd, warnings));
