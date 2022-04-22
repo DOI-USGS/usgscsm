@@ -96,7 +96,8 @@ int parse_options(int argc, char **argv, Options & opt) {
   
   // Print the help and exit
   if (print_help_and_exit) {
-    std::cout << "Usage: " << argv[0] << " --model <model file> [other options]" << "\n";
+    std::cout << "Usage: " << argv[0] << " --model <model file> [other options]"
+              << "\nSee the documentation for more information.\n";
     return 1;
   }
 

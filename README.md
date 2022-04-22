@@ -4,22 +4,22 @@
 
 # USGSCSM
 
-Community Sensor Model (CSM) compliant sensor models created by USGS Astrogeology
-Science Center.
+This library provides *Community Sensor Model (CSM)*-compliant sensor models 
+created by the USGS Astrogeology Science Center.
 
-USGSCSM contains three different sensor models. The first, is a
+USGSCSM contains three different sensor models. The first is a
 generic framing camera model written from scratch. The second is a
 generic line scan camera model based on code from BAE Systems
-Information and Electronic Systems Integration Inc. The third is a
+Information and Electronic Systems Integration, Inc. The third is a
 generic synthetic-aperture radar (SAR) sensor model.
 
 ## Using USGSCSM
 
 This library is a CSM plugin library that is intended to be dynamically loaded
-at run time along side the
+at run-time alongside the
 [CSM API library](https://github.com/USGS-Astrogeology/csm).
 
-Once, the library is loaded, it can be accessed through the CSM Plugin interface.
+Once the library is loaded, it can be accessed through the CSM plugin interface.
 For an example of how to do through the CSM C++ interface see the SensorModelFactory
 class in [SensorUtils](https://github.com/USGS-Astrogeology/SensorUtils).
 For an example of how to do this through the CSM Python bindings see this
@@ -28,10 +28,10 @@ For an example of how to do this through the CSM Python bindings see this
 From the CSM plugin interface, a generic framing camera model
 (USGS_ASTRO_FRAME_SENSOR_MODEL), line scan camera model
 (USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL), or a SAR model
-(USGS_ASTRO_SAR_SENSOR_MODEL) can be instantiated from suitable Image
-Support Data (ISD) file.
+(USGS_ASTRO_SAR_SENSOR_MODEL) can be instantiated from a suitable *Image
+Support Data (ISD)* file.
 
-## Camera model format
+## Camera model format and model state
 
 Under the CSM standard, each plugin library can define its own ISD
 camera model format. This library uses an auxiliary JSON formatted file that must
@@ -45,36 +45,37 @@ directly with metakernels to generate the auxiliary JSON file.
 
 The camera model read from an ISD file is converted at load time to an
 internal representation which makes camera operations more
-efficient. This optimized ``model state`` can be saved to disk to a
-JSON-formatted file, which can be read back and used instead of the
+efficient. This optimized *model state* can be saved to disk as a
+JSON-formatted file, be used interchangeably with the
 original ISD model, and also shared among various photogrammetric
 packages.
 
 The camera model state can be modified by an application of a rotation
 and translation, which is necessary in order to refine a camera's
-position and orientation in Photogrammetry, while these operations are
+position and orientation in photogrammetry, while these operations are
 not easy to express in the original ISD format.
 
-## Inspection of a camera model
+This library provides functionality for saving the model state file,
+as discussed in the next section.
 
-This library ships with a tool named ``usgscsm_cam_test``, which is
-able to load a camera model, whether in the original ISD format or its
+## Camera model processsing
+
+USGSCSM ships with a program named ``usgscsm_cam_test``, which is
+able to load a CSM camera model, whether in the original ISD format or its
 model state representation, export the model state, and perform basic
-sanity checks, such as projections from the camera to the ground and
-back, as described in its
+camera operations, as described in its
 [documentation](docs/source/tools/usgscsm_cam_test.rst).
 
 ## Enabling logging
 
-You can enable logging of the internal operations in the sensor models by setting
-the `USGSCSM_LOG_FILE` environment variable to the file you would like to log to.
-You can also log to standard out by setting it to `stdout` or standard error
-by setting it to `stderr`. Note that these logs can become quite large, multiple
-GBs.
+Logging of the internal operations in the sensor models can be enabled by setting
+the `USGSCSM_LOG_FILE` environment variable to the file the log should be written to.
+To have the logging information printed to the standard output or standard error, set
+this to `stdout` or `stderr`. Note that these logs can become several GB in size.
 
 ---
 
-## Build Requirements
+## Build requirements
 
 * cmake 3.15 or newer
 * GNU-compatible Make
@@ -121,7 +122,7 @@ and are run via ctest. To run all of the tests simply run `ctest` in the build.
 All of the tests are purposefully written to use generic data that values have
 been hand validated. This data can be found under `tests/data`.
 
-## Code Style
+## Code style
 
 This software package uses a modified form of the
 [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html).
