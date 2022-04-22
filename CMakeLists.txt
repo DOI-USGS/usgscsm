@@ -16,6 +16,9 @@ endif()
 # Use external or embedded dependencies
 option(USGSCSM_EXTERNAL_DEPS "If the library should be built with external or embedded dependencies" OFF)
 
+# To find JSON's config file
+set (CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/cmake;${CMAKE_PREFIX_PATH}")
+
 if(USGSCSM_EXTERNAL_DEPS)
   message(STATUS "Using external dependencies")
   # CSM API library
@@ -56,6 +59,7 @@ endif(USGSCSM_EXTERNAL_DEPS)
 add_library(usgscsm SHARED
             src/UsgsAstroPlugin.cpp
             src/UsgsAstroFrameSensorModel.cpp
+            src/UsgsAstroPushFrameSensorModel.cpp
             src/UsgsAstroLsSensorModel.cpp
             src/UsgsAstroSarSensorModel.cpp
             src/Distortion.cpp
@@ -82,7 +86,8 @@ target_link_libraries(usgscsm
 
 add_executable(usgscsm_cam_test bin/usgscsm_cam_test.cc)
 target_link_libraries(usgscsm_cam_test
-    usgscsm)
+    usgscsm
+    ${CSM_LIBRARY})
 
 install(TARGETS usgscsm LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(DIRECTORY ${USGSCSM_INCLUDE_DIRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
