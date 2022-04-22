@@ -121,36 +121,41 @@ csm::Version UsgsAstroPlugin::getModelVersion(
 bool UsgsAstroPlugin::canModelBeConstructedFromState(
     const std::string &modelName, const std::string &modelState,
     csm::WarningList *warnings) const {
+  std::string err_msg;
   try {
-    csm::Model *model = constructModelFromState(modelState, warnings);
+    // Use a shared_ptr to not have to manually deallocate the pointer
+    std::shared_ptr<csm::Model> model(constructModelFromState(modelState, warnings));
     if (model) {
-      delete model;
-      return true;
+      // The created model name
+      std::string createdModelName = model->getModelName();
+
+      // If the model is of expected type, all is good
+      if (createdModelName == modelName)
+        return true;
+
+      // Need to stay on to deal with the fact that the model is not of expected type.
+      err_msg = "Created a model of type " + createdModelName + " instead of the expected "
+        + modelName;
     }
   } catch (std::exception &e) {
-    std::string msg = "Could not create model [";
-    msg += modelName;
-    msg += "] with error [";
-    msg += e.what();
-    msg += "]";
-    MESSAGE_LOG(msg);
-    if (warnings) {
-      warnings->push_back(csm::Warning(
-          csm::Warning::UNKNOWN_WARNING, msg,
-          "UsgsAstroFrameSensorModel::canModelBeConstructedFromState()"));
-    }
-    return false;
+    err_msg = e.what();
   } catch (...) {
-    std::string msg = "Could not create model [";
-    msg += modelName;
-    msg += "] with an unknown error.";
-    MESSAGE_LOG(msg);
-    if (warnings) {
-      warnings->push_back(csm::Warning(
-          csm::Warning::UNKNOWN_WARNING, msg,
-          "UsgsAstroFrameSensorModel::canModelBeConstructedFromState()"));
-    }
+    err_msg = "Unknown error";
   }
+
+  std::string fullMsg = "Could not create model [";
+  fullMsg += modelName;
+  fullMsg += "] with error [";
+  fullMsg += err_msg;
+  fullMsg += "]";
+
+  MESSAGE_LOG(fullMsg);
+  if (warnings) {
+    warnings->push_back(csm::Warning
+                        (csm::Warning::UNKNOWN_WARNING, fullMsg,
+                         "UsgsAstroFrameSensorModel::canModelBeConstructedFromState()"));
+  }
+
   return false;
 }
 
