@@ -29,7 +29,7 @@ struct Options {
 };
   
 // Parse the input options with getopt.
-int parse_options(int argc, char **argv, Options & opt) {
+bool parseOptions(int argc, char **argv, Options & opt) {
 
   // Collect the parsed options in a map
   std::map<std::string, std::string> parsed_options;
@@ -64,7 +64,7 @@ int parse_options(int argc, char **argv, Options & opt) {
     } else {
       // Something went wrong in parsing. The parser will print a message. Just add to it.
       std::cout << "Cannot continue.\n";
-      return 1;
+      return false;
     }
   }
 
@@ -75,7 +75,7 @@ int parse_options(int argc, char **argv, Options & opt) {
       printf("%s ", argv[optind++]);
     printf("\n");
 
-    return 1;
+    return false;
   }
 
   // See if the user asked for help
@@ -98,7 +98,7 @@ int parse_options(int argc, char **argv, Options & opt) {
   if (print_help_and_exit) {
     std::cout << "Usage: " << argv[0] << " --model <model file> [other options]"
               << "\nSee the documentation for more information.\n";
-    return 1;
+    return false;
   }
 
   // Collect all other option values. If not set the values will default to 0.
@@ -107,21 +107,28 @@ int parse_options(int argc, char **argv, Options & opt) {
   opt.subpixel_offset    = atof(parsed_options["subpixel-offset"].c_str());
   opt.height_above_datum = atof(parsed_options["height-above-datum"].c_str());
 
-  return 0;
+  return true;
 }
 
 // Read a file's content in a single string
-void readFileInString(std::string const& filename, std::string & str) {
+bool readFileInString(std::string const& filename, std::string & str) {
 
   str.clear(); // clear the output
 
   std::ifstream ifs(filename.c_str());
+  if (!ifs.is_open()) {
+    std::cout << "Cannot open file: " << filename << std::endl;
+    return false;
+  }
+  
   ifs.seekg(0, std::ios::end);   
   str.reserve(ifs.tellg());
   ifs.seekg(0, std::ios::beg);
   str.assign((std::istreambuf_iterator<char>(ifs)),
              std::istreambuf_iterator<char>());
   ifs.close();
+
+  return true;
 }
 
 // Sort the errors and print some stats
@@ -144,9 +151,9 @@ double pixDiffNorm(csm::ImageCoord const& a, csm::ImageCoord const& b) {
   return sqrt((a.line - b.line) * (a.line - b.line) + (a.samp - b.samp) * (a.samp - b.samp));
 }
 
-// Load a CSM camera model from an ISD or state file. Return 0 on success.
-int load_csm_camera_model(std::string const& model_file,
-                          std::shared_ptr<csm::RasterGM> & model) {
+// Load a CSM camera model from an ISD or state file. Return true on success.
+bool loadCsmCameraModel(std::string const& model_file,
+                       std::shared_ptr<csm::RasterGM> & model) {
 
   // This is needed to trigger loading libusgscsm.so. Otherwise 0
   // plugins are detected.
@@ -158,7 +165,8 @@ int load_csm_camera_model(std::string const& model_file,
   // Read the model in a string, for potentially finding parsing the
   // model state from it.
   std::string model_state;
-  readFileInString(model_file, model_state);
+  if (!readFileInString(model_file, model_state))
+    return false;
   
   // Check if loading the model worked
   bool success = false;
@@ -188,7 +196,6 @@ int load_csm_camera_model(std::string const& model_file,
       } else if (csm_plugin->canModelBeConstructedFromState(model_name, model_state, warnings)) {
         // Try to construct it from the model state
         csm = csm_plugin->constructModelFromState(model_state, warnings);
-        model_name = csm->getModelName(); // ensure the name is right
         std::cout << "Loaded a CSM model of type " << model_name << " from model state file "
                   << model_file << ".\n";
         success = true;
@@ -201,7 +208,7 @@ int load_csm_camera_model(std::string const& model_file,
       if (modelPtr == NULL) {
         // Normally earlier checks should be enough and this should not happen
         std::cerr << "Could not load correctly a CSM model.\n";
-        return 1;
+        return false;
       } else {
         // Assign to a smart pointer which will handle deallocation
         model = std::shared_ptr<csm::RasterGM>(modelPtr);
@@ -212,23 +219,23 @@ int load_csm_camera_model(std::string const& model_file,
   
   if (!success) {
     std::cerr << "Failed to load a CSM model from: " << model_file << ".\n";
-    return 1;
+    return false;
   }
   
-  return 0;
+  return true;
 }
 
 int main(int argc, char **argv) {
 
   Options opt;
-  if (parse_options(argc, argv, opt) != 0)
+  if (!parseOptions(argc, argv, opt))
     return 1;
 
   // Keep the model as smart pointer to the class from which the
   // specific model types inherit.
   std::shared_ptr<csm::RasterGM> model;
 
-  if (load_csm_camera_model(opt.model, model) != 0)
+  if (!loadCsmCameraModel(opt.model, model))
     return 1;
 
   if (opt.output_model_state != "") {
