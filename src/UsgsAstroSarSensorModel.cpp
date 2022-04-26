@@ -524,12 +524,16 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   //   The cross-track unit vector is orthogonal to the position so we ignore it
   double nadirComp = dot(spacecraftPosition, tHat);
 
-  // Iterate to find proper radius value
+  // Iterate to find proper radius value. Limit the number of iterations
+  // because the desired precision may not drop beyond 1e-10 no matter
+  // how many iterations one does. As it was observed, this in fact
+  // converges at the first iteration; this is expected for a spherical
+  // datum and not for an ellipsoidal one.
   double pointRadius = m_majorAxis + height;
   double radiusSqr;
   double pointHeight;
   csm::EcefVector groundVec;
-  do {
+  for (int it = 0; it < 10; it++) {
     radiusSqr = pointRadius * pointRadius;
     double alpha =
         (radiusSqr - slantRange * slantRange - positionMag * positionMag) /
@@ -542,7 +546,10 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
     pointHeight = computeEllipsoidElevation(
         groundVec.x, groundVec.y, groundVec.z, m_majorAxis, m_minorAxis);
     pointRadius -= (pointHeight - height);
-  } while (fabs(pointHeight - height) > desiredPrecision);
+
+    if (fabs(pointHeight - height) <= desiredPrecision)
+      break;
+  }
 
   if (achievedPrecision) {
     *achievedPrecision = fabs(pointHeight - height);
