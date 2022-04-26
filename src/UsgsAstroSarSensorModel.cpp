@@ -527,7 +527,8 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   // Iterate to find proper radius value. Limit the number of iterations
   // because the desired precision may not drop beyond 1e-10 no matter
   // how many iterations one does. As it was observed, this in fact
-  // converges at the first iteration.
+  // converges at the first iteration; this is expected for a spherical
+  // datum and not for an ellipsoidal one.
   double pointRadius = m_majorAxis + height;
   double radiusSqr;
   double pointHeight;
