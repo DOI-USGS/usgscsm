@@ -22,6 +22,7 @@ Command line options
 
 --model <string (default: "")>
     Input CSM model (in ISD or model state format).
+
 --output-model-state <string (default: "")>
     If specified, save the model state to this file.
 

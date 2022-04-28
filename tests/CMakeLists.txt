@@ -23,7 +23,7 @@ endif()
 # uses as input the output of the first test.
 # 1. Save the model state for an ISD camera model.
 add_test(NAME test_usgscsm_cam_test_save_state
-    COMMAND usgscsm_cam_test --model data/orbitalLineScan.json --output-model-state model_state.json
+    COMMAND usgscsm_cam_test --model data/toughLroNacLineScan.json  --sample-rate 100 --subpixel-offset 0.3 --height-above-datum 2307.5 --output-model-state model_state.json
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
 # 2. Load back the state and save it again.
 add_test(NAME test_usgscsm_cam_test_load_state
