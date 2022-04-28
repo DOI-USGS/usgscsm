@@ -165,12 +165,10 @@ bool UsgsAstroPlugin::canModelBeConstructedFromISD(
     const csm::Isd &imageSupportData, const std::string &modelName,
     csm::WarningList *warnings) const {
   try {
-    csm::Model *model =
-        constructModelFromISD(imageSupportData, modelName, warnings);
-    if (model) {
-      delete model;
+    std::shared_ptr<csm::Model> model(constructModelFromISD(imageSupportData, modelName, warnings));
+    if (model)
       return true;
-    }
+
   } catch (std::exception &e) {
     if (warnings) {
       std::string msg = "Could not create model [";
@@ -284,10 +282,9 @@ std::string UsgsAstroPlugin::convertISDToModelState(
     const csm::Isd &imageSupportData, const std::string &modelName,
     csm::WarningList *warnings) const {
   MESSAGE_LOG("Running convertISDToModelState");
-  csm::Model *sensor_model =
-      constructModelFromISD(imageSupportData, modelName, warnings);
+  std::shared_ptr<csm::Model> sensor_model
+    (constructModelFromISD(imageSupportData, modelName, warnings));
   std::string stateString = sensor_model->getModelState();
-  delete sensor_model;
   return stateString;
 }
 
