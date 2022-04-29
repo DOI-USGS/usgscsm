@@ -184,8 +184,8 @@ TEST_F(OrbitalFrameSensorModel, ImageToProximateImagingLocus) {
 TEST_F(FrameStateTest, FL500_OffBody4) {
   std::string key = "m_focalLength";
   double newValue = 500.0;
-  UsgsAstroFrameSensorModel* sensorModel =
-      createModifiedStateSensorModel(key, newValue);
+  std::shared_ptr<UsgsAstroFrameSensorModel> sensorModel(
+      createModifiedStateSensorModel(key, newValue));
 
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(15.0, 15.0);
@@ -193,16 +193,13 @@ TEST_F(FrameStateTest, FL500_OffBody4) {
   EXPECT_NEAR(groundPt.x, 9.77688917, 1e-8);
   EXPECT_NEAR(groundPt.y, -1.48533467, 1e-8);
   EXPECT_NEAR(groundPt.z, -1.48533467, 1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
 }
 
 TEST_F(FrameStateTest, FL500_OffBody3) {
   std::string key = "m_focalLength";
   double newValue = 500.0;
-  UsgsAstroFrameSensorModel* sensorModel =
-      createModifiedStateSensorModel(key, newValue);
+  std::shared_ptr<UsgsAstroFrameSensorModel> sensorModel(
+      createModifiedStateSensorModel(key, newValue));
 
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(0.0, 0.0);
@@ -210,16 +207,13 @@ TEST_F(FrameStateTest, FL500_OffBody3) {
   EXPECT_NEAR(groundPt.x, 9.77688917, 1e-8);
   EXPECT_NEAR(groundPt.y, 1.48533467, 1e-8);
   EXPECT_NEAR(groundPt.z, 1.48533467, 1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
 }
 
 TEST_F(FrameStateTest, FL500_Center) {
   std::string key = "m_focalLength";
   double newValue = 500.0;
-  UsgsAstroFrameSensorModel* sensorModel =
-      createModifiedStateSensorModel(key, newValue);
+  std::shared_ptr<UsgsAstroFrameSensorModel> sensorModel(
+      createModifiedStateSensorModel(key, newValue));
 
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(7.5, 7.5);
@@ -227,16 +221,13 @@ TEST_F(FrameStateTest, FL500_Center) {
   EXPECT_NEAR(groundPt.x, 10.0, 1e-8);
   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
   EXPECT_NEAR(groundPt.z, 0.0, 1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
 }
 
 TEST_F(FrameStateTest, FL500_SlightlyOffCenter) {
   std::string key = "m_focalLength";
   double newValue = 500.0;
-  UsgsAstroFrameSensorModel* sensorModel =
-      createModifiedStateSensorModel(key, newValue);
+  std::shared_ptr<UsgsAstroFrameSensorModel> sensorModel(
+      createModifiedStateSensorModel(key, newValue));
 
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(7.5, 6.5);
@@ -244,9 +235,6 @@ TEST_F(FrameStateTest, FL500_SlightlyOffCenter) {
   EXPECT_NEAR(groundPt.x, 9.99803960, 1e-8);
   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
   EXPECT_NEAR(groundPt.z, 1.98000392e-01, 1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
 }
 
 // Ellipsoid axis tests:
@@ -254,8 +242,8 @@ TEST_F(FrameStateTest, SemiMajorAxis100x_Center) {
   std::string key = "m_majorAxis";
   double newValue = 1000.0;
 
-  UsgsAstroFrameSensorModel* sensorModel =
-      createModifiedStateSensorModel(key, newValue);
+  std::shared_ptr<UsgsAstroFrameSensorModel> sensorModel(
+      createModifiedStateSensorModel(key, newValue));
 
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(7.5, 7.5);
@@ -263,16 +251,13 @@ TEST_F(FrameStateTest, SemiMajorAxis100x_Center) {
   EXPECT_NEAR(groundPt.x, 1000.0, 1e-8);
   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
   EXPECT_NEAR(groundPt.z, 0.0, 1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
 }
 
 TEST_F(FrameStateTest, SemiMajorAxis10x_SlightlyOffCenter) {
   std::string key = "m_majorAxis";
   double newValue = 100.0;
-  UsgsAstroFrameSensorModel* sensorModel =
-      createModifiedStateSensorModel(key, newValue);
+  std::shared_ptr<UsgsAstroFrameSensorModel> sensorModel(
+      createModifiedStateSensorModel(key, newValue));
 
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(7.5, 6.5);
@@ -283,9 +268,6 @@ TEST_F(FrameStateTest, SemiMajorAxis10x_SlightlyOffCenter) {
   EXPECT_NEAR(groundPt.x, 9.83606557e+01, 1e-7);
   EXPECT_NEAR(groundPt.y, 0.0, 1e-7);
   EXPECT_NEAR(groundPt.z, 1.80327869, 1e-7);
-
-  delete sensorModel;
-  sensorModel = NULL;
 }
 
 // The following test is for the scenario where the semi_minor_axis is actually
@@ -293,8 +275,8 @@ TEST_F(FrameStateTest, SemiMajorAxis10x_SlightlyOffCenter) {
 TEST_F(FrameStateTest, SemiMinorAxis10x_SlightlyOffCenter) {
   std::string key = "m_minorAxis";
   double newValue = 100.0;
-  UsgsAstroFrameSensorModel* sensorModel =
-      createModifiedStateSensorModel(key, newValue);
+  std::shared_ptr<UsgsAstroFrameSensorModel> sensorModel(
+      createModifiedStateSensorModel(key, newValue));
 
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(7.5, 6.5);
@@ -302,16 +284,13 @@ TEST_F(FrameStateTest, SemiMinorAxis10x_SlightlyOffCenter) {
   EXPECT_NEAR(groundPt.x, 9.99803960, 1e-8);
   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
   EXPECT_NEAR(groundPt.z, 1.98000392, 1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
 }
 
 TEST_F(FrameStateTest, SampleSumming) {
   std::string key = "m_detectorSampleSumming";
   double newValue = 2.0;
-  UsgsAstroFrameSensorModel* sensorModel =
-      createModifiedStateSensorModel(key, newValue);
+  std::shared_ptr<UsgsAstroFrameSensorModel> sensorModel(
+      createModifiedStateSensorModel(key, newValue));
 
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(7.5, 3.75);
@@ -319,16 +298,13 @@ TEST_F(FrameStateTest, SampleSumming) {
   EXPECT_NEAR(groundPt.x, 10.0, 1e-8);
   EXPECT_NEAR(groundPt.y, 0, 1e-8);
   EXPECT_NEAR(groundPt.z, 0, 1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
 }
 
 TEST_F(FrameStateTest, LineSumming) {
   std::string key = "m_detectorLineSumming";
   double newValue = 2.0;
-  UsgsAstroFrameSensorModel* sensorModel =
-      createModifiedStateSensorModel(key, newValue);
+  std::shared_ptr<UsgsAstroFrameSensorModel> sensorModel(
+      createModifiedStateSensorModel(key, newValue));
 
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(3.75, 7.5);
@@ -336,16 +312,13 @@ TEST_F(FrameStateTest, LineSumming) {
   EXPECT_NEAR(groundPt.x, 10.0, 1e-8);
   EXPECT_NEAR(groundPt.y, 0, 1e-8);
   EXPECT_NEAR(groundPt.z, 0, 1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
 }
 
 TEST_F(FrameStateTest, StartSample) {
   std::string key = "m_startingDetectorSample";
   double newValue = 5.0;
-  UsgsAstroFrameSensorModel* sensorModel =
-      createModifiedStateSensorModel(key, newValue);
+  std::shared_ptr<UsgsAstroFrameSensorModel> sensorModel(
+      createModifiedStateSensorModel(key, newValue));
 
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(7.5, 2.5);
@@ -353,16 +326,13 @@ TEST_F(FrameStateTest, StartSample) {
   EXPECT_NEAR(groundPt.x, 10.0, 1e-8);
   EXPECT_NEAR(groundPt.y, 0, 1e-8);
   EXPECT_NEAR(groundPt.z, 0, 1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
 }
 
 TEST_F(FrameStateTest, StartLine) {
   std::string key = "m_startingDetectorLine";
   double newValue = 5.0;
-  UsgsAstroFrameSensorModel* sensorModel =
-      createModifiedStateSensorModel(key, newValue);
+  std::shared_ptr<UsgsAstroFrameSensorModel> sensorModel(
+      createModifiedStateSensorModel(key, newValue));
 
   ASSERT_NE(sensorModel, nullptr);
   csm::ImageCoord imagePt(2.5, 7.5);
@@ -370,9 +340,6 @@ TEST_F(FrameStateTest, StartLine) {
   EXPECT_NEAR(groundPt.x, 10.0, 1e-8);
   EXPECT_NEAR(groundPt.y, 0, 1e-8);
   EXPECT_NEAR(groundPt.z, 0, 1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
 }
 
 // ****************************************************************************
@@ -390,9 +357,6 @@ TEST_F(FrameSensorModel, X10_SlightlyOffCenter) {
   EXPECT_NEAR(groundPt.x, 10.0, 1e-8);
   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
   EXPECT_NEAR(groundPt.z, 0.0, 1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
 }
 
 TEST_F(FrameSensorModel, X1e9_SlightlyOffCenter) {
@@ -407,9 +371,6 @@ TEST_F(FrameSensorModel, X1e9_SlightlyOffCenter) {
   EXPECT_NEAR(groundPt.x, 3.99998400e+03, 1e-4);
   EXPECT_NEAR(groundPt.y, 0.0, 1e-4);
   EXPECT_NEAR(groundPt.z, 1.99999200e+06, 1e-4);
-
-  delete sensorModel;
-  sensorModel = NULL;
 }
 
 // Angle rotations:
@@ -430,9 +391,6 @@ TEST_F(FrameSensorModel, Rotation_omegaPi_Center) {
   EXPECT_NEAR(groundPt.x, -10.0, 1e-8);
   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
   EXPECT_NEAR(groundPt.z, 0.0, 1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
 }
 
 TEST_F(FrameSensorModel, Rotation_NPole_Center) {
@@ -452,9 +410,6 @@ TEST_F(FrameSensorModel, Rotation_NPole_Center) {
   EXPECT_NEAR(groundPt.x, 0.0, 1e-8);
   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
   EXPECT_NEAR(groundPt.z, 10.0, 1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
 }
 
 TEST_F(FrameSensorModel, Rotation_SPole_Center) {
@@ -469,9 +424,6 @@ TEST_F(FrameSensorModel, Rotation_SPole_Center) {
   EXPECT_NEAR(groundPt.x, 0.0, 1e-8);
   EXPECT_NEAR(groundPt.y, 0.0, 1e-8);
   EXPECT_NEAR(groundPt.z, -10.0, 1e-8);
-
-  delete sensorModel;
-  sensorModel = NULL;
 }
 
 // ****************************************************************************
