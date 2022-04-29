@@ -93,32 +93,25 @@ TEST_F(FrameIsdTest, NotConstructible) {
 
 TEST_F(FrameIsdTest, ConstructValidCamera) {
   UsgsAstroPlugin testPlugin;
-  csm::Model *cameraModel = NULL;
-  EXPECT_NO_THROW(cameraModel = testPlugin.constructModelFromISD(
-                      isd, "USGS_ASTRO_FRAME_SENSOR_MODEL", NULL));
+  std::shared_ptr<csm::Model> cameraModel(NULL);
+  EXPECT_NO_THROW(cameraModel = std::shared_ptr<csm::Model>(testPlugin.constructModelFromISD
+                                                            (isd, "USGS_ASTRO_FRAME_SENSOR_MODEL", NULL)));
   UsgsAstroFrameSensorModel *frameModel =
-      dynamic_cast<UsgsAstroFrameSensorModel *>(cameraModel);
+    dynamic_cast<UsgsAstroFrameSensorModel *>(cameraModel.get());
   EXPECT_NE(frameModel, nullptr);
-  if (cameraModel) {
-    delete cameraModel;
-  }
 }
 
-TEST_F(FrameIsdTest, ConstructInValidCamera) {
+TEST_F(FrameIsdTest, ConstructInvalidCamera) {
   UsgsAstroPlugin testPlugin;
   isd.setFilename("data/empty.img");
-  csm::Model *cameraModel = NULL;
+  std::shared_ptr<csm::Model> cameraModel(NULL);
   try {
-    testPlugin.constructModelFromISD(isd, "USGS_ASTRO_FRAME_SENSOR_MODEL",
-                                     nullptr);
+    cameraModel = std::shared_ptr<csm::Model>(testPlugin.constructModelFromISD(isd, "USGS_ASTRO_FRAME_SENSOR_MODEL", nullptr));
     FAIL() << "Expected an error";
   } catch (csm::Error &e) {
     EXPECT_EQ(e.getError(), csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE);
   } catch (...) {
     FAIL() << "Expected csm SENSOR_MODEL_NOT_CONSTRUCTIBLE error";
-  }
-  if (cameraModel) {
-    delete cameraModel;
   }
 }
 
@@ -144,34 +137,28 @@ TEST_F(ConstVelLineScanIsdTest, NotConstructible) {
 
 TEST_F(ConstVelLineScanIsdTest, ConstructValidCamera) {
   UsgsAstroPlugin testPlugin;
-  csm::Model *cameraModel = NULL;
-  EXPECT_NO_THROW(cameraModel = testPlugin.constructModelFromISD(
-                      isd, "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", NULL));
+  std::shared_ptr<csm::Model> cameraModel(NULL);
+  EXPECT_NO_THROW(cameraModel = std::shared_ptr<csm::Model>(testPlugin.constructModelFromISD
+                                                            (isd, "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", NULL)));
   UsgsAstroLsSensorModel *frameModel =
-      dynamic_cast<UsgsAstroLsSensorModel *>(cameraModel);
+    dynamic_cast<UsgsAstroLsSensorModel *>(cameraModel.get());
   EXPECT_NE(frameModel, nullptr);
-  if (cameraModel) {
-    delete cameraModel;
-  }
 }
 
-TEST_F(ConstVelLineScanIsdTest, ConstructInValidCamera) {
+TEST_F(ConstVelLineScanIsdTest, ConstructInvalidCamera) {
   UsgsAstroPlugin testPlugin;
   isd.setFilename("data/empty.img");
   csm::Model *cameraModel = NULL;
   try {
-    testPlugin.constructModelFromISD(
-        isd, "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", nullptr);
+    std::shared_ptr<csm::Model> cameraModel(testPlugin.constructModelFromISD
+                                            (isd, "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", nullptr));
     FAIL() << "Expected an error";
-
   } catch (csm::Error &e) {
     EXPECT_EQ(e.getError(), csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE);
   } catch (...) {
     FAIL() << "Expected csm SENSOR_MODEL_NOT_CONSTRUCTIBLE error";
   }
-  if (cameraModel) {
-    delete cameraModel;
-  }
+  
 }
 
 TEST_F(SarIsdTest, Constructible) {
@@ -207,37 +194,30 @@ TEST_F(SarIsdTest, NotConstructible) {
 TEST_F(SarIsdTest, ConstructValidCamera) {
   UsgsAstroPlugin testPlugin;
   csm::WarningList warnings;
-  csm::Model *cameraModel = NULL;
-  EXPECT_NO_THROW(cameraModel = testPlugin.constructModelFromISD(
-                      isd, "USGS_ASTRO_SAR_SENSOR_MODEL", &warnings));
+  std::shared_ptr<csm::Model> cameraModel(NULL);
+  EXPECT_NO_THROW(cameraModel =  std::shared_ptr<csm::Model>(testPlugin.constructModelFromISD
+                                                             (isd, "USGS_ASTRO_SAR_SENSOR_MODEL", &warnings)));
   for (auto &warn : warnings) {
     std::cerr << "Warning in " << warn.getFunction() << std::endl;
     std::cerr << "  " << warn.getMessage() << std::endl;
   }
   UsgsAstroSarSensorModel *sarModel =
-      dynamic_cast<UsgsAstroSarSensorModel *>(cameraModel);
+    dynamic_cast<UsgsAstroSarSensorModel *>(cameraModel.get());
   EXPECT_NE(sarModel, nullptr);
-  if (cameraModel) {
-    delete cameraModel;
-  }
 }
 
-TEST_F(SarIsdTest, ConstructInValidCamera) {
+TEST_F(SarIsdTest, ConstructInvalidCamera) {
   UsgsAstroPlugin testPlugin;
   isd.setFilename("data/empty.img");
-  csm::Model *cameraModel = NULL;
+  std::shared_ptr<csm::Model> cameraModel(NULL);
   try {
-    testPlugin.constructModelFromISD(isd, "USGS_ASTRO_SAR_SENSOR_MODEL",
-                                     nullptr);
+    cameraModel = std::shared_ptr<csm::Model>(testPlugin.constructModelFromISD(isd, "USGS_ASTRO_SAR_SENSOR_MODEL", nullptr));
     FAIL() << "Expected an error";
 
   } catch (csm::Error &e) {
     EXPECT_EQ(e.getError(), csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE);
   } catch (...) {
     FAIL() << "Expected csm SENSOR_MODEL_NOT_CONSTRUCTIBLE error";
-  }
-  if (cameraModel) {
-    delete cameraModel;
   }
 }
 
