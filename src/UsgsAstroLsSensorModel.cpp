@@ -1943,21 +1943,27 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(const double& time,
                  time, 3, nOrder, sensPosNom);
 
   // Avoid computing the velocity and adjustments, if not needed, as those
-  // take up at least half of this function's time.
-  bool has_adj = false;
-  for (size_t it = 0; it < adj.size(); it++) {
-    if (adj[it] != 0) {
-      has_adj = true;
+  // take up at least half of this function's time. Note that if the
+  // adjustments are non-null, need to compute the velocity in order
+  // to find the adjusted position.
+  if (!calc_vel) {
+    bool has_adj = false;
+    for (size_t it = 0; it < adj.size(); it++) {
+      if (adj[it] != 0) has_adj = true;
     }
-  }
-  if (!has_adj && !calc_vel) {
-    xc = sensPosNom[0];
-    yc = sensPosNom[1];
-    zc = sensPosNom[2];
-    vx = 0.0;
-    vy = 0.0;
-    vz = 0.0;
-    return;
+    if (!has_adj) {
+      xc = sensPosNom[0];
+      yc = sensPosNom[1];
+      zc = sensPosNom[2];
+      vx = 0.0;
+      vy = 0.0;
+      vz = 0.0;
+
+      MESSAGE_LOG("getAdjSensorPosVel: postition {} {} {}"
+                  "and velocity {} {} {}",
+                  xc, yc, zc, vx, vy, vz)
+        return;
+    }
   }
   
   double sensVelNom[3];
