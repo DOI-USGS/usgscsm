@@ -40,6 +40,7 @@ inline void jsonToIsd(nlohmann::json &object, csm::Isd &isd,
 class FrameSensorModel : public ::testing::Test {
  protected:
   csm::Isd isd;
+  std::shared_ptr<csm::Model> model;
   UsgsAstroFrameSensorModel *sensorModel;
 
   void SetUp() override {
@@ -48,24 +49,23 @@ class FrameSensorModel : public ::testing::Test {
     isd.setFilename("data/simpleFramerISD.img");
     UsgsAstroPlugin frameCameraPlugin;
 
-    csm::Model *model = frameCameraPlugin.constructModelFromISD(
-        isd, UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME);
-    sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+    model = std::shared_ptr<csm::Model>(frameCameraPlugin.constructModelFromISD(
+      isd, UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME));
+    sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model.get());
 
     ASSERT_NE(sensorModel, nullptr);
   }
 
   void TearDown() override {
-    if (sensorModel) {
-      delete sensorModel;
-      sensorModel = NULL;
-    }
+    // The object that sensorModel points to is managed by the smart pointer 'model'.
+    sensorModel = NULL;
   }
 };
 
 class FrameSensorModelLogging : public ::testing::Test {
  protected:
   csm::Isd isd;
+  std::shared_ptr<csm::Model> model;
   UsgsAstroFrameSensorModel *sensorModel;
   std::ostringstream oss;
 
@@ -75,9 +75,9 @@ class FrameSensorModelLogging : public ::testing::Test {
     isd.setFilename("data/simpleFramerISD.img");
     UsgsAstroPlugin frameCameraPlugin;
 
-    csm::Model *model = frameCameraPlugin.constructModelFromISD(
-        isd, UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME);
-    sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+    model = std::shared_ptr<csm::Model>(frameCameraPlugin.constructModelFromISD(
+       isd, UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME));
+    sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model.get());
 
     ASSERT_NE(sensorModel, nullptr);
 
@@ -98,7 +98,7 @@ class FrameSensorModelLogging : public ::testing::Test {
       std::uintptr_t sensorId = reinterpret_cast<std::uintptr_t>(sensorModel);
       spdlog::drop(std::to_string(sensorId));
 
-      delete sensorModel;
+      // No deletion is needed because the resource is owned by the smart pointer 'model'.
       sensorModel = NULL;
     }
 
@@ -109,6 +109,7 @@ class FrameSensorModelLogging : public ::testing::Test {
 class OrbitalFrameSensorModel : public ::testing::Test {
  protected:
   csm::Isd isd;
+  std::shared_ptr<csm::Model> model;
   UsgsAstroFrameSensorModel *sensorModel;
 
   void SetUp() override {
@@ -117,18 +118,16 @@ class OrbitalFrameSensorModel : public ::testing::Test {
     isd.setFilename("data/orbitalFramer.img");
     UsgsAstroPlugin frameCameraPlugin;
 
-    csm::Model *model = frameCameraPlugin.constructModelFromISD(
-        isd, UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME);
-    sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+    model = std::shared_ptr<csm::Model>(frameCameraPlugin.constructModelFromISD(
+      isd, UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME));
+    sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model.get());
 
     ASSERT_NE(sensorModel, nullptr);
   }
 
   void TearDown() override {
-    if (sensorModel) {
-      delete sensorModel;
-      sensorModel = NULL;
-    }
+    // No deletion is needed because the resource is owned by the smart pointer 'model'.
+    sensorModel = NULL;
   }
 };
 
@@ -153,6 +152,7 @@ class FramerParameterizedTest
     : public ::testing::TestWithParam<csm::ImageCoord> {
  protected:
   csm::Isd isd;
+  std::shared_ptr<csm::Model> model;
 
   std::string printIsd(csm::Isd &localIsd) {
     std::string str;
@@ -166,11 +166,13 @@ class FramerParameterizedTest
   }
   UsgsAstroFrameSensorModel *createModel(csm::Isd &modifiedIsd) {
     UsgsAstroPlugin frameCameraPlugin;
-    csm::Model *model = frameCameraPlugin.constructModelFromISD(
-        modifiedIsd, UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME);
+    model = std::shared_ptr<csm::Model>(frameCameraPlugin.constructModelFromISD(
+      modifiedIsd, UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME));
 
+    // The object to which sensorModel points is managed by the smart pointer in 'model'.
+    // That one will be deleted when this test is over.
     UsgsAstroFrameSensorModel *sensorModel =
-        dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+      dynamic_cast<UsgsAstroFrameSensorModel *>(model.get());
 
     if (sensorModel)
       return sensorModel;
@@ -184,14 +186,16 @@ class FramerParameterizedTest
 class FrameStateTest : public ::testing::Test {
  protected:
   csm::Isd isd;
+
+  // This function will return a pointer which is managed by the caller
   UsgsAstroFrameSensorModel *createModifiedStateSensorModel(std::string key,
                                                             double newValue) {
     UsgsAstroPlugin cameraPlugin;
     csm::Model *model = cameraPlugin.constructModelFromISD(
-        isd, UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME);
+          isd, UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME);
 
     UsgsAstroFrameSensorModel *sensorModel =
-        dynamic_cast<UsgsAstroFrameSensorModel *>(model);
+      dynamic_cast<UsgsAstroFrameSensorModel *>(model);
     if (sensorModel) {
       sensorModel->getModelState();
       std::string modelState = sensorModel->getModelState();
@@ -213,6 +217,7 @@ class FrameStateTest : public ::testing::Test {
 class ConstVelocityLineScanSensorModel : public ::testing::Test {
  protected:
   csm::Isd isd;
+  std::shared_ptr<csm::Model> model;
   UsgsAstroLsSensorModel *sensorModel;
 
   void SetUp() override {
@@ -221,24 +226,24 @@ class ConstVelocityLineScanSensorModel : public ::testing::Test {
     isd.setFilename("data/constVelocityLineScan.img");
     UsgsAstroPlugin cameraPlugin;
 
-    csm::Model *model = cameraPlugin.constructModelFromISD(
-        isd, UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME);
-    sensorModel = dynamic_cast<UsgsAstroLsSensorModel *>(model);
+    model = std::shared_ptr<csm::Model>(cameraPlugin.constructModelFromISD(
+     isd, UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME));
+    sensorModel = dynamic_cast<UsgsAstroLsSensorModel *>(model.get());
 
     ASSERT_NE(sensorModel, nullptr);
   }
 
   void TearDown() override {
-    if (sensorModel) {
-      delete sensorModel;
+    // No deletion is necessary since the resource is managed by the smart pointer in 'model'
+    if (sensorModel)
       sensorModel = NULL;
-    }
   }
 };
 
 class OrbitalLineScanSensorModel : public ::testing::Test {
  protected:
   csm::Isd isd;
+  std::shared_ptr<csm::Model> model;
   UsgsAstroLsSensorModel *sensorModel;
 
   void SetUp() override {
@@ -247,18 +252,16 @@ class OrbitalLineScanSensorModel : public ::testing::Test {
     isd.setFilename("data/orbitalLineScan.img");
     UsgsAstroPlugin cameraPlugin;
 
-    csm::Model *model = cameraPlugin.constructModelFromISD(
-        isd, UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME);
-    sensorModel = dynamic_cast<UsgsAstroLsSensorModel *>(model);
-
+    model =  std::shared_ptr<csm::Model>(cameraPlugin.constructModelFromISD(
+      isd, UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME));
+    sensorModel = dynamic_cast<UsgsAstroLsSensorModel *>(model.get());
+    
     ASSERT_NE(sensorModel, nullptr);
   }
 
   void TearDown() override {
-    if (sensorModel) {
-      delete sensorModel;
-      sensorModel = NULL;
-    }
+    // The object that sensorModel points to is managed by the smart pointer 'model'.
+    sensorModel = NULL;
   }
 };
 
@@ -266,6 +269,7 @@ class FlippedOrbitalLineScanSensorModel : public ::testing::Test {
  protected:
   csm::Isd isd;
   UsgsAstroLsSensorModel *sensorModel;
+  std::shared_ptr<csm::Model> model;
 
   void SetUp() override {
     sensorModel = NULL;
@@ -273,18 +277,16 @@ class FlippedOrbitalLineScanSensorModel : public ::testing::Test {
     isd.setFilename("data/flippedOrbitalLineScan.img");
     UsgsAstroPlugin cameraPlugin;
 
-    csm::Model *model = cameraPlugin.constructModelFromISD(
-        isd, UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME);
-    sensorModel = dynamic_cast<UsgsAstroLsSensorModel *>(model);
+    model = std::shared_ptr<csm::Model>(cameraPlugin.constructModelFromISD(
+       isd, UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME));
+    sensorModel = dynamic_cast<UsgsAstroLsSensorModel *>(model.get());
 
     ASSERT_NE(sensorModel, nullptr);
   }
 
   void TearDown() override {
-    if (sensorModel) {
-      delete sensorModel;
-      sensorModel = NULL;
-    }
+    // The object that sensorModel points to is managed by the smart pointer 'model'
+    sensorModel = NULL;
   }
 };
 
@@ -293,6 +295,7 @@ class TwoLineScanSensorModels : public ::testing::Test {
   csm::Isd isd;
   UsgsAstroLsSensorModel *sensorModel1;
   UsgsAstroLsSensorModel *sensorModel2;
+  std::shared_ptr<csm::Model> model1, model2;
 
   void SetUp() override {
     sensorModel1 = nullptr;
@@ -301,26 +304,21 @@ class TwoLineScanSensorModels : public ::testing::Test {
     isd.setFilename("data/orbitalLineScan.img");
     UsgsAstroPlugin cameraPlugin;
 
-    csm::Model *model1 = cameraPlugin.constructModelFromISD(
-        isd, UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME);
-    sensorModel1 = dynamic_cast<UsgsAstroLsSensorModel *>(model1);
-    csm::Model *model2 = cameraPlugin.constructModelFromISD(
-        isd, UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME);
-    sensorModel2 = dynamic_cast<UsgsAstroLsSensorModel *>(model2);
+    model1 = std::shared_ptr<csm::Model>(cameraPlugin.constructModelFromISD(
+       isd, UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME));
+    sensorModel1 = dynamic_cast<UsgsAstroLsSensorModel *>(model1.get());
+    model2 = std::shared_ptr<csm::Model>(cameraPlugin.constructModelFromISD(
+      isd, UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME));
+    sensorModel2 = dynamic_cast<UsgsAstroLsSensorModel *>(model2.get());
 
     ASSERT_NE(sensorModel1, nullptr);
     ASSERT_NE(sensorModel2, nullptr);
   }
 
   void TearDown() override {
-    if (sensorModel1) {
-      delete sensorModel1;
-      sensorModel1 = nullptr;
-    }
-    if (sensorModel2) {
-      delete sensorModel2;
-      sensorModel2 = nullptr;
-    }
+    // Resource deallocation happens via the smart pointers
+    sensorModel1 = nullptr;
+    sensorModel2 = nullptr;
   }
 };
 
@@ -339,6 +337,7 @@ class SarSensorModel : public ::testing::Test {
  protected:
   csm::Isd isd;
   UsgsAstroSarSensorModel *sensorModel;
+  std::shared_ptr<csm::Model> model;
 
   void SetUp() override {
     sensorModel = NULL;
@@ -346,17 +345,15 @@ class SarSensorModel : public ::testing::Test {
     isd.setFilename("data/orbitalSar.img");
     UsgsAstroPlugin sarCameraPlugin;
 
-    csm::Model *model = sarCameraPlugin.constructModelFromISD(
-        isd, UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME);
-    sensorModel = dynamic_cast<UsgsAstroSarSensorModel *>(model);
+    model = std::shared_ptr<csm::Model>(sarCameraPlugin.constructModelFromISD(
+       isd, UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME));
+    sensorModel = dynamic_cast<UsgsAstroSarSensorModel *>(model.get());
     ASSERT_NE(sensorModel, nullptr);
   }
 
   void TearDown() override {
-    if (sensorModel) {
-      delete sensorModel;
-      sensorModel = NULL;
-    }
+    // The smart pointer will take care of dellocation
+    sensorModel = NULL;
   }
 };
 
@@ -372,11 +369,12 @@ class OrbitalPushFrameSensorModel : public ::testing::Test {
   void SetUp() override {
     isd.setFilename("data/orbitalPushFrame.img");
     UsgsAstroPlugin cameraPlugin;
+    
+    csm::Model * model = cameraPlugin.constructModelFromISD(
+       isd, UsgsAstroPushFrameSensorModel::_SENSOR_MODEL_NAME);
 
-    csm::Model *model = cameraPlugin.constructModelFromISD(
-        isd, UsgsAstroPushFrameSensorModel::_SENSOR_MODEL_NAME);
-    sensorModel = std::shared_ptr<UsgsAstroPushFrameSensorModel>(
-        dynamic_cast<UsgsAstroPushFrameSensorModel *>(model));
+    // sensorModel is a smart pointer so it will deallocate the data of 'model'
+    sensorModel = std::shared_ptr<UsgsAstroPushFrameSensorModel>(dynamic_cast<UsgsAstroPushFrameSensorModel *>(model));
 
     ASSERT_NE(sensorModel, nullptr);
   }

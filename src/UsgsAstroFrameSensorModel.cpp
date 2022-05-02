@@ -899,7 +899,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(
 
   MESSAGE_LOG("Constructing state from isd");
 
-  csm::WarningList *parsingWarnings = new csm::WarningList;
+  std::shared_ptr<csm::WarningList> parsingWarnings(new csm::WarningList);
 
   state["m_modelName"] = ale::getSensorModelName(parsedIsd);
   state["m_imageIdentifier"] = ale::getImageId(parsedIsd);
@@ -1115,17 +1115,12 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(
       warnings->insert(warnings->end(), parsingWarnings->begin(),
                        parsingWarnings->end());
     }
-    delete parsingWarnings;
-    parsingWarnings = nullptr;
     MESSAGE_LOG("ISD is invalid for creating the sensor model.");
 
     throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
                      "ISD is invalid for creating the sensor model.",
                      "UsgsAstroFrameSensorModel::constructStateFromIsd");
   }
-
-  delete parsingWarnings;
-  parsingWarnings = nullptr;
 
   return state.dump();
 }

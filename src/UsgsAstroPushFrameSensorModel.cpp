@@ -2061,7 +2061,7 @@ std::string UsgsAstroPushFrameSensorModel::constructStateFromIsd(
   MESSAGE_LOG("Constructing state from Isd")
   // Instantiate UsgsAstroLineScanner sensor model
   json jsonIsd = json::parse(imageSupportData);
-  csm::WarningList* parsingWarnings = new csm::WarningList;
+  std::shared_ptr<csm::WarningList> parsingWarnings(new csm::WarningList);
 
   state["m_modelName"] = ale::getSensorModelName(jsonIsd);
   state["m_imageIdentifier"] = ale::getImageId(jsonIsd);
@@ -2380,15 +2380,10 @@ std::string UsgsAstroPushFrameSensorModel::constructStateFromIsd(
       warnings->insert(warnings->end(), parsingWarnings->begin(),
                        parsingWarnings->end());
     }
-    delete parsingWarnings;
-    parsingWarnings = nullptr;
     throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
                      "ISD is invalid for creating the sensor model.",
                      "UsgsAstroFrameSensorModel::constructStateFromIsd");
   }
-
-  delete parsingWarnings;
-  parsingWarnings = nullptr;
 
   // The state data will still be updated when a sensor model is created since
   // some state data is not in the ISD and requires a SM to compute them.

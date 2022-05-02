@@ -42,28 +42,28 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
   json isd = json::parse(imageSupportData);
   json state = {};
 
-  csm::WarningList* parsingWarnings = new csm::WarningList;
+  std::shared_ptr<csm::WarningList> parsingWarnings(new csm::WarningList);
 
-  state["m_modelName"] = getSensorModelName(isd, parsingWarnings);
-  state["m_imageIdentifier"] = getImageId(isd, parsingWarnings);
-  state["m_sensorName"] = getSensorName(isd, parsingWarnings);
-  state["m_platformName"] = getPlatformName(isd, parsingWarnings);
+  state["m_modelName"] = getSensorModelName(isd, parsingWarnings.get());
+  state["m_imageIdentifier"] = getImageId(isd, parsingWarnings.get());
+  state["m_sensorName"] = getSensorName(isd, parsingWarnings.get());
+  state["m_platformName"] = getPlatformName(isd, parsingWarnings.get());
 
-  state["m_nLines"] = getTotalLines(isd, parsingWarnings);
-  state["m_nSamples"] = getTotalSamples(isd, parsingWarnings);
+  state["m_nLines"] = getTotalLines(isd, parsingWarnings.get());
+  state["m_nSamples"] = getTotalSamples(isd, parsingWarnings.get());
 
   // Zero computed state values
   state["m_referencePointXyz"] = vector<double>(3, 0.0);
 
   // sun_position and velocity are required for getIlluminationDirection
-  state["m_sunPosition"] = getSunPositions(isd, parsingWarnings);
-  state["m_sunVelocity"] = getSunVelocities(isd, parsingWarnings);
+  state["m_sunPosition"] = getSunPositions(isd, parsingWarnings.get());
+  state["m_sunVelocity"] = getSunVelocities(isd, parsingWarnings.get());
 
-  state["m_centerEphemerisTime"] = getCenterTime(isd, parsingWarnings);
-  state["m_startingEphemerisTime"] = getStartingTime(isd, parsingWarnings);
-  state["m_endingEphemerisTime"] = getEndingTime(isd, parsingWarnings);
+  state["m_centerEphemerisTime"] = getCenterTime(isd, parsingWarnings.get());
+  state["m_startingEphemerisTime"] = getStartingTime(isd, parsingWarnings.get());
+  state["m_endingEphemerisTime"] = getEndingTime(isd, parsingWarnings.get());
 
-  state["m_exposureDuration"] = getExposureDuration(isd, parsingWarnings);
+  state["m_exposureDuration"] = getExposureDuration(isd, parsingWarnings.get());
 
   try {
     state["m_dtEphem"] = isd.at("dt_ephemeris");
@@ -85,31 +85,31 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
                      "UsgsAstroSarSensorModel::constructStateFromIsd()"));
   }
 
-  state["m_positions"] = getSensorPositions(isd, parsingWarnings);
-  state["m_velocities"] = getSensorVelocities(isd, parsingWarnings);
+  state["m_positions"] = getSensorPositions(isd, parsingWarnings.get());
+  state["m_velocities"] = getSensorVelocities(isd, parsingWarnings.get());
 
   state["m_currentParameterValue"] = vector<double>(NUM_PARAMETERS, 0.0);
 
   // get radii
-  state["m_minorAxis"] = getSemiMinorRadius(isd, parsingWarnings);
-  state["m_majorAxis"] = getSemiMajorRadius(isd, parsingWarnings);
+  state["m_minorAxis"] = getSemiMinorRadius(isd, parsingWarnings.get());
+  state["m_majorAxis"] = getSemiMajorRadius(isd, parsingWarnings.get());
 
   // set identifiers
-  state["m_platformIdentifier"] = getPlatformName(isd, parsingWarnings);
-  state["m_sensorIdentifier"] = getSensorName(isd, parsingWarnings);
+  state["m_platformIdentifier"] = getPlatformName(isd, parsingWarnings.get());
+  state["m_sensorIdentifier"] = getSensorName(isd, parsingWarnings.get());
 
   // get reference_height
   state["m_minElevation"] = -1000;
   state["m_maxElevation"] = 1000;
 
   // SAR specific values
-  state["m_scaledPixelWidth"] = getScaledPixelWidth(isd, parsingWarnings);
+  state["m_scaledPixelWidth"] = getScaledPixelWidth(isd, parsingWarnings.get());
   state["m_scaleConversionCoefficients"] =
-      getScaleConversionCoefficients(isd, parsingWarnings);
+      getScaleConversionCoefficients(isd, parsingWarnings.get());
   state["m_scaleConversionTimes"] =
-      getScaleConversionTimes(isd, parsingWarnings);
-  state["m_wavelength"] = getWavelength(isd, parsingWarnings);
-  state["m_lookDirection"] = getLookDirection(isd, parsingWarnings);
+      getScaleConversionTimes(isd, parsingWarnings.get());
+  state["m_wavelength"] = getWavelength(isd, parsingWarnings.get());
+  state["m_lookDirection"] = getLookDirection(isd, parsingWarnings.get());
 
   // Default to identity covariance
   state["m_covariance"] = vector<double>(NUM_PARAMETERS * NUM_PARAMETERS, 0.0);
@@ -127,15 +127,10 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
     csm::Warning warn = parsingWarnings->front();
     message += warn.getMessage();
     message += "]";
-    parsingWarnings = nullptr;
-    delete parsingWarnings;
     MESSAGE_LOG(message);
     throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE, message,
                      "UsgsAstroSarSensorModel::constructStateFromIsd");
   }
-
-  delete parsingWarnings;
-  parsingWarnings = nullptr;
 
   // The state data will still be updated when a sensor model is created since
   // some state data is not in the ISD and requires a SM to compute them.
