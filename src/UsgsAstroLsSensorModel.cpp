@@ -1270,7 +1270,8 @@ csm::EcefCoord UsgsAstroLsSensorModel::getSensorPosition(
 //***************************************************************************
 csm::EcefCoord UsgsAstroLsSensorModel::getSensorPosition(double time) const {
   double x, y, z, vx, vy, vz;
-  getAdjSensorPosVel(time, _no_adjustment, x, y, z, vx, vy, vz);
+  bool calc_vel = false;
+  getAdjSensorPosVel(time, _no_adjustment, x, y, z, vx, vy, vz, calc_vel);
 
   MESSAGE_LOG("getSensorPosition at {}", time)
 
@@ -1723,10 +1724,11 @@ void UsgsAstroLsSensorModel::losToEcf(
   MESSAGE_LOG(
       "Computing losToEcf (with adjustments) for"
       "line {} sample {}",
-      line, sample)
+      line, sample);
 
   double time = getImageTime(csm::ImageCoord(line, sample));
-  getAdjSensorPosVel(time, adj, xc, yc, zc, vx, vy, vz);
+  bool calc_vel = false;
+  getAdjSensorPosVel(time, adj, xc, yc, zc, vx, vy, vz, calc_vel);
   // CSM image image convention: UL pixel center == (0.5, 0.5)
   // USGS image convention: UL pixel center == (1.0, 1.0)
   double sampleCSMFull = sample;
@@ -1929,7 +1931,8 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(const double& time,
                                                 const std::vector<double>& adj,
                                                 double& xc, double& yc,
                                                 double& zc, double& vx,
-                                                double& vy, double& vz) const {
+                                                double& vy, double& vz,
+                                                bool calc_vel) const {
   MESSAGE_LOG("Calculating getAdjSensorPosVel at time {}", time)
 
   // Sensor position and velocity (4th or 8th order Lagrange).
@@ -1938,6 +1941,25 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(const double& time,
   double sensPosNom[3];
   lagrangeInterp(m_numPositions / 3, &m_positions[0], m_t0Ephem, m_dtEphem,
                  time, 3, nOrder, sensPosNom);
+
+  // Avoid computing the velocity and adjustments, if not needed, as those
+  // take up at least half of this function's time.
+  bool has_adj = false;
+  for (size_t it = 0; it < adj.size(); it++) {
+    if (adj[it] != 0) {
+      has_adj = true;
+    }
+  }
+  if (!has_adj && !calc_vel) {
+    xc = sensPosNom[0];
+    yc = sensPosNom[1];
+    zc = sensPosNom[2];
+    vx = 0.0;
+    vy = 0.0;
+    vz = 0.0;
+    return;
+  }
+  
   double sensVelNom[3];
   lagrangeInterp(m_numPositions / 3, &m_velocities[0], m_t0Ephem, m_dtEphem,
                  time, 3, nOrder, sensVelNom);
@@ -2015,14 +2037,15 @@ std::vector<double> UsgsAstroLsSensorModel::computeDetectorView(
   MESSAGE_LOG(
       "Computing computeDetectorView (with adjusments)"
       "for ground point {} {} {} at time {} ",
-      groundPoint.x, groundPoint.y, groundPoint.z, time)
+      groundPoint.x, groundPoint.y, groundPoint.z, time);
 
   // Helper function to compute the CCD pixel that views a ground point based
   // on the exterior orientation at a given time.
 
   // Get the exterior orientation
   double xc, yc, zc, vx, vy, vz;
-  getAdjSensorPosVel(time, adj, xc, yc, zc, vx, vy, vz);
+  bool calc_vel = false;
+  getAdjSensorPosVel(time, adj, xc, yc, zc, vx, vy, vz, calc_vel);
 
   // Compute the look vector
   double bodyLookX = groundPoint.x - xc;

@@ -956,7 +956,7 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
   // determines the sensor velocity accounting for parameter adjustments.
   void getAdjSensorPosVel(const double& time, const std::vector<double>& adj,
                           double& xc, double& yc, double& zc, double& vx,
-                          double& vy, double& vz) const;
+                          double& vy, double& vz, bool calc_vel = true) const;
 
   // Computes the imaging locus that would view a ground point at a specific
   // time. Computationally, this is the opposite of losToEcf.
