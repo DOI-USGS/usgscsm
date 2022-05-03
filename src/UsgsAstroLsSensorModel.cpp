@@ -20,6 +20,7 @@
 #include "UsgsAstroLsSensorModel.h"
 #include "Distortion.h"
 #include "Utilities.h"
+#include "EigenUtilities.h"
 
 #include <float.h>
 #include <math.h>
@@ -270,9 +271,10 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string& stateString) {
   }
 
   try {
-    setLinearApproximation();
+    //createLinearApproximation();
+    createProjectiveApproximation(); // this fits the points better
   } catch (...) {
-    _linear = false;
+    m_useApproxInitTrans = false;
   }
 }
 
@@ -478,7 +480,7 @@ void UsgsAstroLsSensorModel::applyTransformToState(ale::Rotation const& r, ale::
 //***************************************************************************
 void UsgsAstroLsSensorModel::reset() {
   MESSAGE_LOG("Running reset()")
-  _linear = false;  // default until a linear model is made
+  m_useApproxInitTrans = false;  // default until an initial approximation is found
   _u0 = 0.0;
   _du_dx = 0.0;
   _du_dy = 0.0;
@@ -680,7 +682,8 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
     csm::WarningList* warnings) const {
   
   csm::ImageCoord approxPt;
-  computeLinearApproximation(groundPt, approxPt);
+  //computeLinearApproximation(groundPt, approxPt);
+  computeProjectiveApproximation(groundPt, approxPt);
 
   // Search for the (line, sample) coordinate that views a given
   // ground point. Set this up as a root-finding problem and use the
@@ -688,7 +691,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
   int count = 0;
   double t0 = 0.0;
   double lineErr0 = calcDetectorLineErr(t0, approxPt, groundPt, adj);
-  double t1 = lineErr0 * 0.1; // need to stay close or else there's overshooting
+  double t1 = 0.1;
   double lineErr1 = calcDetectorLineErr(t1, approxPt, groundPt, adj);
   while (std::abs(lineErr1) > desiredPrecision && ++count < 15) {
 
@@ -2115,7 +2118,7 @@ std::vector<double> UsgsAstroLsSensorModel::computeDetectorView(
 //***************************************************************************
 void UsgsAstroLsSensorModel::computeLinearApproximation(
     const csm::EcefCoord& gp, csm::ImageCoord& ip) const {
-  if (_linear) {
+  if (m_useApproxInitTrans) {
     ip.line = _u0 + _du_dx * gp.x + _du_dy * gp.y + _du_dz * gp.z;
     ip.samp = _v0 + _dv_dx * gp.x + _dv_dy * gp.y + _dv_dz * gp.z;
 
@@ -2136,15 +2139,121 @@ void UsgsAstroLsSensorModel::computeLinearApproximation(
     ip.samp = m_nSamples / 2.0;
     MESSAGE_LOG(
         "Computing computeLinearApproximation"
-        "nonlinear approx line/2 and sample/2")
+        "constant approx line/2 and sample/2")
   }
 }
 
 //***************************************************************************
-// UsgsAstroLineScannerSensorModel::setLinearApproximation
+// UsgsAstroLineScannerSensorModel::computeProjectiveApproximation
 //***************************************************************************
-void UsgsAstroLsSensorModel::setLinearApproximation() {
-  MESSAGE_LOG("Calculating setLinearApproximation")
+void UsgsAstroLsSensorModel::computeProjectiveApproximation(const csm::EcefCoord& gp,
+                                                            csm::ImageCoord& ip) const {
+  if (m_useApproxInitTrans) {
+    std::vector<double> const& u = m_projTransCoeffs; // alias, to save on typing
+
+    double x = gp.x, y = gp.y, z = gp.z;
+    double line_den = 1 + u[4]  * x + u[5]  * y + u[6]  * z;
+    double samp_den = 1 + u[11] * x + u[12] * y + u[13] * z;
+
+    // Sanity checks. Ensure we don't divide by 0 and that the numbers are valid.
+    if (line_den == 0.0 || std::isnan(line_den) || std::isinf(line_den) ||
+        samp_den == 0.0 || std::isnan(samp_den) || std::isinf(samp_den)) {
+      
+      ip.line = m_nLines / 2.0;
+      ip.samp = m_nSamples / 2.0;
+      MESSAGE_LOG("Computing initial guess with constant approx line/2 and sample/2");
+
+      return;
+    }
+
+    // Apply the formula
+    ip.line = (u[0] + u[1] * x + u[2] * y + u[3]  * z) / line_den;
+    ip.samp = (u[7] + u[8] * x + u[9] * y + u[10] * z) / samp_den;
+
+    // Since this is valid only over the image,
+    // don't let the result go beyond the image border.
+    double numRows = m_nLines;
+    double numCols = m_nSamples;
+    if (ip.line < 0.0) ip.line = 0.0;
+    if (ip.line > numRows) ip.line = numRows;
+
+    if (ip.samp < 0.0) ip.samp = 0.0;
+    if (ip.samp > numCols) ip.samp = numCols;
+    
+    MESSAGE_LOG("Computing initial guess with projective approximation");
+  } else {
+    ip.line = m_nLines / 2.0;
+    ip.samp = m_nSamples / 2.0;
+    MESSAGE_LOG("Computing initial guess with constant approx line/2 and sample/2");
+  }
+}
+
+//***************************************************************************
+// UsgsAstroLineScannerSensorModel::createProjectiveApproximation
+//***************************************************************************
+void UsgsAstroLsSensorModel::createProjectiveApproximation() {
+  MESSAGE_LOG("Calculating createProjectiveApproximation");
+
+  // Use 9 points (9*4 eventual matrix rows) as we need to fit 14 variables.
+  const int numPts = 9;
+  double u_factors[numPts] = {0.0, 0.0, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0};
+  double v_factors[numPts] = {0.0, 0.5, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 1.0};
+
+  csm::EcefCoord refPt = getReferencePoint();
+
+  double desired_precision = 0.01;
+  double height = computeEllipsoidElevation(
+      refPt.x, refPt.y, refPt.z, m_majorAxis, m_minorAxis, desired_precision);
+  if (std::isnan(height)) {
+    MESSAGE_LOG(
+        "createProjectiveApproximation: computeElevation of"
+        "reference point {} {} {} with desired precision"
+        "{} returned nan height; nonprojective",
+        refPt.x, refPt.y, refPt.z, desired_precision)
+    m_useApproxInitTrans = false;
+    return;
+  }
+  MESSAGE_LOG(
+      "createProjectiveApproximation: computeElevation of"
+      "reference point {} {} {} with desired precision"
+      "{} returned {} height",
+      refPt.x, refPt.y, refPt.z, desired_precision, height)
+
+  double numImageRows = m_nLines;
+  double numImageCols = m_nSamples;
+
+  std::vector<csm::ImageCoord> ip(2 * numPts);
+  std::vector<csm::EcefCoord>  gp(2 * numPts);
+
+  // Sample at two heights above the ellipsoid in order to get a
+  // reliable estimate of the relationship between image points and
+  // ground points.
+  
+  for (int i = 0; i < numPts; i++) {
+    ip[i].line = u_factors[i] * numImageRows;
+    ip[i].samp = v_factors[i] * numImageCols;
+    gp[i]      = imageToGround(ip[i], height);
+  }
+
+  double delta_z = 100.0;
+  height += delta_z;
+  for (int i = 0; i < numPts; i++) {
+    ip[i + numPts].line = u_factors[i] * numImageRows;
+    ip[i + numPts].samp = v_factors[i] * numImageCols;
+    gp[i + numPts]      = imageToGround(ip[i + numPts], height);
+  }
+
+  usgscsm::computeBestFitProjectiveTransform(ip, gp, m_projTransCoeffs);
+  m_useApproxInitTrans = true;
+  
+  MESSAGE_LOG("Completed createProjectiveApproximation");
+}
+
+//***************************************************************************
+// UsgsAstroLineScannerSensorModel::createLinearApproximation
+//***************************************************************************
+void UsgsAstroLsSensorModel::createLinearApproximation() {
+  MESSAGE_LOG("Calculating createLinearApproximation")
   double u_factors[4] = {0.0, 0.0, 1.0, 1.0};
   double v_factors[4] = {0.0, 1.0, 0.0, 1.0};
 
@@ -2155,15 +2264,15 @@ void UsgsAstroLsSensorModel::setLinearApproximation() {
       refPt.x, refPt.y, refPt.z, m_majorAxis, m_minorAxis, desired_precision);
   if (std::isnan(height)) {
     MESSAGE_LOG(
-        "setLinearApproximation: computeElevation of"
+        "createLinearApproximation: computeElevation of"
         "reference point {} {} {} with desired precision"
         "{} returned nan height; nonlinear",
         refPt.x, refPt.y, refPt.z, desired_precision)
-    _linear = false;
+    m_useApproxInitTrans = false;
     return;
   }
   MESSAGE_LOG(
-      "setLinearApproximation: computeElevation of"
+      "createLinearApproximation: computeElevation of"
       "reference point {} {} {} with desired precision"
       "{} returned {} height",
       refPt.x, refPt.y, refPt.z, desired_precision, height)
@@ -2181,8 +2290,8 @@ void UsgsAstroLsSensorModel::setLinearApproximation() {
     gp[i] = imageToGround(imagePt, height);
   }
 
-  double delz = 100.0;
-  height += delz;
+  double delta_z = 100.0;
+  height += delta_z;
   for (i = 0; i < 4; i++) {
     imagePt.line = u_factors[i] * numRows;
     imagePt.samp = v_factors[i] * numCols;
@@ -2228,10 +2337,10 @@ void UsgsAstroLsSensorModel::setLinearApproximation() {
   // Can not get derivatives this way
   if (fabs(denom) < 1.0e-8) {
     MESSAGE_LOG(
-        "setLinearApproximation: determinant3x3 of"
+        "createLinearApproximation: determinant3x3 of"
         "matrix of partials is {}; nonlinear",
         denom)
-    _linear = false;
+    m_useApproxInitTrans = false;
     return;
   }
 
@@ -2272,8 +2381,8 @@ void UsgsAstroLsSensorModel::setLinearApproximation() {
   _u0 = -gp[0].x * _du_dx - gp[0].y * _du_dy - gp[0].z * _du_dz;
   _v0 = -gp[0].x * _dv_dx - gp[0].y * _dv_dy - gp[0].z * _dv_dz;
 
-  _linear = true;
-  MESSAGE_LOG("Completed setLinearApproximation")
+  m_useApproxInitTrans = true;
+  MESSAGE_LOG("Completed createLinearApproximation")
 }
 
 //***************************************************************************

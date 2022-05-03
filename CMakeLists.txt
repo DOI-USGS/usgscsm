@@ -32,6 +32,9 @@ if(USGSCSM_EXTERNAL_DEPS)
   # Nlohmann JSON
   find_package(nlohmann_json REQUIRED)
 
+  # Eigen
+  find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+   
   # ALE
   find_package(ale REQUIRED)
   set(ALE_TARGET ale::ale)
@@ -53,8 +56,11 @@ else()
   set(ALE_BUILD_TESTS OFF)
   add_subdirectory(ale)
   set(ALE_TARGET ale)
-endif(USGSCSM_EXTERNAL_DEPS)
 
+  # Use Eigen included with ALE
+  add_library (Eigen3::Eigen ALIAS eigen)
+  set(EIGEN3_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ale/eigen)
+endif(USGSCSM_EXTERNAL_DEPS)
 
 add_library(usgscsm SHARED
             src/UsgsAstroPlugin.cpp
@@ -63,7 +69,8 @@ add_library(usgscsm SHARED
             src/UsgsAstroLsSensorModel.cpp
             src/UsgsAstroSarSensorModel.cpp
             src/Distortion.cpp
-            src/Utilities.cpp)
+            src/Utilities.cpp
+            src/EigenUtilities.cpp)
 
 set_target_properties(usgscsm PROPERTIES
     VERSION ${PROJECT_VERSION}
@@ -71,7 +78,8 @@ set_target_properties(usgscsm PROPERTIES
 )
 
 set(USGSCSM_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include/usgscsm"
-                         "${CMAKE_CURRENT_SOURCE_DIR}/include/")
+                         "${CMAKE_CURRENT_SOURCE_DIR}/include"
+                         "${EIGEN3_INCLUDE_DIR}")
 
 target_include_directories(usgscsm
                            PUBLIC
