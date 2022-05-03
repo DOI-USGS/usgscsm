@@ -56,18 +56,6 @@ void usgscsm::computeBestFitProjectiveTransform(std::vector<csm::ImageCoord> con
   // https://eigen.tuxfamily.org/dox/group__LeastSquares.html
   Eigen::VectorXd u = M.colPivHouseholderQr().solve(b);
 
-#if 0
-  // Verification
-  for (int it = 0; it < numPts; it++) {
-
-    double x = groundPts[it].x, y = groundPts[it].y, z = groundPts[it].z;
-    double r = imagePts[it].line, c = imagePts[it].samp;
- 
-    double r2 = (u[0] + u[1] * x + u[2] * y + u[3]  * z) / (1 + u[4]  * x + u[5]  * y + u[6]  * z);
-    double c2 = (u[7] + u[8] * x + u[9] * y + u[10] * z) / (1 + u[11] * x + u[12] * y + u[13] * z);
-  }
-#endif
-  
   // Copy back the result to a standard vector (to avoid using Eigen too much as
   // that is slow to compile).
   transformCoeffs.resize(numMatCols);
