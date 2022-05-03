@@ -8,8 +8,8 @@
 
 namespace usgscsm {
   
-// Compute the best-fitting projective transform that maps ground
-// points to image points.
+// Compute the best-fitting projective transform that maps a set of 3D points
+// to 2D points.
 void computeBestFitProjectiveTransform(std::vector<csm::ImageCoord> const& imagePts,
                                        std::vector<csm::EcefCoord>  const& groundPts,
                                        std::vector<double> & transformCoeffs);

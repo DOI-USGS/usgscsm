@@ -1,6 +1,6 @@
 #include "EigenUtilities.h"
 
-#include <csm/Error.h>
+#include <Error.h>
 #include <Eigen/Dense>
 
 #include <iostream>
@@ -8,8 +8,9 @@
 // Keep these utilities separate as using Eigen in an existing source
 // file results in a 50% increase in compilation time.
 
-// Compute the best-fitting projective transform that maps ground
-// points to image points.
+// Compute the best-fitting projective transform that maps a set of 3D points
+// to 2D points.
+// A best-fit linear transform could be created by eliminating the denominators below.
 void usgscsm::computeBestFitProjectiveTransform(std::vector<csm::ImageCoord> const& imagePts,
                                                 std::vector<csm::EcefCoord>  const& groundPts,
                                                 std::vector<double> & transformCoeffs) {
@@ -41,6 +42,8 @@ void usgscsm::computeBestFitProjectiveTransform(std::vector<csm::ImageCoord> con
  
     // (u0 + u1 * x + u2 * y + u3  * z) / (1 + u4  * x + u5  * y + u6  * z) = r
     // (u7 + u8 * x + u9 * y + u10 * z) / (1 + u11 * x + u12 * y + u13 * z) = c
+
+    // Multiply by the denominators. Get a linear regression in the coefficients.
     
     M.row(2 * it + 0) << 1, x, y, z, -x * r, -y * r, -z * r, 0, 0, 0, 0, 0, 0, 0;
     M.row(2 * it + 1) << 0, 0, 0, 0, 0, 0, 0, 1, x, y, z, -x * c, -y * c, -z * c;
