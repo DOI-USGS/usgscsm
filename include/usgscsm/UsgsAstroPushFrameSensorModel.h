@@ -945,6 +945,12 @@ class UsgsAstroPushFrameSensorModel : public csm::RasterGM,
                             const csm::EcefCoord& groundPt,
                             const std::vector<double>& adj) const;
 
+  // Computes the line distance from the center of a frame to the image point
+  // that a ground point reprojects to at that frame.
+  double calcFrameDistance(int frameletNumber,
+                           const csm::EcefCoord& groundPt,
+                           const std::vector<double>& adj) const;
+
   csm::NoCorrelationModel _no_corr_model;  // A way to report no correlation
                                            // between images is supported
   std::vector<double>

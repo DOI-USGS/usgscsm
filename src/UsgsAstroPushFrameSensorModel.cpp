@@ -667,30 +667,24 @@ csm::ImageCoord UsgsAstroPushFrameSensorModel::groundToImage(
     double desiredPrecision, double* achievedPrecision,
     csm::WarningList* warnings) const {
 
-  // Binary search for the framelet that is closest to the given ground point.
+  // Secant search for the where the ground point is closest to the middle of the framelet.
   int summedFrameletHeight = m_frameletHeight / m_detectorLineSumming;
   int startFramelet = 0;
-  double startDistance = calcSensorDistance(startFramelet, groundPt, adj);
+  double startDistance = calcFrameDistance(startFramelet, groundPt, adj);
   int endFramelet = m_nLines / summedFrameletHeight - 1;
-  double endDistance = calcSensorDistance(endFramelet, groundPt, adj);
-  int maxIts = 20; // Caps out at ~1 million framelets
+  double endDistance = calcFrameDistance(endFramelet, groundPt, adj);
+  int maxIts = 20;
   int count = 0;
-  while(startFramelet != endFramelet && count < maxIts) {
-    int middleFramelet = (endFramelet + startFramelet) / 2;
-    double middleDistance = calcSensorDistance(middleFramelet, groundPt, adj);
-    if (endDistance < startDistance) {
-      startFramelet = middleFramelet;
-      startDistance = middleDistance;
-    }
-    else {
-      endFramelet = middleFramelet;
-      endDistance = middleDistance;
-    }
-    count++;
+  while(startFramelet != endFramelet && startDistance != endDistance && count++ < maxIts) {
+    double offset = endDistance * (endFramelet - startFramelet) / (endDistance - startDistance);
+    startFramelet = endFramelet;
+    startDistance = endDistance;
+    endFramelet = std::round(endFramelet - offset);
+    endDistance = calcFrameDistance(endFramelet, groundPt, adj);
   }
 
   // Get the focal plane coordinate at that framelet
-  double time = getImageTime(csm::ImageCoord(0.5 + summedFrameletHeight * startFramelet, 0.0));
+  double time = getImageTime(csm::ImageCoord(0.5 + summedFrameletHeight * endFramelet, 0.0));
   std::vector<double> focalCoord = computeDetectorView(time, groundPt, adj);
 
   // Invert distortion
@@ -707,7 +701,7 @@ csm::ImageCoord UsgsAstroPushFrameSensorModel::groundToImage(
 
   // Convert to image sample line
   csm::ImageCoord imagePt;
-  imagePt.line = startFramelet * summedFrameletHeight;
+  imagePt.line = endFramelet * summedFrameletHeight;
   imagePt.line += (detectorLine + m_detectorLineOrigin - m_startingDetectorLine)
                 / m_detectorLineSumming;
   imagePt.samp = (detectorSample + m_detectorSampleOrigin - m_startingDetectorSample)
@@ -716,6 +710,10 @@ csm::ImageCoord UsgsAstroPushFrameSensorModel::groundToImage(
   if (achievedPrecision) {
     *achievedPrecision = desiredPrecision;
   }
+
+  MESSAGE_LOG(
+      "Found image point {} {}",
+      imagePt.line, imagePt.samp);
 
   return imagePt;
 }
@@ -2452,5 +2450,28 @@ double UsgsAstroPushFrameSensorModel::calcSensorDistance(int frameletNumber,
   double dist = norm(sensorToGround);
   MESSAGE_LOG("Calculated distance is {}", dist);
   return dist;
+}
+
+
+double UsgsAstroPushFrameSensorModel::calcFrameDistance(int frameletNumber,
+                                                        const csm::EcefCoord& groundPt,
+                                                        const std::vector<double>& adj) const {
+  MESSAGE_LOG("Calculating frame distance for frame {} and ground point {}, {}, {}",
+              frameletNumber, groundPt.x, groundPt.y, groundPt.z)
+  int summedFrameletHeight = m_frameletHeight / m_detectorLineSumming;
+  csm::ImageCoord centerFramePt((frameletNumber + 0.5) * summedFrameletHeight, m_nSamples/2.0);
+
+  double frameTime = getImageTime(centerFramePt);
+  std::vector<double> detectorView = computeDetectorView(frameTime, groundPt, adj);
+
+  // Convert to detector line
+  double detectorLine = m_iTransL[0] + m_iTransL[1] * detectorView[0] +
+    m_iTransL[2] * detectorView[1] + m_detectorLineOrigin -
+    m_startingDetectorLine;
+  detectorLine /= m_detectorLineSumming;
+
+  // Return distance to center of frame
+  MESSAGE_LOG("Frame distance of {} lines", detectorLine - summedFrameletHeight/2.0)
+  return detectorLine - summedFrameletHeight/2.0;
 }
 
