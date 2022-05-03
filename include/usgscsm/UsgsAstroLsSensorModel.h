@@ -968,16 +968,13 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
       const std::vector<double>& adj)      // Parameter Adjustments for partials
       const;
 
-  // The linear approximation for the sensor model is used as the starting point
+  // The projective approximation for the sensor model is used as the starting point
   // for iterative rigorous calculations.
-  void computeLinearApproximation(const csm::EcefCoord& gp,
-                                  csm::ImageCoord& ip) const;
-
-  // Initial setup of the linear approximation
-  void setLinearApproximation();
-
-  // Compute the determinant of a 3x3 matrix
-  double determinant3x3(double mat[9]) const;
+  void computeProjectiveApproximation(const csm::EcefCoord& gp,
+                                      csm::ImageCoord& ip) const;
+  
+  // Create the projective approximation to be used at each ground point
+  void createProjectiveApproximation();
   
   // A function whose value will be 0 when the line a given ground
   // point projects into is found. The obtained line will be
@@ -988,19 +985,13 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
   
   csm::NoCorrelationModel _no_corr_model;  // A way to report no correlation
                                            // between images is supported
-  std::vector<double>
-      _no_adjustment;  // A vector of zeros indicating no internal adjustment
+  std::vector<double> _no_adjustment;  // A vector of zeros indicating no internal adjustment
 
-  // The following support the linear approximation of the sensor model
-  double _u0;
-  double _du_dx;
-  double _du_dy;
-  double _du_dz;
-  double _v0;
-  double _dv_dx;
-  double _dv_dy;
-  double _dv_dz;
-  bool _linear;  // flag indicating if linear approximation is useful.
+  // Store here the projective approximation of the sensor model
+  std::vector<double> m_projTransCoeffs; 
+
+  // Flag indicating if an initial approximation is used
+  bool m_useApproxInitTrans;
 };
 
 #endif  // INCLUDE_USGSCSM_USGSASTROLSSENSORMODEL_H_
