@@ -72,10 +72,10 @@ TEST_F(SarSensorModel, State) {
   json oldJson = stateAsJson(modelState);
   json newJson = stateAsJson(newModelState);
   std::vector<std::string> differences = compareJson(oldJson, newJson);
-  EXPECT_TRUE(differences.empty());
   for (std::string &difference : differences) {
     std::cerr << difference << std::endl;
   }
+  EXPECT_TRUE(differences.empty());
 }
 
 TEST_F(SarSensorModel, Center) {
