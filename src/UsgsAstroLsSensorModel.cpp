@@ -1215,10 +1215,11 @@ std::string UsgsAstroLsSensorModel::getReferenceDateAndTime() const {
   struct tm t = {0};  // Initalize to all 0's
   t.tm_year = 100;    // This is year-1900, so 100 = 2000
   t.tm_mday = 1;
+  t.tm_isdst = 0;     // Explicitly set no daylight savings time
   time_t timeSinceEpoch = mktime(&t);
   time_t finalTime = ephemTime + timeSinceEpoch;
   char buffer[22];
-  strftime(buffer, 22, "%Y-%m-%dT%H:%M:%SZ", gmtime(&finalTime));
+  strftime(buffer, 22, "%Y-%m-%dT%H:%M:%SZ", localtime(&finalTime));
   buffer[21] = '\0';
 
   return buffer;
