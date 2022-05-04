@@ -1124,18 +1124,15 @@ string UsgsAstroSarSensorModel::getSensorMode() const { return "STRIP"; }
 
 string UsgsAstroSarSensorModel::getReferenceDateAndTime() const {
   csm::ImageCoord referencePointImage = groundToImage(m_referencePointXyz);
-  double relativeTime = getImageTime(referencePointImage);
+  double relativeTime =
+    UsgsAstroSarSensorModel::getImageTime(referencePointImage);
   time_t ephemTime = m_centerEphemerisTime + relativeTime;
-  struct tm t = {0};  // Initalize to all 0's
-  t.tm_year = 100;    // This is year-1900, so 100 = 2000
-  t.tm_mday = 1;
-  t.tm_isdst = 1;     // Explicitly set daylight savings time
-  time_t timeSinceEpoch = mktime(&t);
-  time_t finalTime = ephemTime + timeSinceEpoch;
-  char buffer[22];
-  strftime(buffer, 22, "%Y-%m-%dT%H:%M:%SZ", localtime(&finalTime));
-  buffer[21] = '\0';
 
+  time_t y2k = 946684800; // January 1, 2000 12:00:00 AM GMT
+  time_t finalTime = ephemTime + y2k;
+  char buffer[22];
+  strftime(buffer, 22, "%Y-%m-%dT%H:%M:%SZ", gmtime(&finalTime));
+  buffer[21] = '\0';
   return buffer;
 }
 
