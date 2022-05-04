@@ -5,6 +5,7 @@
 #include <stack>
 #include <stdexcept>
 #include <utility>
+#include <ctime>
 
 #include "ale/Distortion.h"
 
