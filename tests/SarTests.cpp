@@ -48,10 +48,9 @@ std::vector<std::string> compareJson(json &leftJson, json &rightJson) {
 }
 
 TEST_F(SarSensorModel, stateFromIsd) {
-  std::ifstream isdFile("data/orbitalSar.json");
-  json isdJson;
-  isdFile >> isdJson;
-  std::string isdString = isdJson.dump();
+  csm::Isd("data/orbitalSar.json");
+  UsgsAstroPlugin plugin;
+  std::string isdString = plugin.loadImageSupportData(isd);
   csm::WarningList warnings;
   std::string stateString;
   try {
@@ -70,8 +69,8 @@ TEST_F(SarSensorModel, State) {
   std::string modelState = sensorModel->getModelState();
   EXPECT_NO_THROW(sensorModel->replaceModelState(modelState));
   std::string newModelState = sensorModel->getModelState();
-  json oldJson = json::parse(modelState);
-  json newJson = json::parse(newModelState);
+  json oldJson = stateAsJson(modelState);
+  json newJson = stateAsJson(newModelState);
   std::vector<std::string> differences = compareJson(oldJson, newJson);
   EXPECT_TRUE(differences.empty());
   for (std::string &difference : differences) {
@@ -82,13 +81,13 @@ TEST_F(SarSensorModel, State) {
 TEST_F(SarSensorModel, Center) {
   csm::ImageCoord imagePt(500.0, 500.0);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-  EXPECT_NEAR(groundPt.x, 1737387.8671710272, 1e-3);
-  EXPECT_NEAR(groundPt.y, -5300.6282306119301, 1e-3);
-  EXPECT_NEAR(groundPt.z, -3749.9796183814506, 1e-3);
+  EXPECT_NEAR(groundPt.x, -1520427.2924246688, 1e-3);
+  EXPECT_NEAR(groundPt.y, -450240.98096817418, 1e-3);
+  EXPECT_NEAR(groundPt.z, 710030.04690435971,  1e-3);
 }
 
 TEST_F(SarSensorModel, GroundToImage) {
-  csm::EcefCoord groundPt(1737387.8671710272, -5300.6282306119301, -3749.9796358514604);
+  csm::EcefCoord groundPt(-1520427.2924246688, -450240.98096817418, 710030.04690435971);
   csm::ImageCoord imagePt = sensorModel->groundToImage(groundPt, 0.001);
   EXPECT_NEAR(imagePt.line, 500.0, 1e-3);
   EXPECT_NEAR(imagePt.samp, 500.0, 1e-3);
@@ -96,36 +95,37 @@ TEST_F(SarSensorModel, GroundToImage) {
 
 TEST_F(SarSensorModel, spacecraftPosition) {
   csm::EcefVector position = sensorModel->getSpacecraftPosition(-0.0025);
-  EXPECT_NEAR(position.x, 3.73740000e+06, 1e-8);
-  EXPECT_NEAR(position.y, 0.00000000e+00, 1e-8);
-  EXPECT_NEAR(position.z, 0.00000000e+00, 1e-8);
+  EXPECT_NEAR(position.x, 212048065766.25,  1e-8);
+  EXPECT_NEAR(position.y, 64616398201.375,  1e-8);
+  EXPECT_NEAR(position.z, 488643469101.125, 1e-8);
 }
 
 TEST_F(SarSensorModel, spacecraftVelocity) {
   csm::EcefVector velocity = sensorModel->getSensorVelocity(-0.0025);
-  EXPECT_NEAR(velocity.x, 0.00000000e+00, 1e-8);
-  EXPECT_NEAR(velocity.y, 0.00000000e+00, 1e-8);
-  EXPECT_NEAR(velocity.z, -3.73740000e+06, 1e-8);
+  EXPECT_NEAR(velocity.x, -427443125.77587891, 1e-8);
+  EXPECT_NEAR(velocity.y, -144589932.36868286, 1e-8);
+  EXPECT_NEAR(velocity.z, 203454745.77563477,  1e-8);
 }
 
 TEST_F(SarSensorModel, getRangeCoefficients) {
   std::vector<double> coeffs = sensorModel->getRangeCoefficients(-0.0025);
-  EXPECT_NEAR(coeffs[0], 2000000.0, 1e-8);
-  EXPECT_NEAR(coeffs[1], 0.0040333608396661775, 1e-8);
-  EXPECT_NEAR(coeffs[2], 0.0, 1e-8);
-  EXPECT_NEAR(coeffs[3], 0.0, 1e-8);
+  EXPECT_NEAR(coeffs[0], 108115.564453125, 1e-8);
+  EXPECT_NEAR(coeffs[1], 28749.89952051267,1e-8);
+  EXPECT_NEAR(coeffs[2], -0.25643537028547314, 1e-8);
+  EXPECT_NEAR(coeffs[3], 1.0983187306945561e-06, 1e-8);
 }
 
 TEST_F(SarSensorModel, computeGroundPartials) {
-  csm::EcefCoord groundPt(1737400.0, 0.0, 0.0);
+  csm::EcefCoord groundPt(-1520427.2924246688, -450240.98096817418, 710030.04690435971);
+
   std::vector<double> partials = sensorModel->computeGroundPartials(groundPt);
   ASSERT_EQ(partials.size(), 6);
-  EXPECT_NEAR(partials[0], 6.5128150576280552e-09, 1e-8);
-  EXPECT_NEAR(partials[1], -5.1810407815840636e-15, 1e-8);
-  EXPECT_NEAR(partials[2], -0.13333333443071135, 1e-8);
-  EXPECT_NEAR(partials[3], -33.057625791698072, 1e-8);
-  EXPECT_NEAR(partials[4], 6.1985123841926308e-05, 1e-8);
-  EXPECT_NEAR(partials[5], 0.0077565105243007169, 1e-8);
+  EXPECT_NEAR(partials[0], -0.052475430922178629, 1e-8);
+  EXPECT_NEAR(partials[1], -0.015883011992733977, 1e-8);
+  EXPECT_NEAR(partials[2], -0.12147919510717504,  1e-8);
+  EXPECT_NEAR(partials[3], 0.075598918597946374,  1e-8);
+  EXPECT_NEAR(partials[4], 0.16130604972264942,   1e-8);
+  EXPECT_NEAR(partials[5], -0.053874104068177074, 1e-8);
 }
 
 TEST_F(SarSensorModel, imageToProximateImagingLocus) {
@@ -138,12 +138,12 @@ TEST_F(SarSensorModel, imageToProximateImagingLocus) {
       0.001,
       &precision,
       &warnings);
-  EXPECT_NEAR(locus.point.x, 1737388.1411342232, 1e-2);
-  EXPECT_NEAR(locus.point.y, -5403.0102509726485, 1e-2);
-  EXPECT_NEAR(locus.point.z, -3749.9801945280433, 1e-2);
-  EXPECT_NEAR(locus.direction.x, 0.002701478402694769, 1e-5);
-  EXPECT_NEAR(locus.direction.y, -0.9999963509835628, 1e-5);
-  EXPECT_NEAR(locus.direction.z, -5.830873570731962e-06, 1e-5);
+  EXPECT_NEAR(locus.point.x, -1479321.6695206575, 1e-2);
+  EXPECT_NEAR(locus.point.y, -511087.07386316231, 1e-2);
+  EXPECT_NEAR(locus.point.z, 700287.08593895065, 1e-2);
+  EXPECT_NEAR(locus.direction.x, -0.1672556005460577, 1e-5);
+  EXPECT_NEAR(locus.direction.y, 0.9842529974996953, 1e-5);
+  EXPECT_NEAR(locus.direction.z, -0.057197910790887985, 1e-5);
   EXPECT_LT(precision, 0.001);
   EXPECT_TRUE(warnings.empty());
 }
@@ -197,5 +197,5 @@ TEST_F(SarSensorModel, adjustedPositionVelocity) {
 
 TEST_F(SarSensorModel, ReferenceDateTime) {
   std::string date = sensorModel->getReferenceDateAndTime();
-  EXPECT_EQ(date, "2000-01-01T00:00:04Z");
+  EXPECT_EQ(date, "2020-08-16T09:52:18Z");
 }

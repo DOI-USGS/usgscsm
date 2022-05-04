@@ -54,14 +54,23 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
   state["m_sensorName"] = ale::getSensorName(isd);
   state["m_platformName"] = ale::getPlatformName(isd);
 
+  MESSAGE_LOG(
+      "m_modelName: {} "
+      "m_imageIdentifier: {} "
+      "m_sensorName: {} "
+      "m_platformName: {} ",
+      state["m_modelName"].dump(), state["m_imageIdentifier"].dump(),
+      state["m_sensorName"].dump(), state["m_platformName"].dump());
+  
   state["m_nLines"] = ale::getTotalLines(isd);
   state["m_nSamples"] = ale::getTotalSamples(isd);
+  MESSAGE_LOG(
+      "m_nLines: {} "
+      "m_nSamples: {} ",
+      state["m_nLines"].dump(), state["m_nSamples"].dump());
 
-  ale::Orientations j2000_to_target = ale::getBodyRotation(isd);
-
-  ale::States instState = ale::getInstrumentPosition(isd);
-  ale::States sunState = ale::getSunPosition(isd);
-  std::vector<double> ephemTime = instState.getTimes();
+  ale::States inst_state = ale::getInstrumentPosition(isd);
+  std::vector<double> ephemTime = inst_state.getTimes();
   if (ephemTime.size() < 2) {
     parsingWarnings->push_back(csm::Warning(
         csm::Warning::DATA_NOT_AVAILABLE, "Instrument position has less than 2 states.",
@@ -78,21 +87,14 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
       ephemTime[i] = startTime + i * timeStep;
     }
   }
-  std::vector<double> instPositions = {};
-  std::vector<double> instVelocities = {};
+
+  // Make the Sun positions and velocities be in target body coordinates
+  ale::States sunState = ale::getSunPosition(isd);
+  ale::Orientations j2000_to_target = ale::getBodyRotation(isd);
+  
   std::vector<double> sunPositions = {};
   std::vector<double> sunVelocities = {};
   for (int i = 0; i < ephemTime.size(); i++) {
-    ale::State j2000InstState = instState.getState(ephemTime[i], ale::SPLINE);
-    ale::State rotatedInstState =
-        j2000_to_target.rotateStateAt(ephemTime[i], j2000InstState, ale::SLERP);
-    // ALE operates in Km and we want m
-    instPositions.push_back(rotatedInstState.position.x * 1000);
-    instPositions.push_back(rotatedInstState.position.y * 1000);
-    instPositions.push_back(rotatedInstState.position.z * 1000);
-    instVelocities.push_back(rotatedInstState.velocity.x * 1000);
-    instVelocities.push_back(rotatedInstState.velocity.y * 1000);
-    instVelocities.push_back(rotatedInstState.velocity.z * 1000);
 
     ale::State j2000SunState = sunState.getState(ephemTime[i], ale::SPLINE);
     ale::State rotatedSunState =
@@ -105,31 +107,23 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
     sunVelocities.push_back(rotatedSunState.velocity.y * 1000);
     sunVelocities.push_back(rotatedSunState.velocity.z * 1000);
   }
-  state["m_positions"] = instPositions;
-  state["m_velocities"] = instVelocities;
-
   state["m_sunPosition"] = sunPositions;
   state["m_sunVelocity"] = sunVelocities;
 
-  state["m_centerEphemerisTime"] = ale::getCenterTime(isd);
   state["m_startingEphemerisTime"] = ale::getStartingTime(isd);
-  state["m_endingEphemerisTime"] = getEndingTime(isd, parsingWarnings);
+  state["m_centerEphemerisTime"] = ale::getCenterTime(isd);
+  state["m_endingEphemerisTime"] = getEndingTime(isd, parsingWarnings.get());
+  MESSAGE_LOG("m_startingEphemerisTime: {} "
+              "m_centerEphemerisTime: {} "
+              "m_endingEphemerisTime: {} ",
+              state["m_startingEphemerisTime"].dump(),
+              state["m_centerEphemerisTime"].dump(),
+              state["m_endingEphemerisTime"].dump()
+              )
 
-  state["m_exposureDuration"] = getExposureDuration(isd, parsingWarnings);
+  state["m_exposureDuration"] = getExposureDuration(isd, parsingWarnings.get());
 
   state["m_currentParameterValue"] = vector<double>(NUM_PARAMETERS, 0.0);
-
-  // get radii
-  state["m_minorAxis"] = ale::getSemiMinorRadius(isd);
-  state["m_majorAxis"] = ale::getSemiMajorRadius(isd);
-
-  // set identifiers
-  state["m_platformIdentifier"] = ale::getPlatformName(isd);
-  state["m_sensorIdentifier"] = ale::getSensorName(isd);
-
-  // get reference_height
-  state["m_minElevation"] = -1000;
-  state["m_maxElevation"] = 1000;
 
   // SAR specific values
   state["m_scaledPixelWidth"] = getScaledPixelWidth(isd, parsingWarnings.get());
@@ -139,6 +133,52 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
       getScaleConversionTimes(isd, parsingWarnings.get());
   state["m_wavelength"] = getWavelength(isd, parsingWarnings.get());
   state["m_lookDirection"] = getLookDirection(isd, parsingWarnings.get());
+
+  // Process positions and velocities
+  ale::State interpInstState, rotatedInstState;
+  std::vector<double> instPositions = {};
+  std::vector<double> instVelocities = {};
+  for (int i = 0; i < ephemTime.size(); i++) {
+    
+    interpInstState = inst_state.getState(ephemTime[i], ale::SPLINE);
+    rotatedInstState =
+      j2000_to_target.rotateStateAt(ephemTime[i], interpInstState, ale::SLERP);
+    
+    // ALE operates in Km and we want m
+    instPositions.push_back(rotatedInstState.position.x * 1000);
+    instPositions.push_back(rotatedInstState.position.y * 1000);
+    instPositions.push_back(rotatedInstState.position.z * 1000);
+    instVelocities.push_back(rotatedInstState.velocity.x * 1000);
+    instVelocities.push_back(rotatedInstState.velocity.y * 1000);
+    instVelocities.push_back(rotatedInstState.velocity.z * 1000);
+
+  }
+  state["m_positions"] = instPositions;
+  state["m_velocities"] = instVelocities;
+
+  // Get radii
+  // ALE operates in km and we want m
+  state["m_minorAxis"] = ale::getSemiMinorRadius(isd) * 1000;
+  state["m_majorAxis"] = ale::getSemiMajorRadius(isd) * 1000;
+  MESSAGE_LOG("m_minorAxis: {}"
+              "m_majorAxis: {}",
+              state["m_minorAxis"].dump(), state["m_majorAxis"].dump());
+  
+  // set identifiers
+  state["m_platformIdentifier"] = ale::getPlatformName(isd);
+  state["m_sensorIdentifier"] = ale::getSensorName(isd);
+  MESSAGE_LOG(
+      "m_platformIdentifier: {}"
+      "m_sensorIdentifier: {}",
+      state["m_platformIdentifier"].dump(), state["m_sensorIdentifier"].dump());
+
+  // Get reference_height
+  state["m_minElevation"] = ale::getMinHeight(isd);
+  state["m_maxElevation"] = ale::getMaxHeight(isd);
+  MESSAGE_LOG(
+      "m_minElevation: {}"
+      "m_maxElevation: {}",
+      state["m_minElevation"].dump(), state["m_maxElevation"].dump());
 
   // Default to identity covariance
   state["m_covariance"] = vector<double>(NUM_PARAMETERS * NUM_PARAMETERS, 0.0);
@@ -553,7 +593,8 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   // Compute the spacecraft position in the new coordinate system
   //   The cross-track unit vector is orthogonal to the position so we ignore it
   double nadirComp = dot(spacecraftPosition, tHat);
-
+  MESSAGE_LOG("Nadir position component: {}", nadirComp);
+  
   // Iterate to find proper radius value. Limit the number of iterations
   // because the desired precision may not drop beyond 1e-10 no matter
   // how many iterations one does. As it was observed, this in fact
@@ -583,9 +624,8 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
       break;
   }
 
-  if (achievedPrecision) {
+  if (achievedPrecision)
     *achievedPrecision = fabs(pointHeight - height);
-  }
 
   MESSAGE_LOG("Iteration ground point: {}, {}, {}", groundVec.x, groundVec.y, groundVec.z);
 
@@ -704,9 +744,8 @@ csm::EcefLocus UsgsAstroSarSensorModel::imageToProximateImagingLocus(
   }
   tangent = normalized(tangent);
 
-  if (achievedPrecision) {
+  if (achievedPrecision)
     *achievedPrecision = 0.0;
-  }
 
   return csm::EcefLocus(closestVec.x, closestVec.y, closestVec.z, tangent.x,
                         tangent.y, tangent.z);
