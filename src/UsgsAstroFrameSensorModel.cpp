@@ -699,7 +699,7 @@ std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
   time_t timeSinceEpoch = mktime(&t);
   time_t finalTime = ephemTime + timeSinceEpoch;
   char buffer[22];
-  strftime(buffer, 22, "%Y-%m-%dT%H:%M:%SZ", localtime(&finalTime));
+  strftime(buffer, 22, "%Y-%m-%dT%H:%M:%SZ", gmtime(&finalTime));
   buffer[21] = '\0';
 
   return buffer;

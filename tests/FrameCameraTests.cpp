@@ -739,5 +739,5 @@ TEST_F(FrameSensorModelLogging, losEllipsoidIntersect) {
 
 TEST_F(OrbitalFrameSensorModel, ReferenceDateTime) {
   std::string date = sensorModel->getReferenceDateAndTime();
-  EXPECT_EQ(date, "2000-01-01T00:16:40Z");
+  EXPECT_EQ(date, "2000-01-01T08:16:40Z");
 }
