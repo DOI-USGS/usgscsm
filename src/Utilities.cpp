@@ -1384,10 +1384,10 @@ std::string ephemTimeToCalendarTime(double ephemTime) {
   // Care must be taken to not use mktime() or localtime() as their
   // precise value depends on if a location respects Daylight Savings Time.
 
-  time_t y2k = 946684800; // January 1, 2000 12:00:00 AM GMT
-  time_t finalTime = ephemTime + y2k;
+  std::time_t y2k = 946684800; // January 1, 2000 12:00:00 AM GMT
+  std::time_t finalTime = ephemTime + y2k;
   char buffer[22];
-  strftime(buffer, 22, "%Y-%m-%dT%H:%M:%SZ", gmtime(&finalTime));
+  strftime(buffer, 22, "%Y-%m-%dT%H:%M:%SZ", std::gmtime(&finalTime));
   buffer[21] = '\0';
   return buffer;
 }
