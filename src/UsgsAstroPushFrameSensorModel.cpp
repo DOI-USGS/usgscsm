@@ -669,6 +669,7 @@ csm::ImageCoord UsgsAstroPushFrameSensorModel::groundToImage(
 
   // Secant search for the where the ground point is closest to the middle of the framelet.
   int summedFrameletHeight = m_frameletHeight / m_detectorLineSumming;
+  int numFramelets = m_nLines / summedFrameletHeight;
   int startFramelet = 0;
   double startDistance = calcFrameDistance(startFramelet, groundPt, adj);
   int endFramelet = m_nLines / summedFrameletHeight - 1;
@@ -680,6 +681,8 @@ csm::ImageCoord UsgsAstroPushFrameSensorModel::groundToImage(
     startFramelet = endFramelet;
     startDistance = endDistance;
     endFramelet = std::round(endFramelet - offset);
+    // Clip to the image bounds
+    endFramelet = std::max(0, std::min(numFramelets, endFramelet));
     endDistance = calcFrameDistance(endFramelet, groundPt, adj);
   }
 
@@ -2429,27 +2432,6 @@ csm::EcefVector UsgsAstroPushFrameSensorModel::getSunPosition(
     sunPosition.z = m_sunPosition[2];
   }
   return sunPosition;
-}
-
-
-double UsgsAstroPushFrameSensorModel::calcSensorDistance(int frameletNumber,
-                                                         const csm::EcefCoord& groundPt,
-                                                         const std::vector<double>& adj) const {
-  MESSAGE_LOG(
-      "Calculating sensor distance for framelet {} "
-      "at ground point ({}, {}, {})",
-      frameletNumber, groundPt.x, groundPt.y, groundPt.z)
-  int summedFrameletHeight = m_frameletHeight / m_detectorLineSumming;
-  double time = getImageTime(csm::ImageCoord(0.5 + summedFrameletHeight * frameletNumber, 0.0));
-
-  double xc, yc, zc, vx, vy, vz;
-  getAdjSensorPosVel(time, adj, xc, yc, zc, vx, vy, vz);
-  csm::EcefVector sensorToGround(groundPt.x - xc,
-                                 groundPt.y - yc,
-                                 groundPt.z - zc);
-  double dist = norm(sensorToGround);
-  MESSAGE_LOG("Calculated distance is {}", dist);
-  return dist;
 }
 
 

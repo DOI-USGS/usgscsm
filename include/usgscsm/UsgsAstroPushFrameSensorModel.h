@@ -941,10 +941,6 @@ class UsgsAstroPushFrameSensorModel : public csm::RasterGM,
       const std::vector<double>& adj)      // Parameter Adjustments for partials
       const;
 
-  double calcSensorDistance(int frameletNumber,
-                            const csm::EcefCoord& groundPt,
-                            const std::vector<double>& adj) const;
-
   // Computes the line distance from the center of a frame to the image point
   // that a ground point reprojects to at that frame.
   double calcFrameDistance(int frameletNumber,
