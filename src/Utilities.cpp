@@ -1375,3 +1375,18 @@ void applyRotationTranslationToXyzVec(ale::Rotation const& r, ale::Vec3d const& 
 
   }
 }
+
+// Convert ephemeris time, in seconds since January 1, 2000 12:00:00 AM GMT,
+// to a calendar time string, such as 2000-01-01T00:16:40Z.
+std::string ephemTimeToCalendarTime(double ephemTime) {
+
+  // Care must be taken to not use mktime() or localtime() as their
+  // precise value depends on if a location respects Daylight Savings Time.
+
+  time_t y2k = 946684800; // January 1, 2000 12:00:00 AM GMT
+  time_t finalTime = ephemTime + y2k;
+  char buffer[22];
+  strftime(buffer, 22, "%Y-%m-%dT%H:%M:%SZ", gmtime(&finalTime));
+  buffer[21] = '\0';
+  return buffer;
+}

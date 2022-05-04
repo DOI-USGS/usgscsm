@@ -694,12 +694,7 @@ std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
   MESSAGE_LOG("Accessing reference data and time");
   time_t ephemTime = m_ephemerisTime;
 
-  time_t y2k = 946684800; // January 1, 2000 12:00:00 AM GMT
-  time_t finalTime = ephemTime + y2k;
-  char buffer[22];
-  strftime(buffer, 22, "%Y-%m-%dT%H:%M:%SZ", gmtime(&finalTime));
-  buffer[21] = '\0';
-  return buffer;
+  return ephemTimeToCalendarTime(ephemTime);
 }
 
 std::string UsgsAstroFrameSensorModel::getModelState() const {
