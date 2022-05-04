@@ -175,7 +175,6 @@ TEST_F(SarIsdTest, Constructible) {
 TEST_F(SarIsdTest, ConstructibleFromState) {
   UsgsAstroPlugin testPlugin;
   csm::WarningList warnings;
-  std::cout << "---now here!" << std::endl;
   std::string modelState = testPlugin.getStateFromISD(isd);
   EXPECT_TRUE(testPlugin.canModelBeConstructedFromState(
       "USGS_ASTRO_SAR_SENSOR_MODEL", modelState, &warnings));
