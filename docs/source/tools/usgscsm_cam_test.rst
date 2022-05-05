@@ -39,5 +39,9 @@ Command line options
     Let the ground be obtained from the datum for this camera by 
     adding to its radii this value (the units are meters).
 
+--desired-precision <double (default: 0.001)>
+    Use this value for operations (ground-to-image and image-to-ground)
+    which need a precision value. Measured in pixels.
+
 --help <no value>
     Print the usage message.
