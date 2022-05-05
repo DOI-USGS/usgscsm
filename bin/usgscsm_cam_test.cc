@@ -23,8 +23,9 @@ struct Options {
   std::string model;              // the .json file in isd or model state format
   std::string output_model_state; // the output model state in .json format
   int sample_rate;
-  double subpixel_offset, height_above_datum;
-  Options(): sample_rate(0), subpixel_offset(0.0), height_above_datum(0.0) {}
+  double subpixel_offset, height_above_datum, desired_precision;
+  Options(): sample_rate(0), subpixel_offset(0.0), height_above_datum(0.0), desired_precision(0.0)
+  {}
 };
 
 void printUsage(std::string const& progName) {
@@ -85,11 +86,15 @@ bool parseOptions(int argc, char **argv, Options & opt) {
     return false;
   }
 
+  if (parsed_options["desired-precision"].empty())
+    parsed_options["desired-precision"] = "0.001"; // set default value
+
   // Collect all other option values. If not set, the values will default to 0.
   opt.output_model_state = parsed_options["output-model-state"];
   opt.sample_rate        = sample_rate_double;
   opt.subpixel_offset    = atof(parsed_options["subpixel-offset"].c_str());
   opt.height_above_datum = atof(parsed_options["height-above-datum"].c_str());
+  opt.desired_precision  = atof(parsed_options["desired-precision"].c_str());
 
   return true;
 }
@@ -116,7 +121,8 @@ bool readFileInString(std::string const& filename, std::string & str) {
 }
 
 // Sort the errors and print some stats
-void printErrors(std::vector<double> & errors) {
+void printErrors(std::vector<double> & errors, double desired_precision,
+                 double max_achieved_precision) {
   std::sort(errors.begin(), errors.end());
 
   if (errors.empty()) {
@@ -129,6 +135,10 @@ void printErrors(std::vector<double> & errors) {
   std::cout << "Median: " << errors[errors.size()/2] << "\n";
   std::cout << "Max:    " << errors.back() << "\n";
   std::cout << "Count:  " << errors.size() << "\n";
+
+  std::cout << std::endl;
+  std::cout << "Desired precision: " << desired_precision << std::endl;
+  std::cout << "Max achieved precision: " << max_achieved_precision << std::endl;
 }
 
 double pixDiffNorm(csm::ImageCoord const& a, csm::ImageCoord const& b) {
@@ -237,17 +247,25 @@ int main(int argc, char **argv) {
     std::cout << "Row and column sample rate: " << opt.sample_rate << "\n";
     std::cout << "Subpixel offset for each pixel: " << opt.subpixel_offset << "\n";
     std::cout << "Ground height (relative to datum): " << opt.height_above_datum << "\n";
+    double max_achieved_precision = 0.0;
     std::vector<double> errors;
     for (int samp = 0; samp < image_size.samp; samp += opt.sample_rate) {
       for (int line = 0; line < image_size.line; line += opt.sample_rate) {
         csm::ImageCoord c(line + opt.subpixel_offset, samp + opt.subpixel_offset);
-        csm::EcefCoord ground = model->imageToGround(c, opt.height_above_datum);
-        csm::ImageCoord d = model->groundToImage(ground);
+        
+        double achieved_precision = 0.0;
+        csm::EcefCoord ground = model->imageToGround(c, opt.height_above_datum,
+                                                     opt.desired_precision, &achieved_precision);
+        max_achieved_precision = std::max(max_achieved_precision, achieved_precision);
+
+        csm::ImageCoord d = model->groundToImage(ground, opt.desired_precision,
+                                                 &achieved_precision);
+        max_achieved_precision = std::max(max_achieved_precision, achieved_precision);
         double error = pixDiffNorm(c, d);
         errors.push_back(error);
       }   
     }
-    printErrors(errors);
+    printErrors(errors, opt.desired_precision, max_achieved_precision);
   }
     
   return 0;

@@ -252,7 +252,7 @@ class OrbitalLineScanSensorModel : public ::testing::Test {
     isd.setFilename("data/orbitalLineScan.img");
     UsgsAstroPlugin cameraPlugin;
 
-    model =  std::shared_ptr<csm::Model>(cameraPlugin.constructModelFromISD(
+    model = std::shared_ptr<csm::Model>(cameraPlugin.constructModelFromISD(
       isd, UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME));
     sensorModel = dynamic_cast<UsgsAstroLsSensorModel *>(model.get());
     
