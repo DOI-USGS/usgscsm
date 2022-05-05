@@ -176,4 +176,8 @@ void applyRotationToQuatVec(ale::Rotation const& r, std::vector<double> & quater
 void applyRotationTranslationToXyzVec(ale::Rotation const& r, ale::Vec3d const& t,
                                       std::vector<double> & xyz);
 
+// Convert ephemeris time, in seconds since January 1, 2000 12:00:00 AM GMT,
+// to a calendar time string, such as 2000-01-01T00:16:40Z.
+std::string ephemTimeToCalendarTime(double ephemTime);
+
 #endif  // INCLUDE_USGSCSM_UTILITIES_H_

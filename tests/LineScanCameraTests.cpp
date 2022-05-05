@@ -325,3 +325,4 @@ TEST_F(ConstVelocityLineScanSensorModel, FocalLengthAdjustment) {
   EXPECT_DOUBLE_EQ(locus.direction.y, -0.4 / scale);
   EXPECT_DOUBLE_EQ(locus.direction.z, -0.05 / scale);
 }
+

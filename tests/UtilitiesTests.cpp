@@ -477,3 +477,11 @@ TEST(UtilitiesTests, stateAsJsonWithoutModel) {
   json state = stateAsJson(modelState);
   EXPECT_STREQ(modelState.c_str(), state.dump().c_str());
 }
+
+TEST(UtilitiesTests, ephemTimeToCalendarTime) {
+
+  double ephemTime = 0.0;
+  std::string timeStr = ephemTimeToCalendarTime(ephemTime);
+
+  EXPECT_STREQ(timeStr.c_str(), "2000-01-01T00:00:00Z");
+}

@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
+set(CMAKE_CTEST_ARGUMENTS "--output-on-failure")
+
 # Link runCSMCameraModelTests with what we want to test and the GTest and pthread library
 add_executable(runCSMCameraModelTests
                PluginTests.cpp

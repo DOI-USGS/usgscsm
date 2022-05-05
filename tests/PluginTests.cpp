@@ -195,8 +195,9 @@ TEST_F(SarIsdTest, ConstructValidCamera) {
   UsgsAstroPlugin testPlugin;
   csm::WarningList warnings;
   std::shared_ptr<csm::Model> cameraModel(NULL);
-  EXPECT_NO_THROW(cameraModel =  std::shared_ptr<csm::Model>(testPlugin.constructModelFromISD
-                                                             (isd, "USGS_ASTRO_SAR_SENSOR_MODEL", &warnings)));
+  EXPECT_NO_THROW(cameraModel = std::shared_ptr<csm::Model>(testPlugin.constructModelFromISD
+                                                            (isd, "USGS_ASTRO_SAR_SENSOR_MODEL",
+                                                             &warnings)));
   for (auto &warn : warnings) {
     std::cerr << "Warning in " << warn.getFunction() << std::endl;
     std::cerr << "  " << warn.getMessage() << std::endl;
@@ -211,7 +212,8 @@ TEST_F(SarIsdTest, ConstructInvalidCamera) {
   isd.setFilename("data/empty.img");
   std::shared_ptr<csm::Model> cameraModel(NULL);
   try {
-    cameraModel = std::shared_ptr<csm::Model>(testPlugin.constructModelFromISD(isd, "USGS_ASTRO_SAR_SENSOR_MODEL", nullptr));
+    cameraModel = std::shared_ptr<csm::Model>(testPlugin.constructModelFromISD
+                                              (isd, "USGS_ASTRO_SAR_SENSOR_MODEL", nullptr));
     FAIL() << "Expected an error";
 
   } catch (csm::Error &e) {

@@ -1206,22 +1206,14 @@ std::string UsgsAstroLsSensorModel::getTrajectoryIdentifier() const {
 //***************************************************************************
 std::string UsgsAstroLsSensorModel::getReferenceDateAndTime() const {
   csm::EcefCoord referencePointGround =
-      UsgsAstroLsSensorModel::getReferencePoint();
+    UsgsAstroLsSensorModel::getReferencePoint();
   csm::ImageCoord referencePointImage =
-      UsgsAstroLsSensorModel::groundToImage(referencePointGround);
+    UsgsAstroLsSensorModel::groundToImage(referencePointGround);
   double relativeTime =
-      UsgsAstroLsSensorModel::getImageTime(referencePointImage);
+    UsgsAstroLsSensorModel::getImageTime(referencePointImage);
   time_t ephemTime = m_centerEphemerisTime + relativeTime;
-  struct tm t = {0};  // Initalize to all 0's
-  t.tm_year = 100;    // This is year-1900, so 100 = 2000
-  t.tm_mday = 1;
-  time_t timeSinceEpoch = mktime(&t);
-  time_t finalTime = ephemTime + timeSinceEpoch;
-  char buffer[22];
-  strftime(buffer, 22, "%Y-%m-%dT%H:%M:%SZ", localtime(&finalTime));
-  buffer[21] = '\0';
 
-  return buffer;
+  return ephemTimeToCalendarTime(ephemTime);
 }
 
 //***************************************************************************
@@ -2380,8 +2372,6 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(
       state["m_detectorSampleOrigin"].dump(),
       state["m_detectorLineOrigin"].dump())
 
-
-
   ale::Orientations j2000_to_sensor = ale::getInstrumentPointing(jsonIsd);
   ale::State interpInstState, rotatedInstState;
   std::vector<double> positions = {};
@@ -2481,8 +2471,8 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(
   MESSAGE_LOG("m_currentParameterValue: {}",
               state["m_currentParameterValue"].dump())
 
-  // get radii
-  // ALE operates in Km and we want m
+  // Get radii
+  // ALE operates in km and we want m
   state["m_minorAxis"] = ale::getSemiMinorRadius(jsonIsd) * 1000;
   state["m_majorAxis"] = ale::getSemiMajorRadius(jsonIsd) * 1000;
   MESSAGE_LOG(
