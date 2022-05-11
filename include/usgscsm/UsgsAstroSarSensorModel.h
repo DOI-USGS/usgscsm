@@ -5,6 +5,8 @@
 #include <RasterGM.h>
 #include <SettableEllipsoid.h>
 
+#include "ale/Rotation.h"
+
 #include "spdlog/spdlog.h"
 
 class UsgsAstroSarSensorModel : public csm::RasterGM,
@@ -24,8 +26,14 @@ class UsgsAstroSarSensorModel : public csm::RasterGM,
   std::string constructStateFromIsd(const std::string imageSupportData,
                                     csm::WarningList* list);
 
-  std::string getModelNameFromModelState(const std::string& model_state);
+  static std::string getModelNameFromModelState(const std::string& model_state);
 
+  // Apply a rotation and translation to a state string. The effect is
+  // to transform the position and orientation of the camera in ECEF
+  // coordinates.
+  static void applyTransformToState(ale::Rotation const& r, ale::Vec3d const& t,
+                                    std::string& stateString);
+  
   virtual csm::ImageCoord groundToImage(
       const csm::EcefCoord& groundPt, double desiredPrecision = 0.001,
       double* achievedPrecision = NULL,

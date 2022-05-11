@@ -697,6 +697,32 @@ std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
   return ephemTimeToCalendarTime(ephemTime);
 }
 
+std::string UsgsAstroFrameSensorModel::getModelNameFromModelState(
+    const std::string& model_state) {
+  // Parse the string to JSON
+  auto j = stateAsJson(model_state);
+  // If model name cannot be determined, return a blank string
+  std::string model_name;
+
+  if (j.find("m_modelName") != j.end()) {
+    model_name = j["m_modelName"];
+  } else {
+    csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
+    std::string aMessage = "No 'm_modelName' key in the model state object.";
+    std::string aFunction = "UsgsAstroFramePlugin::getModelNameFromModelState";
+    csm::Error csmErr(aErrorType, aMessage, aFunction);
+    throw(csmErr);
+  }
+  if (model_name != _SENSOR_MODEL_NAME) {
+    csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
+    std::string aMessage = "Sensor model not supported.";
+    std::string aFunction = "UsgsAstroFramePlugin::getModelNameFromModelState()";
+    csm::Error csmErr(aErrorType, aMessage, aFunction);
+    throw(csmErr);
+  }
+  return model_name;
+}
+
 std::string UsgsAstroFrameSensorModel::getModelState() const {
   MESSAGE_LOG("Dumping model state");
   json state = {
@@ -747,6 +773,56 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
   // Use dump(2) to avoid creating the model string as a single long line
   std::string stateString = getModelName() + "\n" + state.dump(2);
   return stateString;
+}
+
+void UsgsAstroFrameSensorModel::applyTransformToState(ale::Rotation const& r, ale::Vec3d const& t,
+                                                      std::string& stateString) {
+
+  nlohmann::json j = stateAsJson(stateString);
+
+  // The vector having the rotation and translation from camera to
+  // ECEF
+  std::vector<double> currentParameterValue = j["m_currentParameterValue"];
+  
+  // Extract the quaternions from the frame camera, apply the
+  // rotation, and put them back.
+  std::vector<double> quaternions;
+  for (size_t it = 0; it < 4; it++)
+    quaternions.push_back(currentParameterValue[it + 3]);
+  applyRotationToQuatVec(r, quaternions);
+  for (size_t it = 0; it < 4; it++)
+    currentParameterValue[it + 3] = quaternions[it];
+  
+  // Extract the positions from the frame camera, apply to them the
+  // rotation and translation, and put them back.
+  std::vector<double> positions;
+  for (size_t it = 0; it < 3; it++)
+    positions.push_back(currentParameterValue[it]);
+  applyRotationTranslationToXyzVec(r, t, positions);
+  for (size_t it = 0; it < 3; it++)
+    currentParameterValue[it] = positions[it];
+
+  // Put the transformed vector back in the json state.
+  j["m_currentParameterValue"] = currentParameterValue;
+
+  // Apply rotation to velocities. The translation does not get
+  // applied.
+  std::vector<double> velocities = j["m_spacecraftVelocity"];
+  ale::Vec3d zero_t(0, 0, 0);
+  applyRotationTranslationToXyzVec(r, zero_t, velocities);
+  j["m_spacecraftVelocity"] = velocities;
+
+  // Apply the transform to the reference point.
+  std::vector<double> refPt = j["m_referencePointXyz"];
+  applyRotationTranslationToXyzVec(r, t, refPt);
+  j["m_referencePointXyz"] = refPt;
+
+  // We do not change the Sun position or velocity. The idea is that
+  // the Sun is so far, that minor camera adjustments won't affect
+  // where the Sun is.
+
+  // Update the state string
+  stateString = getModelNameFromModelState(stateString) + "\n" + j.dump(2);
 }
 
 bool UsgsAstroFrameSensorModel::isValidModelState(
@@ -871,6 +947,19 @@ void UsgsAstroFrameSensorModel::replaceModelState(
         imageToGround(csm::ImageCoord(m_nLines / 2.0, m_nSamples / 2.0));
     m_currentParameterCovariance =
         state.at("m_currentParameterCovariance").get<std::vector<double>>();
+
+    // These are optional and may not exist in all state files
+    if (state.find("m_maxElevation") != state.end()) 
+      m_maxElevation = state.at("m_maxElevation").get<double>();
+    if (state.find("m_minElevation") != state.end()) 
+      m_minElevation = state.at("m_minElevation").get<double>();
+    if (state.find("m_originalHalfLines") != state.end()) 
+      m_originalHalfLines = state.at("m_originalHalfLines").get<double>();
+    if (state.find("m_originalHalfSamples") != state.end()) 
+      m_originalHalfSamples = state.at("m_originalHalfSamples").get<double>();
+    if (state.find("m_pixelPitch") != state.end()) 
+      m_pixelPitch = state.at("m_pixelPitch").get<double>();
+    
   } catch (std::out_of_range &e) {
     MESSAGE_LOG("State keywords required to generate sensor model missing: " +
                 std::string(e.what()) + "\nUsing model string: " + stringState +
@@ -1348,7 +1437,7 @@ void UsgsAstroFrameSensorModel::losEllipsoidIntersect(
   // If quadTerm is negative, the image ray does not
   // intersect the ellipsoid. Setting the quadTerm to
   // zero means solving for a point on the ray nearest
-  // the surface of the ellisoid.
+  // the surface of the ellipsoid.
 
   if (0.0 > quadTerm) {
     quadTerm = 0.0;

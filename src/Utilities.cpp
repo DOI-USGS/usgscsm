@@ -55,7 +55,7 @@ void calculateRotationMatrixFromQuaternions(double q[4],
   rotationMatrix[8] = -q[0] * q[0] - q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
 }
 
-// Compue the distorted focal plane coordinate for a given image pixel
+// Compute the distorted focal plane coordinate for a given image pixel
 // in - line
 // in - sample
 // in - sampleOrigin - the origin of the ccd coordinate system relative to the
@@ -88,7 +88,7 @@ void computeDistortedFocalPlaneCoordinates(
   distortedY = p21 * t1 + p22 * t2;
 }
 
-// Compue the image pixel for a distorted focal plane coordinate
+// Compute the image pixel for a distorted focal plane coordinate
 // in - line
 // in - sample
 // in - sampleOrigin - the origin of the ccd coordinate system relative to the

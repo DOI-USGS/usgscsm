@@ -19,6 +19,19 @@ TEST_F(FrameSensorModel, State) {
   EXPECT_EQ(sensorModel->getModelState(), modelState);
 }
 
+// Apply the identity transform to a state
+TEST_F(FrameSensorModel, ApplyTransformToState) {
+  std::string modelState = sensorModel->getModelState();
+
+  ale::Rotation r; // identity rotation
+  ale::Vec3d t;    // zero translation
+
+  std::string modelState_out = modelState;
+  UsgsAstroFrameSensorModel::applyTransformToState(r, t, modelState_out);
+
+  EXPECT_EQ(modelState, modelState_out);
+}
+
 // centered and slightly off-center:
 TEST_F(FrameSensorModel, Center) {
   csm::ImageCoord imagePt(7.5, 7.5);

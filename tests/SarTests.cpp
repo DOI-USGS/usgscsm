@@ -78,6 +78,29 @@ TEST_F(SarSensorModel, State) {
   EXPECT_TRUE(differences.empty());
 }
 
+// Apply the identity transform to a state
+TEST_F(SarSensorModel, ApplyTransformToState) {
+  std::string modelState = sensorModel->getModelState();
+
+  ale::Rotation r; // identity rotation
+  ale::Vec3d t;    // zero translation
+
+  // The input state has some "-0" values which get transformed by
+  // applying the identity transform into "0", which results in the
+  // state string changing. Hence, for this test, compare the results
+  // of applying the identity transform once vs twice, which are the
+  // same.
+
+  // First application
+  UsgsAstroSarSensorModel::applyTransformToState(r, t, modelState);
+
+  // Second application
+  std::string modelState2 = modelState;
+  UsgsAstroSarSensorModel::applyTransformToState(r, t, modelState2);
+
+  EXPECT_EQ(modelState, modelState2);
+}
+
 TEST_F(SarSensorModel, Center) {
   csm::ImageCoord imagePt(500.0, 500.0);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);

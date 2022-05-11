@@ -208,7 +208,6 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
 
 string UsgsAstroSarSensorModel::getModelNameFromModelState(
     const string& model_state) {
-  MESSAGE_LOG("Getting model name from model state: {}", model_state);
   // Parse the string to JSON
   auto j = stateAsJson(model_state);
   // If model name cannot be determined, return a blank string
@@ -220,7 +219,6 @@ string UsgsAstroSarSensorModel::getModelNameFromModelState(
     csm::Error::ErrorType aErrorType = csm::Error::INVALID_SENSOR_MODEL_STATE;
     string aMessage = "No 'm_modelName' key in the model state object.";
     string aFunction = "UsgsAstroSarSensorModel::getModelNameFromModelState";
-    MESSAGE_LOG(aMessage);
     csm::Error csmErr(aErrorType, aMessage, aFunction);
     throw(csmErr);
   }
@@ -228,7 +226,6 @@ string UsgsAstroSarSensorModel::getModelNameFromModelState(
     csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
     string aMessage = "Sensor model not supported.";
     string aFunction = "UsgsAstroSarSensorModel::getModelNameFromModelState()";
-    MESSAGE_LOG(aMessage);
     csm::Error csmErr(aErrorType, aMessage, aFunction);
     throw(csmErr);
   }
@@ -397,6 +394,40 @@ string UsgsAstroSarSensorModel::getModelState() const {
   // Use dump(2) to avoid creating the model string as a single long line
   std::string stateString = getModelName() + "\n" + state.dump(2);
   return stateString;
+}
+
+//***************************************************************************
+// UsgsAstroSarSensorModel::applyTransformToState
+//***************************************************************************
+void UsgsAstroSarSensorModel::applyTransformToState(ale::Rotation const& r, ale::Vec3d const& t,
+                                                   std::string& stateString) {
+
+  nlohmann::json j = stateAsJson(stateString);
+
+  // Apply rotation and translation to positions
+  std::vector<double> positions = j["m_positions"].get<std::vector<double>>();
+  applyRotationTranslationToXyzVec(r, t, positions);
+  j["m_positions"] = positions;
+  
+  // Note that the SAR sensor does not have quaternions
+
+  // Apply rotation to velocities. The translation does not get applied.
+  ale::Vec3d zero_t(0, 0, 0);
+  std::vector<double> velocities = j["m_velocities"].get<std::vector<double>>();
+  applyRotationTranslationToXyzVec(r, zero_t, velocities);
+  j["m_velocities"] = velocities;
+
+  // Apply the transform to the reference point
+  std::vector<double> refPt = j["m_referencePointXyz"];
+  applyRotationTranslationToXyzVec(r, t, refPt);
+  j["m_referencePointXyz"] = refPt;
+
+  // We do not change the Sun position or velocity. The idea is that
+  // the Sun is so far, that minor camera adjustments won't affect
+  // where the Sun is.
+
+  // Update the state string
+  stateString = getModelNameFromModelState(stateString) + "\n" + j.dump(2);
 }
 
 csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
