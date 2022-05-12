@@ -1012,7 +1012,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(
   for (int i = 0; i < ephemTime.size(); i++) {
     rotatedInstState =
         j2000_to_target.rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
-    // ALE operates in Km and we want m
+    // ALE operates in km and we want m
     positions.push_back(rotatedInstState.position.x * 1000);
     positions.push_back(rotatedInstState.position.y * 1000);
     positions.push_back(rotatedInstState.position.z * 1000);
@@ -1060,7 +1060,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(
 
   for (int i = 0; i < ephemTime.size(); i++) {
     rotatedSunState = j2000_to_target.rotateStateAt(ephemTime[i], sunStates[i]);
-    // ALE operates in Km and we want m
+    // ALE operates in km and we want m
     sunPositions.push_back(rotatedSunState.position.x * 1000);
     sunPositions.push_back(rotatedSunState.position.y * 1000);
     sunPositions.push_back(rotatedSunState.position.z * 1000);
@@ -1134,8 +1134,8 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(
   state["m_ccdCenter"][0] = ale::getDetectorCenterLine(parsedIsd);
   state["m_ccdCenter"][1] = ale::getDetectorCenterSample(parsedIsd);
 
-  // get radii
-  // ALE operates in Km and we want m
+  // Get radii
+  // ALE operates in km and we want m
   state["m_minorAxis"] = ale::getSemiMinorRadius(parsedIsd) * 1000;
   state["m_majorAxis"] = ale::getSemiMajorRadius(parsedIsd) * 1000;
 

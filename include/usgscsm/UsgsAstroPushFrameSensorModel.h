@@ -104,6 +104,11 @@ class UsgsAstroPushFrameSensorModel : public csm::RasterGM,
   std::vector<double> m_sunPosition;
   std::vector<double> m_sunVelocity;
 
+  // Parameters needed to deal with the fact that neighboring framelets have some overlap
+  int m_numLinesOverlap; // Num overlapping lines (assumed to be even)
+  int m_reducedFrameletHeight; // framelet height after subtracting m_numLinesOverlap lines
+  int m_nReducedLines;   // Number of images lines after eliminating overlaps
+
   // Define logging pointer and file content
   std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
 
