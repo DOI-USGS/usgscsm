@@ -2423,7 +2423,12 @@ std::string UsgsAstroPushFrameSensorModel::constructStateFromIsd(
   // framelets have some overlap. The amount of overlap is at least
   // two pixels and is image- and location-dependent. Will remove
   // half of this many lines at the top and bottom of a frame.
-  state["m_numLinesOverlap"] = 2;
+  try {
+    state["m_numLinesOverlap"] = jsonIsd.at("num_lines_overlap");
+  } catch (...) {
+    state["m_numLinesOverlap"] = 0;
+  }
+
   state["m_reducedframeletHeight"] = state["m_frameletHeight"].get<int>()
     - state["m_numLinesOverlap"].get<int>();
   int numFramelets = state["m_nLines"].get<int>() / state["m_frameletHeight"].get<int>();
