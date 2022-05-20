@@ -1,0 +1,47 @@
+[
+  {
+    "name": "USGSCSM",
+    "organization": "U.S. Geological Survey",
+    "description": "GitHub respository for the CSM compliant sensor models create by the USGS Astrogeology Science Center",
+    "version": "1.5.3",
+    "status": "Production",
+
+    "permissions": {
+      "usageType": "openSource",
+      "licenses": [
+        {
+          "name": "BSD 3-Clause",
+          "URL": "https://github.com/USGS-Astrogeology/usgscsm/blob/dev/LICENSE.md"
+        }
+      ]
+    },
+
+    "homepageURL": "https://github.com/USGS-Astrogeology/usgscsm/releases/tag/1.5.3",
+    "downloadURL": "https://github.com/USGS-Astrogeology/usgscsm/archive/refs/tags/1.5.3.zip",
+    "disclaimerURL": "https://github.com/USGS-Astrogeology/usgscsm/blob/dev/DISCLAIMER.md",
+    "repositoryURL": "https://github.com/USGS-Astrogeology/usgscsm",
+    "vcs": "git",
+
+    "laborHours": 60,
+
+    "tags": [
+      "Planetary",
+      "Remote Sensing",
+      "Data Processing",
+      "Community Sensor Model"
+    ],
+
+    "languages": [
+      "C++"
+    ],
+
+    "contact": {
+      "name": "Jesse Mapel",
+      "email": "jmapel@usgs.gov"
+    },
+
+    "date": {
+      "metadataLastUpdated": "2022-04-15"
+    }
+  }
+]
