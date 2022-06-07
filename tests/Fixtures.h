@@ -131,6 +131,34 @@ class OrbitalFrameSensorModel : public ::testing::Test {
   }
 };
 
+class JitterFrameSensorModel : public ::testing::Test {
+ protected:
+  csm::Isd jitterIsd;
+  csm::Isd isd;
+  std::shared_ptr<csm::RasterGM> jitterModel;
+  std::shared_ptr<csm::RasterGM> model;
+
+  void SetUp() override {
+    csm::Model *genericModel = nullptr;
+
+    UsgsAstroPlugin cameraPlugin;
+
+    isd.setFilename("data/orbitalFramer.img");
+
+    genericModel = cameraPlugin.constructModelFromISD(
+      isd, UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME);
+    model = std::shared_ptr<csm::RasterGM>(dynamic_cast<csm::RasterGM *>(genericModel));
+    ASSERT_NE(model, nullptr);
+
+    jitterIsd.setFilename("data/jitterFramer.img");
+
+    genericModel = cameraPlugin.constructModelFromISD(
+      jitterIsd, UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME);
+    jitterModel = std::shared_ptr<csm::RasterGM>(dynamic_cast<csm::RasterGM *>(genericModel));
+    ASSERT_NE(jitterModel, nullptr);
+  }
+};
+
 class FrameIsdTest : public ::testing::Test {
  protected:
   csm::Isd isd;
@@ -255,7 +283,7 @@ class OrbitalLineScanSensorModel : public ::testing::Test {
     model = std::shared_ptr<csm::Model>(cameraPlugin.constructModelFromISD(
       isd, UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME));
     sensorModel = dynamic_cast<UsgsAstroLsSensorModel *>(model.get());
-    
+
     ASSERT_NE(sensorModel, nullptr);
   }
 
@@ -369,7 +397,7 @@ class OrbitalPushFrameSensorModel : public ::testing::Test {
   void SetUp() override {
     isd.setFilename("data/orbitalPushFrame.img");
     UsgsAstroPlugin cameraPlugin;
-    
+
     csm::Model * model = cameraPlugin.constructModelFromISD(
        isd, UsgsAstroPushFrameSensorModel::_SENSOR_MODEL_NAME);
 

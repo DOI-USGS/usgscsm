@@ -24,6 +24,19 @@ void computeDistortedFocalPlaneCoordinates(
     const double &startingLine, const double iTransS[], const double iTransL[],
     double &distortedX, double &distortedY);
 
+void removeJitter(
+    const double &line, const double &sample,
+    const std::vector<double> lineJitterCoeffs, const std::vector<double> sampleJitterCoeffs,
+    const std::vector<double> lineTimes,
+    double &dejitteredLine, double &dejitteredSample);
+
+void addJitter(
+    const double &line, const double &sample,
+    const double &tolerance, const int &maxIts,
+    const std::vector<double> lineJitterCoeffs, const std::vector<double> sampleJitterCoeffs,
+    const std::vector<double> lineTimes,
+    double &jitteredLine, double &jitteredSample);
+
 void computePixel(const double &distortedX, const double &distortedY,
                   const double &sampleOrigin, const double &lineOrigin,
                   const double &sampleSumming, const double &lineSumming,

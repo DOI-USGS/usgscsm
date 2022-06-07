@@ -96,6 +96,145 @@ TEST(UtilitiesTests, computeDistortedFocalPlaneCoordinatesStart) {
   EXPECT_DOUBLE_EQ(undistortedFocalPlaneY, -0.2);
 }
 
+TEST(UtilitiesTests, removeJitter) {
+  std::vector<double> lineJit = {2.0, 3.0, 4.0};
+  std::vector<double> sampleJit = {-10.0, -20.0, -30.0};
+  std::vector<double> lineTimes = {0.0, 1.0, 2.0, 3.0, 4.0};
+
+  double testline, testSample;
+  double dejitteredLine, dejitteredSample;
+  double lineJitter, sampleJitter;
+
+  // Test at t=0, this should do nothing
+  testline = 1;
+  testSample = 0;
+  dejitteredLine = 10;
+  dejitteredSample = 10;
+  removeJitter(testline, testSample, lineJit, sampleJit, lineTimes, dejitteredLine, dejitteredSample);
+  EXPECT_DOUBLE_EQ(dejitteredLine, testline);
+  EXPECT_DOUBLE_EQ(dejitteredSample, testSample);
+
+  // Test at t=1 to check proper coefficients
+  testline = 2;
+  testSample = 5.0;
+  dejitteredLine = 10;
+  dejitteredSample = 10;
+  removeJitter(testline, testSample, lineJit, sampleJit, lineTimes, dejitteredLine, dejitteredSample);
+  EXPECT_DOUBLE_EQ(dejitteredLine, testline - (2.0 + 3.0 + 4.0));
+  EXPECT_DOUBLE_EQ(dejitteredSample, testSample + (10.0 + 20.0 + 30.0));
+
+  // Test at t=2 to check exponents
+  testline = 3;
+  testSample = 5.0;
+  dejitteredLine = 10;
+  dejitteredSample = 10;
+  removeJitter(testline, testSample, lineJit, sampleJit, lineTimes, dejitteredLine, dejitteredSample);
+  EXPECT_DOUBLE_EQ(dejitteredLine, testline - (8 * 2.0 + 4 * 3.0 + 2 * 4.0));
+  EXPECT_DOUBLE_EQ(dejitteredSample, testSample + (8 * 10.0 + 4 * 20.0 + 2 * 30.0));
+
+  // Test at extreme negative line to ensure it bounds to the image
+  testline = 1;
+  testSample = 0;
+  dejitteredLine = 10;
+  dejitteredSample = 10;
+  removeJitter(testline, testSample, lineJit, sampleJit, lineTimes, dejitteredLine, dejitteredSample);
+  lineJitter = testline - dejitteredLine;
+  sampleJitter = testSample - dejitteredSample;
+  testline = -100;
+  dejitteredLine = 10;
+  dejitteredSample = 10;
+  removeJitter(testline, testSample, lineJit, sampleJit, lineTimes, dejitteredLine, dejitteredSample);
+  EXPECT_DOUBLE_EQ(testline - dejitteredLine, lineJitter);
+  EXPECT_DOUBLE_EQ(testSample - dejitteredSample, sampleJitter);
+
+  // Test at too large of a line to ensure it bounds to the image
+  testline = 5.0;
+  testSample = 0;
+  dejitteredLine = 10;
+  dejitteredSample = 10;
+  removeJitter(testline, testSample, lineJit, sampleJit, lineTimes, dejitteredLine, dejitteredSample);
+  lineJitter = testline - dejitteredLine;
+  sampleJitter = testSample - dejitteredSample;
+  testline = 100;
+  dejitteredLine = 10;
+  dejitteredSample = 10;
+  removeJitter(testline, testSample, lineJit, sampleJit, lineTimes, dejitteredLine, dejitteredSample);
+  EXPECT_DOUBLE_EQ(testline - dejitteredLine, lineJitter);
+  EXPECT_DOUBLE_EQ(testSample - dejitteredSample, sampleJitter);
+
+  // Test at fractional lines to check rounding
+  testline = 1.0;
+  testSample = 5.0;
+  dejitteredLine = 10;
+  dejitteredSample = 10;
+  removeJitter(testline, testSample, lineJit, sampleJit, lineTimes, dejitteredLine, dejitteredSample);
+  lineJitter = testline - dejitteredLine;
+  sampleJitter = testSample - dejitteredSample;
+  testline = 0.75;
+  dejitteredLine = 10;
+  dejitteredSample = 10;
+  removeJitter(testline, testSample, lineJit, sampleJit, lineTimes, dejitteredLine, dejitteredSample);
+  EXPECT_DOUBLE_EQ(testline - dejitteredLine, lineJitter);
+  EXPECT_DOUBLE_EQ(testSample - dejitteredSample, sampleJitter);
+  testline = 1.35;
+  dejitteredLine = 10;
+  dejitteredSample = 10;
+  removeJitter(testline, testSample, lineJit, sampleJit, lineTimes, dejitteredLine, dejitteredSample);
+  EXPECT_DOUBLE_EQ(testline - dejitteredLine, lineJitter);
+  EXPECT_DOUBLE_EQ(testSample - dejitteredSample, sampleJitter);
+}
+
+TEST(UtilitiesTests, removeJitterErrors) {
+  std::vector<double> lineJit = {2.0, 3.0, 4.0};
+  std::vector<double> shortLineJit = {2.0, 3.0};
+  std::vector<double> sampleJit = {-10.0, -20.0, -30.0};
+  std::vector<double> longSampleJit = {-10.0, -20.0, -30.0, -40.0};
+  std::vector<double> lineTimes = {0.0, 1.0, 2.0, 3.0, 4.0};
+  std::vector<double> emptyLineTimes;
+  double testLine = 4;
+  double testSample = 15;
+  double dejitteredLine, dejitteredSample;
+
+  EXPECT_THROW(
+      removeJitter(testLine, testSample, shortLineJit, sampleJit, lineTimes, dejitteredLine, dejitteredSample),
+      csm::Error);
+  EXPECT_THROW(
+      removeJitter(testLine, testSample, lineJit, longSampleJit, lineTimes, dejitteredLine, dejitteredSample),
+      csm::Error);
+  EXPECT_THROW(
+      removeJitter(testLine, testSample, lineJit, sampleJit, emptyLineTimes, dejitteredLine, dejitteredSample),
+      csm::Error);
+}
+
+TEST(UtilitiesTests, addJitter) {
+  // The line jitter must be sufficiently small to make a unique solution.
+  // Extremely high jitter can result in multiple solutions to the inversion.
+  std::vector<double> lineJit = {0.01, 0.02, 0.03};
+  std::vector<double> sampleJit = {-0.01, -0.02, -0.03};
+  std::vector<double> lineTimes = {0.0, 1.0, 2.0, 3.0, 4.0};
+
+  double testline = 4;
+  double testSample = 15.0;
+  double dejitteredLine = 10;
+  double dejitteredSample = 10;
+  removeJitter(
+      testline, testSample,
+      lineJit, sampleJit, lineTimes,
+      dejitteredLine, dejitteredSample);
+  double jitteredLine = 10;
+  double jitteredSample = 10;
+  double tolerance = 1e-7;
+  int maxIts = 30;
+  addJitter(
+    dejitteredLine, dejitteredSample,
+    tolerance, maxIts,
+    lineJit, sampleJit, lineTimes,
+    jitteredLine, jitteredSample);
+
+  EXPECT_LE(fabs(jitteredLine - testline), tolerance);
+  EXPECT_LE(fabs(jitteredSample - testSample), tolerance);
+}
+
 TEST(UtilitiesTests, computePixel) {
   double iTransS[] = {0.0, 0.0, 10.0};
   double iTransL[] = {0.0, 10.0, 0.0};

@@ -190,6 +190,35 @@ TEST_F(OrbitalFrameSensorModel, ImageToProximateImagingLocus) {
 }
 
 // ****************************************************************************
+//   Jitter sensor model tests
+// ****************************************************************************
+
+TEST_F(JitterFrameSensorModel, Center) {
+  // Test jitter is y = -1/256 t^2 + 1/16 t which is 0.25 at t=8
+  csm::ImageCoord imagePt(7.75, 8.25);
+  csm::EcefCoord groundPt = model->imageToGround(imagePt, 0.0);
+
+  csm::ImageCoord jitterImagePt(8.0, 8.0);
+  csm::EcefCoord jitterGroundPt = jitterModel->imageToGround(jitterImagePt, 0.0);
+
+  EXPECT_DOUBLE_EQ(groundPt.x, jitterGroundPt.x);
+  EXPECT_DOUBLE_EQ(groundPt.y, jitterGroundPt.y);
+  EXPECT_DOUBLE_EQ(groundPt.z, jitterGroundPt.z);
+}
+
+TEST_F(JitterFrameSensorModel, Inversion) {
+  for (int line = 0; line <= 16; line++) {
+    for (int sample = 0; sample <= 16; sample++) {
+      csm::ImageCoord imagePt1(line, sample);
+      csm::EcefCoord groundPt = jitterModel->imageToGround(imagePt1, 0.001);
+      csm::ImageCoord imagePt2 = jitterModel->groundToImage(groundPt);
+      EXPECT_NEAR(imagePt1.line, imagePt2.line, 0.001);
+      EXPECT_NEAR(imagePt1.samp, imagePt2.samp, 0.001);
+    }
+  }
+}
+
+// ****************************************************************************
 //   Modified sensor model tests
 // ****************************************************************************
 
