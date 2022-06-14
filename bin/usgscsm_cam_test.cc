@@ -1,5 +1,5 @@
 // A tool to perform some basic tests and operations on a CSM camera model.
-// 
+//
 // Functionality:
 //--------------
 //
@@ -8,13 +8,14 @@
 //
 // - Save the model state if invoked with:
 //   --output-model-state <model state .json file>
-// 
+//
 // - Test projecting rays from the camera to ground, then back,
-//   and compare with the original pixel values.  
+//   and compare with the original pixel values.
 
 #include <UsgsAstroPlugin.h>
 #include <RasterGM.h>
 #include <UsgsAstroLsSensorModel.h>
+#include <Utilities.h>
 
 #include <iostream>
 #include <fstream>
@@ -67,7 +68,7 @@ bool parseOptions(int argc, char **argv, Options & opt) {
     opt = opt.substr(2); // wipe the dashes
     parsed_options[opt] = val;
   }
-  
+
   // It is safe to access non-existent values from a map, the result
   // will be an empty string
   opt.model = parsed_options["model"];
@@ -109,8 +110,8 @@ bool readFileInString(std::string const& filename, std::string & str) {
     std::cout << "Cannot open file: " << filename << std::endl;
     return false;
   }
-  
-  ifs.seekg(0, std::ios::end);   
+
+  ifs.seekg(0, std::ios::end);
   str.reserve(ifs.tellg());
   ifs.seekg(0, std::ios::beg);
   str.assign((std::istreambuf_iterator<char>(ifs)),
@@ -129,7 +130,7 @@ void printErrors(std::vector<double> & errors, double desired_precision,
     std::cout << "Empty list of errors.\n";
     return;
   }
-  
+
   std::cout << "Norm of pixel errors after projecting from camera to ground and back.\n";
   std::cout << "Min:    " << errors[0] << "\n";
   std::cout << "Median: " << errors[errors.size()/2] << "\n";
@@ -155,31 +156,34 @@ bool loadCsmCameraModel(std::string const& model_file,
 
   // Try to read the model as an ISD
   csm::Isd isd(model_file);
-  
+
   // Read the model in a string, for potentially finding parsing the
   // model state from it.
   std::string model_state;
   if (!readFileInString(model_file, model_state))
     return false;
-  
+
+  // Remove special characters from string
+  sanitize(model_state);
+
   // Check if loading the model worked
   bool success = false;
 
   // Try all detected plugins and all models for each plugin.
   csm::PluginList plugins = csm::Plugin::getList();
   for (auto iter = plugins.begin(); iter != plugins.end(); iter++) {
-    
+
     const csm::Plugin* csm_plugin = (*iter);
     std::cout << "Detected CSM plugin: " << csm_plugin->getPluginName()  << "\n";
 
     size_t num_models = csm_plugin->getNumModels();
     std::cout << "Number of models for this plugin: " << num_models << "\n";
-    
+
     // First try to construct the model from isd, and if that fails, from the state
     csm::Model *csm = NULL;
     csm::WarningList* warnings = NULL;
     for (size_t i = 0; i < num_models; i++) {
-      
+
       std::string model_name = (*iter)->getModelName(i);
       if (csm_plugin->canModelBeConstructedFromISD(isd, model_name, warnings)) {
         // Try to construct the model from the isd
@@ -210,12 +214,12 @@ bool loadCsmCameraModel(std::string const& model_file,
       }
     }
   }
-  
+
   if (!success) {
     std::cerr << "Failed to load a CSM model from: " << model_file << ".\n";
     return false;
   }
-  
+
   return true;
 }
 
@@ -252,7 +256,7 @@ int main(int argc, char **argv) {
     for (int samp = 0; samp < image_size.samp; samp += opt.sample_rate) {
       for (int line = 0; line < image_size.line; line += opt.sample_rate) {
         csm::ImageCoord c(line + opt.subpixel_offset, samp + opt.subpixel_offset);
-        
+
         double achieved_precision = 0.0;
         csm::EcefCoord ground = model->imageToGround(c, opt.height_above_datum,
                                                      opt.desired_precision, &achieved_precision);
@@ -263,10 +267,10 @@ int main(int argc, char **argv) {
         max_achieved_precision = std::max(max_achieved_precision, achieved_precision);
         double error = pixDiffNorm(c, d);
         errors.push_back(error);
-      }   
+      }
     }
     printErrors(errors, opt.desired_precision, max_achieved_precision);
   }
-    
+
   return 0;
 }

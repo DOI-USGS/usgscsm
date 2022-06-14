@@ -1332,6 +1332,11 @@ json stateAsJson(std::string modelState) {
   return json::parse(modelState.begin() + foundFirst, modelState.begin() + foundLast + 1);
 }
 
+void sanitize(std::string &input){
+  // Remove characters from the string if they are not printable
+  input.erase(std::remove_if(input.begin(), input.end(), [](int c){return !::isprint(c);}), input.end());
+}
+
 // Apply a rotation to a vector of quaternions.
 void applyRotationToQuatVec(ale::Rotation const& r, std::vector<double> & quaternions) {
   int num_quat = quaternions.size();
