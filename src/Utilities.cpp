@@ -1323,12 +1323,13 @@ double getWavelength(json isd, csm::WarningList *list) {
 }
 
 json stateAsJson(std::string modelState) {
-  std::size_t found = modelState.find_first_of("\n");
+  std::size_t foundFirst = modelState.find_first_of("{");
+  std::size_t foundLast = modelState.find_last_of("}");
 
-  if (found == std::string::npos) {
-    found = 0;
+  if (foundFirst == std::string::npos) {
+    foundFirst = 0;
   }
-  return json::parse(modelState.begin() + found, modelState.end());
+  return json::parse(modelState.begin() + foundFirst, modelState.begin() + foundLast + 1);
 }
 
 // Apply a rotation to a vector of quaternions.
