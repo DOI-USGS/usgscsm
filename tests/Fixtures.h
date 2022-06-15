@@ -219,6 +219,7 @@ class ConstVelocityLineScanSensorModel : public ::testing::Test {
   csm::Isd isd;
   std::shared_ptr<csm::Model> model;
   UsgsAstroLsSensorModel *sensorModel;
+  std::string supFile = "data/gxp_model_file.sup";
 
   void SetUp() override {
     sensorModel = NULL;
@@ -255,7 +256,7 @@ class OrbitalLineScanSensorModel : public ::testing::Test {
     model = std::shared_ptr<csm::Model>(cameraPlugin.constructModelFromISD(
       isd, UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME));
     sensorModel = dynamic_cast<UsgsAstroLsSensorModel *>(model.get());
-    
+
     ASSERT_NE(sensorModel, nullptr);
   }
 
@@ -369,7 +370,7 @@ class OrbitalPushFrameSensorModel : public ::testing::Test {
   void SetUp() override {
     isd.setFilename("data/orbitalPushFrame.img");
     UsgsAstroPlugin cameraPlugin;
-    
+
     csm::Model * model = cameraPlugin.constructModelFromISD(
        isd, UsgsAstroPushFrameSensorModel::_SENSOR_MODEL_NAME);
 

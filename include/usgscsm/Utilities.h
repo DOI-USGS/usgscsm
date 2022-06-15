@@ -171,6 +171,9 @@ std::vector<double> getSensorOrientations(nlohmann::json isd,
 double getWavelength(nlohmann::json isd, csm::WarningList *list = nullptr);
 nlohmann::json stateAsJson(std::string modelState);
 
+// Read the contents of the file out as a string
+bool readFileInString(std::string const& filename, std::string & str);
+
 // Removes special characters from a string
 void sanitize(std::string &input);
 
