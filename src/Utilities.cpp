@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <utility>
 #include <ctime>
+#include <iostream>
+#include <fstream>
 
 #include "ale/Distortion.h"
 
@@ -1335,6 +1337,27 @@ json stateAsJson(std::string modelState) {
 void sanitize(std::string &input){
   // Remove characters from the string if they are not printable
   input.erase(std::remove_if(input.begin(), input.end(), [](int c){return !::isprint(c);}), input.end());
+}
+
+// Read a file's content in a single string
+bool readFileInString(std::string const& filename, std::string & str) {
+
+  str.clear(); // clear the output
+
+  std::ifstream ifs(filename.c_str());
+  if (!ifs.is_open()) {
+    std::cout << "Cannot open file: " << filename << std::endl;
+    return false;
+  }
+
+  ifs.seekg(0, std::ios::end);
+  str.reserve(ifs.tellg());
+  ifs.seekg(0, std::ios::beg);
+  str.assign((std::istreambuf_iterator<char>(ifs)),
+             std::istreambuf_iterator<char>());
+  ifs.close();
+
+  return true;
 }
 
 // Apply a rotation to a vector of quaternions.

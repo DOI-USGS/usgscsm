@@ -100,27 +100,6 @@ bool parseOptions(int argc, char **argv, Options & opt) {
   return true;
 }
 
-// Read a file's content in a single string
-bool readFileInString(std::string const& filename, std::string & str) {
-
-  str.clear(); // clear the output
-
-  std::ifstream ifs(filename.c_str());
-  if (!ifs.is_open()) {
-    std::cout << "Cannot open file: " << filename << std::endl;
-    return false;
-  }
-
-  ifs.seekg(0, std::ios::end);
-  str.reserve(ifs.tellg());
-  ifs.seekg(0, std::ios::beg);
-  str.assign((std::istreambuf_iterator<char>(ifs)),
-             std::istreambuf_iterator<char>());
-  ifs.close();
-
-  return true;
-}
-
 // Sort the errors and print some stats
 void printErrors(std::vector<double> & errors, double desired_precision,
                  double max_achieved_precision) {
