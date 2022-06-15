@@ -171,6 +171,9 @@ std::vector<double> getSensorOrientations(nlohmann::json isd,
 double getWavelength(nlohmann::json isd, csm::WarningList *list = nullptr);
 nlohmann::json stateAsJson(std::string modelState);
 
+// Removes special characters from a string
+void sanitize(std::string &input);
+
 // Apply transforms to orientations and vectors
 void applyRotationToQuatVec(ale::Rotation const& r, std::vector<double> & quaternions);
 void applyRotationTranslationToXyzVec(ale::Rotation const& r, ale::Vec3d const& t,
