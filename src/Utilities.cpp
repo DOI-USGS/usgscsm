@@ -1325,6 +1325,9 @@ double getWavelength(json isd, csm::WarningList *list) {
 }
 
 json stateAsJson(std::string modelState) {
+  // Remove special characters from string
+  sanitize(modelState);
+
   std::size_t foundFirst = modelState.find_first_of("{");
   std::size_t foundLast = modelState.find_last_of("}");
 
@@ -1336,7 +1339,7 @@ json stateAsJson(std::string modelState) {
 
 void sanitize(std::string &input){
   // Remove characters from the string if they are not printable
-  input.erase(std::remove_if(input.begin(), input.end(), [](int c){return !::isprint(c);}), input.end());
+  std::replace_if(input.begin(), input.end(), [](int c){return !::isprint(c);}, '\n');
 }
 
 // Read a file's content in a single string
