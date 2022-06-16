@@ -489,7 +489,7 @@ TEST(UtilitiesTests, ephemTimeToCalendarTime) {
 TEST(UtilitiesTests, fileReaderTest) {
   std::string fromFile;
   readFileInString("data/hello.json", fromFile);
-  EXPECT_STREQ(fromFile.c_str(), "Hello\n");
+  EXPECT_STREQ(fromFile.c_str(), "\"Hello\"\n");
 }
 
 TEST(UtilitiesTests, sanitizeTest) {
