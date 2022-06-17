@@ -30,6 +30,8 @@ artifacts:
     name: usgscsm.dll
   - path: build\ale\Release\ale.dll
     name: ale.dll
+  - path: build\usgscsm_cam_test
+    name: usgscsm_cam_test
 
 on_success:
 - cd ../
