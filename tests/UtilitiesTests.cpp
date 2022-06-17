@@ -495,5 +495,5 @@ TEST(UtilitiesTests, fileReaderTest) {
 TEST(UtilitiesTests, sanitizeTest) {
   std::string input = "\nHello World\007";
   sanitize(input);
-  EXPECT_STREQ(input.c_str(), "Hello World");
+  EXPECT_STREQ(input.c_str(), "\nHello World\n");
 }

@@ -1338,7 +1338,7 @@ json stateAsJson(std::string modelState) {
 }
 
 void sanitize(std::string &input){
-  // Remove characters from the string if they are not printable
+  // Replaces characters from the string that are not printable with newlines
   std::replace_if(input.begin(), input.end(), [](int c){return !::isprint(c);}, '\n');
 }
 
