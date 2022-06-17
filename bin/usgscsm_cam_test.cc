@@ -3,11 +3,14 @@
 // Functionality:
 //--------------
 //
-// - Load a CSM model in ISD format or model state format, via:
+// - Load a CSM model in ISD format, model state, or GXP .sup file format, via:
 //   --model <model file>
 //
 // - Save the model state if invoked with:
 //   --output-model-state <model state .json file>
+//
+// - Modify GXP .sup file's model state with inputed model:
+//   --modify-sup-file <GXP .sup file>
 //
 // - Test projecting rays from the camera to ground, then back,
 //   and compare with the original pixel values.
@@ -22,6 +25,7 @@
 
 struct Options {
   std::string model;              // the .json file in isd or model state format
+  std::string modify_sup_file;    // the .sup file needing a modified model state
   std::string output_model_state; // the output model state in .json format
   int sample_rate;
   double subpixel_offset, height_above_datum, desired_precision;
@@ -91,6 +95,7 @@ bool parseOptions(int argc, char **argv, Options & opt) {
     parsed_options["desired-precision"] = "0.001"; // set default value
 
   // Collect all other option values. If not set, the values will default to 0.
+  opt.modify_sup_file    = parsed_options["modify-sup-file"];
   opt.output_model_state = parsed_options["output-model-state"];
   opt.sample_rate        = sample_rate_double;
   opt.subpixel_offset    = atof(parsed_options["subpixel-offset"].c_str());
@@ -142,8 +147,6 @@ bool loadCsmCameraModel(std::string const& model_file,
   if (!readFileInString(model_file, model_state))
     return false;
 
-  // Remove special characters from string
-  sanitize(model_state);
 
   // Check if loading the model worked
   bool success = false;
@@ -202,6 +205,31 @@ bool loadCsmCameraModel(std::string const& model_file,
   return true;
 }
 
+bool updateSupModel(std::string& sup_string, std::string model) {
+  // grab the state JSON out of the original sup file to determine length of string to replace
+  std::string sup_state = stateAsJson(sup_string).dump().c_str();
+
+  // add back in the BEL characters in json state for GXP to read .sup file
+  std::replace(model.begin(), model.end(), '\n', '\a');
+
+  // update the .sup file SENSOR_STATE_LENGTH with new state length
+  std::string sensor_length = "SENSOR_STATE_LENGTH ";
+  size_t start_len_pos = sup_string.find(sensor_length) + sensor_length.length();
+  size_t end_len_pos = sup_string.find("SENSOR_STATE ") - 1;
+  sup_string.replace(start_len_pos, end_len_pos - start_len_pos, std::to_string(model.length()));
+
+  //replace the camera state in .sup file at the state model name which start with "USGS_ASTRO"
+  size_t start_pos = sup_string.find("USGS_ASTRO");
+  std::size_t end_pos = sup_string.find_last_of("}");
+
+  if(start_pos == std::string::npos)
+    return false;
+
+  sup_string.replace(start_pos, (end_pos - start_pos) + 1, model);
+  return true;
+}
+
+
 int main(int argc, char **argv) {
 
   Options opt;
@@ -220,6 +248,19 @@ int main(int argc, char **argv) {
     std::ofstream ofs(opt.output_model_state.c_str());
     ofs << model->getModelState() << "\n";
     ofs.close();
+  }
+
+  if (opt.modify_sup_file != "") {
+    std::string sup_string;
+    readFileInString(opt.modify_sup_file, sup_string);
+
+    if (!updateSupModel(sup_string, model->getModelState()))
+      return 1;
+
+    std::cout << "Updating model state for sup file: " << opt.modify_sup_file << "\n";
+    std::ofstream ofs_sup(opt.modify_sup_file.c_str());
+    ofs_sup << sup_string << "\n";
+    ofs_sup.close();
   }
 
   if (opt.sample_rate > 0) {
