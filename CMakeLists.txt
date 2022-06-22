@@ -81,6 +81,10 @@ set(USGSCSM_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include/usgscsm"
                          "${CMAKE_CURRENT_SOURCE_DIR}/include"
                          "${EIGEN3_INCLUDE_DIR}")
 
+# These will be copied upon installation to ${CMAKE_INSTALL_INCLUDEDIR}/include
+set(USGSCSM_INSTALL_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include/usgscsm"
+                                 "${CMAKE_CURRENT_SOURCE_DIR}/include/spdlog")
+
 target_include_directories(usgscsm
                            PUBLIC
                            ${USGSCSM_INCLUDE_DIRS}
@@ -98,7 +102,7 @@ target_link_libraries(usgscsm_cam_test
     ${CSM_LIBRARY})
 
 install(TARGETS usgscsm LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
-install(DIRECTORY ${USGSCSM_INCLUDE_DIRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(DIRECTORY ${USGSCSM_INSTALL_INCLUDE_DIRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(TARGETS usgscsm_cam_test RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Optional build tests

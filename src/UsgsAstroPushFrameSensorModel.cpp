@@ -94,6 +94,9 @@ const std::string UsgsAstroPushFrameSensorModel::_STATE_KEYWORD[] = {
     "m_halfSwath",
     "m_halfTime",
     "m_covariance",
+    "m_numLinesOverlap",
+    "m_reducedFrameletHeight",
+    "m_nReducedLines",
 };
 
 const int UsgsAstroPushFrameSensorModel::NUM_PARAM_TYPES = 4;
@@ -107,7 +110,7 @@ const csm::param::Type UsgsAstroPushFrameSensorModel::PARAM_CHAR_ALL[] = {
 // UsgsAstroLineScannerSensorModel::replaceModelState
 //***************************************************************************
 void UsgsAstroPushFrameSensorModel::replaceModelState(const std::string& stateString) {
-  MESSAGE_LOG("Replacing model state")
+  MESSAGE_LOG("Replacing model state");
 
   reset();
   auto j = stateAsJson(stateString);
@@ -125,7 +128,7 @@ void UsgsAstroPushFrameSensorModel::replaceModelState(const std::string& stateSt
       "m_nSamples: {} "
       "m_platformFlag: {} ",
       j["m_imageIdentifier"].dump(), j["m_sensorName"].dump(),
-      j["m_nLines"].dump(), j["m_nSamples"].dump(), j["m_platformFlag"].dump())
+      j["m_nLines"].dump(), j["m_nSamples"].dump(), j["m_platformFlag"].dump());
 
   m_exposureDuration = j["m_exposureDuration"].get<double>();
   m_interframeDelay = j["m_interframeDelay"].get<double>();
@@ -229,7 +232,7 @@ void UsgsAstroPushFrameSensorModel::replaceModelState(const std::string& stateSt
       "m_halfSwath: {} "
       "m_halfTime: {} ",
       j["m_gsd"].dump(), j["m_flyingHeight"].dump(), j["m_halfSwath"].dump(),
-      j["m_halfTime"].dump())
+      j["m_halfTime"].dump());
   // Vector = is overloaded so explicit get with type required.
 
   m_positions = j["m_positions"].get<std::vector<double>>();
@@ -250,10 +253,30 @@ void UsgsAstroPushFrameSensorModel::replaceModelState(const std::string& stateSt
     }
   }
 
-  // If computed state values are still default, then compute them
-  if (m_gsd == 1.0 && m_flyingHeight == 1000.0) {
-    updateState();
+  // Parameters needed to deal with the fact that neighboring framelets have some overlap
+  m_numLinesOverlap       = j["m_numLinesOverlap"];
+  m_reducedFrameletHeight = j["m_reducedframeletHeight"];
+  m_nReducedLines         = j["m_nReducedLines"];
+
+  MESSAGE_LOG(
+      "m_numLinesOverlap: {} "
+      "m_reducedFrameletHeight: {} "
+      "m_nReducedLines: {} ",
+      j["m_numLinesOverlap"].dump(), j["m_reducedFrameletHeight"].dump(),
+      j["m_nReducedLines"].dump());
+
+  if (m_numLinesOverlap %2 != 0) {
+    std::string msg = "The number of overlapping lines among framelets must be even. "
+      "Half this many lines will be removed from the top and bottom of each framelet.";
+    MESSAGE_LOG(msg.c_str());
+    throw csm::Error(csm::Error::INVALID_USE, msg.c_str(),
+                     "UsgsAstroPushFrameSensorModel::replaceModelState");
   }
+
+  // If computed state values are still default, then compute them. This must
+  // be at the very end, once all values are read from the JSON file.
+  if (m_gsd == 1.0 && m_flyingHeight == 1000.0)
+    updateState();
 }
 
 //***************************************************************************
@@ -289,8 +312,7 @@ std::string UsgsAstroPushFrameSensorModel::getModelNameFromModelState(
 // UsgsAstroLineScannerSensorModel::getModelState
 //***************************************************************************
 std::string UsgsAstroPushFrameSensorModel::getModelState() const {
-  MESSAGE_LOG("Running getModelState")
-
+  MESSAGE_LOG("Running getModelState");
   json state;
   state["m_modelName"] = _SENSOR_MODEL_NAME;
   state["m_startingDetectorSample"] = m_startingDetectorSample;
@@ -330,7 +352,7 @@ std::string UsgsAstroPushFrameSensorModel::getModelState() const {
       "m_frameletHeight: {} "
       "m_frameletsFlipped: {} "
       "m_frameletsOrderReversed: {}",
-      m_frameletHeight, m_frameletsFlipped, m_frameletsOrderReversed)
+      m_frameletHeight, m_frameletsFlipped, m_frameletsOrderReversed);
 
   state["m_detectorSampleSumming"] = m_detectorSampleSumming;
   state["m_detectorLineSumming"] = m_detectorLineSumming;
@@ -429,8 +451,20 @@ std::string UsgsAstroPushFrameSensorModel::getModelState() const {
   MESSAGE_LOG("num sun positions: {} ", m_sunPosition.size())
 
   state["m_sunVelocity"] = m_sunVelocity;
-  MESSAGE_LOG("num sun velocities: {} ", m_sunVelocity.size())
+  MESSAGE_LOG("num sun velocities: {} ", m_sunVelocity.size());
 
+  // Parameters needed to deal with the fact that neighboring framelets have some overlap
+  state["m_numLinesOverlap"]       = m_numLinesOverlap;
+  state["m_reducedframeletHeight"] = m_reducedFrameletHeight;
+  state["m_nReducedLines"]         = m_nReducedLines;
+
+  MESSAGE_LOG(
+      "m_numLinesOverlap: {} "
+      "m_reducedFrameletHeight: {} "
+      "m_nReducedLines: {} ",
+      state["m_numLinesOverlap"].dump(), state["m_reducedFrameletHeight"].dump(),
+      state["m_nReducedLines"].dump());
+  
   std::string stateString = getModelName() + "\n" + state.dump(2);
   return stateString;
 }
@@ -438,8 +472,9 @@ std::string UsgsAstroPushFrameSensorModel::getModelState() const {
 //***************************************************************************
 // UsgsAstroLineScannerSensorModel::applyTransformToState
 //***************************************************************************
-void UsgsAstroPushFrameSensorModel::applyTransformToState(ale::Rotation const& r, ale::Vec3d const& t,
-                                                   std::string& stateString) {
+void UsgsAstroPushFrameSensorModel::applyTransformToState(ale::Rotation const& r,
+                                                          ale::Vec3d const& t,
+                                                          std::string& stateString) {
 
   nlohmann::json j = stateAsJson(stateString);
 
@@ -470,7 +505,7 @@ void UsgsAstroPushFrameSensorModel::applyTransformToState(ale::Rotation const& r
 // UsgsAstroLineScannerSensorModel::reset
 //***************************************************************************
 void UsgsAstroPushFrameSensorModel::reset() {
-  MESSAGE_LOG("Running reset()")
+  MESSAGE_LOG("Running reset()");
 
   _no_adjustment.assign(UsgsAstroPushFrameSensorModel::NUM_PARAMETERS, 0.0);
 
@@ -534,7 +569,12 @@ void UsgsAstroPushFrameSensorModel::reset() {
   m_halfTime = 10.0;
 
   m_covariance =
-      std::vector<double>(NUM_PARAMETERS * NUM_PARAMETERS, 0.0);  // 52
+    std::vector<double>(NUM_PARAMETERS * NUM_PARAMETERS, 0.0);  // 52
+
+  // These will be overwritten later
+  m_numLinesOverlap = 0;
+  m_reducedFrameletHeight = 0;
+  m_nReducedLines = 0;
 }
 
 //*****************************************************************************
@@ -555,9 +595,9 @@ UsgsAstroPushFrameSensorModel::~UsgsAstroPushFrameSensorModel() {}
 void UsgsAstroPushFrameSensorModel::updateState() {
   // If sensor model is being created for the first time
   // This routine will set some parameters not found in the ISD.
-  MESSAGE_LOG("Updating State")
+  MESSAGE_LOG("Updating state")
   // Reference point (image center)
-  double lineCtr = m_nLines / 2.0;
+  double lineCtr = m_nReducedLines / 2.0;
   double sampCtr = m_nSamples / 2.0;
   csm::ImageCoord ip(lineCtr, sampCtr);
   MESSAGE_LOG("updateState: center image coordinate set to {} {}", lineCtr,
@@ -595,11 +635,11 @@ void UsgsAstroPushFrameSensorModel::updateState() {
 
   // Compute half swath
   m_halfSwath = m_gsd * m_nSamples / 2.0;
-  MESSAGE_LOG("updateState: half swath set to {}", m_halfSwath)
+  MESSAGE_LOG("updateState: half swath set to {}", m_halfSwath);
 
   // Compute half time duration
-  int summedFrameletHeight = m_frameletHeight / m_detectorLineSumming;
-  int numFramelets = m_nLines / summedFrameletHeight;
+  int summedFrameletHeight = m_reducedFrameletHeight / m_detectorLineSumming;
+  int numFramelets = m_nReducedLines / summedFrameletHeight;
   double fullImageTime = m_startingEphemerisTime
                        + (numFramelets - 1) * m_interframeDelay
                        + m_exposureDuration;
@@ -668,15 +708,15 @@ csm::ImageCoord UsgsAstroPushFrameSensorModel::groundToImage(
     csm::WarningList* warnings) const {
 
   // Secant search for the where the ground point is closest to the middle of the framelet.
-  int summedFrameletHeight = m_frameletHeight / m_detectorLineSumming;
-  int numFramelets = m_nLines / summedFrameletHeight;
+  int summedFrameletHeight = m_reducedFrameletHeight / m_detectorLineSumming;
+  int numFramelets = m_nReducedLines / summedFrameletHeight;
   int startFramelet = 0;
   double startDistance = calcFrameDistance(startFramelet, groundPt, adj);
-  int endFramelet = m_nLines / summedFrameletHeight - 1;
+  int endFramelet = m_nReducedLines / summedFrameletHeight - 1;
   double endDistance = calcFrameDistance(endFramelet, groundPt, adj);
   int maxIts = 20;
   int count = 0;
-  while(startFramelet != endFramelet && startDistance != endDistance && count++ < maxIts) {
+  while (startFramelet != endFramelet && startDistance != endDistance && count++ < maxIts) {
     double offset = endDistance * (endFramelet - startFramelet) / (endDistance - startDistance);
     startFramelet = endFramelet;
     startDistance = endDistance;
@@ -698,15 +738,21 @@ csm::ImageCoord UsgsAstroPushFrameSensorModel::groundToImage(
 
   // Convert to detector line and sample
   double detectorLine = m_iTransL[0] + m_iTransL[1] * distortedFocalX +
-                        m_iTransL[2] * distortedFocalY;
+    m_iTransL[2] * distortedFocalY;
+
   double detectorSample = m_iTransS[0] + m_iTransS[1] * distortedFocalX +
                           m_iTransS[2] * distortedFocalY;
 
   // Convert to image sample line
   csm::ImageCoord imagePt;
-  imagePt.line = endFramelet * summedFrameletHeight;
-  imagePt.line += (detectorLine + m_detectorLineOrigin - m_startingDetectorLine)
-                / m_detectorLineSumming;
+  imagePt.line = (detectorLine + m_detectorLineOrigin - m_startingDetectorLine)
+    / m_detectorLineSumming;
+  // Convert from local framelet to full frame line
+  imagePt.line += endFramelet * summedFrameletHeight;
+
+  // Adjust for the fact that several lines were removed at the framelet top and bottom
+  imagePt.line -= m_numLinesOverlap/2;
+  
   imagePt.samp = (detectorSample + m_detectorSampleOrigin - m_startingDetectorSample)
                / m_detectorSampleSumming;
 
@@ -808,6 +854,7 @@ csm::EcefCoord UsgsAstroPushFrameSensorModel::imageToGround(
         csm::Warning::PRECISION_NOT_MET, "Desired precision not achieved.",
         "UsgsAstroPushFrameSensorModel::imageToGround()"));
   }
+
   MESSAGE_LOG("imageToGround for {} {} {}", image_pt.line, image_pt.samp, height);
   return csm::EcefCoord(x, y, z);
 }
@@ -1200,18 +1247,20 @@ std::string UsgsAstroPushFrameSensorModel::getReferenceDateAndTime() const {
 //***************************************************************************
 double UsgsAstroPushFrameSensorModel::getImageTime(
     const csm::ImageCoord& image_pt) const {
-  int summedFrameletHeight = m_frameletHeight / m_detectorLineSumming;
+  int summedFrameletHeight = m_reducedFrameletHeight / m_detectorLineSumming;
+
+  // Note that image_pt.line is double, so after division the fractional part
+  // is removed below.
   int frameletNumber = image_pt.line / summedFrameletHeight;
   if (m_frameletsOrderReversed) {
-    frameletNumber = (m_nLines / summedFrameletHeight) - frameletNumber - 1;
+    frameletNumber = (m_nReducedLines / summedFrameletHeight) - frameletNumber - 1;
   }
 
   double time = m_startingEphemerisTime + 0.5 * m_exposureDuration
               + frameletNumber * m_interframeDelay;
-
   time -= m_centerEphemerisTime;
 
-  MESSAGE_LOG("getImageTime for image line {} is {}", image_pt.line, time)
+  MESSAGE_LOG("getImageTime for image line {} is {}", image_pt.line, time);
 
   return time;
 }
@@ -1386,7 +1435,7 @@ csm::ImageCoord UsgsAstroPushFrameSensorModel::getImageStart() const {
 // UsgsAstroPushFrameSensorModel::getImageSize
 //***************************************************************************
 csm::ImageVector UsgsAstroPushFrameSensorModel::getImageSize() const {
-  return csm::ImageVector(m_nLines, m_nSamples);
+  return csm::ImageVector(m_nReducedLines, m_nSamples);
 }
 
 //---------------------------------------------------------------------------
@@ -1407,7 +1456,7 @@ std::pair<csm::ImageCoord, csm::ImageCoord>
 UsgsAstroPushFrameSensorModel::getValidImageRange() const {
   return std::pair<csm::ImageCoord, csm::ImageCoord>(
       csm::ImageCoord(0.0, 0.0),
-      csm::ImageCoord(m_nLines,
+      csm::ImageCoord(m_nReducedLines,
                       m_nSamples));  // Technically nl and ns are outside the
                                      // image in a zero based system.
 }
@@ -1684,18 +1733,22 @@ void UsgsAstroPushFrameSensorModel::losToEcf(
   MESSAGE_LOG(
       "Computing losToEcf (with adjustments) for"
       "line {} sample {}",
-      line, sample)
+      line, sample);
 
   double time = getImageTime(csm::ImageCoord(line, sample));
   getAdjSensorPosVel(time, adj, xc, yc, zc, vx, vy, vz);
 
   // Compute the line within the framelet
-  int summedFrameletHeight = m_frameletHeight / m_detectorLineSumming;
+  int summedFrameletHeight = m_reducedFrameletHeight / m_detectorLineSumming;
   double frameletLine = std::fmod(line, summedFrameletHeight);
   if (m_frameletsFlipped) {
-    frameletLine = summedFrameletHeight - frameletLine;
+    // TODO: Below may need to subtract 1. Need a testcase where this happens.
+    frameletLine = summedFrameletHeight - frameletLine; 
   }
 
+  // Adjust for the fact that several lines were removed at the framelet top and bottom
+  frameletLine += m_numLinesOverlap/2;
+  
   // Compute distorted image coordinates in mm (sample, line on image (pixels)
   // -> focal plane
   double distortedFocalPlaneX, distortedFocalPlaneY;
@@ -1856,8 +1909,8 @@ void UsgsAstroPushFrameSensorModel::losEllipsoidIntersect(
     quadTerm = 0.0;
     std::string message = "Image ray does not intersect ellipsoid";
     if (warnings) {
-      warnings->push_back(csm::Warning(
-          csm::Warning::NO_INTERSECTION, message, "UsgsAstroPushFrameSensorModel::losElliposidIntersect"));
+      warnings->push_back(csm::Warning(csm::Warning::NO_INTERSECTION, message,
+                                       "UsgsAstroPushFrameSensorModel::losElliposidIntersect"));
     }
     MESSAGE_LOG(message)
   }
@@ -2051,7 +2104,7 @@ std::vector<double> UsgsAstroPushFrameSensorModel::computeDetectorView(
 std::string UsgsAstroPushFrameSensorModel::constructStateFromIsd(
     const std::string imageSupportData, csm::WarningList* warnings) {
   json state = {};
-  MESSAGE_LOG("Constructing state from Isd")
+  MESSAGE_LOG("Constructing state from Isd");
   // Instantiate UsgsAstroLineScanner sensor model
   json jsonIsd = json::parse(imageSupportData);
   std::shared_ptr<csm::WarningList> parsingWarnings(new csm::WarningList);
@@ -2151,7 +2204,7 @@ std::string UsgsAstroPushFrameSensorModel::constructStateFromIsd(
   for (int i = 0; i < ephemTime.size(); i++) {
     interpSunState = sunState.getState(ephemTime[i], ale::SPLINE);
     rotatedSunState = j2000_to_target.rotateStateAt(ephemTime[i], interpSunState);
-    // ALE operates in Km and we want m
+    // ALE operates in km and we want m
     sunPositions.push_back(rotatedSunState.position.x * 1000);
     sunPositions.push_back(rotatedSunState.position.y * 1000);
     sunPositions.push_back(rotatedSunState.position.z * 1000);
@@ -2233,9 +2286,7 @@ std::string UsgsAstroPushFrameSensorModel::constructStateFromIsd(
       state["m_startingDetectorSample"].dump(),
       state["m_startingDetectorLine"].dump(),
       state["m_detectorSampleOrigin"].dump(),
-      state["m_detectorLineOrigin"].dump())
-
-
+      state["m_detectorLineOrigin"].dump());
 
   ale::Orientations j2000_to_sensor = ale::getInstrumentPointing(jsonIsd);
   ale::State interpInstState, rotatedInstState;
@@ -2246,7 +2297,7 @@ std::string UsgsAstroPushFrameSensorModel::constructStateFromIsd(
     interpInstState = inst_state.getState(ephemTime[i], ale::SPLINE);
     rotatedInstState =
         j2000_to_target.rotateStateAt(ephemTime[i], interpInstState, ale::SLERP);
-    // ALE operates in Km and we want m
+    // ALE operates in km and we want m
     positions.push_back(rotatedInstState.position.x * 1000);
     positions.push_back(rotatedInstState.position.y * 1000);
     positions.push_back(rotatedInstState.position.z * 1000);
@@ -2336,8 +2387,8 @@ std::string UsgsAstroPushFrameSensorModel::constructStateFromIsd(
   MESSAGE_LOG("m_currentParameterValue: {}",
               state["m_currentParameterValue"].dump())
 
-  // get radii
-  // ALE operates in Km and we want m
+  // Get radii
+  // ALE operates in km and we want m
   state["m_minorAxis"] = ale::getSemiMinorRadius(jsonIsd) * 1000;
   state["m_majorAxis"] = ale::getSemiMajorRadius(jsonIsd) * 1000;
   MESSAGE_LOG(
@@ -2368,6 +2419,21 @@ std::string UsgsAstroPushFrameSensorModel::constructStateFromIsd(
     state["m_covariance"][i * NUM_PARAMETERS + i] = 1.0;
   }
 
+  // Parameters needed to deal with the fact that neighboring
+  // framelets have some overlap. The amount of overlap is at least
+  // two pixels and is image- and location-dependent. Will remove
+  // half of this many lines at the top and bottom of a frame.
+  try {
+    state["m_numLinesOverlap"] = jsonIsd.at("num_lines_overlap");
+  } catch (...) {
+    state["m_numLinesOverlap"] = 0;
+  }
+
+  state["m_reducedframeletHeight"] = state["m_frameletHeight"].get<int>()
+    - state["m_numLinesOverlap"].get<int>();
+  int numFramelets = state["m_nLines"].get<int>() / state["m_frameletHeight"].get<int>();
+  state["m_nReducedLines"] = numFramelets * state["m_reducedframeletHeight"].get<int>();
+  
   if (!parsingWarnings->empty()) {
     if (warnings) {
       warnings->insert(warnings->end(), parsingWarnings->begin(),
@@ -2426,13 +2492,14 @@ csm::EcefVector UsgsAstroPushFrameSensorModel::getSunPosition(
   return sunPosition;
 }
 
-
 double UsgsAstroPushFrameSensorModel::calcFrameDistance(int frameletNumber,
                                                         const csm::EcefCoord& groundPt,
                                                         const std::vector<double>& adj) const {
+
   MESSAGE_LOG("Calculating frame distance for frame {} and ground point {}, {}, {}",
               frameletNumber, groundPt.x, groundPt.y, groundPt.z)
-  int summedFrameletHeight = m_frameletHeight / m_detectorLineSumming;
+
+  int summedFrameletHeight = m_reducedFrameletHeight / m_detectorLineSumming;
   csm::ImageCoord centerFramePt((frameletNumber + 0.5) * summedFrameletHeight, m_nSamples/2.0);
 
   double frameTime = getImageTime(centerFramePt);
@@ -2444,8 +2511,11 @@ double UsgsAstroPushFrameSensorModel::calcFrameDistance(int frameletNumber,
     m_startingDetectorLine;
   detectorLine /= m_detectorLineSumming;
 
+  // Adjust for the fact that several lines were removed at the framelet top and bottom
+  detectorLine -= m_numLinesOverlap/2;
+
   // Return distance to center of frame
-  MESSAGE_LOG("Frame distance of {} lines", detectorLine - summedFrameletHeight/2.0)
+  MESSAGE_LOG("Frame distance of {} lines", detectorLine - summedFrameletHeight/2.0);
   return detectorLine - summedFrameletHeight/2.0;
 }
 

@@ -2312,7 +2312,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(
   for (int i = 0; i < ephemTime.size(); i++) {
     interpSunState = sunState.getState(ephemTime[i], ale::SPLINE);
     rotatedSunState = j2000_to_target.rotateStateAt(ephemTime[i], interpSunState);
-    // ALE operates in Km and we want m
+    // ALE operates in km and we want m
     sunPositions.push_back(rotatedSunState.position.x * 1000);
     sunPositions.push_back(rotatedSunState.position.y * 1000);
     sunPositions.push_back(rotatedSunState.position.z * 1000);
@@ -2387,7 +2387,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(
     interpInstState = inst_state.getState(ephemTime[i], ale::SPLINE);
     rotatedInstState =
         j2000_to_target.rotateStateAt(ephemTime[i], interpInstState, ale::SLERP);
-    // ALE operates in Km and we want m
+    // ALE operates in km and we want m
     positions.push_back(rotatedInstState.position.x * 1000);
     positions.push_back(rotatedInstState.position.y * 1000);
     positions.push_back(rotatedInstState.position.z * 1000);

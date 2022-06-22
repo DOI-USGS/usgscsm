@@ -260,48 +260,51 @@ void lagrangeInterp(const int &numTime, const double *valueArray,
 
   // Compute interpolation coefficients
   double tp3, tp2, tp1, tm1, tm2, tm3, tm4, d[8];
-  double tau = fndex - index;
+  double t0 = fndex - index;
   if (order == 2) {
-    tm1 = tau - 1;
+    tm1 = t0 - 1;
     d[0] = -tm1;
-    d[1] = tau;
+    d[1] = t0;
   } else if (order == 4) {
-    tp1 = tau + 1;
-    tm1 = tau - 1;
-    tm2 = tau - 2;
-    d[0] = -tau * tm1 * tm2 / 6.0;
+    tp1 = t0 + 1;
+    tm1 = t0 - 1;
+    tm2 = t0 - 2;
+    d[0] = -t0 * tm1 * tm2 / 6.0;
     d[1] = tp1 * tm1 * tm2 / 2.0;
-    d[2] = -tp1 * tau * tm2 / 2.0;
-    d[3] = tp1 * tau * tm1 / 6.0;
+    d[2] = -tp1 * t0 * tm2 / 2.0;
+    d[3] = tp1 * t0 * tm1 / 6.0;
   } else if (order == 6) {
-    tp2 = tau + 2;
-    tp1 = tau + 1;
-    tm1 = tau - 1;
-    tm2 = tau - 2;
-    tm3 = tau - 3;
-    d[0] = -tp1 * tau * tm1 * tm2 * tm3 / 120.0;
-    d[1] = tp2 * tau * tm1 * tm2 * tm3 / 24.0;
+    tp2 = t0 + 2;
+    tp1 = t0 + 1;
+    tm1 = t0 - 1;
+    tm2 = t0 - 2;
+    tm3 = t0 - 3;
+    d[0] = -tp1 * t0 * tm1 * tm2 * tm3 / 120.0;
+    d[1] = tp2 * t0 * tm1 * tm2 * tm3 / 24.0;
     d[2] = -tp2 * tp1 * tm1 * tm2 * tm3 / 12.0;
-    d[3] = tp2 * tp1 * tau * tm2 * tm3 / 12.0;
-    d[4] = -tp2 * tp1 * tau * tm1 * tm3 / 24.0;
-    d[5] = tp2 * tp1 * tau * tm1 * tm2 / 120.0;
+    d[3] = tp2 * tp1 * t0 * tm2 * tm3 / 12.0;
+    d[4] = -tp2 * tp1 * t0 * tm1 * tm3 / 24.0;
+    d[5] = tp2 * tp1 * t0 * tm1 * tm2 / 120.0;
   } else if (order == 8) {
-    tp3 = tau + 3;
-    tp2 = tau + 2;
-    tp1 = tau + 1;
-    tm1 = tau - 1;
-    tm2 = tau - 2;
-    tm3 = tau - 3;
-    tm4 = tau - 4;
-    // Why are the denominators hard coded, as it should be x[0] - x[i]
-    d[0] = -tp2 * tp1 * tau * tm1 * tm2 * tm3 * tm4 / 5040.0;
-    d[1] = tp3 * tp1 * tau * tm1 * tm2 * tm3 * tm4 / 720.0;
-    d[2] = -tp3 * tp2 * tau * tm1 * tm2 * tm3 * tm4 / 240.0;
+    tp3 = t0 + 3;
+    tp2 = t0 + 2;
+    tp1 = t0 + 1;
+    tm1 = t0 - 1;
+    tm2 = t0 - 2;
+    tm3 = t0 - 3;
+    tm4 = t0 - 4;
+    // The denominators are hard-coded because the sampling is uniform
+    // hence they can be computed explicitly.
+    // Note: Trying pre-compute the many repeated multiplications
+    // below does not speed things up.
+    d[0] = -tp2 * tp1 * t0 * tm1 * tm2 * tm3 * tm4 / 5040.0;
+    d[1] = tp3 * tp1 * t0 * tm1 * tm2 * tm3 * tm4  / 720.0;
+    d[2] = -tp3 * tp2 * t0 * tm1 * tm2 * tm3 * tm4 / 240.0;
     d[3] = tp3 * tp2 * tp1 * tm1 * tm2 * tm3 * tm4 / 144.0;
-    d[4] = -tp3 * tp2 * tp1 * tau * tm2 * tm3 * tm4 / 144.0;
-    d[5] = tp3 * tp2 * tp1 * tau * tm1 * tm3 * tm4 / 240.0;
-    d[6] = -tp3 * tp2 * tp1 * tau * tm1 * tm2 * tm4 / 720.0;
-    d[7] = tp3 * tp2 * tp1 * tau * tm1 * tm2 * tm3 / 5040.0;
+    d[4] = -tp3 * tp2 * tp1 * t0 * tm2 * tm3 * tm4 / 144.0;
+    d[5] = tp3 * tp2 * tp1 * t0 * tm1 * tm3 * tm4  / 240.0;
+    d[6] = -tp3 * tp2 * tp1 * t0 * tm1 * tm2 * tm4 / 720.0;
+    d[7] = tp3 * tp2 * tp1 * t0 * tm1 * tm2 * tm3  / 5040.0;
   }
 
   // Compute interpolated point
