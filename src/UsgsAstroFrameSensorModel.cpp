@@ -81,6 +81,9 @@ void UsgsAstroFrameSensorModel::reset() {
   m_iTransS = std::vector<double>(3, 0.0);
   m_iTransL = std::vector<double>(3, 0.0);
   m_boresight = std::vector<double>(3, 0.0);
+  m_lineJitter.clear();
+  m_sampleJitter.clear();
+  m_lineTimes.clear();
   m_parameterType =
       std::vector<csm::param::Type>(NUM_PARAMETERS, csm::param::REAL);
   m_referencePointXyz.x = 0;
@@ -163,6 +166,18 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
                m_startingDetectorSample, m_startingDetectorLine, &m_iTransS[0],
                &m_iTransL[0], line, sample);
 
+  // Optionally apply rolling shutter jitter correction
+  if (m_lineTimes.size()) {
+    double jitteredLine, jitteredSample;
+    addJitter(
+        line, sample,
+        desired_precision, 20,
+        m_lineJitter, m_sampleJitter, m_lineTimes,
+        jitteredLine, jitteredSample);
+    line = jitteredLine;
+    sample = jitteredSample;
+  }
+
   MESSAGE_LOG("Computed groundToImage for {}, {}, {} as line, sample: {}, {}",
               groundPt.x, groundPt.y, groundPt.z, line, sample);
 
@@ -211,8 +226,13 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(
       m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1],
       m[2][2]);
 
-  // Apply the principal point offset, assuming the pp is given in pixels
-  double xl, yl, zl;
+  // Optionally apply rolling shutter jitter correction
+  if (m_lineTimes.size()) {
+    double dejitteredLine, dejitteredSample;
+    removeJitter(line, sample, m_lineJitter, m_sampleJitter, m_lineTimes, dejitteredLine, dejitteredSample);
+    line = dejitteredLine;
+    sample = dejitteredSample;
+  }
 
   // Convert from the pixel space into the metric space
   double x_camera, y_camera;
@@ -229,6 +249,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(
               undistortedY);
 
   // Now back from distorted mm to pixels
+  double xl, yl, zl;
   xl = m[0][0] * undistortedX + m[0][1] * undistortedY -
        m[0][2] * -m_focalLength;
   yl = m[1][0] * undistortedX + m[1][1] * undistortedY -
@@ -737,6 +758,9 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
       {"m_transY", {m_transY[0], m_transY[1], m_transY[2]}},
       {"m_iTransS", {m_iTransS[0], m_iTransS[1], m_iTransS[2]}},
       {"m_iTransL", {m_iTransL[0], m_iTransL[1], m_iTransL[2]}},
+      {"m_lineJitter", m_lineJitter},
+      {"m_sampleJitter", m_sampleJitter},
+      {"m_lineTimes", m_lineTimes},
       {"m_majorAxis", m_majorAxis},
       {"m_minorAxis", m_minorAxis},
       {"m_spacecraftVelocity",
@@ -783,7 +807,7 @@ void UsgsAstroFrameSensorModel::applyTransformToState(ale::Rotation const& r, al
   // The vector having the rotation and translation from camera to
   // ECEF
   std::vector<double> currentParameterValue = j["m_currentParameterValue"];
-  
+
   // Extract the quaternions from the frame camera, apply the
   // rotation, and put them back.
   std::vector<double> quaternions;
@@ -792,7 +816,7 @@ void UsgsAstroFrameSensorModel::applyTransformToState(ale::Rotation const& r, al
   applyRotationToQuatVec(r, quaternions);
   for (size_t it = 0; it < 4; it++)
     currentParameterValue[it + 3] = quaternions[it];
-  
+
   // Extract the positions from the frame camera, apply to them the
   // rotation and translation, and put them back.
   std::vector<double> positions;
@@ -949,17 +973,23 @@ void UsgsAstroFrameSensorModel::replaceModelState(
         state.at("m_currentParameterCovariance").get<std::vector<double>>();
 
     // These are optional and may not exist in all state files
-    if (state.find("m_maxElevation") != state.end()) 
+    if (state.find("m_maxElevation") != state.end())
       m_maxElevation = state.at("m_maxElevation").get<double>();
-    if (state.find("m_minElevation") != state.end()) 
+    if (state.find("m_minElevation") != state.end())
       m_minElevation = state.at("m_minElevation").get<double>();
-    if (state.find("m_originalHalfLines") != state.end()) 
+    if (state.find("m_originalHalfLines") != state.end())
       m_originalHalfLines = state.at("m_originalHalfLines").get<double>();
-    if (state.find("m_originalHalfSamples") != state.end()) 
+    if (state.find("m_originalHalfSamples") != state.end())
       m_originalHalfSamples = state.at("m_originalHalfSamples").get<double>();
-    if (state.find("m_pixelPitch") != state.end()) 
+    if (state.find("m_pixelPitch") != state.end())
       m_pixelPitch = state.at("m_pixelPitch").get<double>();
-    
+    if (state.find("m_lineJitter") != state.end())
+      m_lineJitter = state.at("m_lineJitter").get<std::vector<double>>();
+    if (state.find("m_sampleJitter") != state.end())
+      m_sampleJitter = state.at("m_sampleJitter").get<std::vector<double>>();
+    if (state.find("m_lineTimes") != state.end())
+      m_lineTimes = state.at("m_lineTimes").get<std::vector<double>>();
+
   } catch (std::out_of_range &e) {
     MESSAGE_LOG("State keywords required to generate sensor model missing: " +
                 std::string(e.what()) + "\nUsing model string: " + stringState +
@@ -1149,6 +1179,13 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(
 
   state["m_iTransL"] = ale::getFocal2PixelLines(parsedIsd);
   state["m_iTransS"] = ale::getFocal2PixelSamples(parsedIsd);
+
+  // optional rolling shutter jitter
+  if (parsedIsd.find("jitter") != parsedIsd.end()) {
+    state["m_lineJitter"] = parsedIsd.at("jitter").at("lineJitterCoefficients");
+    state["m_sampleJitter"] = parsedIsd.at("jitter").at("sampleJitterCoefficients");
+    state["m_lineTimes"] = parsedIsd.at("jitter").at("lineExposureTimes");
+  }
 
   // We don't pass the pixel to focal plane transformation so invert the
   // focal plane to pixel transformation

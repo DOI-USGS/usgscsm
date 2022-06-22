@@ -1,5 +1,6 @@
 #include "Utilities.h"
 
+
 #include <Error.h>
 #include <cmath>
 #include <stack>
@@ -87,6 +88,87 @@ void computeDistortedFocalPlaneCoordinates(
   distortedX = p11 * t1 + p12 * t2;
   distortedY = p21 * t1 + p22 * t2;
 }
+
+
+// Compute the de-jittered pixel coordinate given a jittered image coordinate
+// a set of jitter coefficients and line exposure times for rolling shutter.
+// Jitter coefficients are in largest power first order. There is no constant
+// coefficient. For example {1, 2, 3} would correspond to 1*t^3 + 2*t&2 + 3*t.
+void removeJitter(
+    const double &line, const double &sample,
+    const std::vector<double> lineJitterCoeffs, const std::vector<double> sampleJitterCoeffs,
+    const std::vector<double> lineTimes,
+    double &dejitteredLine, double &dejitteredSample) {
+  // Check input
+  if (lineJitterCoeffs.size() != sampleJitterCoeffs.size() ||
+      lineTimes.size() == 0) {
+    throw csm::Error(
+        csm::Error::INDEX_OUT_OF_RANGE,
+        "Jitter coefficient vectors must be the same size.",
+        "removeJitter");
+  }
+  if (lineTimes.size() == 0) {
+    throw csm::Error(
+        csm::Error::INDEX_OUT_OF_RANGE,
+        "Line exposure times must be non-empty.",
+        "removeJitter");
+  }
+  double lineJitter = 0;
+  double sampleJitter = 0;
+  // Bound line index to the vector of line exposure times;
+  double time = lineTimes[std::max(std::min((int)std::round(line), (int)lineTimes.size()), 1) - 1];
+  for (unsigned int n = 0; n < lineJitterCoeffs.size(); n++) {
+    double timeTerm = pow(time, lineJitterCoeffs.size() - n);
+    lineJitter += lineJitterCoeffs[n] * timeTerm;
+    sampleJitter += sampleJitterCoeffs[n] * timeTerm;
+  }
+  dejitteredLine = line - lineJitter;
+  dejitteredSample = sample - sampleJitter;
+
+  return;
+}
+
+
+// Compute the jittered pixel coordinate given a de-jittered image coordinate
+// a set of jitter coefficients and line exposure times for rolling shutter.
+// Jitter coefficients are in largest power first order. There is no constant
+// coefficient. For example {1, 2, 3} would correspond to 1*t^3 + 2*t&2 + 3*t.
+// This uses an iterative method so a tolerance and maximum number of iteration
+// are required to determine when to stop iterating.
+void addJitter(
+    const double &line, const double &sample,
+    const double &tolerance, const int &maxIts,
+    const std::vector<double> lineJitterCoeffs, const std::vector<double> sampleJitterCoeffs,
+    const std::vector<double> lineTimes,
+    double &jitteredLine, double &jitteredSample) {
+  int iteration = 0;
+  double dejitteredLine = line - 1;
+  double dejitteredSample = sample - 1;
+  double currentLine = line;
+  double currentSample =  sample;
+
+  while (iteration < maxIts) {
+    removeJitter(
+        currentLine, currentSample,
+        lineJitterCoeffs, sampleJitterCoeffs, lineTimes,
+        dejitteredLine, dejitteredSample);
+
+    if (fabs(dejitteredLine - line) < tolerance &&
+        fabs(dejitteredSample - sample) < tolerance) {
+      break;
+    }
+
+    currentLine = line + currentLine - dejitteredLine;
+    currentSample = sample + currentSample - dejitteredSample;
+    iteration++;
+  }
+
+  jitteredLine = currentLine;
+  jitteredSample = currentSample;
+
+  return;
+}
+
 
 // Compute the image pixel for a distorted focal plane coordinate
 // in - line

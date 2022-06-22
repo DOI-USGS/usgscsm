@@ -38,7 +38,7 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM,
 
   std::string constructStateFromIsd(const std::string &jsonIsd,
                                     csm::WarningList *warnings);
-  
+
   // Apply a rotation and translation to a state string. The effect is
   // to transform the position and orientation of the camera in ECEF
   // coordinates.
@@ -365,6 +365,9 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM,
   std::vector<double> m_iTransS;
   std::vector<double> m_iTransL;
   std::vector<double> m_boresight;
+  std::vector<double> m_lineJitter;
+  std::vector<double> m_sampleJitter;
+  std::vector<double> m_lineTimes;
   double m_majorAxis;
   double m_minorAxis;
   double m_focalLength;
