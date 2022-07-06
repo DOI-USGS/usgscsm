@@ -1,3 +1,27 @@
+/** Copyright  © 2017-2022 BAE Systems Information and Electronic Systems Integration Inc.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted
+provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions
+and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or other materials provided
+with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors may be used to
+endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. **/
+
 #include "UsgsAstroPushFrameSensorModel.h"
 #include "Distortion.h"
 #include "Utilities.h"
@@ -464,7 +488,7 @@ std::string UsgsAstroPushFrameSensorModel::getModelState() const {
       "m_nReducedLines: {} ",
       state["m_numLinesOverlap"].dump(), state["m_reducedFrameletHeight"].dump(),
       state["m_nReducedLines"].dump());
-  
+
   std::string stateString = getModelName() + "\n" + state.dump(2);
   return stateString;
 }
@@ -752,7 +776,7 @@ csm::ImageCoord UsgsAstroPushFrameSensorModel::groundToImage(
 
   // Adjust for the fact that several lines were removed at the framelet top and bottom
   imagePt.line -= m_numLinesOverlap/2;
-  
+
   imagePt.samp = (detectorSample + m_detectorSampleOrigin - m_startingDetectorSample)
                / m_detectorSampleSumming;
 
@@ -1238,7 +1262,7 @@ std::string UsgsAstroPushFrameSensorModel::getReferenceDateAndTime() const {
   double relativeTime =
       UsgsAstroPushFrameSensorModel::getImageTime(referencePointImage);
   time_t ephemTime = m_centerEphemerisTime + relativeTime;
-  
+
   return ephemTimeToCalendarTime(ephemTime);
 }
 
@@ -1743,12 +1767,12 @@ void UsgsAstroPushFrameSensorModel::losToEcf(
   double frameletLine = std::fmod(line, summedFrameletHeight);
   if (m_frameletsFlipped) {
     // TODO: Below may need to subtract 1. Need a testcase where this happens.
-    frameletLine = summedFrameletHeight - frameletLine; 
+    frameletLine = summedFrameletHeight - frameletLine;
   }
 
   // Adjust for the fact that several lines were removed at the framelet top and bottom
   frameletLine += m_numLinesOverlap/2;
-  
+
   // Compute distorted image coordinates in mm (sample, line on image (pixels)
   // -> focal plane
   double distortedFocalPlaneX, distortedFocalPlaneY;
@@ -2433,7 +2457,7 @@ std::string UsgsAstroPushFrameSensorModel::constructStateFromIsd(
     - state["m_numLinesOverlap"].get<int>();
   int numFramelets = state["m_nLines"].get<int>() / state["m_frameletHeight"].get<int>();
   state["m_nReducedLines"] = numFramelets * state["m_reducedframeletHeight"].get<int>();
-  
+
   if (!parsingWarnings->empty()) {
     if (warnings) {
       warnings->insert(warnings->end(), parsingWarnings->begin(),
