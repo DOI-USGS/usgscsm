@@ -10,7 +10,7 @@
       "usageType": "openSource",
       "licenses": [
         {
-          "name": "BSD 3-Clause",
+          "name": "Public Domain, CC-1.0",
           "URL": "https://github.com/USGS-Astrogeology/usgscsm/blob/dev/LICENSE.md"
         }
       ]
@@ -41,7 +41,7 @@
     },
 
     "date": {
-      "metadataLastUpdated": "2022-04-15"
+      "metadataLastUpdated": "2022-07-06"
     }
   }
 ]
