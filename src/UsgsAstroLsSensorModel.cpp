@@ -1,22 +1,27 @@
-//----------------------------------------------------------------------------
-//
-//                                UNCLASSIFIED
-//
-// Copyright © 1989-2017 BAE Systems Information and Electronic Systems
-// Integration Inc.
-//                            ALL RIGHTS RESERVED
-// Use of this software product is governed by the terms of a license
-// agreement. The license agreement is found in the installation directory.
-//
-//             For support, please visit http://www.baesystems.com/gxp
-//
-//  Revision History:
-//  Date        Name         Description
-//  ----------- ------------ -----------------------------------------------
-//  13-Nov-2015 BAE Systems  Initial Implementation
-//  24-Apr-2017 BAE Systems  Update for CSM 3.0.2
-//  24-OCT-2017 BAE Systems  Update for CSM 3.0.3
-//-----------------------------------------------------------------------------
+/** Copyright  © 2017-2022 BAE Systems Information and Electronic Systems Integration Inc.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted
+provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions
+and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or other materials provided
+with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors may be used to
+endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. **/
+
 #include "UsgsAstroLsSensorModel.h"
 #include "Distortion.h"
 #include "Utilities.h"
@@ -678,7 +683,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
     const csm::EcefCoord& groundPt, const std::vector<double>& adj,
     double desiredPrecision, double* achievedPrecision,
     csm::WarningList* warnings) const {
-  
+
   csm::ImageCoord approxPt;
   computeProjectiveApproximation(groundPt, approxPt);
 
@@ -692,14 +697,14 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
   double lineErr1 = calcDetectorLineErr(t1, approxPt, groundPt, adj);
   while (std::abs(lineErr1) > desiredPrecision && ++count < 15) {
 
-    if (lineErr1 == lineErr0) 
+    if (lineErr1 == lineErr0)
       break; // avoid division by 0
-    
+
     // Secant method update
     // https://en.wikipedia.org/wiki/Secant_method
     double t2 = t1 - lineErr1 * (t1 - t0) / (lineErr1 - lineErr0);
     double lineErr2 = calcDetectorLineErr(t2, approxPt, groundPt, adj);
-    
+
     // Update for the next step
     t0 = t1; lineErr0 = lineErr1;
     t1 = t2; lineErr1 = lineErr2;
@@ -1957,7 +1962,7 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(const double& time,
         return;
     }
   }
-  
+
   double sensVelNom[3];
   lagrangeInterp(m_numPositions / 3, &m_velocities[0], m_t0Ephem, m_dtEphem,
                  time, 3, nOrder, sensVelNom);
@@ -2117,7 +2122,7 @@ void UsgsAstroLsSensorModel::computeProjectiveApproximation(const csm::EcefCoord
     // Sanity checks. Ensure we don't divide by 0 and that the numbers are valid.
     if (line_den == 0.0 || std::isnan(line_den) || std::isinf(line_den) ||
         samp_den == 0.0 || std::isnan(samp_den) || std::isinf(samp_den)) {
-      
+
       ip.line = m_nLines / 2.0;
       ip.samp = m_nSamples / 2.0;
       MESSAGE_LOG("Computing initial guess with constant approx line/2 and sample/2");
@@ -2138,7 +2143,7 @@ void UsgsAstroLsSensorModel::computeProjectiveApproximation(const csm::EcefCoord
 
     if (ip.samp < 0.0) ip.samp = 0.0;
     if (ip.samp > numCols) ip.samp = numCols;
-    
+
     MESSAGE_LOG("Computing initial guess with projective approximation");
   } else {
     ip.line = m_nLines / 2.0;
@@ -2185,7 +2190,7 @@ void UsgsAstroLsSensorModel::createProjectiveApproximation() {
   // Sample at two heights above the ellipsoid in order to get a
   // reliable estimate of the relationship between image points and
   // ground points.
-  
+
   for (int i = 0; i < numPts; i++) {
     ip[i].line = u_factors[i] * numImageRows;
     ip[i].samp = v_factors[i] * numImageCols;
@@ -2202,7 +2207,7 @@ void UsgsAstroLsSensorModel::createProjectiveApproximation() {
 
   usgscsm::computeBestFitProjectiveTransform(ip, gp, m_projTransCoeffs);
   m_useApproxInitTrans = true;
-  
+
   MESSAGE_LOG("Completed createProjectiveApproximation");
 }
 
@@ -2573,19 +2578,19 @@ csm::EcefVector UsgsAstroLsSensorModel::getSunPosition(
 double UsgsAstroLsSensorModel::calcDetectorLineErr(double t, csm::ImageCoord const& approxPt,
                                                    const csm::EcefCoord& groundPt,
                                                    const std::vector<double>& adj) const {
-  
+
   csm::ImageCoord currPt = approxPt;
   currPt.line += t;
-    
+
   double timei = getImageTime(currPt);
   std::vector<double> detectorView = computeDetectorView(timei, groundPt, adj);
-  
+
   // Convert to detector line
   double detectorLine = m_iTransL[0] + m_iTransL[1] * detectorView[0] +
     m_iTransL[2] * detectorView[1] + m_detectorLineOrigin -
     m_startingDetectorLine;
   detectorLine /= m_detectorLineSumming;
-    
+
   return detectorLine;
 }
-  
+

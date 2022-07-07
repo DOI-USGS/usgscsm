@@ -1,29 +1,26 @@
-//----------------------------------------------------------------------------
-//
-//                                UNCLASSIFIED
-//
-// Copyright © 1989-2017 BAE Systems Information and Electronic Systems
-// Integration Inc.
-//                            ALL RIGHTS RESERVED
-// Use of this software product is governed by the terms of a license
-// agreement. The license agreement is found in the installation directory.
-//
-//             For support, please visit http://www.baesystems.com/gxp
-//
-//  Description:
-//    The Astro Line Scanner sensor model implements the CSM 3.0.3 API.
-//    Since it supports a sensor used on non-Earth bodies (Moon, Mars), the
-//    ellipsoid is made settable based on the support data.  This ellipsoid
-//    is reported using the methods in the SettableEllipsoid class from which
-//    this model inherits.
-//
-//  Revision History:
-//  Date        Name         Description
-//  ----------- ------------ -----------------------------------------------
-//  13-Nov-2015 BAE Systems  Initial Implementation
-//  16-OCT-2017 BAE Systems  Update for CSM 3.0.3
-//
-//-----------------------------------------------------------------------------
+/** Copyright  © 2017-2022 BAE Systems Information and Electronic Systems Integration Inc.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted
+provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions
+and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or other materials provided
+with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors may be used to
+endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. **/
 
 #ifndef INCLUDE_USGSCSM_USGSASTROLSSENSORMODEL_H_
 #define INCLUDE_USGSCSM_USGSASTROLSSENSORMODEL_H_
@@ -159,7 +156,7 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
   // coordinates.
   static void applyTransformToState(ale::Rotation const& r, ale::Vec3d const& t,
                                     std::string& stateString);
-  
+
   // Set the sensor model based on the input state data
   void set(const std::string& state_data);
 
@@ -972,23 +969,23 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
   // for iterative rigorous calculations.
   void computeProjectiveApproximation(const csm::EcefCoord& gp,
                                       csm::ImageCoord& ip) const;
-  
+
   // Create the projective approximation to be used at each ground point
   void createProjectiveApproximation();
-  
+
   // A function whose value will be 0 when the line a given ground
   // point projects into is found. The obtained line will be
   // approxPt.line + t.
   double calcDetectorLineErr(double t, csm::ImageCoord const& approxPt,
                              const csm::EcefCoord& groundPt,
                              const std::vector<double>& adj) const;
-  
+
   csm::NoCorrelationModel _no_corr_model;  // A way to report no correlation
                                            // between images is supported
   std::vector<double> _no_adjustment;  // A vector of zeros indicating no internal adjustment
 
   // Store here the projective approximation of the sensor model
-  std::vector<double> m_projTransCoeffs; 
+  std::vector<double> m_projTransCoeffs;
 
   // Flag indicating if an initial approximation is used
   bool m_useApproxInitTrans;
