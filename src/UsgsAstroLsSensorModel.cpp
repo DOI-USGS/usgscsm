@@ -585,7 +585,11 @@ UsgsAstroLsSensorModel::UsgsAstroLsSensorModel() {
 //*****************************************************************************
 // UsgsAstroLsSensorModel Destructor
 //*****************************************************************************
-UsgsAstroLsSensorModel::~UsgsAstroLsSensorModel() {}
+UsgsAstroLsSensorModel::~UsgsAstroLsSensorModel() {
+  if (m_logger) {
+    m_logger->flush();
+  }
+}
 
 //*****************************************************************************
 // UsgsAstroLsSensorModel updateState
