@@ -75,21 +75,27 @@ UsgsAstroPlugin::UsgsAstroPlugin() {
     std::string logFile(logFilePtr);
 
     if (logFile != "") {
-      std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
+      m_logger = spdlog::get("usgscsm_logger");
 
       if (!m_logger) {
         if (logFile == "stdout") {
-          std::shared_ptr<spdlog::logger> m_logger =
-              spdlog::stdout_color_mt("usgscsm_logger");
+          m_logger = spdlog::stdout_color_mt("usgscsm_logger");
         }
         else if (logFile == "stderr") {
-          std::shared_ptr<spdlog::logger> m_logger =
-              spdlog::stderr_color_mt("usgscsm_logger");
+          m_logger = spdlog::stderr_color_mt("usgscsm_logger");
         }
         else {
-          std::shared_ptr<spdlog::logger> m_logger =
-              spdlog::basic_logger_mt("usgscsm_logger", logFile);
+          m_logger = spdlog::basic_logger_mt("usgscsm_logger", logFile);
         }
+
+        char *logLevlPtr = getenv("USGSCSM_LOG_LEVEL");
+        if (logLevlPtr != NULL) {
+          std::string logLevelStr(logLevlPtr);
+          std::transform(logLevelStr.begin(), logLevelStr.end(), logLevelStr.begin(),
+              [](unsigned char c){ return std::tolower(c); });
+          m_logger->set_level(spdlog::level::from_str(logLevelStr));
+        }
+
       }
     }
   }

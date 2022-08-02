@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="docs/USGSCSM_Logo.svg" alt="USGSCSM" width=200> 
+  <img src="docs/USGSCSM_Logo.svg" alt="USGSCSM" width=200>
 </p>
 
 # USGSCSM
 
-This library provides *Community Sensor Model (CSM)*-compliant sensor models 
+This library provides *Community Sensor Model (CSM)*-compliant sensor models
 created by the USGS Astrogeology Science Center.
 
 USGSCSM contains three different sensor models. The first is a
@@ -71,7 +71,26 @@ camera operations, as described in its
 Logging of the internal operations in the sensor models can be enabled by setting
 the `USGSCSM_LOG_FILE` environment variable to the file the log should be written to.
 To have the logging information printed to the standard output or standard error, set
-this to `stdout` or `stderr`. Note that these logs can become several GB in size.
+this to `stdout` or `stderr`.
+
+You can adjust how much information is logged by setting the `USGSCSM_LOG_LEVEL`
+environment variable. The log level is not case sensitive.
+The log levels are:
+
+| Level | Description |
+| ----- | ----------- |
+| trace | Intermediate calculation values |
+| debug | All function calls and returns |
+| **info ** | Only core photogrammetry calls - Default log level |
+| warn | CSM warnings |
+| err | CSM exceptions |
+| critical | Critical errors |
+| off | No log messages |
+
+All log messages of level `USGSCSM_LOG_LEVEL` and below will be logged. For example,
+setting the log level to *info* will log all messages of types *info*, *warn*, *err*,
+*critical*, and *off*. Note that these logs can become several GB in size when the
+log level is set to *debug* or *trace*.
 
 ---
 
