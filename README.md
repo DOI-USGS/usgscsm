@@ -81,7 +81,7 @@ The log levels are:
 | ----- | ----------- |
 | trace | Intermediate calculation values |
 | debug | All function calls and returns |
-| **info ** | Only core photogrammetry calls - Default log level |
+| **info** | Only core photogrammetry calls - Default log level |
 | warn | CSM warnings |
 | err | CSM exceptions |
 | critical | Critical errors |
