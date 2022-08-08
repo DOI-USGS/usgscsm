@@ -277,9 +277,13 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string& stateString) {
 
   try {
     // Approximate the ground-to-image function with a projective transform
-    createProjectiveApproximation();
+    // TESTING REMOVING PROJECTIVE TRANSFORM
+    // createProjectiveApproximation();
+    setLinearApproximation();
   } catch (...) {
-    m_useApproxInitTrans = false;
+    // TESTING REMOVING PROJECTIVE TRANSFORM
+    // m_useApproxInitTrans = false;
+    _linear = false;
   }
 }
 
@@ -491,7 +495,17 @@ void UsgsAstroLsSensorModel::applyTransformToState(ale::Rotation const& r, ale::
 //***************************************************************************
 void UsgsAstroLsSensorModel::reset() {
   MESSAGE_LOG("Running reset()")
-  m_useApproxInitTrans = false;  // default until an initial approximation is found
+  // TESTING REMOVING PROJECTIVE TRANSFORM
+  _linear = false;  // default until a linear model is made
+  _u0 = 0.0;
+  _du_dx = 0.0;
+  _du_dy = 0.0;
+  _du_dz = 0.0;
+  _v0 = 0.0;
+  _dv_dx = 0.0;
+  _dv_dy = 0.0;
+  _dv_dz = 0.0;
+  // m_useApproxInitTrans = false;  // default until an initial approximation is found
 
   _no_adjustment.assign(UsgsAstroLsSensorModel::NUM_PARAMETERS, 0.0);
 
@@ -685,7 +699,9 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
     csm::WarningList* warnings) const {
 
   csm::ImageCoord approxPt;
-  computeProjectiveApproximation(groundPt, approxPt);
+  // TESTING REMOVING PROJECTIVE TRANSFORM
+  computeLinearApproximation(groundPt, approxPt);
+  // computeProjectiveApproximation(groundPt, approxPt);
 
   // Search for the (line, sample) coordinate that views a given
   // ground point. Set this up as a root-finding problem and use the
@@ -693,7 +709,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
   int count = 0;
   double t0 = 0.0;
   double lineErr0 = calcDetectorLineErr(t0, approxPt, groundPt, adj);
-  double t1 = 0.1;
+  double t1 = lineErr0 * 0.1;
   double lineErr1 = calcDetectorLineErr(t1, approxPt, groundPt, adj);
   while (std::abs(lineErr1) > desiredPrecision && ++count < 15) {
 
@@ -2107,35 +2123,18 @@ std::vector<double> UsgsAstroLsSensorModel::computeDetectorView(
   return std::vector<double>{focalX, focalY};
 }
 
+// TESTING REMOVING PROJECTIVE TRANSFORM
 //***************************************************************************
-// UsgsAstroLineScannerSensorModel::computeProjectiveApproximation
+// UsgsAstroLineScannerSensorModel::computeLinearApproximation
 //***************************************************************************
-void UsgsAstroLsSensorModel::computeProjectiveApproximation(const csm::EcefCoord& gp,
-                                                            csm::ImageCoord& ip) const {
-  if (m_useApproxInitTrans) {
-    std::vector<double> const& u = m_projTransCoeffs; // alias, to save on typing
+void UsgsAstroLsSensorModel::computeLinearApproximation(
+    const csm::EcefCoord& gp, csm::ImageCoord& ip) const {
+  if (_linear) {
+    ip.line = _u0 + _du_dx * gp.x + _du_dy * gp.y + _du_dz * gp.z;
+    ip.samp = _v0 + _dv_dx * gp.x + _dv_dy * gp.y + _dv_dz * gp.z;
 
-    double x = gp.x, y = gp.y, z = gp.z;
-    double line_den = 1 + u[4]  * x + u[5]  * y + u[6]  * z;
-    double samp_den = 1 + u[11] * x + u[12] * y + u[13] * z;
-
-    // Sanity checks. Ensure we don't divide by 0 and that the numbers are valid.
-    if (line_den == 0.0 || std::isnan(line_den) || std::isinf(line_den) ||
-        samp_den == 0.0 || std::isnan(samp_den) || std::isinf(samp_den)) {
-
-      ip.line = m_nLines / 2.0;
-      ip.samp = m_nSamples / 2.0;
-      MESSAGE_LOG("Computing initial guess with constant approx line/2 and sample/2");
-
-      return;
-    }
-
-    // Apply the formula
-    ip.line = (u[0] + u[1] * x + u[2] * y + u[3]  * z) / line_den;
-    ip.samp = (u[7] + u[8] * x + u[9] * y + u[10] * z) / samp_den;
-
-    // Since this is valid only over the image,
-    // don't let the result go beyond the image border.
+    // Since this is valid only over image,
+    // don't let result go beyond the image border.
     double numRows = m_nLines;
     double numCols = m_nSamples;
     if (ip.line < 0.0) ip.line = 0.0;
@@ -2143,25 +2142,25 @@ void UsgsAstroLsSensorModel::computeProjectiveApproximation(const csm::EcefCoord
 
     if (ip.samp < 0.0) ip.samp = 0.0;
     if (ip.samp > numCols) ip.samp = numCols;
-
-    MESSAGE_LOG("Computing initial guess with projective approximation");
+    MESSAGE_LOG(
+        "Computing computeLinearApproximation"
+        "with linear approximation")
   } else {
     ip.line = m_nLines / 2.0;
     ip.samp = m_nSamples / 2.0;
-    MESSAGE_LOG("Computing initial guess with constant approx line/2 and sample/2");
+    MESSAGE_LOG(
+        "Computing computeLinearApproximation"
+        "nonlinear approx line/2 and sample/2")
   }
 }
 
 //***************************************************************************
-// UsgsAstroLineScannerSensorModel::createProjectiveApproximation
+// UsgsAstroLineScannerSensorModel::setLinearApproximation
 //***************************************************************************
-void UsgsAstroLsSensorModel::createProjectiveApproximation() {
-  MESSAGE_LOG("Calculating createProjectiveApproximation");
-
-  // Use 9 points (9*4 eventual matrix rows) as we need to fit 14 variables.
-  const int numPts = 9;
-  double u_factors[numPts] = {0.0, 0.0, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0};
-  double v_factors[numPts] = {0.0, 0.5, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 1.0};
+void UsgsAstroLsSensorModel::setLinearApproximation() {
+  MESSAGE_LOG("Calculating setLinearApproximation")
+  double u_factors[4] = {0.0, 0.0, 1.0, 1.0};
+  double v_factors[4] = {0.0, 1.0, 0.0, 1.0};
 
   csm::EcefCoord refPt = getReferencePoint();
 
@@ -2169,47 +2168,243 @@ void UsgsAstroLsSensorModel::createProjectiveApproximation() {
   double height = computeEllipsoidElevation(
       refPt.x, refPt.y, refPt.z, m_majorAxis, m_minorAxis, desired_precision);
   if (std::isnan(height)) {
-    MESSAGE_LOG("createProjectiveApproximation: computeElevation of"
-                "reference point {} {} {} with desired precision"
-                "{} returned nan height; nonprojective",
-                refPt.x, refPt.y, refPt.z, desired_precision);
-    m_useApproxInitTrans = false;
+    MESSAGE_LOG(
+        "setLinearApproximation: computeElevation of"
+        "reference point {} {} {} with desired precision"
+        "{} returned nan height; nonlinear",
+        refPt.x, refPt.y, refPt.z, desired_precision)
+    _linear = false;
     return;
   }
-  MESSAGE_LOG("createProjectiveApproximation: computeElevation of"
-              "reference point {} {} {} with desired precision"
-              "{} returned {} height",
-              refPt.x, refPt.y, refPt.z, desired_precision, height);
+  MESSAGE_LOG(
+      "setLinearApproximation: computeElevation of"
+      "reference point {} {} {} with desired precision"
+      "{} returned {} height",
+      refPt.x, refPt.y, refPt.z, desired_precision, height)
 
-  double numImageRows = m_nLines;
-  double numImageCols = m_nSamples;
+  double numRows = m_nLines;
+  double numCols = m_nSamples;
 
-  std::vector<csm::ImageCoord> ip(2 * numPts);
-  std::vector<csm::EcefCoord>  gp(2 * numPts);
+  csm::ImageCoord imagePt;
+  csm::EcefCoord gp[8];
 
-  // Sample at two heights above the ellipsoid in order to get a
-  // reliable estimate of the relationship between image points and
-  // ground points.
-
-  for (int i = 0; i < numPts; i++) {
-    ip[i].line = u_factors[i] * numImageRows;
-    ip[i].samp = v_factors[i] * numImageCols;
-    gp[i]      = imageToGround(ip[i], height);
+  int i;
+  for (i = 0; i < 4; i++) {
+    imagePt.line = u_factors[i] * numRows;
+    imagePt.samp = v_factors[i] * numCols;
+    gp[i] = imageToGround(imagePt, height);
   }
 
-  double delta_z = 100.0;
-  height += delta_z;
-  for (int i = 0; i < numPts; i++) {
-    ip[i + numPts].line = u_factors[i] * numImageRows;
-    ip[i + numPts].samp = v_factors[i] * numImageCols;
-    gp[i + numPts]      = imageToGround(ip[i + numPts], height);
+  double delz = 100.0;
+  height += delz;
+  for (i = 0; i < 4; i++) {
+    imagePt.line = u_factors[i] * numRows;
+    imagePt.samp = v_factors[i] * numCols;
+    gp[i + 4] = imageToGround(imagePt, height);
   }
 
-  usgscsm::computeBestFitProjectiveTransform(ip, gp, m_projTransCoeffs);
-  m_useApproxInitTrans = true;
+  csm::EcefCoord d_du;
+  d_du.x = ((gp[2].x + gp[3].x + gp[6].x + gp[7].x) -
+            (gp[0].x + gp[1].x + gp[4].x + gp[5].x)) /
+           numRows / 4.0;
+  d_du.y = ((gp[2].y + gp[3].y + gp[6].y + gp[7].y) -
+            (gp[0].y + gp[1].y + gp[4].y + gp[5].y)) /
+           numRows / 4.0;
+  d_du.z = ((gp[2].z + gp[3].z + gp[6].z + gp[7].z) -
+            (gp[0].z + gp[1].z + gp[4].z + gp[5].z)) /
+           numRows / 4.0;
 
-  MESSAGE_LOG("Completed createProjectiveApproximation");
+  csm::EcefCoord d_dv;
+  d_dv.x = ((gp[1].x + gp[3].x + gp[5].x + gp[7].x) -
+            (gp[0].x + gp[2].x + gp[4].x + gp[6].x)) /
+           numCols / 4.0;
+  d_dv.y = ((gp[1].y + gp[3].y + gp[5].y + gp[7].y) -
+            (gp[0].y + gp[2].y + gp[4].y + gp[6].y)) /
+           numCols / 4.0;
+  d_dv.z = ((gp[1].z + gp[3].z + gp[5].z + gp[7].z) -
+            (gp[0].z + gp[2].z + gp[4].z + gp[6].z)) /
+           numCols / 4.0;
+
+  double mat3x3[9];
+
+  mat3x3[0] = d_du.x;
+  mat3x3[1] = d_dv.x;
+  mat3x3[2] = 1.0;
+  mat3x3[3] = d_du.y;
+  mat3x3[4] = d_dv.y;
+  mat3x3[5] = 1.0;
+  mat3x3[6] = d_du.z;
+  mat3x3[7] = d_dv.z;
+  mat3x3[8] = 1.0;
+
+  double denom = determinant3x3(mat3x3);
+
+  // Can not get derivatives this way
+  if (fabs(denom) < 1.0e-8) {
+    MESSAGE_LOG(
+        "setLinearApproximation: determinant3x3 of"
+        "matrix of partials is {}; nonlinear",
+        denom)
+    _linear = false;
+    return;
+  }
+
+  mat3x3[0] = 1.0;
+  mat3x3[3] = 0.0;
+  mat3x3[6] = 0.0;
+  _du_dx = determinant3x3(mat3x3) / denom;
+
+  mat3x3[0] = 0.0;
+  mat3x3[3] = 1.0;
+  mat3x3[6] = 0.0;
+  _du_dy = determinant3x3(mat3x3) / denom;
+
+  mat3x3[0] = 0.0;
+  mat3x3[3] = 0.0;
+  mat3x3[6] = 1.0;
+  _du_dz = determinant3x3(mat3x3) / denom;
+
+  mat3x3[0] = d_du.x;
+  mat3x3[3] = d_du.y;
+  mat3x3[6] = d_du.z;
+
+  mat3x3[1] = 1.0;
+  mat3x3[4] = 0.0;
+  mat3x3[7] = 0.0;
+  _dv_dx = determinant3x3(mat3x3) / denom;
+
+  mat3x3[1] = 0.0;
+  mat3x3[4] = 1.0;
+  mat3x3[7] = 0.0;
+  _dv_dy = determinant3x3(mat3x3) / denom;
+
+  mat3x3[1] = 0.0;
+  mat3x3[4] = 0.0;
+  mat3x3[7] = 1.0;
+  _dv_dz = determinant3x3(mat3x3) / denom;
+
+  _u0 = -gp[0].x * _du_dx - gp[0].y * _du_dy - gp[0].z * _du_dz;
+  _v0 = -gp[0].x * _dv_dx - gp[0].y * _dv_dy - gp[0].z * _dv_dz;
+
+  _linear = true;
+  MESSAGE_LOG("Completed setLinearApproximation")
 }
+
+// TESTING REMOVING PROJECTIVE TRANSFORM
+//***************************************************************************
+// UsgsAstroLineScannerSensorModel::determinant3x3
+//***************************************************************************
+double UsgsAstroLsSensorModel::determinant3x3(double mat[9]) const {
+  return mat[0] * (mat[4] * mat[8] - mat[7] * mat[5]) -
+         mat[1] * (mat[3] * mat[8] - mat[6] * mat[5]) +
+         mat[2] * (mat[3] * mat[7] - mat[6] * mat[4]);
+}
+
+
+// TESTING REMOVING PROJECTIVE TRANSFORM
+// //***************************************************************************
+// // UsgsAstroLineScannerSensorModel::computeProjectiveApproximation
+// //***************************************************************************
+// void UsgsAstroLsSensorModel::computeProjectiveApproximation(const csm::EcefCoord& gp,
+//                                                             csm::ImageCoord& ip) const {
+//   if (m_useApproxInitTrans) {
+//     std::vector<double> const& u = m_projTransCoeffs; // alias, to save on typing
+
+//     double x = gp.x, y = gp.y, z = gp.z;
+//     double line_den = 1 + u[4]  * x + u[5]  * y + u[6]  * z;
+//     double samp_den = 1 + u[11] * x + u[12] * y + u[13] * z;
+
+//     // Sanity checks. Ensure we don't divide by 0 and that the numbers are valid.
+//     if (line_den == 0.0 || std::isnan(line_den) || std::isinf(line_den) ||
+//         samp_den == 0.0 || std::isnan(samp_den) || std::isinf(samp_den)) {
+
+//       ip.line = m_nLines / 2.0;
+//       ip.samp = m_nSamples / 2.0;
+//       MESSAGE_LOG("Computing initial guess with constant approx line/2 and sample/2");
+
+//       return;
+//     }
+
+//     // Apply the formula
+//     ip.line = (u[0] + u[1] * x + u[2] * y + u[3]  * z) / line_den;
+//     ip.samp = (u[7] + u[8] * x + u[9] * y + u[10] * z) / samp_den;
+
+//     // Since this is valid only over the image,
+//     // don't let the result go beyond the image border.
+//     double numRows = m_nLines;
+//     double numCols = m_nSamples;
+//     if (ip.line < 0.0) ip.line = 0.0;
+//     if (ip.line > numRows) ip.line = numRows;
+
+//     if (ip.samp < 0.0) ip.samp = 0.0;
+//     if (ip.samp > numCols) ip.samp = numCols;
+
+//     MESSAGE_LOG("Computing initial guess with projective approximation");
+//   } else {
+//     ip.line = m_nLines / 2.0;
+//     ip.samp = m_nSamples / 2.0;
+//     MESSAGE_LOG("Computing initial guess with constant approx line/2 and sample/2");
+//   }
+// }
+
+// //***************************************************************************
+// // UsgsAstroLineScannerSensorModel::createProjectiveApproximation
+// //***************************************************************************
+// void UsgsAstroLsSensorModel::createProjectiveApproximation() {
+//   MESSAGE_LOG("Calculating createProjectiveApproximation");
+
+//   // Use 9 points (9*4 eventual matrix rows) as we need to fit 14 variables.
+//   const int numPts = 9;
+//   double u_factors[numPts] = {0.0, 0.0, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0};
+//   double v_factors[numPts] = {0.0, 0.5, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 1.0};
+
+//   csm::EcefCoord refPt = getReferencePoint();
+
+//   double desired_precision = 0.01;
+//   double height = computeEllipsoidElevation(
+//       refPt.x, refPt.y, refPt.z, m_majorAxis, m_minorAxis, desired_precision);
+//   if (std::isnan(height)) {
+//     MESSAGE_LOG("createProjectiveApproximation: computeElevation of"
+//                 "reference point {} {} {} with desired precision"
+//                 "{} returned nan height; nonprojective",
+//                 refPt.x, refPt.y, refPt.z, desired_precision);
+//     m_useApproxInitTrans = false;
+//     return;
+//   }
+//   MESSAGE_LOG("createProjectiveApproximation: computeElevation of"
+//               "reference point {} {} {} with desired precision"
+//               "{} returned {} height",
+//               refPt.x, refPt.y, refPt.z, desired_precision, height);
+
+//   double numImageRows = m_nLines;
+//   double numImageCols = m_nSamples;
+
+//   std::vector<csm::ImageCoord> ip(2 * numPts);
+//   std::vector<csm::EcefCoord>  gp(2 * numPts);
+
+//   // Sample at two heights above the ellipsoid in order to get a
+//   // reliable estimate of the relationship between image points and
+//   // ground points.
+
+//   for (int i = 0; i < numPts; i++) {
+//     ip[i].line = u_factors[i] * numImageRows;
+//     ip[i].samp = v_factors[i] * numImageCols;
+//     gp[i]      = imageToGround(ip[i], height);
+//   }
+
+//   double delta_z = 100.0;
+//   height += delta_z;
+//   for (int i = 0; i < numPts; i++) {
+//     ip[i + numPts].line = u_factors[i] * numImageRows;
+//     ip[i + numPts].samp = v_factors[i] * numImageCols;
+//     gp[i + numPts]      = imageToGround(ip[i + numPts], height);
+//   }
+
+//   usgscsm::computeBestFitProjectiveTransform(ip, gp, m_projTransCoeffs);
+//   m_useApproxInitTrans = true;
+
+//   MESSAGE_LOG("Completed createProjectiveApproximation");
+// }
 
 //***************************************************************************
 // UsgsAstroLineScannerSensorModel::constructStateFromIsd
