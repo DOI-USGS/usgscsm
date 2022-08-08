@@ -696,13 +696,18 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
     double* achieved_precision, csm::WarningList* warnings) const {
   MESSAGE_LOG(
       spdlog::level::info,
-      "Computing groundToImage(No adjustments) for {}, {}, {}, with desired "
+      "Computing groundToImage(No adjustments) for ({}, {}, {}), with desired "
       "precision {}",
       ground_pt.x, ground_pt.y, ground_pt.z, desired_precision);
 
   // The public interface invokes the private interface with no adjustments.
-  return groundToImage(ground_pt, _no_adjustment, desired_precision,
-                       achieved_precision, warnings);
+  csm::ImageCoord imagePt = groundToImage(
+      ground_pt, _no_adjustment, desired_precision, achieved_precision, warnings);
+  MESSAGE_LOG(
+      spdlog::level::info,
+      "groundToImage result of ({}, {})",
+      imagePt.line, imagePt.samp);
+  return imagePt;
 }
 
 //***************************************************************************
@@ -874,7 +879,7 @@ csm::EcefCoord UsgsAstroLsSensorModel::imageToGround(
         "UsgsAstroLsSensorModel::imageToGround()"));
   }
   MESSAGE_LOG(
-      spdlog::level::debug,
+      spdlog::level::info,
       "imageToGround result {} {} {}",
       x, y, z);
   return csm::EcefCoord(x, y, z);
@@ -1094,6 +1099,13 @@ csm::EcefLocus UsgsAstroLsSensorModel::imageToRemoteImagingLocus(
   if (achieved_precision) {
     *achieved_precision = 0.0;
   }
+
+  MESSAGE_LOG(
+      spdlog::level::info,
+      "imageToProximateImagingLocus result of point ({}, {}, {}) "
+      "direction ({}, {}, {}).",
+      locus.point.x, locus.point.y, locus.point.z,
+      locus.direction.x, locus.direction.y, locus.direction.z);
   return locus;
 }
 

@@ -111,8 +111,13 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
       "precision {}",
       groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
 
-  return groundToImage(groundPt, m_noAdjustments, desiredPrecision,
-                       achievedPrecision, warnings);
+  csm::ImageCoord imagePt = groundToImage(
+      groundPt, m_noAdjustments, desiredPrecision, achievedPrecision, warnings);
+  MESSAGE_LOG(
+      spdlog::level::info,
+      "groundToImage result of ({}, {})",
+      imagePt.line, imagePt.samp);
+  return imagePt;
 }
 
 /**
@@ -282,7 +287,7 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(
   losEllipsoidIntersect(height, xc, yc, zc, xl, yl, zl, x, y, z, warnings);
 
   MESSAGE_LOG(
-      spdlog::level::debug,
+      spdlog::level::info,
       "Resulting EcefCoordinate: {}, {}, {}",
       x, y, z);
 
@@ -334,13 +339,22 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToProximateImagingLocus(
   csm::EcefVector positionToClosest =
       dot(remoteLocus.direction, positionToGround) * remoteLocus.direction;
 
-  return csm::EcefLocus(
+  csm::EcefLocus locus(
       remoteLocus.point.x + positionToClosest.x,
       remoteLocus.point.y + positionToClosest.y,
       remoteLocus.point.z + positionToClosest.z,
       remoteLocus.direction.x,
       remoteLocus.direction.y,
       remoteLocus.direction.z);
+
+    MESSAGE_LOG(
+    spdlog::level::info,
+    "imageToProximateImagingLocus result of point ({}, {}, {}) "
+    "direction ({}, {}, {}).",
+    locus.point.x, locus.point.y, locus.point.z,
+    locus.direction.x, locus.direction.y, locus.direction.z);
+
+  return locus;
 }
 
 csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(
