@@ -1946,7 +1946,7 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(const double& time,
   if (!calc_vel) {
     bool has_adj = false;
     for (size_t it = 0; it < adj.size(); it++) {
-      if (adj[it] != 0) has_adj = true;
+      if (getValue(it, adj) != 0) has_adj = true;
     }
     if (!has_adj) {
       xc = sensPosNom[0];
