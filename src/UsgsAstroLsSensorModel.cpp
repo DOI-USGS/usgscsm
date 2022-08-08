@@ -1943,25 +1943,26 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(const double& time,
   // take up at least half of this function's time. Note that if the
   // adjustments are non-null, need to compute the velocity in order
   // to find the adjusted position.
-  if (!calc_vel) {
-    bool has_adj = false;
-    for (size_t it = 0; it < adj.size(); it++) {
-      if (adj[it] != 0) has_adj = true;
-    }
-    if (!has_adj) {
-      xc = sensPosNom[0];
-      yc = sensPosNom[1];
-      zc = sensPosNom[2];
-      vx = 0.0;
-      vy = 0.0;
-      vz = 0.0;
+  // TESTING ALWAYS COMPUTING VELOCITIES
+  // if (!calc_vel) {
+  //   bool has_adj = false;
+  //   for (size_t it = 0; it < adj.size(); it++) {
+  //     if (adj[it] != 0) has_adj = true;
+  //   }
+  //   if (!has_adj) {
+  //     xc = sensPosNom[0];
+  //     yc = sensPosNom[1];
+  //     zc = sensPosNom[2];
+  //     vx = 0.0;
+  //     vy = 0.0;
+  //     vz = 0.0;
 
-      MESSAGE_LOG("getAdjSensorPosVel: postition {} {} {}"
-                  "and velocity {} {} {}",
-                  xc, yc, zc, vx, vy, vz)
-        return;
-    }
-  }
+  //     MESSAGE_LOG("getAdjSensorPosVel: postition {} {} {}"
+  //                 "and velocity {} {} {}",
+  //                 xc, yc, zc, vx, vy, vz)
+  //       return;
+  //   }
+  // }
 
   double sensVelNom[3];
   lagrangeInterp(m_numPositions / 3, &m_velocities[0], m_t0Ephem, m_dtEphem,
