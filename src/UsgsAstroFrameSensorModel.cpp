@@ -6,8 +6,8 @@
 
 #include <nlohmann/json.hpp>
 
-#include <Error.h>
-#include <Version.h>
+#include <csm/Error.h>
+#include <csm/Version.h>
 
 #include "ale/Util.h"
 

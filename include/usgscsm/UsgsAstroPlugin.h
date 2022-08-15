@@ -26,11 +26,11 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #define INCLUDE_USGSCSM_USGSASTROPLUGIN_H_
 
 #include <string>
-#include<map>
-#include<memory>
+#include <map>
+#include <memory>
 
-#include <Plugin.h>
-#include <Version.h>
+#include <csm/Plugin.h>
+#include <csm/Version.h>
 
 #include <nlohmann/json.hpp>
 #include "spdlog/spdlog.h"

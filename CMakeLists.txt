@@ -79,6 +79,7 @@ set_target_properties(usgscsm PROPERTIES
 
 set(USGSCSM_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include/usgscsm"
                          "${CMAKE_CURRENT_SOURCE_DIR}/include"
+                         "${CMAKE_CURRENT_SOURCE_DIR}"
                          "${EIGEN3_INCLUDE_DIR}")
 
 # These will be copied upon installation to ${CMAKE_INSTALL_INCLUDEDIR}/include
