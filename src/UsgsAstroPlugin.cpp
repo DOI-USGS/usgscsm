@@ -34,11 +34,12 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include <fstream>
 #include <string>
 
-#include <Error.h>
-#include <Plugin.h>
-#include <Version.h>
-#include <Warning.h>
-#include <csm.h>
+#include <csm/Error.h>
+#include <csm/Plugin.h>
+#include <csm/Version.h>
+#include <csm/Warning.h>
+#include <csm/csm.h>
+
 #include <math.h>
 
 #include "spdlog/sinks/basic_file_sink.h"
