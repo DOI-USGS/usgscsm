@@ -624,3 +624,15 @@ TEST(UtilitiesTests, ephemTimeToCalendarTime) {
 
   EXPECT_STREQ(timeStr.c_str(), "2000-01-01T00:00:00Z");
 }
+
+TEST(UtilitiesTests, fileReaderTest) {
+  std::string fromFile;
+  readFileInString("data/hello.json", fromFile);
+  EXPECT_STREQ(fromFile.c_str(), "\"Hello\"\n");
+}
+
+TEST(UtilitiesTests, sanitizeTest) {
+  std::string input = "\nHello World\007";
+  sanitize(input);
+  EXPECT_STREQ(input.c_str(), "\nHello World\n");
+}

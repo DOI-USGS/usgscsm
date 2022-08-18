@@ -248,6 +248,7 @@ class ConstVelocityLineScanSensorModel : public ::testing::Test {
   csm::Isd isd;
   std::shared_ptr<csm::Model> model;
   UsgsAstroLsSensorModel *sensorModel;
+  std::string supFile = "data/gxp_model_file.sup";
 
   void SetUp() override {
     sensorModel = NULL;

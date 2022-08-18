@@ -7,6 +7,8 @@
 #include <stdexcept>
 #include <utility>
 #include <ctime>
+#include <iostream>
+#include <fstream>
 
 #include "ale/Distortion.h"
 
@@ -1408,12 +1410,42 @@ double getWavelength(json isd, csm::WarningList *list) {
 }
 
 json stateAsJson(std::string modelState) {
-  std::size_t found = modelState.find_first_of("\n");
+  // Remove special characters from string
+  sanitize(modelState);
 
-  if (found == std::string::npos) {
-    found = 0;
+  std::size_t foundFirst = modelState.find_first_of("{");
+  std::size_t foundLast = modelState.find_last_of("}");
+
+  if (foundFirst == std::string::npos) {
+    foundFirst = 0;
   }
-  return json::parse(modelState.begin() + found, modelState.end());
+  return json::parse(modelState.begin() + foundFirst, modelState.begin() + foundLast + 1);
+}
+
+void sanitize(std::string &input){
+  // Replaces characters from the string that are not printable with newlines
+  std::replace_if(input.begin(), input.end(), [](int c){return !::isprint(c);}, '\n');
+}
+
+// Read a file's content in a single string
+bool readFileInString(std::string const& filename, std::string & str) {
+
+  str.clear(); // clear the output
+
+  std::ifstream ifs(filename.c_str());
+  if (!ifs.is_open()) {
+    std::cout << "Cannot open file: " << filename << std::endl;
+    return false;
+  }
+
+  ifs.seekg(0, std::ios::end);
+  str.reserve(ifs.tellg());
+  ifs.seekg(0, std::ios::beg);
+  str.assign((std::istreambuf_iterator<char>(ifs)),
+             std::istreambuf_iterator<char>());
+  ifs.close();
+
+  return true;
 }
 
 // Apply a rotation to a vector of quaternions.

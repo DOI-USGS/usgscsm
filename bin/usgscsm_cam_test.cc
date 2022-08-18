@@ -1,26 +1,31 @@
 // A tool to perform some basic tests and operations on a CSM camera model.
-// 
+//
 // Functionality:
 //--------------
 //
-// - Load a CSM model in ISD format or model state format, via:
+// - Load a CSM model in ISD format, model state, or GXP .sup file format, via:
 //   --model <model file>
 //
 // - Save the model state if invoked with:
 //   --output-model-state <model state .json file>
-// 
+//
+// - Modify GXP .sup file's model state with inputed model:
+//   --modify-sup-file <GXP .sup file>
+//
 // - Test projecting rays from the camera to ground, then back,
-//   and compare with the original pixel values.  
+//   and compare with the original pixel values.
 
 #include <UsgsAstroPlugin.h>
 #include <RasterGM.h>
 #include <UsgsAstroLsSensorModel.h>
+#include <Utilities.h>
 
 #include <iostream>
 #include <fstream>
 
 struct Options {
   std::string model;              // the .json file in isd or model state format
+  std::string modify_sup_file;    // the .sup file needing a modified model state
   std::string output_model_state; // the output model state in .json format
   int sample_rate;
   double subpixel_offset, height_above_datum, desired_precision;
@@ -67,7 +72,7 @@ bool parseOptions(int argc, char **argv, Options & opt) {
     opt = opt.substr(2); // wipe the dashes
     parsed_options[opt] = val;
   }
-  
+
   // It is safe to access non-existent values from a map, the result
   // will be an empty string
   opt.model = parsed_options["model"];
@@ -90,32 +95,12 @@ bool parseOptions(int argc, char **argv, Options & opt) {
     parsed_options["desired-precision"] = "0.001"; // set default value
 
   // Collect all other option values. If not set, the values will default to 0.
+  opt.modify_sup_file    = parsed_options["modify-sup-file"];
   opt.output_model_state = parsed_options["output-model-state"];
   opt.sample_rate        = sample_rate_double;
   opt.subpixel_offset    = atof(parsed_options["subpixel-offset"].c_str());
   opt.height_above_datum = atof(parsed_options["height-above-datum"].c_str());
   opt.desired_precision  = atof(parsed_options["desired-precision"].c_str());
-
-  return true;
-}
-
-// Read a file's content in a single string
-bool readFileInString(std::string const& filename, std::string & str) {
-
-  str.clear(); // clear the output
-
-  std::ifstream ifs(filename.c_str());
-  if (!ifs.is_open()) {
-    std::cout << "Cannot open file: " << filename << std::endl;
-    return false;
-  }
-  
-  ifs.seekg(0, std::ios::end);   
-  str.reserve(ifs.tellg());
-  ifs.seekg(0, std::ios::beg);
-  str.assign((std::istreambuf_iterator<char>(ifs)),
-             std::istreambuf_iterator<char>());
-  ifs.close();
 
   return true;
 }
@@ -129,7 +114,7 @@ void printErrors(std::vector<double> & errors, double desired_precision,
     std::cout << "Empty list of errors.\n";
     return;
   }
-  
+
   std::cout << "Norm of pixel errors after projecting from camera to ground and back.\n";
   std::cout << "Min:    " << errors[0] << "\n";
   std::cout << "Median: " << errors[errors.size()/2] << "\n";
@@ -155,31 +140,32 @@ bool loadCsmCameraModel(std::string const& model_file,
 
   // Try to read the model as an ISD
   csm::Isd isd(model_file);
-  
+
   // Read the model in a string, for potentially finding parsing the
   // model state from it.
   std::string model_state;
   if (!readFileInString(model_file, model_state))
     return false;
-  
+
+
   // Check if loading the model worked
   bool success = false;
 
   // Try all detected plugins and all models for each plugin.
   csm::PluginList plugins = csm::Plugin::getList();
   for (auto iter = plugins.begin(); iter != plugins.end(); iter++) {
-    
+
     const csm::Plugin* csm_plugin = (*iter);
     std::cout << "Detected CSM plugin: " << csm_plugin->getPluginName()  << "\n";
 
     size_t num_models = csm_plugin->getNumModels();
     std::cout << "Number of models for this plugin: " << num_models << "\n";
-    
+
     // First try to construct the model from isd, and if that fails, from the state
     csm::Model *csm = NULL;
     csm::WarningList* warnings = NULL;
     for (size_t i = 0; i < num_models; i++) {
-      
+
       std::string model_name = (*iter)->getModelName(i);
       if (csm_plugin->canModelBeConstructedFromISD(isd, model_name, warnings)) {
         // Try to construct the model from the isd
@@ -210,14 +196,39 @@ bool loadCsmCameraModel(std::string const& model_file,
       }
     }
   }
-  
+
   if (!success) {
     std::cerr << "Failed to load a CSM model from: " << model_file << ".\n";
     return false;
   }
-  
+
   return true;
 }
+
+bool updateSupModel(std::string& sup_string, std::string model) {
+  // grab the state JSON out of the original sup file to determine length of string to replace
+  std::string sup_state = stateAsJson(sup_string).dump().c_str();
+
+  // add back in the BEL characters in json state for GXP to read .sup file
+  std::replace(model.begin(), model.end(), '\n', '\a');
+
+  // update the .sup file SENSOR_STATE_LENGTH with new state length
+  std::string sensor_length = "SENSOR_STATE_LENGTH ";
+  size_t start_len_pos = sup_string.find(sensor_length) + sensor_length.length();
+  size_t end_len_pos = sup_string.find("SENSOR_STATE ") - 1;
+  sup_string.replace(start_len_pos, end_len_pos - start_len_pos, std::to_string(model.length()));
+
+  //replace the camera state in .sup file at the state model name which start with "USGS_ASTRO"
+  size_t start_pos = sup_string.find("USGS_ASTRO");
+  std::size_t end_pos = sup_string.find_last_of("}");
+
+  if(start_pos == std::string::npos)
+    return false;
+
+  sup_string.replace(start_pos, (end_pos - start_pos) + 1, model);
+  return true;
+}
+
 
 int main(int argc, char **argv) {
 
@@ -239,6 +250,19 @@ int main(int argc, char **argv) {
     ofs.close();
   }
 
+  if (opt.modify_sup_file != "") {
+    std::string sup_string;
+    readFileInString(opt.modify_sup_file, sup_string);
+
+    if (!updateSupModel(sup_string, model->getModelState()))
+      return 1;
+
+    std::cout << "Updating model state for sup file: " << opt.modify_sup_file << "\n";
+    std::ofstream ofs_sup(opt.modify_sup_file.c_str());
+    ofs_sup << sup_string << "\n";
+    ofs_sup.close();
+  }
+
   if (opt.sample_rate > 0) {
     csm::ImageVector image_size = model->getImageSize();
     std::cout << "\n";
@@ -252,7 +276,7 @@ int main(int argc, char **argv) {
     for (int samp = 0; samp < image_size.samp; samp += opt.sample_rate) {
       for (int line = 0; line < image_size.line; line += opt.sample_rate) {
         csm::ImageCoord c(line + opt.subpixel_offset, samp + opt.subpixel_offset);
-        
+
         double achieved_precision = 0.0;
         csm::EcefCoord ground = model->imageToGround(c, opt.height_above_datum,
                                                      opt.desired_precision, &achieved_precision);
@@ -263,10 +287,10 @@ int main(int argc, char **argv) {
         max_achieved_precision = std::max(max_achieved_precision, achieved_precision);
         double error = pixDiffNorm(c, d);
         errors.push_back(error);
-      }   
+      }
     }
     printErrors(errors, opt.desired_precision, max_achieved_precision);
   }
-    
+
   return 0;
 }

@@ -158,7 +158,16 @@ TEST_F(ConstVelLineScanIsdTest, ConstructInvalidCamera) {
   } catch (...) {
     FAIL() << "Expected csm SENSOR_MODEL_NOT_CONSTRUCTIBLE error";
   }
-  
+
+}
+
+TEST_F(ConstVelocityLineScanSensorModel, ConstructibleFromSupState) {
+  UsgsAstroPlugin testPlugin;
+  std::string modelState;
+  EXPECT_TRUE(readFileInString(supFile, modelState));
+  sanitize(modelState);
+  EXPECT_TRUE(testPlugin.canModelBeConstructedFromState(
+      "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", modelState));
 }
 
 TEST_F(SarIsdTest, Constructible) {
