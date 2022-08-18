@@ -518,6 +518,11 @@ void UsgsAstroPushFrameSensorModel::applyTransformToState(ale::Rotation const& r
   applyRotationTranslationToXyzVec(r, zero_t, velocities);
   j["m_velocities"] = velocities;
 
+  // Apply the transform to the reference point
+  std::vector<double> refPt = j["m_referencePointXyz"];
+  applyRotationTranslationToXyzVec(r, t, refPt);
+  j["m_referencePointXyz"] = refPt;
+
   // We do not change the Sun position or velocity. The idea is that
   // the Sun is so far, that minor camera adjustments won't affect
   // where the Sun is.
