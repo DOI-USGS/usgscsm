@@ -34,7 +34,7 @@ void calculateRotationMatrixFromEuler(double euler[], double rotationMatrix[]) {
   rotationMatrix[8] = cos_a * cos_b;
 }
 
-// uses a quaternion to calclate a rotation matrix.
+// uses a quaternion to calculate a rotation matrix.
 // in - q[4]
 // out - rotationMatrix[9]
 void calculateRotationMatrixFromQuaternions(double q[4],
