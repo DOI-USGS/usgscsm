@@ -33,4 +33,14 @@ add_test(NAME test_usgscsm_cam_test_load_state
     COMMAND usgscsm_cam_test --model model_state.json --output-model-state model_state2.json
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
 
+
+# 3. Save model state from .sup file
+add_test(NAME test_usgscsm_cam_test_save_sup_state
+    COMMAND usgscsm_cam_test --model data/gxp_model_file.sup --output-model-state gxp_model_state.json
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
+# 4. Load model state
+add_test(NAME test_usgscsm_cam_test_load_sup_state
+    COMMAND usgscsm_cam_test --model gxp_model_state.json --output-model-state gxp_model_state2.json
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
+
 gtest_discover_tests(runCSMCameraModelTests WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
