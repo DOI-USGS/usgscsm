@@ -527,6 +527,7 @@ void UsgsAstroLsSensorModel::reset() {
   m_detectorSampleSumming = 1.0;  // 15
   m_detectorLineSumming = 1.0;
   m_startingDetectorSample = 1.0;  // 16
+  m_startingDetectorLine   = 1.0;
   m_ikCode = -85600;               // 17
   m_focalLength = 350.0;           // 18
   m_zDirection = 1.0;              // 19
