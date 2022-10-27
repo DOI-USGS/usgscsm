@@ -34,7 +34,7 @@ if(USGSCSM_EXTERNAL_DEPS)
 
   # Eigen
   find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-   
+
   # ALE
   find_package(ale REQUIRED)
   set(ALE_TARGET ale::ale)
@@ -46,12 +46,11 @@ else()
   set(CSM_LIBRARY csmapi)
 
   # Nlohmann JSON
-  set(JSON_BuildTests OFF CACHE INTERNAL "")
-  add_subdirectory(json)
+  # Use the Nlohmann JSON version embedded in ALE
 
   # ALE
   set(ALE_USE_EXTERNAL_EIGEN OFF)
-  set(ALE_USE_EXTERNAL_JSON ON)
+  set(ALE_USE_EXTERNAL_JSON OFF)
   set(ALE_BUILD_LOAD OFF)
   set(ALE_BUILD_TESTS OFF)
   add_subdirectory(ale)
