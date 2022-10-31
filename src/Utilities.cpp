@@ -1053,6 +1053,8 @@ DistortionType getDistortionModel(int aleDistortionModel,
       return DistortionType::DAWNFC;
     } else if (aleDistortionType == ale::DistortionType::LROLROCNAC) {
       return DistortionType::LROLROCNAC;
+    }else if (aleDistortionType == ale::DistortionType::CAHVOR) {
+      return DistortionType::CAHVOR;
     }
   } catch (...) {
     if (list) {
@@ -1191,6 +1193,24 @@ std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
               "Utilities::getDistortion()"));
         }
         coefficients = std::vector<double>(1, 0.0);
+      }
+    } break;
+    case DistortionType::CAHVOR: {
+      try {
+        coefficients = isd.at("optical_distortion")
+                           .at("cahvor")
+                           .at("coefficients")
+                           .get<std::vector<double>>();
+
+        return coefficients;
+      } catch (...) {
+        if (list) {
+          list->push_back(csm::Warning(
+              csm::Warning::DATA_NOT_AVAILABLE,
+              "Could not parse the radial distortion model coefficients.",
+              "Utilities::getDistortion()"));
+        }
+        coefficients = std::vector<double>(6, 0.0);
       }
     } break;
   }

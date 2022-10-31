@@ -6,7 +6,7 @@
 #include <tuple>
 #include <vector>
 
-enum DistortionType { RADIAL, TRANSVERSE, KAGUYALISM, DAWNFC, LROLROCNAC };
+enum DistortionType { RADIAL, TRANSVERSE, KAGUYALISM, DAWNFC, LROLROCNAC, CAHVOR };
 
 // Transverse Distortion
 void distortionJacobian(double x, double y, double *jacobian,
