@@ -5,7 +5,7 @@ channels:
 
 dependencies:
   - cmake>=3.15
-  - ale
+  - ale>=0.8.8
   - csm
-  - nlohmann_json<=3.10.4
+  - nlohmann_json
   - eigen
