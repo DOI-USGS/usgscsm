@@ -204,14 +204,11 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       double r = sqrt(r2);
       double r3 = r2 * r;
 
-      int xPointer = 0;
-      int yPointer = 5;
-
       double dr_x = odkx[0] + odkx[1] * r + odkx[2] * r2 + odkx[3] * r3;
       double dr_y = odky[0] + odky[1] * r + odky[2] * r2 + odky[3] * r3;
 
-      ux = dx + dr_x + boresightX;
-      uy = dy + dr_y + boresightY;
+      ux += dr_x + boresightX;
+      uy += dr_y + boresightY;
     } break;
 
     // The dawn distortion model is "reversed" from other distortion models so
@@ -593,8 +590,8 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
           iteration++;
         } while (fabs(r - r_prev) > desiredPrecision);
 
-        dx = ux / (1.0 - drOverR);
-        dy = uy / (1.0 - drOverR);
+        dx = shiftedUx / (1.0 - drOverR);
+        dy = shiftedUy / (1.0 - drOverR);
         dx += opticalDistCoeffs[3];
         dy += opticalDistCoeffs[4];
       }

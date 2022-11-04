@@ -324,3 +324,59 @@ TEST(LroLrocNac, testZeroCoeffs) {
   ASSERT_DOUBLE_EQ(ux, 0.0);
   ASSERT_DOUBLE_EQ(uy, 0.0);
 }
+
+INSTANTIATE_TEST_SUITE_P(CahvorTest, CoeffOffsetParameterizedTest,
+                         ::testing::Values(std::vector<double>(2, 0),
+                                           std::vector<double>(2, 1)));
+
+TEST_P(CoeffOffsetParameterizedTest, RemoveDistortionCahvorTest)
+{
+  csm::ImageCoord imagePt(0.0, 4.0);
+
+  double ux, uy;
+  std::vector<double> offsets = GetParam();
+  std::vector<double> coeffs = {0, 0, 0};
+  coeffs.insert(coeffs.end(), offsets.begin(), offsets.end());
+
+  removeDistortion(imagePt.samp, imagePt.line, ux, uy, coeffs,
+                   DistortionType::CAHVOR);
+
+  EXPECT_NEAR(ux, 4, 1e-8);
+  EXPECT_NEAR(uy, 0, 1e-8);
+}
+
+// If coeffs are 0 then this will have the same result as removeDistortion
+// with 0 distortion coefficients
+TEST_P(CoeffOffsetParameterizedTest, InverseDistortionCahvorTest)
+{
+  csm::ImageCoord imagePt(0.0, 4.0);
+
+  double dx, dy;
+  double desiredPrecision = 0.01;
+  std::vector<double> offsets = GetParam();
+  std::vector<double> coeffs = {0, 0, 0};
+  coeffs.insert(coeffs.end(), offsets.begin(), offsets.end());
+
+  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
+                  DistortionType::CAHVOR, desiredPrecision);
+
+  EXPECT_NEAR(dx, 4, 1e-8);
+  EXPECT_NEAR(dy, 0, 1e-8);
+}
+
+TEST_P(CoeffOffsetParameterizedTest, InverseOnesCoeffsCahvorTest)
+{
+  csm::ImageCoord imagePt(0.0, 4.0);
+
+  double dx, dy;
+  double desiredPrecision = 0.01;
+  std::vector<double> offsets = GetParam();
+  std::vector<double> coeffs = {1, 1, 1};
+  coeffs.insert(coeffs.end(), offsets.begin(), offsets.end());
+
+  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
+                  DistortionType::CAHVOR, desiredPrecision);
+
+  EXPECT_NEAR(dx, 4, 1e-8);
+  EXPECT_NEAR(dy, 0, 1e-8);
+}
