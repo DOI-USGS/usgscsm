@@ -17,7 +17,7 @@
     },
     "homepageURL": "https://code.usgs.gov/astrogeology/usgscsm/",
     "downloadURL": "https://code.usgs.gov/astrogeology/usgscsm/-/archive/main/usgscsm-main.zip",
-    "disclaimerURL": "https://code.usgs.gov/astrogeology/usgscsm/-/raw/usgscsm/DISCLAIMER.md",
+    "disclaimerURL": "https://code.usgs.gov/astrogeology/usgscsm/-/raw/main/DISCLAIMER.md",
     "repositoryURL": "https://code.usgs.gov/astrogeology/usgscsm.git",
     "vcs": "git",
     "laborHours": 60,
