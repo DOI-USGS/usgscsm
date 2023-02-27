@@ -3,21 +3,21 @@
     "name": "USGSCSM",
     "organization": "U.S. Geological Survey",
     "description": "GitHub respository for the CSM compliant sensor models create by the USGS Astrogeology Science Center",
-    "version": "main",
-    "status": "Development",
+    "version": "1.6.0",
+    "status": "Production",
 
     "permissions": {
       "usageType": "openSource",
       "licenses": [
         {
           "name": "Public Domain, CC-1.0",
-          "URL": "https://code.usgs.gov/astrogeology/usgscsm/-/raw/main/LICENSE.md"
+          "URL": "https://code.usgs.gov/astrogeology/usgscsm/-/raw/1.6.0/LICENSE.md"
         }
       ]
     },
-    "homepageURL": "https://code.usgs.gov/astrogeology/usgscsm/",
-    "downloadURL": "https://code.usgs.gov/astrogeology/usgscsm/-/archive/main/usgscsm-main.zip",
-    "disclaimerURL": "https://code.usgs.gov/astrogeology/usgscsm/-/raw/usgscsm/DISCLAIMER.md",
+    "homepageURL": "https://code.usgs.gov/astrogeology/usgscsm/-/tree/1.6.0",
+    "downloadURL": "https://code.usgs.gov/astrogeology/usgscsm/-/archive/1.6.0/knoten-1.6.0.zip",
+    "disclaimerURL": "https://code.usgs.gov/astrogeology/usgscsm/-/raw/1.6.0/DISCLAIMER.md",
     "repositoryURL": "https://code.usgs.gov/astrogeology/usgscsm.git",
     "vcs": "git",
     "laborHours": 60,
