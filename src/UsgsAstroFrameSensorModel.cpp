@@ -153,6 +153,11 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
   // Camera rotation matrix
   double m[3][3];
   calcRotationMatrix(m, adjustments);
+  MESSAGE_LOG(
+      spdlog::level::trace,
+      "Calculated rotation matrix [{}, {}, {}], [{}, {}, {}], [{}, {}, {}]",
+      m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1],
+      m[2][2]);
 
   // Sensor position
   double undistortedx, undistortedy, denom;
@@ -160,11 +165,20 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
   undistortedx = (f * (m[0][0] * xo + m[1][0] * yo + m[2][0] * zo) / denom);
   undistortedy = (f * (m[0][1] * xo + m[1][1] * yo + m[2][1] * zo) / denom);
 
+  MESSAGE_LOG(
+      spdlog::level::trace,
+      "Found undistortedX: {}, and undistortedY: {}",
+      undistortedx, undistortedy);
   // Apply the distortion to the line/sample location and then convert back to
   // line/sample
   double distortedX, distortedY;
   applyDistortion(undistortedx, undistortedy, distortedX, distortedY,
                   m_opticalDistCoeffs, m_distortionType);
+
+  MESSAGE_LOG(
+      spdlog::level::trace,
+      "Found distortedX: {}, and distortedY: {}",
+      distortedX, distortedY);
 
   // Convert distorted mm into line/sample
   double sample, line;
