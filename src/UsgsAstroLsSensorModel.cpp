@@ -721,6 +721,10 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
 
   csm::ImageCoord approxPt;
   computeProjectiveApproximation(groundPt, approxPt);
+  MESSAGE_LOG(
+      spdlog::level::trace,
+      "Computed Proj Approximation: {}, {}",
+      approxPt.line, approxPt.samp);
 
   // Search for the (line, sample) coordinate that views a given
   // ground point. Set this up as a root-finding problem and use the
@@ -730,6 +734,10 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
   double lineErr0 = calcDetectorLineErr(t0, approxPt, groundPt, adj);
   double t1 = 0.1;
   double lineErr1 = calcDetectorLineErr(t1, approxPt, groundPt, adj);
+  MESSAGE_LOG(
+      spdlog::level::trace,
+      "Initial Line Error: {}, {}",
+      lineErr0, lineErr1);
   while (std::abs(lineErr1) > desiredPrecision && ++count < 15) {
 
     if (lineErr1 == lineErr0)
@@ -743,25 +751,45 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
     // Update for the next step
     t0 = t1; lineErr0 = lineErr1;
     t1 = t2; lineErr1 = lineErr2;
+    MESSAGE_LOG(
+        spdlog::level::trace,
+        "{} Line Error and (t0, t1): {}, {}, {}, {}",
+        count, lineErr0, lineErr1, t0, t1);
   }
 
   // Update the line with the found value
   approxPt.line += t1;
+  MESSAGE_LOG(
+      spdlog::level::trace,
+      "After line Approximation: {}, {}",
+      approxPt.line, approxPt.samp);
 
   double timei = getImageTime(approxPt);
   std::vector<double> detectorView = computeDetectorView(timei, groundPt, adj);
+  MESSAGE_LOG(
+      spdlog::level::trace,
+      "Detector View: {}, and undistortedY: {}",
+      detectorView[0], detectorView[1]);
 
   // Invert distortion
   double distortedFocalX, distortedFocalY;
   applyDistortion(detectorView[0], detectorView[1], distortedFocalX,
                   distortedFocalY, m_opticalDistCoeffs, m_distortionType,
                   desiredPrecision);
+  MESSAGE_LOG(
+      spdlog::level::trace,
+      "Distorted X, Y: {}, and undistortedY: {}",
+      distortedFocalX, distortedFocalY);
 
   // Convert to detector line and sample
   double detectorLine = m_iTransL[0] + m_iTransL[1] * distortedFocalX +
                         m_iTransL[2] * distortedFocalY;
   double detectorSample = m_iTransS[0] + m_iTransS[1] * distortedFocalX +
                           m_iTransS[2] * distortedFocalY;
+  MESSAGE_LOG(
+      spdlog::level::trace,
+      "Detector Line, Sample: {}, and undistortedY: {}",
+      detectorLine, detectorSample);
   // Convert to image sample line
   double finalUpdate =
       (detectorLine + m_detectorLineOrigin - m_startingDetectorLine) /
@@ -2263,6 +2291,11 @@ void UsgsAstroLsSensorModel::computeProjectiveApproximation(const csm::EcefCoord
     ip.line = (u[0] + u[1] * x + u[2] * y + u[3]  * z) / line_den;
     ip.samp = (u[7] + u[8] * x + u[9] * y + u[10] * z) / samp_den;
 
+    MESSAGE_LOG(
+        spdlog::level::debug,
+        "Projective approximation before bounding ({}, {})",
+        ip.line, ip.samp);
+
     // Since this is valid only over the image,
     // don't let the result go beyond the image border.
     double numRows = m_nLines;
@@ -2303,19 +2336,19 @@ void UsgsAstroLsSensorModel::createProjectiveApproximation() {
   if (std::isnan(height)) {
     MESSAGE_LOG(
         spdlog::level::warn,
-        "createProjectiveApproximation: computeElevation of"
-        "reference point {} {} {} with desired precision"
-        "{} returned nan height; nonprojective",
-        refPt.x, refPt.y, refPt.z, desired_precision);
+        "createProjectiveApproximation: computeElevation of "
+        "reference point {} {} {} with desired precision "
+        "{} and major/minor radii {}, {} returned nan height; nonprojective",
+        refPt.x, refPt.y, refPt.z, desired_precision, m_majorAxis, m_minorAxis);
     m_useApproxInitTrans = false;
     return;
   }
   MESSAGE_LOG(
       spdlog::level::trace,
-      "createProjectiveApproximation: computeElevation of"
-      "reference point {} {} {} with desired precision"
-      "{} returned {} height",
-      refPt.x, refPt.y, refPt.z, desired_precision, height);
+      "createProjectiveApproximation: computeElevation of "
+      "reference point {} {} {} with desired precision "
+      "{} and major/minor radii {}, {} returned {} height",
+      refPt.x, refPt.y, refPt.z, desired_precision, m_majorAxis, m_minorAxis, height);
 
   double numImageRows = m_nLines;
   double numImageCols = m_nSamples;
@@ -2764,10 +2797,15 @@ double UsgsAstroLsSensorModel::calcDetectorLineErr(double t, csm::ImageCoord con
   double timei = getImageTime(currPt);
   std::vector<double> detectorView = computeDetectorView(timei, groundPt, adj);
 
+  // Invert distortion
+  double distortedFocalX, distortedFocalY;
+  applyDistortion(detectorView[0], detectorView[1], distortedFocalX,
+                  distortedFocalY, m_opticalDistCoeffs, m_distortionType);
+
   // Convert to detector line
-  double detectorLine = m_iTransL[0] + m_iTransL[1] * detectorView[0] +
-    m_iTransL[2] * detectorView[1] + m_detectorLineOrigin -
-    m_startingDetectorLine;
+  double detectorLine = m_iTransL[0] + m_iTransL[1] * distortedFocalX +
+                        m_iTransL[2] * distortedFocalY + m_detectorLineOrigin -
+                        m_startingDetectorLine;
   detectorLine /= m_detectorLineSumming;
 
   return detectorLine;
