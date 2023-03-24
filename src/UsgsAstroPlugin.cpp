@@ -26,6 +26,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 
 #include "UsgsAstroFrameSensorModel.h"
 #include "UsgsAstroLsSensorModel.h"
+#include "UsgsAstroProjectedLsSensorModel.h"
 #include "UsgsAstroPushFrameSensorModel.h"
 #include "UsgsAstroSarSensorModel.h"
 
@@ -133,6 +134,7 @@ std::string UsgsAstroPlugin::getModelName(size_t modelIndex) const {
   std::vector<std::string> supportedModelNames = {
       UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME,
       UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME,
+      UsgsAstroProjectedLsSensorModel::_SENSOR_MODEL_NAME,
       UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME,
       UsgsAstroPushFrameSensorModel::_SENSOR_MODEL_NAME};
   MESSAGE_LOG(spdlog::level::debug, "Get Model Name: {}. Used index: {}",
@@ -186,7 +188,7 @@ bool UsgsAstroPlugin::canModelBeConstructedFromState(
   if (warnings) {
     warnings->push_back(csm::Warning
                         (csm::Warning::UNKNOWN_WARNING, fullMsg,
-                         "UsgsAstroFrameSensorModel::canModelBeConstructedFromState()"));
+                         "UsgsAstroPlugin::canModelBeConstructedFromState()"));
   }
 
   return false;
@@ -210,7 +212,7 @@ bool UsgsAstroPlugin::canModelBeConstructedFromISD(
       MESSAGE_LOG(spdlog::level::warn, msg);
       warnings->push_back(csm::Warning(
           csm::Warning::UNKNOWN_WARNING, msg,
-          "UsgsAstroFrameSensorModel::canModelBeConstructedFromISD()"));
+          "UsgsAstroPlugin::canModelBeConstructedFromISD()"));
     }
   } catch (...) {
     if (warnings) {
@@ -220,7 +222,7 @@ bool UsgsAstroPlugin::canModelBeConstructedFromISD(
       MESSAGE_LOG(spdlog::level::warn, msg);
       warnings->push_back(csm::Warning(
           csm::Warning::UNKNOWN_WARNING, msg,
-          "UsgsAstroFrameSensorModel::canModelBeConstructedFromISD()"));
+          "UsgsAstroPlugin::canModelBeConstructedFromISD()"));
     }
   }
   return false;
@@ -294,7 +296,7 @@ bool UsgsAstroPlugin::canISDBeConvertedToModelState(
       MESSAGE_LOG(spdlog::level::warn, msg);
       warnings->push_back(csm::Warning(
           csm::Warning::UNKNOWN_WARNING, msg,
-          "UsgsAstroFrameSensorModel::canISDBeConvertedToModelState()"));
+          "UsgsAstroPlugin::canISDBeConvertedToModelState()"));
     }
     return false;
   }
@@ -351,6 +353,26 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(
     UsgsAstroLsSensorModel *model = new UsgsAstroLsSensorModel();
     try {
       MESSAGE_LOG(spdlog::level::debug, "Trying to construct a UsgsAstroLsSensorModel");
+      model->replaceModelState(
+          model->constructStateFromIsd(stringIsd, warnings));
+    } catch (std::exception &e) {
+      delete model;
+      csm::Error::ErrorType aErrorType =
+          csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE;
+      std::string aMessage = "Could not construct model [";
+      aMessage += modelName;
+      aMessage += "] with error [";
+      aMessage += e.what();
+      aMessage += "]";
+      std::string aFunction = "UsgsAstroPlugin::constructModelFromISD()";
+      MESSAGE_LOG(spdlog::level::err, aMessage);
+      throw csm::Error(aErrorType, aMessage, aFunction);
+    }
+    return model;
+  } else if (modelName == UsgsAstroProjectedLsSensorModel::_SENSOR_MODEL_NAME) {
+    UsgsAstroProjectedLsSensorModel *model = new UsgsAstroProjectedLsSensorModel();
+    try {
+      MESSAGE_LOG(spdlog::level::debug, "Trying to construct a UsgsAstroProjectedLsSensorModel");
       model->replaceModelState(
           model->constructStateFromIsd(stringIsd, warnings));
     } catch (std::exception &e) {
@@ -433,7 +455,12 @@ csm::Model *UsgsAstroPlugin::constructModelFromState(
     UsgsAstroLsSensorModel *model = new UsgsAstroLsSensorModel();
     model->replaceModelState(modelState);
     return model;
-  } else if (modelName == UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME) {
+  } else if (modelName == UsgsAstroProjectedLsSensorModel::_SENSOR_MODEL_NAME) {
+    MESSAGE_LOG(spdlog::level::debug, "Constructing a UsgsAstroProjectedLsSensorModel");
+    UsgsAstroProjectedLsSensorModel *model = new UsgsAstroProjectedLsSensorModel();
+    model->replaceModelState(modelState);
+    return model;
+  }else if (modelName == UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME) {
     MESSAGE_LOG(spdlog::level::debug, "Constructing a UsgsAstroSarSensorModel");
     UsgsAstroSarSensorModel *model = new UsgsAstroSarSensorModel();
     model->replaceModelState(modelState);

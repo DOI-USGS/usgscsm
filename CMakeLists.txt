@@ -26,14 +26,18 @@ if(USGSCSM_EXTERNAL_DEPS)
                             PATH_SUFFIXES "csm"
                             PATHS $ENV{CONDA_PREFIX}/include/)
   find_library(CSM_LIBRARY csmapi PATHS $ENV{CONDA_PREFIX}/lib)
-  message("--Found external CSM Library: ${CSM_LIBRARY}")
-  message("--Found external CSM Include Directory: ${CSM_INCLUDE_DIR}")
+  message("-- Found external CSM Library: ${CSM_LIBRARY}")
+  message("-- Found external CSM Include Directory: ${CSM_INCLUDE_DIR}")
 
   # Nlohmann JSON
   find_package(nlohmann_json REQUIRED)
 
   # Eigen
   find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+
+  # GDAL
+  find_package(PROJ REQUIRED CONFIG)
+  set(PROJ_TARGET PROJ::proj)
 
   # ALE
   find_package(ale REQUIRED)
@@ -66,6 +70,7 @@ add_library(usgscsm SHARED
             src/UsgsAstroFrameSensorModel.cpp
             src/UsgsAstroPushFrameSensorModel.cpp
             src/UsgsAstroLsSensorModel.cpp
+            src/UsgsAstroProjectedLsSensorModel.cpp
             src/UsgsAstroSarSensorModel.cpp
             src/Distortion.cpp
             src/Utilities.cpp
@@ -75,11 +80,11 @@ set_target_properties(usgscsm PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
 )
-
 set(USGSCSM_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include/usgscsm"
                          "${CMAKE_CURRENT_SOURCE_DIR}/include"
                          "${CMAKE_CURRENT_SOURCE_DIR}"
-                         "${EIGEN3_INCLUDE_DIR}")
+                         "${EIGEN3_INCLUDE_DIR}"
+                         "${PROJ_INCLUDE_DIR}")
 
 # These will be copied upon installation to ${CMAKE_INSTALL_INCLUDEDIR}/include
 set(USGSCSM_INSTALL_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include/usgscsm"
@@ -94,6 +99,7 @@ target_include_directories(usgscsm
 target_link_libraries(usgscsm
                       ${CSM_LIBRARY}
                       ${ALE_TARGET}
+                      ${PROJ_TARGET}
                       nlohmann_json::nlohmann_json)
 
 add_executable(usgscsm_cam_test bin/usgscsm_cam_test.cc)

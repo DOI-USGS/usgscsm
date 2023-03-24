@@ -4,8 +4,9 @@ channels:
   - default
 
 dependencies:
-  - cmake>=3.15
   - ale>=0.8.8
+  - cmake>=3.15
   - csm
-  - nlohmann_json
   - eigen
+  - gdal
+  - nlohmann_json
