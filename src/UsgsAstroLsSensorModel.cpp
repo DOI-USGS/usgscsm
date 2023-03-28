@@ -2735,7 +2735,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(
     }
     throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
                      "ISD is invalid for creating the sensor model.",
-                     "UsgsAstroFrameSensorModel::constructStateFromIsd");
+                     "UsgsAstroLsSensorModel::constructStateFromIsd");
   }
 
   // The state data will still be updated when a sensor model is created since

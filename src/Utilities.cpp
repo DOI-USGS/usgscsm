@@ -1528,3 +1528,45 @@ std::string ephemTimeToCalendarTime(double ephemTime) {
   buffer[21] = '\0';
   return buffer;
 }
+
+std::vector<double> getGeoTransform(json isd) {
+  std::vector<double> transform = {};
+  try {
+    transform = isd.at("geo_transform").get<std::vector<double>>();
+  } catch (std::exception &e) {
+    std::string originalError = e.what();
+    std::string msg = "Could not parse the geo_transform. ERROR: " + originalError + isd.dump();
+    throw std::runtime_error(msg);
+  }
+  return transform;
+}
+
+std::string getProjectionString(json isd) {
+  std::string projection_string = "";
+  try {
+    projection_string = isd.at("proj_string");
+  } catch (...) {
+    throw std::runtime_error("Could not parse the projection string.");
+  }
+  return projection_string;
+}
+
+std::vector<double> pixelToMeter(double line, double sample, std::vector<double> geoTransform) {
+  double meter_x = (sample * geoTransform[1]) + geoTransform[0];
+  double meter_y = (line * geoTransform[5]) + geoTransform[3];
+
+  meter_x += geoTransform[1] * 0.5;
+  meter_y += geoTransform[5] * 0.5;
+
+  return {meter_y, meter_x};
+}
+
+std::vector<double> meterToPixel(double meter_x, double meter_y, std::vector<double> geoTransform) {
+  meter_x -= geoTransform[1] * 0.5;
+  meter_y -= geoTransform[5] * 0.5;
+
+  double sample = (meter_x - geoTransform[0]) / geoTransform[1];
+  double line = (meter_y - geoTransform[3]) / geoTransform[5];
+
+  return {line, sample};
+}

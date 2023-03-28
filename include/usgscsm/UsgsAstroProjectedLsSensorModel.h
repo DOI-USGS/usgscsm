@@ -70,61 +70,8 @@ class UsgsAstroProjectedLsSensorModel : public UsgsAstroLsSensorModel {
                                     csm::WarningList* list);
 
   // State data elements;
-  std::string m_imageIdentifier;
-  std::string m_sensorName;
-  int m_nLines;
-  int m_nSamples;
-  int m_platformFlag;
-  std::vector<double> m_intTimeLines;
-  std::vector<double> m_intTimeStartTimes;
-  std::vector<double> m_intTimes;
-  double m_startingEphemerisTime;
-  double m_centerEphemerisTime;
-  double m_detectorSampleSumming;
-  double m_detectorLineSumming;
-  double m_startingDetectorSample;
-  double m_startingDetectorLine;
-  int m_ikCode;
-  double m_focalLength;
-  double m_zDirection;
-  DistortionType m_distortionType;
-  std::vector<double> m_opticalDistCoeffs;
-  double m_iTransS[3];
-  double m_iTransL[3];
-  double m_detectorSampleOrigin;
-  double m_detectorLineOrigin;
-  double m_mountingMatrix[9];
-  double m_majorAxis;
-  double m_minorAxis;
-  std::string m_referenceDateAndTime;
-  std::string m_platformIdentifier;
-  std::string m_sensorIdentifier;
-  std::string m_trajectoryIdentifier;
-  std::string m_collectionIdentifier;
-  double m_refElevation;
-  double m_minElevation;
-  double m_maxElevation;
-  double m_dtEphem;
-  double m_t0Ephem;
-  double m_dtQuat;
-  double m_t0Quat;
-  int m_numPositions;
-  int m_numQuaternions;
-  std::vector<double> m_positions;
-  std::vector<double> m_velocities;
-  std::vector<double> m_quaternions;
-  std::vector<double> m_currentParameterValue;
-  std::vector<csm::param::Type> m_parameterType;
-  csm::EcefCoord m_referencePointXyz;
-  double m_gsd;
-  double m_flyingHeight;
-  double m_halfSwath;
-  double m_halfTime;
-  std::vector<double> m_covariance;
-  int m_imageFlipFlag;
-
-  std::vector<double> m_sunPosition;
-  std::vector<double> m_sunVelocity;
+  std::vector<double> m_geoTransform;
+  std::string m_projString;
 
   // Define logging pointer and file content
   std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
@@ -720,13 +667,6 @@ class UsgsAstroProjectedLsSensorModel : public UsgsAstroLsSensorModel {
                                    const std::vector<double>& adj,
                                    double attCorr[9]) const;
 
-  virtual csm::EcefVector getSunPosition(const double imageTime) const;
-  //> This method returns the position of the sun at the time the image point
-  //  was recorded.  If multiple sun positions are available, the method uses
-  //  lagrange interpolation.  If one sun position and at least one sun velocity
-  //  are available, then the position is calculated using linear extrapolation.
-  //  If only one sun position is available, then that value is returned.
-
  private:
 
   // Some state data values not found in the support data require a
@@ -790,4 +730,4 @@ class UsgsAstroProjectedLsSensorModel : public UsgsAstroLsSensorModel {
   bool m_useApproxInitTrans;
 };
 
-#endif  // INCLUDE_USGSCSM_UsgsAstroProjectedLsSensorModel_H_
+#endif  // INCLUDE_USGSCSM_USGSASTROPROJECTEDLSSENSORMODEL_H_

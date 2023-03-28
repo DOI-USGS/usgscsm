@@ -199,4 +199,12 @@ void applyRotationTranslationToXyzVec(ale::Rotation const& r, ale::Vec3d const& 
 // to a calendar time string, such as 2000-01-01T00:16:40Z.
 std::string ephemTimeToCalendarTime(double ephemTime);
 
+std::vector<double> getGeoTransform(nlohmann::json isd);
+
+std::string getProjectionString(nlohmann::json isd);
+
+std::vector<double> pixelToMeter(double line, double sample, std::vector<double> geoTransform);
+
+std::vector<double> meterToPixel(double meter_x, double meter_y, std::vector<double> geoTransform);
+
 #endif  // INCLUDE_USGSCSM_UTILITIES_H_
