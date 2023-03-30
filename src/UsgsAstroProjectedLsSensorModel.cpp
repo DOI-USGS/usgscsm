@@ -289,58 +289,12 @@ csm::ImageCoord UsgsAstroProjectedLsSensorModel::groundToImage(
 csm::ImageCoordCovar UsgsAstroProjectedLsSensorModel::groundToImage(
     const csm::EcefCoordCovar &groundPt, double desired_precision,
     double *achieved_precision, csm::WarningList *warnings) const {
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "Computing groundToImage(Covar) for {}, {}, {}, with desired precision "
-      "{}",
-      groundPt.x, groundPt.y, groundPt.z, desired_precision);
-  // Ground to image with error propagation
-  // Compute corresponding image point
-  csm::EcefCoord gp;
-  gp.x = groundPt.x;
-  gp.y = groundPt.y;
-  gp.z = groundPt.z;
+  csm::ImageCoordCovar imageCoordCovar = UsgsAstroLsSensorModel::groundToImage(groundPt, desired_precision, achieved_precision, warnings);
+  csm::ImageCoord projImagePt = groundToImage(groundPt);
 
-  csm::ImageCoord ip =
-      groundToImage(gp, desired_precision, achieved_precision, warnings);
-  csm::ImageCoordCovar result(ip.line, ip.samp);
-
-  // // Compute partials ls wrt XYZ
-  // std::vector<double> prt(6, 0.0);
-  // prt = UsgsAstroLsSensorModel::computeGroundPartials(groundPt);
-
-  // // Error propagation
-  // double ltx, lty, ltz;
-  // double stx, sty, stz;
-  // ltx = prt[0] * groundPt.covariance[0] + prt[1] * groundPt.covariance[3] +
-  //       prt[2] * groundPt.covariance[6];
-  // lty = prt[0] * groundPt.covariance[1] + prt[1] * groundPt.covariance[4] +
-  //       prt[2] * groundPt.covariance[7];
-  // ltz = prt[0] * groundPt.covariance[2] + prt[1] * groundPt.covariance[5] +
-  //       prt[2] * groundPt.covariance[8];
-  // stx = prt[3] * groundPt.covariance[0] + prt[4] * groundPt.covariance[3] +
-  //       prt[5] * groundPt.covariance[6];
-  // sty = prt[3] * groundPt.covariance[1] + prt[4] * groundPt.covariance[4] +
-  //       prt[5] * groundPt.covariance[7];
-  // stz = prt[3] * groundPt.covariance[2] + prt[4] * groundPt.covariance[5] +
-  //       prt[5] * groundPt.covariance[8];
-
-  // double gp_cov[4]; // Input gp cov in image space
-  // gp_cov[0] = ltx * prt[0] + lty * prt[1] + ltz * prt[2];
-  // gp_cov[1] = ltx * prt[3] + lty * prt[4] + ltz * prt[5];
-  // gp_cov[2] = stx * prt[0] + sty * prt[1] + stz * prt[2];
-  // gp_cov[3] = stx * prt[3] + sty * prt[4] + stz * prt[5];
-
-  // std::vector<double> unmodeled_cov = getUnmodeledError(ip);
-  // double sensor_cov[4]; // sensor cov in image space
-  // determineSensorCovarianceInImageSpace(gp, sensor_cov);
-
-  // result.covariance[0] = gp_cov[0] + unmodeled_cov[0] + sensor_cov[0];
-  // result.covariance[1] = gp_cov[1] + unmodeled_cov[1] + sensor_cov[1];
-  // result.covariance[2] = gp_cov[2] + unmodeled_cov[2] + sensor_cov[2];
-  // result.covariance[3] = gp_cov[3] + unmodeled_cov[3] + sensor_cov[3];
-
-  return result;
+  imageCoordCovar.line = projImagePt.line;
+  imageCoordCovar.samp = projImagePt.samp;
+  return imageCoordCovar;
 }
 
 //***************************************************************************
@@ -406,7 +360,7 @@ csm::EcefCoordCovar UsgsAstroProjectedLsSensorModel::imageToGround(
   csm::EcefCoord groundCoord = imageToGround(image_pt, height);
   csm::ImageCoord cameraImagePt = UsgsAstroLsSensorModel::groundToImage(groundCoord);
   csm::ImageCoordCovar cameraImagePtCovar(cameraImagePt.line, cameraImagePt.samp);
-
+  
   return UsgsAstroLsSensorModel::imageToGround(cameraImagePtCovar, height, heightVariance, desired_precision, achieved_precision, warnings);
 }
 
@@ -417,7 +371,10 @@ csm::EcefLocus UsgsAstroProjectedLsSensorModel::imageToProximateImagingLocus(
     const csm::ImageCoord& image_pt, const csm::EcefCoord& ground_pt,
     double desired_precision, double* achieved_precision,
     csm::WarningList* warnings) const {
-  csm::ImageCoord cameraImagePt = UsgsAstroLsSensorModel::groundToImage(ground_pt);
+  csm::EcefCoord projGround = imageToGround(image_pt, 0);
+  csm::ImageCoord cameraImagePt = UsgsAstroLsSensorModel::groundToImage(projGround);
+  // std::cout.precision(17);
+  // std::cout << cameraImagePt.line << ", " <<
 
   return UsgsAstroLsSensorModel::imageToProximateImagingLocus(cameraImagePt, ground_pt, desired_precision, achieved_precision, warnings);
 }
@@ -494,69 +451,6 @@ std::string UsgsAstroProjectedLsSensorModel::getReferenceDateAndTime() const {
   time_t ephemTime = m_centerEphemerisTime + relativeTime;
 
   return ephemTimeToCalendarTime(ephemTime);
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getImageTime
-//***************************************************************************
-double UsgsAstroProjectedLsSensorModel::getImageTime(
-    const csm::ImageCoord& image_pt) const {
-  // Convert imagept to camera imagept
-  // proj -> ecef -> groundToImage
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "getImageTime for image line {}",
-      image_pt.line)
-  double lineFull = image_pt.line;
-
-  auto referenceLineIt =
-      std::upper_bound(m_intTimeLines.begin(), m_intTimeLines.end(), lineFull);
-  if (referenceLineIt != m_intTimeLines.begin()) {
-    --referenceLineIt;
-  }
-  size_t referenceIndex =
-      std::distance(m_intTimeLines.begin(), referenceLineIt);
-
-  // Adding 0.5 to the line results in center exposure time for a given line
-  double time = m_intTimeStartTimes[referenceIndex] +
-                m_intTimes[referenceIndex] *
-                    (lineFull - m_intTimeLines[referenceIndex] + 0.5);
-
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "getImageTime is {}",
-      time)
-
-  return time;
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getSensorPosition
-//***************************************************************************
-csm::EcefCoord UsgsAstroProjectedLsSensorModel::getSensorPosition(
-    const csm::ImageCoord& imagePt) const {
-  // Convert imagept to camera imagept
-  // proj -> ecef -> groundToImage
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "getSensorPosition at image coord ({}, {})",
-      imagePt.line, imagePt.samp)
-
-  return UsgsAstroLsSensorModel::getSensorPosition(getImageTime(imagePt));
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getSensorVelocity
-//***************************************************************************
-csm::EcefVector UsgsAstroProjectedLsSensorModel::getSensorVelocity(
-    const csm::ImageCoord& imagePt) const {
-  // Convert imagept to camera imagept
-  // proj -> ecef -> groundToImage
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "getSensorVelocity at image coord ({}, {})",
-      imagePt.line, imagePt.samp);
-  return UsgsAstroLsSensorModel::getSensorVelocity(getImageTime(imagePt));
 }
 
 //---------------------------------------------------------------------------
@@ -710,33 +604,6 @@ UsgsAstroProjectedLsSensorModel::getValidImageRange() const {
       csm::ImageCoord(m_nLines,
                       m_nSamples));  // Technically nl and ns are outside the
                                      // image in a zero based system.
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getIlluminationDirection
-//***************************************************************************
-csm::EcefVector UsgsAstroProjectedLsSensorModel::getIlluminationDirection(
-    const csm::EcefCoord& groundPt) const {
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "Accessing illumination direction of ground point"
-      "{} {} {}.",
-      groundPt.x, groundPt.y, groundPt.z);
-
-  csm::EcefVector sunPosition =
-      getSunPosition(getImageTime(groundToImage(groundPt)));
-  csm::EcefVector illuminationDirection =
-      csm::EcefVector(groundPt.x - sunPosition.x, groundPt.y - sunPosition.y,
-                      groundPt.z - sunPosition.z);
-
-  double scale = sqrt(illuminationDirection.x * illuminationDirection.x +
-                      illuminationDirection.y * illuminationDirection.y +
-                      illuminationDirection.z * illuminationDirection.z);
-
-  illuminationDirection.x /= scale;
-  illuminationDirection.y /= scale;
-  illuminationDirection.z /= scale;
-  return illuminationDirection;
 }
 
 //---------------------------------------------------------------------------
@@ -897,201 +764,6 @@ std::string UsgsAstroProjectedLsSensorModel::getSensorMode() const {
 //***************************************************************************
 csm::Version UsgsAstroProjectedLsSensorModel::getVersion() const {
   return csm::Version(1, 0, 0);
-}
-
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::getEllipsoid
-//***************************************************************************
-csm::Ellipsoid UsgsAstroProjectedLsSensorModel::getEllipsoid() const {
-  return csm::Ellipsoid(m_majorAxis, m_minorAxis);
-}
-
-void UsgsAstroProjectedLsSensorModel::setEllipsoid(const csm::Ellipsoid& ellipsoid) {
-  m_majorAxis = ellipsoid.getSemiMajorRadius();
-  m_minorAxis = ellipsoid.getSemiMinorRadius();
-}
-
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::getValue
-//***************************************************************************
-double UsgsAstroProjectedLsSensorModel::getValue(
-    int index, const std::vector<double>& adjustments) const {
-  return m_currentParameterValue[index] + adjustments[index];
-}
-
-//***************************************************************************
-// Functions pulled out of losToEcf and computeViewingPixel
-// **************************************************************************
-void UsgsAstroProjectedLsSensorModel::getQuaternions(const double& time,
-                                            double q[4]) const {
-  int nOrder = 8;
-  if (m_platformFlag == 0) nOrder = 4;
-  int nOrderQuat = nOrder;
-  if (m_numQuaternions < 6 && nOrder == 8) nOrderQuat = 4;
-
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "Calculating getQuaternions for time {} with {}"
-      "order lagrange",
-      time, nOrder)
-  lagrangeInterp(m_numQuaternions / 4, &m_quaternions[0], m_t0Quat, m_dtQuat,
-                 time, 4, nOrderQuat, q);
-}
-
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::calculateAttitudeCorrection
-//***************************************************************************
-void UsgsAstroProjectedLsSensorModel::calculateAttitudeCorrection(
-    const double& time, const std::vector<double>& adj,
-    double attCorr[9]) const {
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "Computing calculateAttitudeCorrection (with adjustment)"
-      "for time {}",
-      time)
-  double aTime = time - m_t0Quat;
-  double euler[3];
-  double nTime = aTime / m_halfTime;
-  double nTime2 = nTime * nTime;
-  euler[0] = (getValue(6, adj) + getValue(9, adj) * nTime +
-              getValue(12, adj) * nTime2) /
-             m_flyingHeight;
-  euler[1] = (getValue(7, adj) + getValue(10, adj) * nTime +
-              getValue(13, adj) * nTime2) /
-             m_flyingHeight;
-  euler[2] = (getValue(8, adj) + getValue(11, adj) * nTime +
-              getValue(14, adj) * nTime2) /
-             m_halfSwath;
-  MESSAGE_LOG(
-      spdlog::level::trace,
-      "calculateAttitudeCorrection: euler {} {} {}",
-      euler[0], euler[1], euler[2])
-
-  calculateRotationMatrixFromEuler(euler, attCorr);
-}
-
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::computeProjectiveApproximation
-//***************************************************************************
-void UsgsAstroProjectedLsSensorModel::computeProjectiveApproximation(const csm::EcefCoord& gp,
-                                                            csm::ImageCoord& ip) const {
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "Computing projective approximation for ground point ({}, {}, {})",
-      gp.x, gp.y, gp.z);
-  if (m_useApproxInitTrans) {
-    std::vector<double> const& u = m_projTransCoeffs; // alias, to save on typing
-
-    double x = gp.x, y = gp.y, z = gp.z;
-    double line_den = 1 + u[4]  * x + u[5]  * y + u[6]  * z;
-    double samp_den = 1 + u[11] * x + u[12] * y + u[13] * z;
-
-    // Sanity checks. Ensure we don't divide by 0 and that the numbers are valid.
-    if (line_den == 0.0 || std::isnan(line_den) || std::isinf(line_den) ||
-        samp_den == 0.0 || std::isnan(samp_den) || std::isinf(samp_den)) {
-
-      ip.line = m_nLines / 2.0;
-      ip.samp = m_nSamples / 2.0;
-      MESSAGE_LOG(
-          spdlog::level::warn,
-          "Computing initial guess with constant approx line/2 and sample/2");
-
-      return;
-    }
-
-    // Apply the formula
-    ip.line = (u[0] + u[1] * x + u[2] * y + u[3]  * z) / line_den;
-    ip.samp = (u[7] + u[8] * x + u[9] * y + u[10] * z) / samp_den;
-
-    MESSAGE_LOG(
-        spdlog::level::debug,
-        "Projective approximation before bounding ({}, {})",
-        ip.line, ip.samp);
-
-    // Since this is valid only over the image,
-    // don't let the result go beyond the image border.
-    double numRows = m_nLines;
-    double numCols = m_nSamples;
-    if (ip.line < 0.0) ip.line = 0.0;
-    if (ip.line > numRows) ip.line = numRows;
-
-    if (ip.samp < 0.0) ip.samp = 0.0;
-    if (ip.samp > numCols) ip.samp = numCols;
-  } else {
-    ip.line = m_nLines / 2.0;
-    ip.samp = m_nSamples / 2.0;
-  }
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "Projective approximation ({}, {})",
-      ip.line, ip.samp);
-}
-
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::createProjectiveApproximation
-//***************************************************************************
-void UsgsAstroProjectedLsSensorModel::createProjectiveApproximation() {
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "Calculating createProjectiveApproximation");
-
-  // Use 9 points (9*4 eventual matrix rows) as we need to fit 14 variables.
-  const int numPts = 9;
-  double u_factors[numPts] = {0.0, 0.0, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0};
-  double v_factors[numPts] = {0.0, 0.5, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 1.0};
-
-  csm::EcefCoord refPt = getReferencePoint();
-
-  double desired_precision = 0.01;
-  double height = computeEllipsoidElevation(
-      refPt.x, refPt.y, refPt.z, m_majorAxis, m_minorAxis, desired_precision);
-  if (std::isnan(height)) {
-    MESSAGE_LOG(
-        spdlog::level::warn,
-        "createProjectiveApproximation: computeElevation of "
-        "reference point {} {} {} with desired precision "
-        "{} and major/minor radii {}, {} returned nan height; nonprojective",
-        refPt.x, refPt.y, refPt.z, desired_precision, m_majorAxis, m_minorAxis);
-    m_useApproxInitTrans = false;
-    return;
-  }
-  MESSAGE_LOG(
-      spdlog::level::trace,
-      "createProjectiveApproximation: computeElevation of "
-      "reference point {} {} {} with desired precision "
-      "{} and major/minor radii {}, {} returned {} height",
-      refPt.x, refPt.y, refPt.z, desired_precision, m_majorAxis, m_minorAxis, height);
-
-  double numImageRows = m_nLines;
-  double numImageCols = m_nSamples;
-
-  std::vector<csm::ImageCoord> ip(2 * numPts);
-  std::vector<csm::EcefCoord>  gp(2 * numPts);
-
-  // Sample at two heights above the ellipsoid in order to get a
-  // reliable estimate of the relationship between image points and
-  // ground points.
-
-  for (int i = 0; i < numPts; i++) {
-    ip[i].line = u_factors[i] * numImageRows;
-    ip[i].samp = v_factors[i] * numImageCols;
-    gp[i]      = imageToGround(ip[i], height);
-  }
-
-  double delta_z = 100.0;
-  height += delta_z;
-  for (int i = 0; i < numPts; i++) {
-    ip[i + numPts].line = u_factors[i] * numImageRows;
-    ip[i + numPts].samp = v_factors[i] * numImageCols;
-    gp[i + numPts]      = imageToGround(ip[i + numPts], height);
-  }
-
-  usgscsm::computeBestFitProjectiveTransform(ip, gp, m_projTransCoeffs);
-  m_useApproxInitTrans = true;
-
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "Completed createProjectiveApproximation");
 }
 
 //***************************************************************************
