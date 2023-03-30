@@ -775,8 +775,8 @@ std::string UsgsAstroProjectedLsSensorModel::constructStateFromIsd(
   json lsState = json::parse(UsgsAstroLsSensorModel::constructStateFromIsd(imageSupportData, warnings));
   json state = json::parse(imageSupportData);
 
-  lsState["m_geoTransform"] = getGeoTransform(state);
-  lsState["m_projString"] = getProjectionString(state);
+  lsState["m_geoTransform"] = ale::getGeoTransform(state);
+  lsState["m_projString"] = ale::getProjectionString(state);
   MESSAGE_LOG(
       spdlog::level::trace,
       "m_geoTransform: {} "
