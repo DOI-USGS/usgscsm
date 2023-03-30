@@ -239,7 +239,7 @@ csm::ImageCoord UsgsAstroProjectedLsSensorModel::groundToImage(
   PJ_CONTEXT *C = proj_context_create();
 
   /* Create a projection. */
-  PJ *isdProj = proj_create(C, m_projString.c_str());
+  PJ *isdProj = proj_create(C, (m_projString + " +type=crs").c_str());
   if (0 == isdProj) {
     MESSAGE_LOG(
         spdlog::level::debug,
@@ -316,7 +316,7 @@ csm::EcefCoord UsgsAstroProjectedLsSensorModel::imageToGround(
   PJ_CONTEXT *C = proj_context_create();
 
   /* Create a projection. */
-  PJ *isdProj = proj_create(C, m_projString.c_str());
+  PJ *isdProj = proj_create(C, (m_projString + " +type=crs").c_str());
   if (0 == isdProj) {
     MESSAGE_LOG(
         spdlog::level::debug,
@@ -776,7 +776,7 @@ std::string UsgsAstroProjectedLsSensorModel::constructStateFromIsd(
   json state = json::parse(imageSupportData);
 
   lsState["m_geoTransform"] = ale::getGeoTransform(state);
-  lsState["m_projString"] = ale::getProjectionString(state);
+  lsState["m_projString"] = ale::getProjection(state);
   MESSAGE_LOG(
       spdlog::level::trace,
       "m_geoTransform: {} "
