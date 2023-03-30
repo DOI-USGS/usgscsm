@@ -290,41 +290,9 @@ class UsgsAstroProjectedLsSensorModel : public UsgsAstroLsSensorModel {
   //  will be returned.
   //<
 
-  virtual csm::EcefVector getIlluminationDirection(
-      const csm::EcefCoord& groundPt) const;
-  //> This method returns a vector defining the direction of
-  //  illumination at the given groundPt (x,y,z in ECEF meters).
-  //  Note that there are two opposite directions possible.  Both are
-  //  valid, so either can be returned; the calling application can convert
-  //  to the other as necessary.
-  //<
-
   //---
   // Time and Trajectory
   //---
-  virtual double getImageTime(const csm::ImageCoord& imagePt) const;
-  //> This method returns the time in seconds at which the pixel at the
-  //  given imagePt (line, sample in full image space pixels) was captured
-  //
-  //  The time provided is relative to the reference date and time given
-  //  by the Model::getReferenceDateAndTime method.
-  //<
-
-  virtual csm::EcefCoord getSensorPosition(
-      const csm::ImageCoord& imagePt) const;
-  //> This method returns the position of the physical sensor
-  // (x,y,z in ECEF meters) when the pixel at the given imagePt
-  // (line, sample in full image space pixels) was captured.
-  //
-  // A csm::Error will be thrown if the sensor position is not available.
-  //<
-
-  virtual csm::EcefVector getSensorVelocity(
-      const csm::ImageCoord &imagePt) const;
-  //> This method returns the velocity of the physical sensor
-  // (x,y,z in ECEF meters per second) when the pixel at the given imagePt
-  // (line, sample in full image space pixels) was captured.
-  //<
 
   virtual const csm::CorrelationModel& getCorrelationModel() const;
   //> This method returns a reference to a CorrelationModel.
@@ -655,18 +623,6 @@ class UsgsAstroProjectedLsSensorModel : public UsgsAstroLsSensorModel {
   //  current state.
   //<
 
-  virtual csm::Ellipsoid getEllipsoid() const;
-  //> This method returns the planetary ellipsoid.
-  //<
-
-  virtual void setEllipsoid(const csm::Ellipsoid& ellipsoid);
-  //> This method sets the planetary ellipsoid.
-  //<
-
-  void calculateAttitudeCorrection(const double& time,
-                                   const std::vector<double>& adj,
-                                   double attCorr[9]) const;
-
  private:
 
   // Some state data values not found in the support data require a
@@ -679,8 +635,6 @@ class UsgsAstroProjectedLsSensorModel : public UsgsAstroLsSensorModel {
 
   void reconstructSensorDistortion(double& focalX, double& focalY,
                                    const double& desiredPrecision) const;
-
-  void getQuaternions(const double& time, double quaternion[4]) const;
 
   // Computes the LOS correction due to light aberration
   void lightAberrationCorr(const double& vx, const double& vy, const double& vz,
@@ -703,21 +657,6 @@ class UsgsAstroProjectedLsSensorModel : public UsgsAstroLsSensorModel {
       const csm::EcefCoord& groundPoint,  // The ground coordinate
       const std::vector<double>& adj)      // Parameter Adjustments for partials
       const;
-
-  // The projective approximation for the sensor model is used as the starting point
-  // for iterative rigorous calculations.
-  void computeProjectiveApproximation(const csm::EcefCoord& gp,
-                                      csm::ImageCoord& ip) const;
-
-  // Create the projective approximation to be used at each ground point
-  void createProjectiveApproximation();
-
-  // A function whose value will be 0 when the line a given ground
-  // point projects into is found. The obtained line will be
-  // approxPt.line + t.
-  double calcDetectorLineErr(double t, csm::ImageCoord const& approxPt,
-                             const csm::EcefCoord& groundPt,
-                             const std::vector<double>& adj) const;
 
   csm::NoCorrelationModel _no_corr_model;  // A way to report no correlation
                                            // between images is supported
