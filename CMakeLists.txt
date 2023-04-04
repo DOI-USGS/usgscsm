@@ -35,10 +35,6 @@ if(USGSCSM_EXTERNAL_DEPS)
   # Eigen
   find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
-  # GDAL
-  find_package(PROJ REQUIRED CONFIG)
-  set(PROJ_TARGET PROJ::proj)
-
   # ALE
   find_package(ale REQUIRED)
   set(ALE_TARGET ale::ale)
@@ -64,6 +60,10 @@ else()
   add_library (Eigen3::Eigen ALIAS eigen)
   set(EIGEN3_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ale/eigen)
 endif(USGSCSM_EXTERNAL_DEPS)
+
+# Proj
+find_package(PROJ REQUIRED CONFIG)
+set(PROJ_TARGET PROJ::proj)
 
 add_library(usgscsm SHARED
             src/UsgsAstroPlugin.cpp
