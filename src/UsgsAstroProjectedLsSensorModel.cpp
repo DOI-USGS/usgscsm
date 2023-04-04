@@ -23,15 +23,7 @@ IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISI
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. **/
 
 #include "UsgsAstroProjectedLsSensorModel.h"
-#include "Distortion.h"
 #include "Utilities.h"
-#include "EigenUtilities.h"
-
-#include <float.h>
-#include <math.h>
-#include <algorithm>
-#include <iostream>
-#include <sstream>
 
 #include <proj.h>
 
@@ -40,8 +32,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 
 #include "ale/Util.h"
 
-#define MESSAGE_LOG(...)         \
-  if (m_logger) {                \
+#define MESSAGE_LOG(...)        \
+  if (m_logger) {               \
     m_logger->log(__VA_ARGS__); \
   }
 
@@ -49,25 +41,6 @@ using json = nlohmann::json;
 
 const std::string UsgsAstroProjectedLsSensorModel::_SENSOR_MODEL_NAME =
     "USGS_ASTRO_PROJECTED_LINE_SCANNER_SENSOR_MODEL";
-const int UsgsAstroProjectedLsSensorModel::NUM_PARAMETERS = 16;
-const std::string UsgsAstroProjectedLsSensorModel::PARAMETER_NAME[] = {
-    "IT Pos. Bias   ",  // 0
-    "CT Pos. Bias   ",  // 1
-    "Rad Pos. Bias  ",  // 2
-    "IT Vel. Bias   ",  // 3
-    "CT Vel. Bias   ",  // 4
-    "Rad Vel. Bias  ",  // 5
-    "Omega Bias     ",  // 6
-    "Phi Bias       ",  // 7
-    "Kappa Bias     ",  // 8
-    "Omega Rate     ",  // 9
-    "Phi Rate       ",  // 10
-    "Kappa Rate     ",  // 11
-    "Omega Accl     ",  // 12
-    "Phi Accl       ",  // 13
-    "Kappa Accl     ",  // 14
-    "Focal Bias     "   // 15
-};
 
 const std::string UsgsAstroProjectedLsSensorModel::_STATE_KEYWORD[] = {
     "m_modelName",
@@ -122,13 +95,6 @@ const std::string UsgsAstroProjectedLsSensorModel::_STATE_KEYWORD[] = {
     "m_geoTransform",
     "m_projString",
 };
-
-const int UsgsAstroProjectedLsSensorModel::NUM_PARAM_TYPES = 4;
-const std::string UsgsAstroProjectedLsSensorModel::PARAM_STRING_ALL[] = {
-    "NONE", "FICTITIOUS", "REAL", "FIXED"};
-const csm::param::Type UsgsAstroProjectedLsSensorModel::PARAM_CHAR_ALL[] = {
-    csm::param::NONE, csm::param::FICTITIOUS, csm::param::REAL,
-    csm::param::FIXED};
 
 //***************************************************************************
 // UsgsAstroLineScannerSensorModel::replaceModelState
@@ -212,18 +178,12 @@ void UsgsAstroProjectedLsSensorModel::reset() {
 //*****************************************************************************
 // UsgsAstroProjectedLsSensorModel Constructor
 //*****************************************************************************
-UsgsAstroProjectedLsSensorModel::UsgsAstroProjectedLsSensorModel() {
-  _no_adjustment.assign(UsgsAstroProjectedLsSensorModel::NUM_PARAMETERS, 0.0);
-}
+UsgsAstroProjectedLsSensorModel::UsgsAstroProjectedLsSensorModel() : UsgsAstroLsSensorModel() {}
 
 //*****************************************************************************
 // UsgsAstroProjectedLsSensorModel Destructor
 //*****************************************************************************
-UsgsAstroProjectedLsSensorModel::~UsgsAstroProjectedLsSensorModel() {
-  if (m_logger) {
-    m_logger->flush();
-  }
-}
+UsgsAstroProjectedLsSensorModel::~UsgsAstroProjectedLsSensorModel() {}
 
 //---------------------------------------------------------------------------
 // Core Photogrammetry
@@ -394,118 +354,6 @@ csm::EcefLocus UsgsAstroProjectedLsSensorModel::imageToRemoteImagingLocus(
 }
 
 //---------------------------------------------------------------------------
-// Uncertainty Propagation
-//---------------------------------------------------------------------------
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getParameterCovariance
-//***************************************************************************
-double UsgsAstroProjectedLsSensorModel::getParameterCovariance(int index1,
-                                                      int index2) const {
-  int index = UsgsAstroProjectedLsSensorModel::NUM_PARAMETERS * index1 + index2;
-
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "getParameterCovariance for {} {} is {}",
-      index1, index2, m_covariance[index])
-
-  return m_covariance[index];
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::setParameterCovariance
-//***************************************************************************
-void UsgsAstroProjectedLsSensorModel::setParameterCovariance(int index1, int index2,
-                                                    double covariance) {
-  int index = UsgsAstroProjectedLsSensorModel::NUM_PARAMETERS * index1 + index2;
-
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "setParameterCovariance for {} {} is {}",
-      index1, index2, m_covariance[index])
-
-  m_covariance[index] = covariance;
-}
-
-//---------------------------------------------------------------------------
-// Time and Trajectory
-//---------------------------------------------------------------------------
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getTrajectoryIdentifier
-//***************************************************************************
-std::string UsgsAstroProjectedLsSensorModel::getTrajectoryIdentifier() const {
-  return "UNKNOWN";
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getReferenceDateAndTime
-//***************************************************************************
-std::string UsgsAstroProjectedLsSensorModel::getReferenceDateAndTime() const {
-  csm::EcefCoord referencePointGround =
-    UsgsAstroProjectedLsSensorModel::getReferencePoint();
-  csm::ImageCoord referencePointImage =
-    UsgsAstroProjectedLsSensorModel::groundToImage(referencePointGround);
-  double relativeTime =
-    UsgsAstroProjectedLsSensorModel::getImageTime(referencePointImage);
-  time_t ephemTime = m_centerEphemerisTime + relativeTime;
-
-  return ephemTimeToCalendarTime(ephemTime);
-}
-
-//---------------------------------------------------------------------------
-// Sensor Model Parameters
-//---------------------------------------------------------------------------
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::setParameterValue
-//***************************************************************************
-void UsgsAstroProjectedLsSensorModel::setParameterValue(int index, double value) {
-  m_currentParameterValue[index] = value;
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getParameterValue
-//***************************************************************************
-double UsgsAstroProjectedLsSensorModel::getParameterValue(int index) const {
-  return m_currentParameterValue[index];
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getParameterName
-//***************************************************************************
-std::string UsgsAstroProjectedLsSensorModel::getParameterName(int index) const {
-  return PARAMETER_NAME[index];
-}
-
-std::string UsgsAstroProjectedLsSensorModel::getParameterUnits(int index) const {
-  // All parameters are meters or scaled to meters
-  return "m";
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getNumParameters
-//***************************************************************************
-int UsgsAstroProjectedLsSensorModel::getNumParameters() const {
-  return UsgsAstroProjectedLsSensorModel::NUM_PARAMETERS;
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getParameterType
-//***************************************************************************
-csm::param::Type UsgsAstroProjectedLsSensorModel::getParameterType(int index) const {
-  return m_parameterType[index];
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::setParameterType
-//***************************************************************************
-void UsgsAstroProjectedLsSensorModel::setParameterType(int index,
-                                              csm::param::Type pType) {
-  m_parameterType[index] = pType;
-}
-
-//---------------------------------------------------------------------------
 // Sensor Model Information
 //---------------------------------------------------------------------------
 
@@ -513,53 +361,7 @@ void UsgsAstroProjectedLsSensorModel::setParameterType(int index,
 // UsgsAstroProjectedLsSensorModel::getPedigree
 //***************************************************************************
 std::string UsgsAstroProjectedLsSensorModel::getPedigree() const {
-  return "USGS_LINE_SCANNER";
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getImageIdentifier
-//***************************************************************************
-std::string UsgsAstroProjectedLsSensorModel::getImageIdentifier() const {
-  return m_imageIdentifier;
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::setImageIdentifier
-//***************************************************************************
-void UsgsAstroProjectedLsSensorModel::setImageIdentifier(const std::string& imageId,
-                                                csm::WarningList* warnings) {
-  // Image id should include the suffix without the path name
-  m_imageIdentifier = imageId;
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getSensorIdentifier
-//***************************************************************************
-std::string UsgsAstroProjectedLsSensorModel::getSensorIdentifier() const {
-  return m_sensorIdentifier;
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getPlatformIdentifier
-//***************************************************************************
-std::string UsgsAstroProjectedLsSensorModel::getPlatformIdentifier() const {
-  return m_platformIdentifier;
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::setReferencePoint
-//***************************************************************************
-void UsgsAstroProjectedLsSensorModel::setReferencePoint(
-    const csm::EcefCoord& ground_pt) {
-  m_referencePointXyz = ground_pt;
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getReferencePoint
-//***************************************************************************
-csm::EcefCoord UsgsAstroProjectedLsSensorModel::getReferencePoint() const {
-  // Return ground point at image center
-  return m_referencePointXyz;
+  return "USGS_PROJECTED_LINE_SCANNER";
 }
 
 //***************************************************************************
@@ -567,196 +369,6 @@ csm::EcefCoord UsgsAstroProjectedLsSensorModel::getReferencePoint() const {
 //***************************************************************************
 std::string UsgsAstroProjectedLsSensorModel::getModelName() const {
   return UsgsAstroProjectedLsSensorModel::_SENSOR_MODEL_NAME;
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getImageStart
-//***************************************************************************
-csm::ImageCoord UsgsAstroProjectedLsSensorModel::getImageStart() const {
-  return csm::ImageCoord(0.0, 0.0);
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getImageSize
-//***************************************************************************
-csm::ImageVector UsgsAstroProjectedLsSensorModel::getImageSize() const {
-  return csm::ImageVector(m_nLines, m_nSamples);
-}
-
-//---------------------------------------------------------------------------
-//  Monoscopic Mensuration
-//---------------------------------------------------------------------------
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getValidHeightRange
-//***************************************************************************
-std::pair<double, double> UsgsAstroProjectedLsSensorModel::getValidHeightRange() const {
-  return std::pair<double, double>(m_minElevation, m_maxElevation);
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getValidImageRange
-//***************************************************************************
-std::pair<csm::ImageCoord, csm::ImageCoord>
-UsgsAstroProjectedLsSensorModel::getValidImageRange() const {
-  return std::pair<csm::ImageCoord, csm::ImageCoord>(
-      csm::ImageCoord(0.0, 0.0),
-      csm::ImageCoord(m_nLines,
-                      m_nSamples));  // Technically nl and ns are outside the
-                                     // image in a zero based system.
-}
-
-//---------------------------------------------------------------------------
-//  Error Correction
-//---------------------------------------------------------------------------
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getNumGeometricCorrectionSwitches
-//***************************************************************************
-int UsgsAstroProjectedLsSensorModel::getNumGeometricCorrectionSwitches() const {
-  return 0;
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getGeometricCorrectionName
-//***************************************************************************
-std::string UsgsAstroProjectedLsSensorModel::getGeometricCorrectionName(
-    int index) const {
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "Accessing name of geometric correction switch {}. "
-      "Geometric correction switches are not supported, throwing exception",
-      index);
-  // Since there are no geometric corrections, all indices are out of range
-  throw csm::Error(csm::Error::INDEX_OUT_OF_RANGE, "Index is out of range.",
-                   "UsgsAstroProjectedLsSensorModel::getGeometricCorrectionName");
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::setGeometricCorrectionSwitch
-//***************************************************************************
-void UsgsAstroProjectedLsSensorModel::setGeometricCorrectionSwitch(
-    int index, bool value, csm::param::Type pType) {
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "Setting geometric correction switch {} to {} "
-      "with parameter type {}. "
-      "Geometric correction switches are not supported, throwing exception",
-      index, value, pType);
-  // Since there are no geometric corrections, all indices are out of range
-  throw csm::Error(csm::Error::INDEX_OUT_OF_RANGE, "Index is out of range.",
-                   "UsgsAstroProjectedLsSensorModel::setGeometricCorrectionSwitch");
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getGeometricCorrectionSwitch
-//***************************************************************************
-bool UsgsAstroProjectedLsSensorModel::getGeometricCorrectionSwitch(int index) const {
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "Accessing value of geometric correction switch {}. "
-      "Geometric correction switches are not supported, throwing exception",
-      index);
-  // Since there are no geometric corrections, all indices are out of range
-  throw csm::Error(csm::Error::INDEX_OUT_OF_RANGE, "Index is out of range.",
-                   "UsgsAstroProjectedLsSensorModel::getGeometricCorrectionSwitch");
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getCrossCovarianceMatrix
-//***************************************************************************
-std::vector<double> UsgsAstroProjectedLsSensorModel::getCrossCovarianceMatrix(
-    const csm::GeometricModel& comparisonModel, csm::param::Set pSet,
-    const csm::GeometricModel::GeometricModelList& otherModels) const {
-  // Return covariance matrix
-  if (&comparisonModel == this) {
-    std::vector<int> paramIndices = getParameterSetIndices(pSet);
-    int numParams = paramIndices.size();
-    std::vector<double> covariances(numParams * numParams, 0.0);
-    for (int i = 0; i < numParams; i++) {
-      for (int j = 0; j < numParams; j++) {
-        covariances[i * numParams + j] =
-            getParameterCovariance(paramIndices[i], paramIndices[j]);
-      }
-    }
-    return covariances;
-  }
-  // No correlation between models.
-  const std::vector<int>& indices = getParameterSetIndices(pSet);
-  size_t num_rows = indices.size();
-  const std::vector<int>& indices2 =
-      comparisonModel.getParameterSetIndices(pSet);
-  size_t num_cols = indices.size();
-
-  return std::vector<double>(num_rows * num_cols, 0.0);
-}
-
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::getCorrelationModel
-//***************************************************************************
-const csm::CorrelationModel& UsgsAstroProjectedLsSensorModel::getCorrelationModel()
-    const {
-  // All Line Scanner images are assumed uncorrelated
-  return _no_corr_model;
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getUnmodeledCrossCovariance
-//***************************************************************************
-std::vector<double> UsgsAstroProjectedLsSensorModel::getUnmodeledCrossCovariance(
-    const csm::ImageCoord& pt1, const csm::ImageCoord& pt2) const {
-  // No unmodeled error
-  return std::vector<double>(4, 0.0);
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getCollectionIdentifier
-//***************************************************************************
-std::string UsgsAstroProjectedLsSensorModel::getCollectionIdentifier() const {
-  return "UNKNOWN";
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::hasShareableParameters
-//***************************************************************************
-bool UsgsAstroProjectedLsSensorModel::hasShareableParameters() const {
-  // Parameter sharing is not supported for this sensor
-  return false;
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::isParameterShareable
-//***************************************************************************
-bool UsgsAstroProjectedLsSensorModel::isParameterShareable(int index) const {
-  // Parameter sharing is not supported for this sensor
-  return false;
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getParameterSharingCriteria
-//***************************************************************************
-csm::SharingCriteria UsgsAstroProjectedLsSensorModel::getParameterSharingCriteria(
-    int index) const {
-  MESSAGE_LOG(
-      spdlog::level::debug,
-      "Checking sharing criteria for parameter {}. "
-      "Sharing is not supported.",
-      index);
-  return csm::SharingCriteria();
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getSensorType
-//***************************************************************************
-std::string UsgsAstroProjectedLsSensorModel::getSensorType() const {
-  return CSM_SENSOR_TYPE_EO;
-}
-
-//***************************************************************************
-// UsgsAstroProjectedLsSensorModel::getSensorMode
-//***************************************************************************
-std::string UsgsAstroProjectedLsSensorModel::getSensorMode() const {
-  return CSM_SENSOR_MODE_PB;
 }
 
 //***************************************************************************
@@ -785,15 +397,4 @@ std::string UsgsAstroProjectedLsSensorModel::constructStateFromIsd(
   // The state data will still be updated when a sensor model is created since
   // some state data is not in the ISD and requires a SM to compute them.
   return lsState.dump();
-}
-
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::getLogger
-//***************************************************************************
-std::shared_ptr<spdlog::logger> UsgsAstroProjectedLsSensorModel::getLogger() {
-  return m_logger;
-}
-
-void UsgsAstroProjectedLsSensorModel::setLogger(std::string logName) {
-  m_logger = spdlog::get(logName);
 }
