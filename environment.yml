@@ -8,5 +8,5 @@ dependencies:
   - cmake>=3.15
   - csm
   - eigen
-  - gdal
   - nlohmann_json
+  - proj
