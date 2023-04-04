@@ -333,8 +333,6 @@ csm::EcefLocus UsgsAstroProjectedLsSensorModel::imageToProximateImagingLocus(
     csm::WarningList* warnings) const {
   csm::EcefCoord projGround = imageToGround(image_pt, 0);
   csm::ImageCoord cameraImagePt = UsgsAstroLsSensorModel::groundToImage(projGround);
-  // std::cout.precision(17);
-  // std::cout << cameraImagePt.line << ", " <<
 
   return UsgsAstroLsSensorModel::imageToProximateImagingLocus(cameraImagePt, ground_pt, desired_precision, achieved_precision, warnings);
 }
