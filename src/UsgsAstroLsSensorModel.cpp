@@ -702,7 +702,7 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
       ground_pt.x, ground_pt.y, ground_pt.z, desired_precision);
 
   // The public interface invokes the private interface with no adjustments.
-  csm::ImageCoord imagePt = groundToImage(
+  csm::ImageCoord imagePt = UsgsAstroLsSensorModel::groundToImage(
       ground_pt, _no_adjustment, desired_precision, achieved_precision, warnings);
   MESSAGE_LOG(
       spdlog::level::info,
@@ -837,7 +837,7 @@ csm::ImageCoordCovar UsgsAstroLsSensorModel::groundToImage(
   gp.z = groundPt.z;
 
   csm::ImageCoord ip =
-      groundToImage(gp, desired_precision, achieved_precision, warnings);
+      UsgsAstroLsSensorModel::groundToImage(gp, desired_precision, achieved_precision, warnings);
   csm::ImageCoordCovar result(ip.line, ip.samp);
 
   // Compute partials ls wrt XYZ
@@ -968,20 +968,20 @@ csm::EcefCoordCovar UsgsAstroLsSensorModel::imageToGround(
   const double DELTA_GROUND = m_gsd;
   csm::ImageCoord ip(image_pt.line, image_pt.samp);
 
-  csm::EcefCoord gp = imageToGround(ip, height, desired_precision,
-                                    achieved_precision, warnings);
+  csm::EcefCoord gp = UsgsAstroLsSensorModel::imageToGround(ip, height, desired_precision,
+                                                            achieved_precision, warnings);
 
   // Compute numerical partials xyz wrt to lsh
   ip.line = image_pt.line + DELTA_IMAGE;
   ip.samp = image_pt.samp;
-  csm::EcefCoord gpl = imageToGround(ip, height, desired_precision);
+  csm::EcefCoord gpl = UsgsAstroLsSensorModel::imageToGround(ip, height, desired_precision);
   double xpl = (gpl.x - gp.x) / DELTA_IMAGE;
   double ypl = (gpl.y - gp.y) / DELTA_IMAGE;
   double zpl = (gpl.z - gp.z) / DELTA_IMAGE;
 
   ip.line = image_pt.line;
   ip.samp = image_pt.samp + DELTA_IMAGE;
-  csm::EcefCoord gps = imageToGround(ip, height, desired_precision);
+  csm::EcefCoord gps = UsgsAstroLsSensorModel::imageToGround(ip, height, desired_precision);
   double xps = (gps.x - gp.x) / DELTA_IMAGE;
   double yps = (gps.y - gp.y) / DELTA_IMAGE;
   double zps = (gps.z - gp.z) / DELTA_IMAGE;
@@ -989,7 +989,7 @@ csm::EcefCoordCovar UsgsAstroLsSensorModel::imageToGround(
   ip.line = image_pt.line;
   ip.samp = image_pt.samp;
   csm::EcefCoord gph =
-      imageToGround(ip, height + DELTA_GROUND, desired_precision);
+      UsgsAstroLsSensorModel::imageToGround(ip, height + DELTA_GROUND, desired_precision);
   double xph = (gph.x - gp.x) / DELTA_GROUND;
   double yph = (gph.y - gp.y) / DELTA_GROUND;
   double zph = (gph.z - gp.z) / DELTA_GROUND;
@@ -1064,7 +1064,7 @@ csm::EcefLocus UsgsAstroLsSensorModel::imageToProximateImagingLocus(
 
   // Ground point on object ray with the same elevation
   csm::EcefCoord gp1 =
-      imageToGround(image_pt, height, desired_precision, achieved_precision);
+      UsgsAstroLsSensorModel::imageToGround(image_pt, height, desired_precision, achieved_precision);
 
   // Vector between 2 ground points above
   double dx1 = x - gp1.x;
@@ -1072,8 +1072,8 @@ csm::EcefLocus UsgsAstroLsSensorModel::imageToProximateImagingLocus(
   double dz1 = z - gp1.z;
 
   // Unit vector along object ray
-  csm::EcefCoord gp2 = imageToGround(image_pt, height - DELTA_GROUND,
-                                     desired_precision, achieved_precision);
+  csm::EcefCoord gp2 = UsgsAstroLsSensorModel::imageToGround(image_pt, height - DELTA_GROUND,
+                                                             desired_precision, achieved_precision);
   double dx2 = gp2.x - gp1.x;
   double dy2 = gp2.y - gp1.y;
   double dz2 = gp2.z - gp1.z;
@@ -1093,8 +1093,8 @@ csm::EcefLocus UsgsAstroLsSensorModel::imageToProximateImagingLocus(
 
   double hLocus = computeEllipsoidElevation(gp2.x, gp2.y, gp2.z, m_majorAxis,
                                             m_minorAxis, desired_precision);
-  locus.point = imageToGround(image_pt, hLocus, desired_precision,
-                              achieved_precision, warnings);
+  locus.point = UsgsAstroLsSensorModel::imageToGround(image_pt, hLocus, desired_precision,
+                                                      achieved_precision, warnings);
 
   locus.direction.x = dx2;
   locus.direction.y = dy2;
@@ -2735,7 +2735,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(
     }
     throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
                      "ISD is invalid for creating the sensor model.",
-                     "UsgsAstroFrameSensorModel::constructStateFromIsd");
+                     "UsgsAstroLsSensorModel::constructStateFromIsd");
   }
 
   // The state data will still be updated when a sensor model is created since
