@@ -639,7 +639,7 @@ TEST(UtilitiesTests, sanitizeTest) {
 
 TEST(UtilitiesTests, pixelToMeterTest) {
   std::vector<double> geoTransform = {-104607.78948592, 4.980137561815, 0.0, -570564.40018202, 0.0, -4.980137561815};
-  std::vector<double> ret = pixelToMeter(13.1191, 4981.08, geoTransform);
+  std::vector<double> ret = pixelToMeter(13.6191, 4981.58, geoTransform);
   EXPECT_NEAR(ret[0], -570632.225173488, 1e-4);
   EXPECT_NEAR(ret[1], -79798.83581073358, 1e-4);
 }
@@ -647,6 +647,6 @@ TEST(UtilitiesTests, pixelToMeterTest) {
 TEST(UtilitiesTests, meterToPixelTest) {
   std::vector<double> geoTransform = {-104607.78948592, 4.980137561815, 0.0, -570564.40018202, 0.0, -4.980137561815};
   std::vector<double> ret = meterToPixel(-79798.83581073358, -570632.225173488, geoTransform);
-  EXPECT_NEAR(ret[0], 13.1191, 1e-4);
-  EXPECT_NEAR(ret[1], 4981.0800000000099, 1e-4);
+  EXPECT_NEAR(ret[0], 13.6191, 1e-4);
+  EXPECT_NEAR(ret[1], 4981.5800000000099, 1e-4);
 }
