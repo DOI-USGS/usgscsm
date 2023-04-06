@@ -197,7 +197,9 @@ UsgsAstroProjectedSensorModel::UsgsAstroProjectedSensorModel() {}
 //*****************************************************************************
 // UsgsAstroProjectedSensorModel Destructor
 //*****************************************************************************
-UsgsAstroProjectedSensorModel::~UsgsAstroProjectedSensorModel() {}
+UsgsAstroProjectedSensorModel::~UsgsAstroProjectedSensorModel() {
+  delete m_camera;
+}
 
 //---------------------------------------------------------------------------
 // Core Photogrammetry
@@ -287,6 +289,12 @@ csm::EcefCoord UsgsAstroProjectedSensorModel::imageToGround(
   std::vector<double> meterCoord = pixelToMeter(image_pt.line, image_pt.samp, m_geoTransform);
   meterLine = meterCoord[0];
   meterSamp = meterCoord[1];
+  MESSAGE_LOG(
+      spdlog::level::trace,
+      "METERS X: {0:.15f}", meterLine);
+  MESSAGE_LOG(
+      spdlog::level::trace,
+      "METERS Y: {0:.15f}", meterSamp);
   PJ_CONTEXT *C = proj_context_create();
 
   /* Create a projection. */
