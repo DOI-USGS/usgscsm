@@ -67,10 +67,11 @@ set(PROJ_TARGET PROJ::proj)
 
 add_library(usgscsm SHARED
             src/UsgsAstroPlugin.cpp
+            src/UsgsAstroPluginSupport.cpp
             src/UsgsAstroFrameSensorModel.cpp
             src/UsgsAstroPushFrameSensorModel.cpp
             src/UsgsAstroLsSensorModel.cpp
-            src/UsgsAstroProjectedLsSensorModel.cpp
+            src/UsgsAstroProjectedSensorModel.cpp
             src/UsgsAstroSarSensorModel.cpp
             src/Distortion.cpp
             src/Utilities.cpp

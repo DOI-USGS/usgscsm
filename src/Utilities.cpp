@@ -1,6 +1,5 @@
 #include "Utilities.h"
 
-
 #include <Error.h>
 #include <cmath>
 #include <stack>
