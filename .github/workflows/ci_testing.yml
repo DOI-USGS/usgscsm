@@ -69,5 +69,5 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DUSGSCSM_BUILD_TESTS=OFF ..
+          cmake -G "Visual Studio 16 2019 Win64" -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DUSGSCSM_BUILD_TESTS=OFF ..
           cmake --build . --target ALL_BUILD --config Release
