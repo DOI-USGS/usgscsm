@@ -67,5 +67,7 @@ jobs:
           conda list
       - name: Build Package
         run: |
+          mkdir -p build
+          cd build
           cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DUSGSCSM_BUILD_TESTS=OFF ..
           cmake --build . --target ALL_BUILD --config Release
