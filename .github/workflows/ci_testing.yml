@@ -9,12 +9,12 @@ on:
       - main
 
 jobs:
-  Build-and-Test:
+  Build-and-Test-LinuxOsX:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-       os: [ubuntu-latest, macos-latest, windows-latest]
+       os: [ubuntu-latest, macos-latest]
        python-version: ["3.8", "3.9", "3.10", "3.11"]
     defaults:
       run:
@@ -38,16 +38,34 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DUSGSCSM_BUILD_TESTS=OFF ..
-            cmake --build . --target ALL_BUILD --config Release
-          else
-            cmake -DCMAKE_BUILD_TYPE=RELEASE -DUSGSCSM_EXTERNAL_DEPS=ON ..
-            cmake --build .
-          fi
+          cmake -DCMAKE_BUILD_TYPE=RELEASE -DUSGSCSM_EXTERNAL_DEPS=ON ..
+          cmake --build .
       - name: Test Package
         run: |
-          if [ "$RUNNER_OS" != "Windows" ]; then
-            cd build
-            ctest -VV
-          fi
+          cd build
+          ctest -VV
+  
+  Build-and-Test-Win:
+    runs-on: windows-2019
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          activate-environment: usgscsm
+          environment-file: environment.yml
+          auto-activate-base: false
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+      - name: Check build environment
+        run: |
+          conda list
+      - name: Build Package
+        run: |
+          cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DUSGSCSM_BUILD_TESTS=OFF ..
+          cmake --build . --target ALL_BUILD --config Release
