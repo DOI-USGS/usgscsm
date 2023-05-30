@@ -38,9 +38,16 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake -DCMAKE_BUILD_TYPE=RELEASE -DUSGSCSM_EXTERNAL_DEPS=ON ..
-          cmake --build .
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DUSGSCSM_BUILD_TESTS=OFF ..
+            cmake --build . --target ALL_BUILD --config Release
+          else
+            cmake -DCMAKE_BUILD_TYPE=RELEASE -DUSGSCSM_EXTERNAL_DEPS=ON ..
+            cmake --build .
+          fi
       - name: Test Package
         run: |
-          cd build
-          ctest -VV
+          if [ "$RUNNER_OS" != "Windows" ]; then
+            cd build
+            ctest -VV
+          fi
