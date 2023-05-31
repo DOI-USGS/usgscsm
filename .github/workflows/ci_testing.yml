@@ -74,4 +74,4 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: dll
-          path: Release\usgscsm.dll
+          path: D:\a\usgscsm\usgscsm\build\Release\usgscsm.dll
