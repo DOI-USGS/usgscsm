@@ -74,4 +74,7 @@ jobs:
       - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
         with:
           name: ReleaseArtifacts
-          path: D:\a\usgscsm\usgscsm\build\Release\*
+          path: |
+          D:\a\usgscsm\usgscsm\build\Release\usgscsm.dll
+          D:\a\usgscsm\usgscsm\build\ale\Release\ale.dll
+          D:\a\usgscsm\usgscsm\build\Release\usgscsm_cam_test.exe
