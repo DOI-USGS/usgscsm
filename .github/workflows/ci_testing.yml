@@ -73,6 +73,7 @@ jobs:
           cmake --build . --target ALL_BUILD --config Release
           ls
           tree D:\a
+          ls D:\a\usgscsm\usgscsm\build\Release\
       - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
         with:
           name: usgscsm
