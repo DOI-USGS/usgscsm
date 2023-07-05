@@ -69,7 +69,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake -G "Visual Studio 16 2019" -DUSGSCSM_EXTERNAL_DEPS=ON -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DUSGSCSM_BUILD_TESTS=OFF ..
+          cmake -G "Visual Studio 16 2019" -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DUSGSCSM_BUILD_TESTS=OFF ..
           cmake --build . --target ALL_BUILD --config Release
           ls
           tree D:\a
