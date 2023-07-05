@@ -53,7 +53,7 @@ jobs:
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
         with:
-          submodules: true
+          submodules: recursive
       - uses: conda-incubator/setup-miniconda@3b0f2504dd76ef23b6d31f291f4913fb60ab5ff3
         with:
           miniconda-version: "latest"
@@ -72,8 +72,6 @@ jobs:
           cmake -G "Visual Studio 16 2019" -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DUSGSCSM_BUILD_TESTS=OFF ..
           cmake --build . --target ALL_BUILD --config Release
           ls
-          tree D:\a
-          ls D:\a\usgscsm\usgscsm\build\Release\
       - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
         with:
           name: usgscsm
