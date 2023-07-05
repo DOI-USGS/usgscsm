@@ -71,7 +71,8 @@ jobs:
           cd build
           cmake -G "Visual Studio 16 2019" -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DUSGSCSM_BUILD_TESTS=OFF ..
           cmake --build . --target ALL_BUILD --config Release
-          ls
+          ls D:\a\usgscsm\usgscsm\build\ale
+          ls D:\a\usgscsm\usgscsm\build\Release
       - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
         with:
           name: usgscsm
