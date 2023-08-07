@@ -42,12 +42,20 @@ if(USGSCSM_EXTERNAL_DEPS)
   # ALE
   find_package(ale REQUIRED)
   set(ALE_TARGET ale::ale)
+
+  # Proj
+  find_package(PROJ REQUIRED CONFIG)
+  set(PROJ_TARGET PROJ::proj)
 else()
   message(STATUS "Using embedded dependencies")
   # CSM API library
   add_subdirectory(csm)
   set(CSM_INCLUDE_DIR /csm)
   set(CSM_LIBRARY csmapi)
+
+  add_subdirectory(PROJ)
+  set(PROJ_INCLUDE_DIR /PROJ)
+  set(PROJ_TARGET PROJ::proj)
 
   # Nlohmann JSON
   # Use the Nlohmann JSON version embedded in ALE
@@ -65,10 +73,6 @@ else()
   add_library (Eigen3::Eigen ALIAS eigen)
   set(EIGEN3_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ale/eigen)
 endif(USGSCSM_EXTERNAL_DEPS)
-
-# Proj
-find_package(PROJ REQUIRED CONFIG)
-set(PROJ_TARGET PROJ::proj)
 
 add_library(usgscsm SHARED
             src/UsgsAstroPlugin.cpp
