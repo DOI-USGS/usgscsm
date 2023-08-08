@@ -21,7 +21,7 @@ endif()
 option(USGSCSM_EXTERNAL_DEPS "If the library should be built with external or embedded dependencies" OFF)
 option(ENABLE_CURL "Set to build the curl components of proj" OFF)
 option(ENABLE_TIFF "Set to build the TIFF components of proj" OFF)
-option(BUILD_TESTING "Set to build the proj tests", OFF)
+option(BUILD_TESTING "Set to build the proj tests" OFF)
 option(BUILD_APPS "Set to build the proj apps" OFF)
 
 # To find JSON's config file
