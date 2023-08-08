@@ -15,6 +15,7 @@ requirements:
     - vc 14  # [win]
     - cmake >=3.10
     - libcsm
+    - sqlite
     - vc 14  # [win]
   run:
     - vc  # [win]
