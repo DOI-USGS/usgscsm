@@ -36,7 +36,6 @@ jobs:
           conda list
       - name: Build Package
         run: |
-          git submodule update --init --recursive
           mkdir -p build
           cd build
           cmake -DCMAKE_BUILD_TYPE=RELEASE -DUSGSCSM_EXTERNAL_DEPS=OFF -DUSGSCSM_BUILD_DOCS=OFF ..
