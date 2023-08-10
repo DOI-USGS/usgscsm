@@ -62,7 +62,8 @@ else()
   set(PROJ_TARGET PROJ::proj)
 
   # Nlohmann JSON
-  # Use the Nlohmann JSON version embedded in ALE
+  set(JSON_BuildTests OFF CACHE INTERNAL "")
+  add_subdirectory(json)
 
   # ALE
   set(ALE_USE_EXTERNAL_EIGEN OFF)
@@ -70,12 +71,43 @@ else()
   set(ALE_BUILD_LOAD OFF)
   set(ALE_BUILD_TESTS OFF)
   set(ALE_BUILD_DOCS OFF)
-  add_subdirectory(ale)
-  set(ALE_TARGET ale)
 
   # Use Eigen included with ALE
   add_library (Eigen3::Eigen ALIAS eigen)
+  target_include_directories (eigen INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/ale/eigen)
   set(EIGEN3_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ale/eigen)
+
+  set(ALE_BUILD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ale/include/ale")
+
+  set(ALE_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/ale/src/InterpUtils.cpp
+                       ${CMAKE_CURRENT_SOURCE_DIR}/ale/src/Rotation.cpp
+                       ${CMAKE_CURRENT_SOURCE_DIR}/ale/src/Orientations.cpp
+                       ${CMAKE_CURRENT_SOURCE_DIR}/ale/src/States.cpp
+                       ${CMAKE_CURRENT_SOURCE_DIR}/ale/src/Util.cpp
+                       ${CMAKE_CURRENT_SOURCE_DIR}/ale/src/Vectors.cpp)
+
+  set(ALE_HEADER_FILES ${ALE_BUILD_INCLUDE_DIR}/Rotation.h
+                       ${ALE_BUILD_INCLUDE_DIR}/Util.h)
+  
+  add_library(ale OBJECT ${ALE_SOURCE_FILES})
+  set(ALE_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ale/include/ale/")
+
+  target_include_directories(ale
+                            PUBLIC
+                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/ale/include>
+                            $<INSTALL_INTERFACE:include>
+                            PRIVATE)
+
+  target_include_directories(ale
+                             PRIVATE
+                             ${ALE_INCLUDE_DIRS}
+  )
+  set(ALE_LINKS nlohmann_json::nlohmann_json
+                Eigen3::Eigen
+  )
+  target_link_libraries(ale PRIVATE ${ALE_LINKS})
+  
 endif(USGSCSM_EXTERNAL_DEPS)
 
 add_library(usgscsm SHARED
@@ -88,13 +120,15 @@ add_library(usgscsm SHARED
             src/UsgsAstroSarSensorModel.cpp
             src/Distortion.cpp
             src/Utilities.cpp
-            src/EigenUtilities.cpp)
+            src/EigenUtilities.cpp
+            $<TARGET_OBJECTS:ale>)
 
 set_target_properties(usgscsm PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
 )
 set(USGSCSM_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include/usgscsm"
+                         "${CMAKE_CURRENT_SOURCE_DIR}/ale/include"
                          "${CMAKE_CURRENT_SOURCE_DIR}/include"
                          "${CMAKE_CURRENT_SOURCE_DIR}"
                          "${EIGEN3_INCLUDE_DIR}"
@@ -112,7 +146,7 @@ target_include_directories(usgscsm
 
 target_link_libraries(usgscsm
                       ${CSM_LIBRARY}
-                      ${ALE_TARGET}
+                      ale
                       ${PROJ_TARGET}
                       nlohmann_json::nlohmann_json)
 
