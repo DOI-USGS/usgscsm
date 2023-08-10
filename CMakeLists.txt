@@ -27,6 +27,23 @@ option(BUILD_APPS "Set to build the proj apps" OFF)
 # To find JSON's config file
 set (CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/cmake;${CMAKE_PREFIX_PATH}")
 
+set(USGSCSM_SRC_FILES src/UsgsAstroPlugin.cpp
+                      src/UsgsAstroPluginSupport.cpp
+                      src/UsgsAstroFrameSensorModel.cpp
+                      src/UsgsAstroPushFrameSensorModel.cpp
+                      src/UsgsAstroLsSensorModel.cpp
+                      src/UsgsAstroProjectedSensorModel.cpp
+                      src/UsgsAstroSarSensorModel.cpp
+                      src/Distortion.cpp
+                      src/Utilities.cpp
+                      src/EigenUtilities.cpp
+)
+
+set(USGSCSM_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include/usgscsm"
+                         "${CMAKE_CURRENT_SOURCE_DIR}/include"
+                         "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
 if(USGSCSM_EXTERNAL_DEPS)
   message(STATUS "Using external dependencies")
   # CSM API library
@@ -50,6 +67,7 @@ if(USGSCSM_EXTERNAL_DEPS)
   # Proj
   find_package(PROJ REQUIRED CONFIG)
   set(PROJ_TARGET PROJ::proj)
+  add_library(usgscsm SHARED ${USGSCSM_SRC_FILES})
 else()
   message(STATUS "Using embedded dependencies")
   # CSM API library
@@ -107,30 +125,20 @@ else()
                 Eigen3::Eigen
   )
   target_link_libraries(ale PRIVATE ${ALE_LINKS})
-  
+  set(ALE_TARGET ale)
+  set(USGSCSM_INCLUDE_DIRS "${USGSCSM_INCLUDE_DIRS}"
+                           "${CMAKE_CURRENT_SOURCE_DIR}/ale/include"
+  )
+  add_library(usgscsm SHARED ${USGSCSM_SRC_FILES}
+                             $<TARGET_OBJECTS:ale>
+  )
 endif(USGSCSM_EXTERNAL_DEPS)
-
-add_library(usgscsm SHARED
-            src/UsgsAstroPlugin.cpp
-            src/UsgsAstroPluginSupport.cpp
-            src/UsgsAstroFrameSensorModel.cpp
-            src/UsgsAstroPushFrameSensorModel.cpp
-            src/UsgsAstroLsSensorModel.cpp
-            src/UsgsAstroProjectedSensorModel.cpp
-            src/UsgsAstroSarSensorModel.cpp
-            src/Distortion.cpp
-            src/Utilities.cpp
-            src/EigenUtilities.cpp
-            $<TARGET_OBJECTS:ale>)
 
 set_target_properties(usgscsm PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
 )
-set(USGSCSM_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include/usgscsm"
-                         "${CMAKE_CURRENT_SOURCE_DIR}/ale/include"
-                         "${CMAKE_CURRENT_SOURCE_DIR}/include"
-                         "${CMAKE_CURRENT_SOURCE_DIR}"
+set(USGSCSM_INCLUDE_DIRS "${USGSCSM_INCLUDE_DIRS}"
                          "${EIGEN3_INCLUDE_DIR}"
                          "${PROJ_INCLUDE_DIR}")
 
@@ -146,7 +154,7 @@ target_include_directories(usgscsm
 
 target_link_libraries(usgscsm
                       ${CSM_LIBRARY}
-                      ale
+                      ${ALE_TARGET}
                       ${PROJ_TARGET}
                       nlohmann_json::nlohmann_json)
 
