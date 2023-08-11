@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(usgscsm VERSION 1.6.0 DESCRIPTION "usgscsm library")
+project(usgscsm VERSION 1.7.0 DESCRIPTION "usgscsm library")
 
 include(GNUInstallDirs)
 
