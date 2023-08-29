@@ -129,6 +129,10 @@ else()
   set(USGSCSM_INCLUDE_DIRS "${USGSCSM_INCLUDE_DIRS}"
                            "${CMAKE_CURRENT_SOURCE_DIR}/ale/include"
   )
+  
+  set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fPIC" )
+  set( CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -fPIC" )
+
   add_library(usgscsm SHARED ${USGSCSM_SRC_FILES}
                              $<TARGET_OBJECTS:ale>
   )
