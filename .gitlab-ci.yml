@@ -26,3 +26,15 @@ clone_github:
         - git push -f --prune --tags
     only:
         - branches
+
+pages:
+  stage: deploy 
+  script:
+    - mamba install --file doc_environment.yml
+    - cd docs
+    - sphinx-build -b html source public
+  artifacts:
+    paths:
+      - docs/public
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"

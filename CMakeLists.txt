@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(usgscsm VERSION 1.7.0 DESCRIPTION "usgscsm library")
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+message(STATUS "CMake Module Path: " ${CMAKE_MODULE_PATH})
+
 include(GNUInstallDirs)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -129,3 +133,11 @@ if(USGSCSM_BUILD_TESTS)
   add_subdirectory(tests)
 
 endif()
+
+option (USGSCSM_BUILD_DOCS "Build the USGSCSM Docs" ON)
+if(USGSCSM_BUILD_DOCS)
+  add_subdirectory ("docs")
+else()
+  message(STATUS "Skipping Docs")
+endif()
+

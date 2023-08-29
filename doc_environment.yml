@@ -5,7 +5,6 @@ channels:
 
 dependencies:
   - cmake>=3.12
-  - ale
   - csm
   - nlohmann_json
   - breathe
