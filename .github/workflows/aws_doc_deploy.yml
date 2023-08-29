@@ -5,12 +5,15 @@ on:
     branches:
       - main  # Set a branch to deploy
   pull_request:
-  repository_dispatch:
-    types: [automated_deploy]
+    branches:
+      - main  # Set a branch to deploy
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
         with:
@@ -22,10 +25,10 @@ jobs:
           environment-file: doc_environment.yml
           auto-activate-base: false
           auto-update-conda: true
-          python-version: "3.10"
 
       - name: Check doc build environment
         run: |
+          conda info
           conda list
 
       - name: Build Docs
@@ -42,6 +45,7 @@ jobs:
           aws-region: us-west-2
       
       - name: Upload to S3
+        if: github.repository == 'DOI_USGS/usgscsm'
         run: |
           cd docs
           aws s3 sync --delete public s3://asc-docs/usgscsm
