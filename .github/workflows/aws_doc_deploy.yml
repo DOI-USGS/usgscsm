@@ -1,0 +1,42 @@
+name: aws-doc-deploy
+
+on:
+  push:
+    branches:
+      - main  # Set a branch to deploy
+  pull_request:
+  repository_dispatch:
+    types: [automated_deploy]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
+        with:
+          submodules: true
+      - uses: conda-incubator/setup-miniconda@3b0f2504dd76ef23b6d31f291f4913fb60ab5ff3
+        with:
+          miniconda-version: "latest"
+          activate-environment: usgscsm
+          environment-file: doc_environment.yml
+          auto-activate-base: false
+          auto-update-conda: true
+
+      - name: Build Docs
+        run: |
+          cd docs
+          doxygen Doxyfile.in
+          sphinx-build -b html source public
+
+      - name: Set AWS credentials for upload
+        uses: aws-actions/configure-aws-credentials@0e613a0980cbf65ed5b322eb7a1e075d28913a83
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      
+      - name: Upload to S3
+        run: |
+          cd docs
+          aws s3 sync --delete public s3://asc-docs/usgscsm
