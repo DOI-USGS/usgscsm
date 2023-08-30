@@ -2,7 +2,7 @@ name: aws-doc-deploy
 
 on:
   workflow_run:
-    workflows: ["Build-Docs"]
+    workflows: ["Pull-Request-CI/Build-Docs"]
     branches: [main]
     types: 
       - completed
