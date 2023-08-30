@@ -1,0 +1,37 @@
+name: aws-doc-deploy
+
+on:
+  workflow_run:
+    workflows: ["Build-Docs"]
+    branches: [main]
+    types: 
+      - completed
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
+        with:
+          submodules: true
+          fetch-depth: 0
+      - uses: actions/download-artifact@v9bc31d5ccc31df68ecc42ccf4149144866c47d8a
+        with:
+          name: docs_folder
+            
+      - name: Set AWS credentials for upload
+        uses: aws-actions/configure-aws-credentials@0e613a0980cbf65ed5b322eb7a1e075d28913a83
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      
+      - name: Upload to S3
+        working-directory: docs/public
+        run: |
+          cd docs
+          aws s3 sync --delete public s3://asc-docs/usgscsm

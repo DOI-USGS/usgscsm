@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'usgscsm'
+project = 'USGSCSM'
 copyright = '2021, USGS Astrogeology Software Team'
 author = 'USGS Astrogeology Software Team'
 
@@ -51,8 +51,8 @@ html_theme = 'alabaster'
 html_static_path = ['_static']
 
 # breathe (doxygen -> sphinx package) settings
-breathe_projects = { "usgscsm": "../xml/" }
-breathe_default_project = "usgscsm"
+breathe_projects = { "USGSCSM": "../xml/" }
+breathe_default_project = "USGSCSM"
 
 import subprocess, os
 
