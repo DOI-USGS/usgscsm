@@ -1,4 +1,4 @@
-name: Doc-Build-Upload
+name: Doc-Build
 
 on:
   pull_request:
