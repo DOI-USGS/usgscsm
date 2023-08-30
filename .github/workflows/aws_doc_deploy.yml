@@ -40,7 +40,7 @@ jobs:
           sphinx-build -b html source public
       
       - name: Set AWS credentials for upload
-        uses: aws-actions/configure-aws-credentials@ef93a73b1313f148011965ef7361f667f371f58b
+        uses: aws-actions/configure-aws-credentials@0e613a0980cbf65ed5b322eb7a1e075d28913a83
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
