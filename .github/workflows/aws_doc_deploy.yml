@@ -45,5 +45,5 @@ jobs:
           aws-region: us-west-2
       
       - name: Upload to S3
-        working-directory: docs/public
+        working-directory: docs
         run: aws s3 sync --delete public s3://asc-docs/usgscsm
