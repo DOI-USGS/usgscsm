@@ -50,6 +50,15 @@ html_theme = 'alabaster'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+html_js_files = ['usgsbanner.js']
+
+html_css_files = [
+    '_static/common.css',
+    '_static/custom.css',
+    '_static/uswds_header.css'
+]
+
+
 # breathe (doxygen -> sphinx package) settings
 breathe_projects = { "USGSCSM": "../xml/" }
 breathe_default_project = "USGSCSM"

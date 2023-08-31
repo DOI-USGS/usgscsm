@@ -1,0 +1,11 @@
+{% extends '!layout.html' %}
+
+{% block footer %}
+    <!-- {{ super() }} -->
+    {% include "usgsfooter.html" %}
+{% endblock %}
+
+{% block header %}
+    {% include "usgsheader.html" %}
+    {{ super() }}
+{% endblock %}
