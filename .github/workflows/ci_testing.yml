@@ -70,7 +70,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake -G "Visual Studio 16 2019" -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DUSGSCSM_BUILD_TESTS=OFF .. -DUSGSCSM_BUILD_DOCS=OFF
+          cmake -G "Visual Studio 16 2019" -DUSGSCSM_BUILD_DOCS=OFF -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DUSGSCSM_BUILD_TESTS=OFF .. 
           cmake --build . --target ALL_BUILD --config Release
       - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
         with:
