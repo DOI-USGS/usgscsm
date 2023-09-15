@@ -279,13 +279,16 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(
 
   // Now back from distorted mm to pixels
   double xl, yl, zl;
-  xl = m[0][0] * undistortedX + m[0][1] * undistortedY -
-       m[0][2] * -m_focalLength;
-  yl = m[1][0] * undistortedX + m[1][1] * undistortedY -
-       m[1][2] * -m_focalLength;
-  zl = m[2][0] * undistortedX + m[2][1] * undistortedY -
-       m[2][2] * -m_focalLength;
-  MESSAGE_LOG(spdlog::level::trace, "Compute xl, yl, zl as {}, {}, {}", xl, yl, zl);
+
+  xl = m[0][0] * undistortedX + m[0][1] * undistortedY + m[0][2] * m_focalLength;
+  yl = m[1][0] * undistortedX + m[1][1] * undistortedY + m[1][2] * m_focalLength;
+  zl = m[2][0] * undistortedX + m[2][1] * undistortedY + m[2][2] * m_focalLength;
+  // // Get unit vector
+  double mag = sqrt(xl * xl + yl * yl + zl * zl);
+  xl /= mag;
+  yl /= mag;
+  zl /= mag;
+  MESSAGE_LOG(spdlog::level::trace, "Body unit look xl, yl, zl as {}, {}, {}", xl, yl, zl);
 
   double xc, yc, zc;
   xc = m_currentParameterValue[0];
@@ -413,11 +416,13 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(
       m[2][2]);
   std::vector<double> lookC{undistortedFocalPlaneX, undistortedFocalPlaneY,
                             m_focalLength};
+  MESSAGE_LOG(spdlog::level::trace, "Camera look xl, yl, zl as {}, {}, {}",
+              lookC[0], lookC[1], lookC[2]);
   std::vector<double> lookB{
       m[0][0] * lookC[0] + m[0][1] * lookC[1] + m[0][2] * lookC[2],
       m[1][0] * lookC[0] + m[1][1] * lookC[1] + m[1][2] * lookC[2],
       m[2][0] * lookC[0] + m[2][1] * lookC[1] + m[2][2] * lookC[2]};
-
+  MESSAGE_LOG(spdlog::level::trace, "Body look xl, yl, zl as {}, {}, {}", lookB[0], lookB[1], lookB[2]);
   // Get unit vector
   double mag =
       sqrt(lookB[0] * lookB[0] + lookB[1] * lookB[1] + lookB[2] * lookB[2]);
@@ -426,7 +431,17 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(
   if (achievedPrecision) {
     *achievedPrecision = 0.0;
   }
+  // The above computes the negative look vector, so negate it
+  lookBUnit[0] = -lookBUnit[0];
+  lookBUnit[1] = -lookBUnit[1];
+  lookBUnit[2] = -lookBUnit[2];
 
+  MESSAGE_LOG(
+      spdlog::level::info,
+      "Resulting EcefLocus: {}, {}, {}, {}, {}, {}",
+      m_currentParameterValue[0], m_currentParameterValue[1],
+      m_currentParameterValue[2], lookBUnit[0], lookBUnit[1],
+      lookBUnit[2]);
   return csm::EcefLocus(m_currentParameterValue[0], m_currentParameterValue[1],
                         m_currentParameterValue[2], lookBUnit[0], lookBUnit[1],
                         lookBUnit[2]);

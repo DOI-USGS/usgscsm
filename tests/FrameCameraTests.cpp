@@ -154,9 +154,9 @@ TEST_F(OrbitalFrameSensorModel, ImageToRemoteImagingLocus) {
   double lookY = groundPt.y - locus.point.y;
   double lookZ = groundPt.z - locus.point.z;
   double lookMag = sqrt(lookX * lookX + lookY * lookY + lookZ * lookZ);
-  lookX /= lookMag;
-  lookY /= lookMag;
-  lookZ /= lookMag;
+  lookX /= -lookMag;
+  lookY /= -lookMag;
+  lookZ /= -lookMag;
   EXPECT_NEAR(locus.direction.x, lookX, 1e-10);
   EXPECT_NEAR(locus.direction.y, lookY, 1e-10);
   EXPECT_NEAR(locus.direction.z, lookZ, 1e-10);
