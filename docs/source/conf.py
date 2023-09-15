@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'usgscsm'
+project = 'USGSCSM'
 copyright = '2021, USGS Astrogeology Software Team'
 author = 'USGS Astrogeology Software Team'
 
@@ -48,11 +48,11 @@ html_theme = 'alabaster'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = []
 
 # breathe (doxygen -> sphinx package) settings
-breathe_projects = { "usgscsm": "../xml/" }
-breathe_default_project = "usgscsm"
+breathe_projects = { "USGSCSM": "../xml/" }
+breathe_default_project = "USGSCSM"
 
 import subprocess, os
 
