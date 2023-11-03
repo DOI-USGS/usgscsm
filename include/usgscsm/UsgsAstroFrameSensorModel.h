@@ -347,7 +347,6 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM,
 
   static const std::string _SENSOR_MODEL_NAME;
 
- private:
   // Input parameters
   static const int m_numParameters;
   static const std::string m_parameterName[];
@@ -397,6 +396,8 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM,
   int m_nParameters;
 
   csm::EcefCoord m_referencePointXyz;
+
+ private:
 
   std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
 
