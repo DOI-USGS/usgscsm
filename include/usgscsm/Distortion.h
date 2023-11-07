@@ -6,11 +6,11 @@
 #include <tuple>
 #include <vector>
 
-enum DistortionType { RADIAL, TRANSVERSE, KAGUYALISM, DAWNFC, LROLROCNAC, CAHVOR };
+enum DistortionType { RADIAL, TRANSVERSE, KAGUYALISM, DAWNFC, LROLROCNAC, CAHVOR, RADTAN };
 
-// Transverse Distortion
-void distortionJacobian(double x, double y, double *jacobian,
-                        const std::vector<double> opticalDistCoeffs);
+// Transverse distortion Jacobian
+void transverseDistortionJacobian(double x, double y, double *jacobian,
+                                  const std::vector<double> opticalDistCoeffs);
 
 void computeTransverseDistortion(double ux, double uy, double &dx, double &dy,
                                  const std::vector<double> opticalDistCoeffs);
