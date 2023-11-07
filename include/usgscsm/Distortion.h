@@ -10,18 +10,18 @@ enum DistortionType { RADIAL, TRANSVERSE, KAGUYALISM, DAWNFC, LROLROCNAC, CAHVOR
 
 // Transverse distortion Jacobian
 void transverseDistortionJacobian(double x, double y, double *jacobian,
-                                  const std::vector<double> opticalDistCoeffs);
+                                  std::vector<double> const& opticalDistCoeffs);
 
 void computeTransverseDistortion(double ux, double uy, double &dx, double &dy,
-                                 const std::vector<double> opticalDistCoeffs);
+                                 std::vector<double> const& opticalDistCoeffs);
 
 void removeDistortion(double dx, double dy, double &ux, double &uy,
-                      const std::vector<double> opticalDistCoeffs,
+                      std::vector<double> const& opticalDistCoeffs,
                       DistortionType distortionType,
                       const double tolerance = 1.0E-6);
 
 void applyDistortion(double ux, double uy, double &dx, double &dy,
-                     const std::vector<double> opticalDistCoeffs,
+                     std::vector<double> const& opticalDistCoeffs,
                      DistortionType distortionType,
                      const double desiredPrecision = 1.0E-6,
                      const double tolerance = 1.0E-6);

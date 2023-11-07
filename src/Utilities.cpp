@@ -401,6 +401,57 @@ double brentRoot(double lowerBound, double upperBound,
   return nextPoint;
 }
 
+// Use the Newton-Raphson method undistort a pixel (dx, dy), producing (ux, uy).
+void newtonRaphson(double dx, double dy, double &ux, double &uy,
+                    std::vector<double> const& opticalDistCoeffs,
+                    DistortionType distortionType, const double tolerance,
+                    std::function<void(double, double, double &, double &,
+                                       std::vector<double> const&)> distortionFunction,
+                    std::function<void(double, double, double *, 
+                                       std::vector<double> const&)> distortionJacobian) {
+
+  const int maxTries = 20;
+
+  double x, y, fx, fy, jacobian[4];
+
+  // Initial guess for the root
+  x = dx;
+  y = dy;
+
+  distortionFunction(x, y, fx, fy, opticalDistCoeffs);
+
+  for (int count = 1;
+        ((fabs(fx) + fabs(fy)) > tolerance) && (count < maxTries); count++) {
+    distortionFunction(x, y, fx, fy, opticalDistCoeffs);
+
+    fx = dx - fx;
+    fy = dy - fy;
+
+    distortionJacobian(x, y, jacobian, opticalDistCoeffs);
+
+    // Jxx * Jyy - Jxy * Jyx
+    double determinant =
+        jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2];
+    if (fabs(determinant) < 1e-6) {
+      ux = x;
+      uy = y;
+      // Near-zero determinant. Cannot continue. Return most recent result.
+      return;
+    }
+
+    x = x + (jacobian[3] * fx - jacobian[1] * fy) / determinant;
+    y = y + (jacobian[0] * fy - jacobian[2] * fx) / determinant;
+  }
+
+  if ((fabs(fx) + fabs(fy)) <= tolerance) {
+    // The method converged to a root.
+    ux = x;
+    uy = y;
+
+    return;
+  }
+}
+
 double evaluatePolynomial(const std::vector<double> &coeffs, double x) {
   if (coeffs.empty()) {
     throw std::invalid_argument("Polynomial coeffs must be non-empty.");

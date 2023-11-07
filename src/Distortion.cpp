@@ -1,11 +1,12 @@
 #include "Distortion.h"
+#include "Utilities.h"
 
 #include <Error.h>
 #include <string>
 
 // Jacobian for Transverse distortion
 void transverseDistortionJacobian(double x, double y, double *jacobian,
-                                  const std::vector<double> opticalDistCoeffs) {
+                                  std::vector<double> const& opticalDistCoeffs) {
   double d_dx[10];
   d_dx[0] = 0;
   d_dx[1] = 1;
@@ -58,7 +59,7 @@ void transverseDistortionJacobian(double x, double y, double *jacobian,
  * tuple
  */
 void computeTransverseDistortion(double ux, double uy, double &dx, double &dy,
-                                 const std::vector<double> opticalDistCoeffs) {
+                                 std::vector<double> const& opticalDistCoeffs) {
   double f[10];
   f[0] = 1;
   f[1] = ux;
@@ -96,8 +97,8 @@ void computeRadTanDistortion(double ux, double uy, double &dx, double &dy,
   if (opticalDistCoeffs.size() != 5) {
     csm::Error::ErrorType errorType = csm::Error::INDEX_OUT_OF_RANGE;
     std::string message =
-        "Distortion coefficients for the radtan distortion model must be of size 5. "
-        "Got: " + std::to_string(opticalDistCoeffs.size());
+        "Distortion coefficients for the radtan distortion model must be of size 5, "
+        "in the order k1, k2, p1, p2, k3. Got: " + std::to_string(opticalDistCoeffs.size());
     std::string function = "computeRadTanDistortion";
     throw csm::Error(errorType, message, function);
   }
@@ -150,73 +151,10 @@ void radTanDistortionJacobian(double x, double y, double *jacobian,
   jacobian[3] = (1.0 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2)
               + y * (k1 * dr2dy + k2 * dr2dy * 2.0 * r2 + k3 * dr2dy * 3.0 * r2 * r2)
               + p1 * (dr2dy + 4.0 * y) + 2.0 * p2 * x;
-
-#if 0
-// Check the partial derivatives with numerical differentiation              
-  {
-    double eps = 1e-4;
-    double y0 = y;
-    y = y0 + eps;
-    r2 = (x * x) + (y * y);
-      
-    double dx1 = x * (1.0 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2)
-     + (2.0 * p1 * x * y + p2 * (r2 + 2.0 * x * x));
-
-    double dy1 = y * (1.0 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2)
-     + (p1 * (r2 + 2.0 * y * y) + 2.0 * p2 * x * y);
-
-    y = y0 - eps;
-    r2 = (x * x) + (y * y);
-
-    double dx2 = x * (1.0 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2)
-     + (2.0 * p1 * x * y + p2 * (r2 + 2.0 * x * x));
-              
-    double dy2 = y * (1.0 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2)
-     + (p1 * (r2 + 2.0 * y * y) + 2.0 * p2 * x * y);
-
-    std::cout << "--numerical1 is " << (dx1-dx2)/(2*eps) << " " << jacobian[1] << std::endl;
-    std::cout << "diff1 is " << (dx1-dx2)/(2*eps) - jacobian[1] << std::endl;
-                  
-    std::cout << "--numerical3 is " << (dy1-dy2)/(2*eps) << " " << jacobian[3] << std::endl;
-    std::cout << "diff3 is " << (dy1-dy2)/(2*eps) - jacobian[3] << std::endl;
-    
-    y = y0;
-  }
-
-  {
-    double eps = 1e-4;
-    double x0 = x;
-    x = x0 + eps;
-    r2 = (x * x) + (y * y);
-      
-    double dx1 = x * (1.0 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2)
-     + (2.0 * p1 * x * y + p2 * (r2 + 2.0 * x * x));
-
-    double dy1 = y * (1.0 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2)
-     + (p1 * (r2 + 2.0 * y * y) + 2.0 * p2 * x * y);
-
-    x = x0 - eps;
-    r2 = (x * x) + (y * y);
-
-    double dx2 = x * (1.0 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2)
-     + (2.0 * p1 * x * y + p2 * (r2 + 2.0 * x * x));
-              
-    double dy2 = y * (1.0 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2)
-     + (p1 * (r2 + 2.0 * y * y) + 2.0 * p2 * x * y);
-
-    std::cout << "--numerical0 is " << (dx1-dx2)/(2*eps) << " " << jacobian[0] << std::endl;
-    std::cout << "diff0 is " << (dx1-dx2)/(2*eps) - jacobian[0] << std::endl;
-                  
-    std::cout << "--numerical2 is " << (dy1-dy2)/(2*eps) << " " << jacobian[2] << std::endl;
-    std::cout << "diff2 is " << (dy1-dy2)/(2*eps) - jacobian[2] << std::endl;
-    
-    x = x0;
-  }
-#endif  
 }
 
 void removeDistortion(double dx, double dy, double &ux, double &uy,
-                      const std::vector<double> opticalDistCoeffs,
+                      std::vector<double> const& opticalDistCoeffs,
                       DistortionType distortionType, const double tolerance) {
   ux = dx;
   uy = dy;
@@ -244,55 +182,8 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       // Solve the distortion equation using the Newton-Raphson method.
       // Set the error tolerance to about one millionth of a NAC pixel.
       // The maximum number of iterations of the Newton-Raphson method.
-      const int maxTries = 20;
-
-      double x;
-      double y;
-      double fx;
-      double fy;
-      double jacobian[4];
-
-      // Initial guess at the root
-      x = dx;
-      y = dy;
-
-      computeTransverseDistortion(x, y, fx, fy, opticalDistCoeffs);
-
-      for (int count = 1;
-           ((fabs(fx) + fabs(fy)) > tolerance) && (count < maxTries); count++) {
-        computeTransverseDistortion(x, y, fx, fy, opticalDistCoeffs);
-
-        fx = dx - fx;
-        fy = dy - fy;
-
-        transverseDistortionJacobian(x, y, jacobian, opticalDistCoeffs);
-
-        // Jxx * Jyy - Jxy * Jyx
-        double determinant =
-            jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2];
-        if (fabs(determinant) < 1E-6) {
-          ux = x;
-          uy = y;
-          //
-          // Near-zero determinant. Add error handling here.
-          //
-          //-- Just break out and return with no convergence
-          return;
-        }
-
-        x = x + (jacobian[3] * fx - jacobian[1] * fy) / determinant;
-        y = y + (jacobian[0] * fy - jacobian[2] * fx) / determinant;
-      }
-
-      if ((fabs(fx) + fabs(fy)) <= tolerance) {
-        // The method converged to a root.
-        ux = x;
-        uy = y;
-
-        return;
-      }
-      // Otherwise method did not converge to a root within the maximum
-      // number of iterations
+      newtonRaphson(dx, dy, ux, uy, opticalDistCoeffs, distortionType, tolerance, 
+                    computeTransverseDistortion, transverseDistortionJacobian);
     } break;
 
     case KAGUYALISM: {
@@ -354,7 +245,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       bool done;
 
       /****************************************************************************
-       * Pre-loop intializations
+       * Pre-loop initializations
        ****************************************************************************/
 
       r2 = dy * dy + dx * dx;
@@ -388,7 +279,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       } while (!done);
 
       /****************************************************************************
-       * Sucess ...
+       * Success ...
        ****************************************************************************/
 
       ux = guess_ux;
@@ -451,61 +342,12 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
     break;
     
     // Compute undistorted focal plane coordinate given distorted coordinates
-    // with the RADTAN model. See computeRadTanDistortion() for more details.
+    // with the radtan model. See computeRadTanDistortion() for more details.
     case RADTAN:
     {
-      // Solve the distortion equation using the Newton-Raphson method.
-      // Set the error tolerance to about one millionth of a NAC pixel.
-      // The maximum number of iterations of the Newton-Raphson method.
-      const int maxTries = 20;
-
-      double x;
-      double y;
-      double fx;
-      double fy;
-      double jacobian[4];
-
-      // Initial guess at the root
-      x = dx;
-      y = dy;
-
-      computeRadTanDistortion(x, y, fx, fy, opticalDistCoeffs);
-
-      for (int count = 1;
-           ((fabs(fx) + fabs(fy)) > tolerance) && (count < maxTries); count++) {
-        computeRadTanDistortion(x, y, fx, fy, opticalDistCoeffs);
-
-        fx = dx - fx;
-        fy = dy - fy;
-
-        radTanDistortionJacobian(x, y, jacobian, opticalDistCoeffs);
-
-        // Jxx * Jyy - Jxy * Jyx
-        double determinant =
-            jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2];
-        if (fabs(determinant) < 1e-6) {
-          ux = x;
-          uy = y;
-          //
-          // Near-zero determinant. Add error handling here.
-          //
-          //-- Just break out and return with no convergence
-          return;
-        }
-
-        x = x + (jacobian[3] * fx - jacobian[1] * fy) / determinant;
-        y = y + (jacobian[0] * fy - jacobian[2] * fx) / determinant;
-      }
-
-      if ((fabs(fx) + fabs(fy)) <= tolerance) {
-        // The method converged to a root.
-        ux = x;
-        uy = y;
-
-        return;
-      }
-      // Otherwise method did not converge to a root within the maximum
-      // number of iterations
+      newtonRaphson(dx, dy, ux, uy, opticalDistCoeffs, distortionType, tolerance, 
+                    computeRadTanDistortion, radTanDistortionJacobian);
+      
     }
     break;
     
@@ -513,7 +355,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
 }
 
 void applyDistortion(double ux, double uy, double &dx, double &dy,
-                     const std::vector<double> opticalDistCoeffs,
+                     std::vector<double> const& opticalDistCoeffs,
                      DistortionType distortionType,
                      const double desiredPrecision, const double tolerance) {
   dx = ux;

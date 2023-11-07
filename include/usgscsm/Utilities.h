@@ -65,6 +65,15 @@ void lagrangeInterp(const int &numTime, const double *valueArray,
 double brentRoot(double lowerBound, double upperBound,
                  std::function<double(double)> func, double epsilon = 1e-10);
 
+// Use the Newton-Raphson method undistort a pixel (dx, dy), producing (ux, uy).
+void newtonRaphson(double dx, double dy, double &ux, double &uy,
+                    std::vector<double> const& opticalDistCoeffs,
+                    DistortionType distortionType, const double tolerance,
+                    std::function<void(double, double, double &, double &,
+                                       std::vector<double> const&)> distortionFunction,
+                    std::function<void(double, double, double *, 
+                                       std::vector<double> const&)> distortionJacobian);
+
 // Evaluate a polynomial function.
 // Coefficients should be ordered least order to greatest I.E. {1, 2, 3} is 1 +
 // 2x + 3x^2
