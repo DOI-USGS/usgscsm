@@ -6,7 +6,9 @@
 #include <tuple>
 #include <vector>
 
-enum DistortionType { RADIAL, TRANSVERSE, KAGUYALISM, DAWNFC, LROLROCNAC, CAHVOR, RADTAN };
+// This should be synched with the enum in ale/Distortion.h
+enum DistortionType { RADIAL, TRANSVERSE, KAGUYALISM, DAWNFC, LROLROCNAC, CAHVOR, 
+                     LUNARORBITER, RADTAN };
 
 // Transverse distortion Jacobian
 void transverseDistortionJacobian(double x, double y, double *jacobian,
@@ -23,6 +25,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
 void applyDistortion(double ux, double uy, double &dx, double &dy,
                      std::vector<double> const& opticalDistCoeffs,
                      DistortionType distortionType,
-                     const double desiredPrecision = 1.0E-6,
+                     const double desiredPrecisio
+                     n = 1.0E-6,
                      const double tolerance = 1.0E-6);
 #endif  // INCLUDE_USGSCSM_DISTORTION_H_

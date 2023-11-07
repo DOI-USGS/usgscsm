@@ -1060,9 +1060,9 @@ double getSemiMinorRadius(json isd, csm::WarningList *list) {
 // type. Defaults to transverse
 DistortionType getDistortionModel(json isd, csm::WarningList *list) {
   try {
-    json distoriton_subset = isd.at("optical_distortion");
+    json distortion_subset = isd.at("optical_distortion");
 
-    json::iterator it = distoriton_subset.begin();
+    json::iterator it = distortion_subset.begin();
 
     std::string distortion = (std::string)it.key();
 
@@ -1076,6 +1076,12 @@ DistortionType getDistortionModel(json isd, csm::WarningList *list) {
       return DistortionType::DAWNFC;
     } else if (distortion.compare("lrolrocnac") == 0) {
       return DistortionType::LROLROCNAC;
+    } else if (distortion.compare("cahvor") == 0) {
+      return DistortionType::CAHVOR;
+    } else if (distortion.compare("lunarorbiter") == 0) {
+      return DistortionType::LUNARORBITER;
+    } else if (distortion.compare("radtan") == 0) {
+      return DistortionType::RADTAN;
     }
   } catch (...) {
     if (list) {
@@ -1105,6 +1111,10 @@ DistortionType getDistortionModel(int aleDistortionModel,
       return DistortionType::LROLROCNAC;
     }else if (aleDistortionType == ale::DistortionType::CAHVOR) {
       return DistortionType::CAHVOR;
+    }else if (aleDistortionType == ale::DistortionType::LUNARORBITER) {
+      return DistortionType::LUNARORBITER;
+    }else if (aleDistortionType == ale::DistortionType::RADTAN) {
+      return DistortionType::RADTAN;
     }
   } catch (...) {
     if (list) {
@@ -1263,7 +1273,26 @@ std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
         coefficients = std::vector<double>(6, 0.0);
       }
     } break;
+    case DistortionType::RADTAN: {
+      try {
+        coefficients = isd.at("optical_distortion")
+                           .at("radtan")
+                           .at("coefficients")
+                           .get<std::vector<double>>();
+
+        return coefficients;
+      } catch (...) {
+        if (list) {
+          list->push_back(csm::Warning(
+              csm::Warning::DATA_NOT_AVAILABLE,
+              "Could not parse the radtan distortion model coefficients.",
+              "Utilities::getDistortion()"));
+        }
+        coefficients = std::vector<double>(5, 0.0);
+      }
+    } break;
   }
+  
   if (list) {
     list->push_back(
         csm::Warning(csm::Warning::DATA_NOT_AVAILABLE,
