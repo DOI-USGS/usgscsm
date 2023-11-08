@@ -94,11 +94,11 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
     case RADIAL: {
       double rr = dx * dx + dy * dy;
 
-        double dr = opticalDistCoeffs[0] +
-                    (rr * (opticalDistCoeffs[1] + rr * opticalDistCoeffs[2]));
+      double dr = opticalDistCoeffs[0] +
+                  (rr * (opticalDistCoeffs[1] + rr * opticalDistCoeffs[2]));
 
-        ux = dx * (1.0 - dr);
-        uy = dy * (1.0 - dr);
+      ux = dx * (1.0 - dr);
+      uy = dy * (1.0 - dr);
     } break;
 
     // Computes undistorted focal plane (x,y) coordinates given a distorted
@@ -332,43 +332,43 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
     case RADIAL: {
       double rp2 = (ux * ux) + (uy * uy);
 
-        double rp = sqrt(rp2);
-        // Compute first fractional distortion using rp
-        double drOverR =
-            opticalDistCoeffs[0] +
-            (rp2 * (opticalDistCoeffs[1] + (rp2 * opticalDistCoeffs[2])));
+      double rp = sqrt(rp2);
+      // Compute first fractional distortion using rp
+      double drOverR =
+          opticalDistCoeffs[0] +
+          (rp2 * (opticalDistCoeffs[1] + (rp2 * opticalDistCoeffs[2])));
 
-        // Compute first distorted point estimate, r
-        double r = rp + (drOverR * rp);
-        double r_prev, r2_prev;
-        int iteration = 0;
+      // Compute first distorted point estimate, r
+      double r = rp + (drOverR * rp);
+      double r_prev, r2_prev;
+      int iteration = 0;
 
-        do {
-          // Don't get in an end-less loop.  This algorithm should
-          // converge quickly.  If not then we are probably way outside
-          // of the focal plane.  Just set the distorted position to the
-          // undistorted position. Also, make sure the focal plane is less
-          // than 1km, it is unreasonable for it to grow larger than that.
-          if (iteration >= 20 || r > 1E9) {
-            drOverR = 0.0;
-            break;
-          }
+      do {
+        // Don't get in an end-less loop.  This algorithm should
+        // converge quickly.  If not then we are probably way outside
+        // of the focal plane.  Just set the distorted position to the
+        // undistorted position. Also, make sure the focal plane is less
+        // than 1km, it is unreasonable for it to grow larger than that.
+        if (iteration >= 20 || r > 1E9) {
+          drOverR = 0.0;
+          break;
+        }
 
-          r_prev = r;
-          r2_prev = r * r;
+        r_prev = r;
+        r2_prev = r * r;
 
-          // Compute new fractional distortion:
-          drOverR = opticalDistCoeffs[0] +
-                    (r2_prev *
-                     (opticalDistCoeffs[1] + (r2_prev * opticalDistCoeffs[2])));
+        // Compute new fractional distortion:
+        drOverR = opticalDistCoeffs[0] +
+                  (r2_prev *
+                   (opticalDistCoeffs[1] + (r2_prev * opticalDistCoeffs[2])));
 
-          // Compute new estimate of r
-          r = rp + (drOverR * r_prev);
-          iteration++;
-        } while (fabs(r - r_prev) > desiredPrecision);
+        // Compute new estimate of r
+        r = rp + (drOverR * r_prev);
+        iteration++;
+      } while (fabs(r - r_prev) > desiredPrecision);
 
-        dx = ux / (1.0 - drOverR);
-        dy = uy / (1.0 - drOverR);
+      dx = ux / (1.0 - drOverR);
+      dy = uy / (1.0 - drOverR);
       
     } break;
     case TRANSVERSE: {
