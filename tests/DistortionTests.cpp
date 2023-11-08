@@ -124,17 +124,26 @@ TEST(transverse, removeDistortion_AlternatingOnes) {
   EXPECT_NEAR(uy, 7.5, 1e-8);
 }
 
-TEST(Radial, testRemoveDistortion) {
-  csm::ImageCoord imagePt(0.0, 4.0);
+TEST(Radial, testUndistortDistort) {
+  
+  // Distorted pixel
+  csm::ImageCoord imagePt(0.0, 1e-1);
 
+  // Undistort
   double ux, uy;
-  std::vector<double> coeffs = {0, 0, 0};
-
+  std::vector<double> coeffs = {0.03, 0.00001, 0.000004};
+  double tolerance = 1e-2;
   removeDistortion(imagePt.samp, imagePt.line, ux, uy, coeffs,
-                   DistortionType::RADIAL);
-
-  EXPECT_NEAR(ux, 4, 1e-8);
-  EXPECT_NEAR(uy, 0, 1e-8);
+                   DistortionType::RADIAL, tolerance);
+  
+  // Distort back
+  double desiredPrecision = 1e-6;
+  double dx, dy;
+  applyDistortion(ux, uy, dx, dy, coeffs,
+                  DistortionType::RADIAL, desiredPrecision, tolerance);
+  
+  EXPECT_NEAR(dx, imagePt.samp, 1e-8);
+  EXPECT_NEAR(dy, imagePt.line, 1e-8);
 }
 
 // If coeffs are 0 then this will have the same result as removeDistortion

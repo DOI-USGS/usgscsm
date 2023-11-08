@@ -94,13 +94,11 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
     case RADIAL: {
       double rr = dx * dx + dy * dy;
 
-      if (rr > tolerance) {
-        double dr = opticalDistCoeffs[0] +
-                    (rr * (opticalDistCoeffs[1] + rr * opticalDistCoeffs[2]));
+      double dr = opticalDistCoeffs[0] +
+                  (rr * (opticalDistCoeffs[1] + rr * opticalDistCoeffs[2]));
 
-        ux = dx * (1.0 - dr);
-        uy = dy * (1.0 - dr);
-      }
+      ux = dx * (1.0 - dr);
+      uy = dy * (1.0 - dr);
     } break;
 
     // Computes undistorted focal plane (x,y) coordinates given a distorted
@@ -221,7 +219,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       bool done;
 
       /****************************************************************************
-       * Pre-loop intializations
+       * Pre-loop initializations
        ****************************************************************************/
 
       r2 = dy * dy + dx * dx;
@@ -255,7 +253,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       } while (!done);
 
       /****************************************************************************
-       * Sucess ...
+       * Success ...
        ****************************************************************************/
 
       ux = guess_ux;
@@ -327,52 +325,51 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
   dy = uy;
 
   switch (distortionType) {
-    // Compute undistorted focal plane coordinate given a distorted
-    // focal plane coordinate. This case works by iteratively adding distortion
+    // Compute distorted focal plane coordinate given undistorted
+    // focal plane coordinates. This case works by iteratively adding distortion
     // until the new distorted point, r, undistorts to within a tolerance of the
     // original point, rp.
     case RADIAL: {
       double rp2 = (ux * ux) + (uy * uy);
 
-      if (rp2 > tolerance) {
-        double rp = sqrt(rp2);
-        // Compute first fractional distortion using rp
-        double drOverR =
-            opticalDistCoeffs[0] +
-            (rp2 * (opticalDistCoeffs[1] + (rp2 * opticalDistCoeffs[2])));
+      double rp = sqrt(rp2);
+      // Compute first fractional distortion using rp
+      double drOverR =
+          opticalDistCoeffs[0] +
+          (rp2 * (opticalDistCoeffs[1] + (rp2 * opticalDistCoeffs[2])));
 
-        // Compute first distorted point estimate, r
-        double r = rp + (drOverR * rp);
-        double r_prev, r2_prev;
-        int iteration = 0;
+      // Compute first distorted point estimate, r
+      double r = rp + (drOverR * rp);
+      double r_prev, r2_prev;
+      int iteration = 0;
 
-        do {
-          // Don't get in an end-less loop.  This algorithm should
-          // converge quickly.  If not then we are probably way outside
-          // of the focal plane.  Just set the distorted position to the
-          // undistorted position. Also, make sure the focal plane is less
-          // than 1km, it is unreasonable for it to grow larger than that.
-          if (iteration >= 20 || r > 1E9) {
-            drOverR = 0.0;
-            break;
-          }
+      do {
+        // Don't get in an end-less loop.  This algorithm should
+        // converge quickly.  If not then we are probably way outside
+        // of the focal plane.  Just set the distorted position to the
+        // undistorted position. Also, make sure the focal plane is less
+        // than 1km, it is unreasonable for it to grow larger than that.
+        if (iteration >= 20 || r > 1E9) {
+          drOverR = 0.0;
+          break;
+        }
 
-          r_prev = r;
-          r2_prev = r * r;
+        r_prev = r;
+        r2_prev = r * r;
 
-          // Compute new fractional distortion:
-          drOverR = opticalDistCoeffs[0] +
-                    (r2_prev *
-                     (opticalDistCoeffs[1] + (r2_prev * opticalDistCoeffs[2])));
+        // Compute new fractional distortion:
+        drOverR = opticalDistCoeffs[0] +
+                  (r2_prev *
+                   (opticalDistCoeffs[1] + (r2_prev * opticalDistCoeffs[2])));
 
-          // Compute new estimate of r
-          r = rp + (drOverR * r_prev);
-          iteration++;
-        } while (fabs(r - r_prev) > desiredPrecision);
+        // Compute new estimate of r
+        r = rp + (drOverR * r_prev);
+        iteration++;
+      } while (fabs(r - r_prev) > desiredPrecision);
 
-        dx = ux / (1.0 - drOverR);
-        dy = uy / (1.0 - drOverR);
-      }
+      dx = ux / (1.0 - drOverR);
+      dy = uy / (1.0 - drOverR);
+      
     } break;
     case TRANSVERSE: {
       computeTransverseDistortion(ux, uy, dx, dy, opticalDistCoeffs);
@@ -468,7 +465,7 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
 
     // The LRO LROC NAC distortion model uses an iterative approach to go from
     // undistorted x,y to distorted x,y
-    // Algorithum adapted from ISIS3 LRONarrowAngleDistortionMap.cpp
+    // Algorithm adapted from ISIS3 LRONarrowAngleDistortionMap.cpp
     case LROLROCNAC: {
       double yt = uy;
 
@@ -491,9 +488,9 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
 
       double dk1 = opticalDistCoeffs[0];
 
-      // Owing to the odd distotion model employed in this senser if |y| is >
+      // Owing to the odd distortion model employed in this sensor if |y| is >
       // 116.881145553046 then there is no root to find.  Further, the greatest
-      // y that any measure on the sensor will acutally distort to is less
+      // y that any measure on the sensor will actually distort to is less
       // than 20.  Thus, if any distorted measure is greater that that skip the
       // iterations.  The points isn't in the cube, and exactly how far outside
       // the cube is irrelevant.  Just let the camera model know its not in the
