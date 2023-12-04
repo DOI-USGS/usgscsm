@@ -19,8 +19,8 @@ TEST_P(ImageCoordParameterizedTest, JacobianTest) {
 
   csm::ImageCoord imagePt = GetParam();
   double jacobian[4];
-  distortionJacobian(imagePt.samp, imagePt.line, jacobian,
-                     transverseDistortionCoeffs);
+  transverseDistortionJacobian(imagePt.samp, imagePt.line, jacobian,
+                               transverseDistortionCoeffs);
 
   // Jxx * Jyy - Jxy * Jyx
   double determinant =
@@ -36,8 +36,8 @@ TEST(Transverse, Jacobian1) {
       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0};
 
   double jacobian[4];
-  distortionJacobian(imagePt.samp, imagePt.line, jacobian,
-                     transverseDistortionCoeffs);
+  transverseDistortionJacobian(imagePt.samp, imagePt.line, jacobian,
+                               transverseDistortionCoeffs);
 
   EXPECT_NEAR(jacobian[0], 56.25, 1e-8);
   EXPECT_NEAR(jacobian[1], 112.5, 1e-8);
@@ -388,4 +388,29 @@ TEST_P(CoeffOffsetParameterizedTest, InverseOnesCoeffsCahvorTest)
 
   EXPECT_NEAR(dx, 4, 1e-8);
   EXPECT_NEAR(dy, 0, 1e-8);
+}
+
+INSTANTIATE_TEST_SUITE_P(RadTanInversionTest, RadTanTest,
+                         ::testing::Values(std::vector<double>(0, 0)));
+
+TEST_P(RadTanTest, RadTanInversionTest)
+{
+
+  // Initialize radtan distortion coefficients (k1, k2, p1, p2, k3)  
+  std::vector<double> distCoeffs= {0.000031, -0.000056, 1.3e-5, -1.7e-6, 2.9e-8};
+  
+  double ux = 5.0, uy = 6.0; 
+  
+  // Compute distortion 
+  double dx, dy;
+  applyDistortion(ux, uy, dx, dy, distCoeffs, DistortionType::RADTAN, 1e-8, 1e-8);
+  
+  // Remove distortion (undistort)
+  double ux2, uy2;
+  removeDistortion(dx, dy, ux2, uy2, distCoeffs, DistortionType::RADTAN, 1e-8);
+  
+  EXPECT_NEAR(dx, 4.0010785450000004, 1e-8);
+  EXPECT_NEAR(dy, 4.8022116940000013, 1e-8);
+  EXPECT_NEAR(ux2, ux, 1e-8);
+  EXPECT_NEAR(uy2, uy, 1e-8);
 }
