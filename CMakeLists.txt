@@ -57,6 +57,7 @@ else()
   set(ALE_USE_EXTERNAL_JSON OFF)
   set(ALE_BUILD_LOAD OFF)
   set(ALE_BUILD_TESTS OFF)
+  set(ALE_BUILD_DOCS OFF)
   add_subdirectory(ale)
   set(ALE_TARGET ale)
 
