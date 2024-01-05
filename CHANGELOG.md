@@ -35,6 +35,13 @@ release.
 
 ## [Unreleased]
 
+### Added
+- Added support for the radial and tangential distortion model [#466](https://github.com/DOI-USGS/usgscsm/pull/466)
+
 ### Changed
+- Made FrameSensor members public [#455](https://github.com/DOI-USGS/usgscsm/pull/455)
 - Updated installation location [#467](https://github.com/DOI-USGS/usgscsm/pull/467) 
 - Updated ALE submodule [#470](https://github.com/DOI-USGS/usgscsm/pull/470)
+
+### Fixed
+- Fixed issue with radial distortion computation [#464](https://github.com/DOI-USGS/usgscsm/pull/464)
