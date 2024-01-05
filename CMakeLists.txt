@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(usgscsm VERSION 1.7.0 DESCRIPTION "usgscsm library")
+project(usgscsm VERSION 2.0.0 DESCRIPTION "usgscsm library")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
