@@ -35,6 +35,8 @@ release.
 
 ## [Unreleased]
 
+## [2.0.0] - 2024-01-05
+
 ### Added
 - Added support for the radial and tangential distortion model [#466](https://github.com/DOI-USGS/usgscsm/pull/466)
 
