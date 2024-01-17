@@ -9,7 +9,7 @@ package:
 source:
   - folder: .
     url: https://github.com/acpaquette/{{ name }}/archive/{{ version }}.tar.gz
-    sha256: a8ae036caa0b958fa6e28ee8ba7a29c2b6fefeb1413144243d59521f51d1dc12
+    sha256: e6aa7830d216b878094b470971e1695fa34b7893e346c2449b7a8ae162db70f5
 
 build:
   number: 0
