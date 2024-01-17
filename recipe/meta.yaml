@@ -1,6 +1,6 @@
 
 {% set name = "usgscsm" %}
-{% set version = "2.0.0" %}
+{% set version = "proj_stuff" %}
 
 package:
   name: {{ name|lower }}
@@ -8,7 +8,7 @@ package:
 
 source:
   - folder: .
-    url: https://github.com/DOI-USGS/{{ name }}/archive/{{ version }}.tar.gz
+    url: https://github.com/acpaquette/{{ name }}/archive/{{ version }}.tar.gz
     sha256: a8ae036caa0b958fa6e28ee8ba7a29c2b6fefeb1413144243d59521f51d1dc12
 
 build:
