@@ -24,6 +24,9 @@ source:
   - folder: json
     url: https://github.com/nlohmann/json/archive/1a521cbd3657eea6ba90cded2aecca93e3cd78d4.zip
     sha256: 3bc24b2490e91285b66211d3763bb8db3d3fd447f24ae35d82279fcafa60e3d5
+  - folder: PROJ
+    url: https://github.com/OSGeo/PROJ/releases/download/9.3.1/proj-9.3.1.zip
+    sha256: 35cad1d170a69db834e08dcd86093146
 
 build:
   number: 0
