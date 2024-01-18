@@ -1,13 +1,13 @@
 
 {% set name = "usgscsm" %}
-{% set version = "proj_stuff" %}
+{% set version = "main" %}
 
 package:
   name: {{ name|lower }}
   version: {{ version }}
 
 source:
-  git_url: 'https://github.com/acpaquette/usgscsm.git'
+  git_url: 'https://github.com/DOI-USGS/usgscsm.git'
   git_tag: {{ version }}
 
 build:
