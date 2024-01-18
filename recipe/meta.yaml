@@ -7,26 +7,8 @@ package:
   version: {{ version }}
 
 source:
-  - folder: .
-    url: https://github.com/acpaquette/{{ name }}/archive/{{ version }}.tar.gz
-    sha256: e6aa7830d216b878094b470971e1695fa34b7893e346c2449b7a8ae162db70f5
-
-  # submodules
-  - folder: ale
-    url: https://github.com/DOI-USGS/ale/archive/a7d8a148f54d5141c63ed45a24a71c890ca11de7.zip
-    sha256: d2cecca296de5c44245f0471cf5a3e835fb4792cc9fba24ab9f29822dc67338f
-  - folder: csm
-    url: https://github.com/USGS-Astrogeology/csm/archive/c78dbba3731432249a75db9fdd7415b292d46715.zip
-    sha256: e3eb35fbc27df94d6432c66a93b1dd140a9e93d6897c9107d5a99ab0557e99ea
-  - folder: gtest
-    url: https://github.com/google/googletest/archive/aee0f9d9b5b87796ee8a0ab26b7587ec30e8858e.zip
-    sha256: 04a1751f94244307cebe695a69cc945f9387a80b0ef1af21394a490697c5c895
-  - folder: json
-    url: https://github.com/nlohmann/json/archive/1a521cbd3657eea6ba90cded2aecca93e3cd78d4.zip
-    sha256: 3bc24b2490e91285b66211d3763bb8db3d3fd447f24ae35d82279fcafa60e3d5
-  - folder: PROJ
-    url: https://github.com/OSGeo/PROJ/releases/download/9.3.1/proj-9.3.1.zip
-    sha256: f652ceb9a9b7e6c58b2d534d96b1e5dfb49b1781bd65d9a2a7b08329582a0b97
+  git_url: 'https://github.com/acpaquette/usgscsm.git'
+  git_tag: {{ version }}
 
 build:
   number: 0
@@ -38,15 +20,15 @@ requirements:
     - {{ compiler('cxx') }}
     - cmake >=3.10
     - make
-  host:
-    - csm
     - nlohmann_json
     - eigen
+  host:
+    - csm
     - vc  # [win]
   run:
-    - {{ pin_compatible('nlohmann_json', min_pin='x.x', max_pin='x.x') }}
     - csm
-    - eigen
+    # - {{ pin_compatible('nlohmann_json', min_pin='x.x', max_pin='x.x') }}
+    # - eigen
 
 test:
   commands:
