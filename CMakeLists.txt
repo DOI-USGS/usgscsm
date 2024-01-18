@@ -157,7 +157,7 @@ else()
   endif()
 
   message("${CMAKE_CURRENT_SOURCE_DIR}")
-  configure_file(${PROJ_SOURCE_DIR}/cmake/proj_config.cmake.in ${PROJ_SOURCE_DIR}/src/proj_config.h)
+  configure_file(${PROJ_SOURCE_DIR}/cmake/proj_config.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/PROJ/src/proj_config.h)
   include(ProjMac)
   include(policies)
 
@@ -425,7 +425,7 @@ else()
     ${PROJ_SOURCE_DIR}/src/networkfilemanager.cpp
     ${PROJ_SOURCE_DIR}/src/sqlite3_utils.hpp
     ${PROJ_SOURCE_DIR}/src/sqlite3_utils.cpp
-    ${PROJ_SOURCE_DIR}/src/proj_config.h
+    ${CMAKE_CURRENT_BINARY_DIR}/PROJ/src/proj_config.h
   )
 
   set(HEADERS_LIBPROJ
