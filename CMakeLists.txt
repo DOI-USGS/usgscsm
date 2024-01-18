@@ -138,14 +138,6 @@ else()
     set(CMAKE_C_FLAGS "${_prev_CMAKE_C_FLAGS}")
   endif()
 
-  set(PACKAGE "proj")
-  set(PACKAGE_BUGREPORT "https://github.com/OSGeo/PROJ/issues")
-  set(PACKAGE_NAME "PROJ")
-  set(PACKAGE_STRING "PROJ ${${PROJECT_NAME}_VERSION}")
-  set(PACKAGE_TARNAME "proj")
-  set(PACKAGE_URL "https://proj.org")
-  set(PACKAGE_VERSION "${${PROJECT_NAME}_VERSION}")
-
   # check if a second proj_config.h exists (created by ./configure)
   # as this is within CMake's C_INCLUDES / CXX_INCLUDES
   set(AUTOCONF_PROJ_CONFIG_H "${PROJ_SOURCE_DIR}/src/proj_config.h")
@@ -164,10 +156,8 @@ else()
   set(PROJ_DATA_PATH "${CMAKE_INSTALL_FULL_DATADIR}/usgscsm")
 
   include_directories(${PROJ_SOURCE_DIR}/src)
-  # This line may need to be revisted once EISE work gets under way
   add_subdirectory(PROJ/data)
 
-  ###################
   message(STATUS "Configuring proj library:")
 
   ##############################################
@@ -629,7 +619,6 @@ else()
   print_variable(PROJ_CORE_TARGET_OUTPUT_NAME)
   print_variable(BUILD_SHARED_LIBS)
   print_variable(PROJ_LIBRARIES)
-  ###################
 
   set(PROJ_TARGET proj)
   set(PROJ_INCLUDE_DIR /PROJ)
