@@ -644,9 +644,6 @@ else()
                        ${CMAKE_CURRENT_SOURCE_DIR}/ale/src/Util.cpp
                        ${CMAKE_CURRENT_SOURCE_DIR}/ale/src/Vectors.cpp)
 
-  # set(ALE_HEADER_FILES ${ALE_BUILD_INCLUDE_DIR}/Rotation.h
-  #                      ${ALE_BUILD_INCLUDE_DIR}/Util.h)
-  
   add_library(ale OBJECT ${ALE_SOURCE_FILES})
   set(ALE_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ale/include/ale/")
 
