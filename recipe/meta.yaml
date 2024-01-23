@@ -1,30 +1,39 @@
 
+{% set name = "usgscsm" %}
+{% set version = "main" %}
+
 package:
-  name: usgscsm
-  version: {{ environ.get("GIT_DESCRIBE_TAG", "") }}
+  name: {{ name|lower }}
+  version: {{ version }}
 
 source:
-  git_url: https://github.com/USGS-Astrogeology/CSM-CameraModel.git
+  git_url: 'https://github.com/DOI-USGS/usgscsm.git'
+  git_tag: {{ version }}
+
 build:
-  string: {{ environ.get("GIT_DESCRIBE_HASH", "") }}
+  number: 0
+  skip: true  # [win]
+
 
 requirements:
   build:
-    - {{ compiler('cxx') }}  # [linux]
-    - vc 14  # [win]
+    - {{ compiler('cxx') }}
     - cmake >=3.10
-    - libcsm
-    - vc 14  # [win]
-  run:
+    - make
+    - nlohmann_json
+    - eigen
+  host:
+    - csm
     - vc  # [win]
+  run:
+    - csm
 
 test:
   commands:
-    - test -e $PREFIX/lib/libusgscsm.so  # [linux]
-    - test -e $PREFIX/lib/libusgscsm.dylib  # [osx]
+    - test -e $PREFIX/lib/csmplugins/libusgscsm${SHLIB_EXT}  # [unix]
     - if not exist %LIBRARY_BIN%\usgscsm.dll exit 1  # [win]
 
 about:
-  home: https://github.com/USGS-Astrogeology/CSM-CameraModels
+  home: https://github.com/DOI-USGS/usgscsm
   license: None
 summary: "USGS Astrogeology Community Sensor Model compliant sensor models."
