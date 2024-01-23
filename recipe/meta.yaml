@@ -1,6 +1,6 @@
 
 {% set name = "usgscsm" %}
-{% set version = "2.0.1" %}
+{% set version = "main" %}
 
 package:
   name: {{ name|lower }}
