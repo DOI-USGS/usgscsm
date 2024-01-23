@@ -35,6 +35,11 @@ release.
 
 ## [Unreleased]
 
+## [2.0.1] - 2024-01-23
+
+### Changed
+- Updated USGSCSM build process to internally build dependencies into the library with no linking. [#445](https://github.com/DOI-USGS/usgscsm/pull/445)
+
 ## [2.0.0] - 2024-01-05
 
 ### Added
