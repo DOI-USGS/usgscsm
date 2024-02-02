@@ -624,8 +624,12 @@ else()
   set(PROJ_INCLUDE_DIR /PROJ)
 
   # Nlohmann JSON
-  set(JSON_BuildTests OFF CACHE INTERNAL "")
-  add_subdirectory(json)
+  add_library (nlohmann_json INTERFACE)
+  add_library (nlohmann_json::nlohmann_json ALIAS nlohmann_json)
+  target_include_directories (nlohmann_json INTERFACE
+                              $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/json/include>
+                              $<INSTALL_INTERFACE:include>)
+  set(NLOHMANN_JSON_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/json/include)
 
   # ALE
   # Use Eigen included with ALE
@@ -663,6 +667,7 @@ else()
   target_link_libraries(ale PRIVATE ${ALE_LINKS})
   set(ALE_TARGET ale)
   set(USGSCSM_INCLUDE_DIRS "${USGSCSM_INCLUDE_DIRS}"
+                           "${NLOHMANN_JSON_INCLUDE_DIR}"
                            "${CMAKE_CURRENT_SOURCE_DIR}/ale/include"
                            "${CMAKE_CURRENT_SOURCE_DIR}/PROJ/include"
   )
