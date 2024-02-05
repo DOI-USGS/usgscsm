@@ -8,7 +8,7 @@ https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credit
 
 Several files in this project were originally developed and are copyrighted by
 BAE Systems Information and Electronic Systems Integration Inc. They are licensed
-under the BDS 3 clause license and have comments identifying this at the top.
+under the BSD 3 clause license and have comments identifying this at the top.
 
 It also contains materials from contributors that have waived their
 copyright interest to the public domain.
