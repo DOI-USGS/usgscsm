@@ -4,7 +4,6 @@
 #include <Error.h>
 #include <string>
 
-
 /**
  * @description Calculates the Jacobian matrix of the distortion function at a specific point (x, y). 
  * The distortion model is based on the given optical distortion coefficients.
@@ -68,7 +67,7 @@ void transverseDistortionJacobian(double x, double y, double *jacobian,
  * @param ux Undistorted x
  * @param uy Undistorted y
  * @param opticalDistCoeffs For both X and Y coefficients
- * 
+ *
  * @returns distortedPoint Newly adjusted focal plane coordinates as an x, y
  * tuple
  */
@@ -98,13 +97,22 @@ void computeTransverseDistortion(double ux, double uy, double &dx, double &dy,
   }
 }
 
-// Compute distorted focal plane coordinates given undistorted coordinates. Use
-// the radial-tangential distortion model with 5 coefficients (k1, k2, k3 for
-// radial distortion, and p1, p2 for tangential distortion). This was tested to
-// give the same results as the OpenCV distortion model, by invoking the
-// function cv::projectPoints() (with zero rotation, zero translation, and
-// identity camera matrix). The parameters are stored in opticalDistCoeffs 
-// in the order: [k1, k2, p1, p2, k3]. 
+/**
+ * @description Computes the distorted focal plane coordinates (dx, dy) from undistorted coordinates 
+ * (ux, uy) using the radial-tangential distortion model. This model uses 5 coefficients: 3 for
+ * radial distortion (k1, k2, k3) and 2 for tangential distortion (p1, p2). The function is designed
+ * to align with the results of the OpenCV's cv::projectPoints() function when used with zero rotation,
+ * zero translation, and an identity camera matrix. The distortion coefficients are expected in the
+ * order [k1, k2, p1, p2, k3] within opticalDistCoeffs.
+ * 
+ * @param ux The x-coordinate of the undistorted point.
+ * @param uy The y-coordinate of the undistorted point.
+ * @param dx Reference to a double where the x-coordinate of the distorted point will be stored.
+ * @param dy Reference to a double where the y-coordinate of the distorted point will be stored.
+ * @param opticalDistCoeffs Constant reference to a vector containing the distortion coefficients.
+ * 
+ * @throws csm::Error If opticalDistCoeffs does not contain exactly 5 elements.
+ */
 void computeRadTanDistortion(double ux, double uy, double &dx, double &dy,
                              std::vector<double> const& opticalDistCoeffs) {
 
@@ -134,7 +142,22 @@ void computeRadTanDistortion(double ux, double uy, double &dx, double &dy,
      + (p1 * (r2 + 2.0 * y * y) + 2.0 * p2 * x * y);
 }
 
-// Compute the jacobian for radtan distortion
+/**
+ * @description Computes the Jacobian matrix of the radial-tangential distortion model at a 
+ * given point (x, y). This function provides partial derivatives of the distorted 
+ * coordinates with respect to the undistorted coordinates, facilitating calibration and 
+ * error estimation tasks. It assumes a distortion model characterized by five coefficients:
+ * (k1, k2, p1, p2, k3) stored in opticalDistCoeffs in the specified order. The computed 
+ * Jacobian is stored in the provided 'jacobian' array, organized as:
+ * [dfx/dx, dfx/dy, dfy/dx, dfy/dy].
+ * 
+ * @param x The x-coordinate of the point.
+ * @param y The y-coordinate of the point.
+ * @param jacobian Pointer to an array where the resulting 2x2 Jacobian matrix will be stored.
+ * @param opticalDistCoeffs Constant reference to a vector containing the optical distortion 
+ * coefficients.
+ */
+
 void radTanDistortionJacobian(double x, double y, double *jacobian,
                               std::vector<double> const& opticalDistCoeffs) {
 
