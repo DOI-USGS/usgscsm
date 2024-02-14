@@ -19,8 +19,8 @@ TEST_P(ImageCoordParameterizedTest, JacobianTest) {
 
   csm::ImageCoord imagePt = GetParam();
   double jacobian[4];
-  distortionJacobian(imagePt.samp, imagePt.line, jacobian,
-                     transverseDistortionCoeffs);
+  transverseDistortionJacobian(imagePt.samp, imagePt.line, jacobian,
+                               transverseDistortionCoeffs);
 
   // Jxx * Jyy - Jxy * Jyx
   double determinant =
@@ -36,8 +36,8 @@ TEST(Transverse, Jacobian1) {
       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0};
 
   double jacobian[4];
-  distortionJacobian(imagePt.samp, imagePt.line, jacobian,
-                     transverseDistortionCoeffs);
+  transverseDistortionJacobian(imagePt.samp, imagePt.line, jacobian,
+                               transverseDistortionCoeffs);
 
   EXPECT_NEAR(jacobian[0], 56.25, 1e-8);
   EXPECT_NEAR(jacobian[1], 112.5, 1e-8);
@@ -124,17 +124,26 @@ TEST(transverse, removeDistortion_AlternatingOnes) {
   EXPECT_NEAR(uy, 7.5, 1e-8);
 }
 
-TEST(Radial, testRemoveDistortion) {
-  csm::ImageCoord imagePt(0.0, 4.0);
+TEST(Radial, testUndistortDistort) {
+  
+  // Distorted pixel
+  csm::ImageCoord imagePt(0.0, 1e-1);
 
+  // Undistort
   double ux, uy;
-  std::vector<double> coeffs = {0, 0, 0};
-
+  std::vector<double> coeffs = {0.03, 0.00001, 0.000004};
+  double tolerance = 1e-2;
   removeDistortion(imagePt.samp, imagePt.line, ux, uy, coeffs,
-                   DistortionType::RADIAL);
-
-  EXPECT_NEAR(ux, 4, 1e-8);
-  EXPECT_NEAR(uy, 0, 1e-8);
+                   DistortionType::RADIAL, tolerance);
+  
+  // Distort back
+  double desiredPrecision = 1e-6;
+  double dx, dy;
+  applyDistortion(ux, uy, dx, dy, coeffs,
+                  DistortionType::RADIAL, desiredPrecision, tolerance);
+  
+  EXPECT_NEAR(dx, imagePt.samp, 1e-8);
+  EXPECT_NEAR(dy, imagePt.line, 1e-8);
 }
 
 // If coeffs are 0 then this will have the same result as removeDistortion
@@ -323,4 +332,85 @@ TEST(LroLrocNac, testZeroCoeffs) {
   ASSERT_DOUBLE_EQ(dy, 0.0);
   ASSERT_DOUBLE_EQ(ux, 0.0);
   ASSERT_DOUBLE_EQ(uy, 0.0);
+}
+
+INSTANTIATE_TEST_SUITE_P(CahvorTest, CoeffOffsetParameterizedTest,
+                         ::testing::Values(std::vector<double>(2, 0),
+                                           std::vector<double>(2, 1)));
+
+TEST_P(CoeffOffsetParameterizedTest, RemoveDistortionCahvorTest)
+{
+  csm::ImageCoord imagePt(0.0, 4.0);
+
+  double ux, uy;
+  std::vector<double> offsets = GetParam();
+  std::vector<double> coeffs = {0, 0, 0};
+  coeffs.insert(coeffs.end(), offsets.begin(), offsets.end());
+
+  removeDistortion(imagePt.samp, imagePt.line, ux, uy, coeffs,
+                   DistortionType::CAHVOR);
+
+  EXPECT_NEAR(ux, 4, 1e-8);
+  EXPECT_NEAR(uy, 0, 1e-8);
+}
+
+// If coeffs are 0 then this will have the same result as removeDistortion
+// with 0 distortion coefficients
+TEST_P(CoeffOffsetParameterizedTest, InverseDistortionCahvorTest)
+{
+  csm::ImageCoord imagePt(0.0, 4.0);
+
+  double dx, dy;
+  double desiredPrecision = 0.01;
+  std::vector<double> offsets = GetParam();
+  std::vector<double> coeffs = {0, 0, 0};
+  coeffs.insert(coeffs.end(), offsets.begin(), offsets.end());
+
+  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
+                  DistortionType::CAHVOR, desiredPrecision);
+
+  EXPECT_NEAR(dx, 4, 1e-8);
+  EXPECT_NEAR(dy, 0, 1e-8);
+}
+
+TEST_P(CoeffOffsetParameterizedTest, InverseOnesCoeffsCahvorTest)
+{
+  csm::ImageCoord imagePt(0.0, 4.0);
+
+  double dx, dy;
+  double desiredPrecision = 0.01;
+  std::vector<double> offsets = GetParam();
+  std::vector<double> coeffs = {1, 1, 1};
+  coeffs.insert(coeffs.end(), offsets.begin(), offsets.end());
+
+  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
+                  DistortionType::CAHVOR, desiredPrecision);
+
+  EXPECT_NEAR(dx, 4, 1e-8);
+  EXPECT_NEAR(dy, 0, 1e-8);
+}
+
+INSTANTIATE_TEST_SUITE_P(RadTanInversionTest, RadTanTest,
+                         ::testing::Values(std::vector<double>(0, 0)));
+
+TEST_P(RadTanTest, RadTanInversionTest)
+{
+
+  // Initialize radtan distortion coefficients (k1, k2, p1, p2, k3)  
+  std::vector<double> distCoeffs= {0.000031, -0.000056, 1.3e-5, -1.7e-6, 2.9e-8};
+  
+  double ux = 5.0, uy = 6.0; 
+  
+  // Compute distortion 
+  double dx, dy;
+  applyDistortion(ux, uy, dx, dy, distCoeffs, DistortionType::RADTAN, 1e-8, 1e-8);
+  
+  // Remove distortion (undistort)
+  double ux2, uy2;
+  removeDistortion(dx, dy, ux2, uy2, distCoeffs, DistortionType::RADTAN, 1e-8);
+  
+  EXPECT_NEAR(dx, 4.0010785450000004, 1e-8);
+  EXPECT_NEAR(dy, 4.8022116940000013, 1e-8);
+  EXPECT_NEAR(ux2, ux, 1e-8);
+  EXPECT_NEAR(uy2, uy, 1e-8);
 }

@@ -2,5 +2,5 @@ USGSCSM Astro Frame Sensor Model Class
 =======================================================
 
 .. doxygenfile:: UsgsAstroFrameSensorModel.h
-   :project: usgscsm
+   :project: USGSCSM
 

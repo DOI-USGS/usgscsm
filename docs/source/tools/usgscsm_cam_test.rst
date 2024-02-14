@@ -47,7 +47,7 @@ Command line options
     Use this value for operations (ground-to-image and image-to-ground)
     which need a precision value. Measured in pixels.
 
---modify-sup-file (default: "")>
+--modify-sup-file <string (default: "")>
     Input GXP .sup file to be modified by inputted CSM model. This will override
     the existing .sup file's SENSOR_STATE.
 

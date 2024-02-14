@@ -9,6 +9,8 @@ Processing Kaguya TC Images
 ---------------------------
 Begin by generating an ISD as described in the section on :ref:`isd_generation`.
 
+.. code-block:: python
+
     import json
     import os
     import csmapi

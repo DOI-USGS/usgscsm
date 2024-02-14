@@ -26,7 +26,7 @@ TEST(PluginTests, ReleaseDate) {
 
 TEST(PluginTests, NumModels) {
   UsgsAstroPlugin testPlugin;
-  EXPECT_EQ(4, testPlugin.getNumModels());
+  EXPECT_EQ(5, testPlugin.getNumModels());
 }
 
 TEST(PluginTests, BadISDFile) {

@@ -65,6 +65,15 @@ void lagrangeInterp(const int &numTime, const double *valueArray,
 double brentRoot(double lowerBound, double upperBound,
                  std::function<double(double)> func, double epsilon = 1e-10);
 
+// Use the Newton-Raphson method undistort a pixel (dx, dy), producing (ux, uy).
+void newtonRaphson(double dx, double dy, double &ux, double &uy,
+                    std::vector<double> const& opticalDistCoeffs,
+                    DistortionType distortionType, const double tolerance,
+                    std::function<void(double, double, double &, double &,
+                                       std::vector<double> const&)> distortionFunction,
+                    std::function<void(double, double, double *, 
+                                       std::vector<double> const&)> distortionJacobian);
+
 // Evaluate a polynomial function.
 // Coefficients should be ordered least order to greatest I.E. {1, 2, 3} is 1 +
 // 2x + 3x^2
@@ -198,5 +207,9 @@ void applyRotationTranslationToXyzVec(ale::Rotation const& r, ale::Vec3d const& 
 // Convert ephemeris time, in seconds since January 1, 2000 12:00:00 AM GMT,
 // to a calendar time string, such as 2000-01-01T00:16:40Z.
 std::string ephemTimeToCalendarTime(double ephemTime);
+
+std::vector<double> pixelToMeter(double line, double sample, std::vector<double> geoTransform);
+
+std::vector<double> meterToPixel(double meter_x, double meter_y, std::vector<double> geoTransform);
 
 #endif  // INCLUDE_USGSCSM_UTILITIES_H_

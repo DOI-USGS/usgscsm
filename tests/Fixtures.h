@@ -177,6 +177,12 @@ class ConstVelLineScanIsdTest : public ::testing::Test {
 class ImageCoordParameterizedTest
     : public ::testing::TestWithParam<csm::ImageCoord> {};
 
+class CoeffOffsetParameterizedTest
+    : public ::testing::TestWithParam<std::vector<double>> {};
+
+class RadTanTest
+    : public ::testing::TestWithParam<std::vector<double>> {};
+
 class FramerParameterizedTest
     : public ::testing::TestWithParam<csm::ImageCoord> {
  protected:

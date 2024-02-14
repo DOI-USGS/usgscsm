@@ -1,6 +1,5 @@
 #include "Utilities.h"
 
-
 #include <Error.h>
 #include <cmath>
 #include <stack>
@@ -400,6 +399,57 @@ double brentRoot(double lowerBound, double upperBound,
   } while (++iteration < 30 && fabs(counterPoint - currentPoint) > epsilon);
 
   return nextPoint;
+}
+
+// Use the Newton-Raphson method undistort a pixel (dx, dy), producing (ux, uy).
+void newtonRaphson(double dx, double dy, double &ux, double &uy,
+                    std::vector<double> const& opticalDistCoeffs,
+                    DistortionType distortionType, const double tolerance,
+                    std::function<void(double, double, double &, double &,
+                                       std::vector<double> const&)> distortionFunction,
+                    std::function<void(double, double, double *, 
+                                       std::vector<double> const&)> distortionJacobian) {
+
+  const int maxTries = 20;
+
+  double x, y, fx, fy, jacobian[4];
+
+  // Initial guess for the root
+  x = dx;
+  y = dy;
+
+  distortionFunction(x, y, fx, fy, opticalDistCoeffs);
+
+  for (int count = 1;
+        ((fabs(fx) + fabs(fy)) > tolerance) && (count < maxTries); count++) {
+    distortionFunction(x, y, fx, fy, opticalDistCoeffs);
+
+    fx = dx - fx;
+    fy = dy - fy;
+
+    distortionJacobian(x, y, jacobian, opticalDistCoeffs);
+
+    // Jxx * Jyy - Jxy * Jyx
+    double determinant =
+        jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2];
+    if (fabs(determinant) < 1e-6) {
+      ux = x;
+      uy = y;
+      // Near-zero determinant. Cannot continue. Return most recent result.
+      return;
+    }
+
+    x = x + (jacobian[3] * fx - jacobian[1] * fy) / determinant;
+    y = y + (jacobian[0] * fy - jacobian[2] * fx) / determinant;
+  }
+
+  if ((fabs(fx) + fabs(fy)) <= tolerance) {
+    // The method converged to a root.
+    ux = x;
+    uy = y;
+
+    return;
+  }
 }
 
 double evaluatePolynomial(const std::vector<double> &coeffs, double x) {
@@ -1010,9 +1060,9 @@ double getSemiMinorRadius(json isd, csm::WarningList *list) {
 // type. Defaults to transverse
 DistortionType getDistortionModel(json isd, csm::WarningList *list) {
   try {
-    json distoriton_subset = isd.at("optical_distortion");
+    json distortion_subset = isd.at("optical_distortion");
 
-    json::iterator it = distoriton_subset.begin();
+    json::iterator it = distortion_subset.begin();
 
     std::string distortion = (std::string)it.key();
 
@@ -1026,6 +1076,12 @@ DistortionType getDistortionModel(json isd, csm::WarningList *list) {
       return DistortionType::DAWNFC;
     } else if (distortion.compare("lrolrocnac") == 0) {
       return DistortionType::LROLROCNAC;
+    } else if (distortion.compare("cahvor") == 0) {
+      return DistortionType::CAHVOR;
+    } else if (distortion.compare("lunarorbiter") == 0) {
+      return DistortionType::LUNARORBITER;
+    } else if (distortion.compare("radtan") == 0) {
+      return DistortionType::RADTAN;
     }
   } catch (...) {
     if (list) {
@@ -1053,6 +1109,12 @@ DistortionType getDistortionModel(int aleDistortionModel,
       return DistortionType::DAWNFC;
     } else if (aleDistortionType == ale::DistortionType::LROLROCNAC) {
       return DistortionType::LROLROCNAC;
+    }else if (aleDistortionType == ale::DistortionType::CAHVOR) {
+      return DistortionType::CAHVOR;
+    }else if (aleDistortionType == ale::DistortionType::LUNARORBITER) {
+      return DistortionType::LUNARORBITER;
+    }else if (aleDistortionType == ale::DistortionType::RADTAN) {
+      return DistortionType::RADTAN;
     }
   } catch (...) {
     if (list) {
@@ -1193,7 +1255,44 @@ std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
         coefficients = std::vector<double>(1, 0.0);
       }
     } break;
+    case DistortionType::CAHVOR: {
+      try {
+        coefficients = isd.at("optical_distortion")
+                           .at("cahvor")
+                           .at("coefficients")
+                           .get<std::vector<double>>();
+
+        return coefficients;
+      } catch (...) {
+        if (list) {
+          list->push_back(csm::Warning(
+              csm::Warning::DATA_NOT_AVAILABLE,
+              "Could not parse the radial distortion model coefficients.",
+              "Utilities::getDistortion()"));
+        }
+        coefficients = std::vector<double>(6, 0.0);
+      }
+    } break;
+    case DistortionType::RADTAN: {
+      try {
+        coefficients = isd.at("optical_distortion")
+                           .at("radtan")
+                           .at("coefficients")
+                           .get<std::vector<double>>();
+
+        return coefficients;
+      } catch (...) {
+        if (list) {
+          list->push_back(csm::Warning(
+              csm::Warning::DATA_NOT_AVAILABLE,
+              "Could not parse the radtan distortion model coefficients.",
+              "Utilities::getDistortion()"));
+        }
+        coefficients = std::vector<double>(5, 0.0);
+      }
+    } break;
   }
+  
   if (list) {
     list->push_back(
         csm::Warning(csm::Warning::DATA_NOT_AVAILABLE,
@@ -1507,4 +1606,18 @@ std::string ephemTimeToCalendarTime(double ephemTime) {
   strftime(buffer, 22, "%Y-%m-%dT%H:%M:%SZ", std::gmtime(&finalTime));
   buffer[21] = '\0';
   return buffer;
+}
+
+std::vector<double> pixelToMeter(double line, double sample, std::vector<double> geoTransform) {
+  double meter_x = (sample * geoTransform[1]) + geoTransform[0];
+  double meter_y = (line * geoTransform[5]) + geoTransform[3];
+
+  return {meter_y, meter_x};
+}
+
+std::vector<double> meterToPixel(double meter_x, double meter_y, std::vector<double> geoTransform) {
+  double sample = (meter_x - geoTransform[0]) / geoTransform[1];
+  double line = (meter_y - geoTransform[3]) / geoTransform[5];
+
+  return {line, sample};
 }

@@ -153,6 +153,11 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
   // Camera rotation matrix
   double m[3][3];
   calcRotationMatrix(m, adjustments);
+  MESSAGE_LOG(
+      spdlog::level::trace,
+      "Calculated rotation matrix [{}, {}, {}], [{}, {}, {}], [{}, {}, {}]",
+      m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1],
+      m[2][2]);
 
   // Sensor position
   double undistortedx, undistortedy, denom;
@@ -160,11 +165,20 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
   undistortedx = (f * (m[0][0] * xo + m[1][0] * yo + m[2][0] * zo) / denom);
   undistortedy = (f * (m[0][1] * xo + m[1][1] * yo + m[2][1] * zo) / denom);
 
+  MESSAGE_LOG(
+      spdlog::level::trace,
+      "Found undistortedX: {}, and undistortedY: {}",
+      undistortedx, undistortedy);
   // Apply the distortion to the line/sample location and then convert back to
   // line/sample
   double distortedX, distortedY;
   applyDistortion(undistortedx, undistortedy, distortedX, distortedY,
                   m_opticalDistCoeffs, m_distortionType);
+
+  MESSAGE_LOG(
+      spdlog::level::trace,
+      "Found distortedX: {}, and distortedY: {}",
+      distortedX, distortedY);
 
   // Convert distorted mm into line/sample
   double sample, line;
@@ -321,7 +335,7 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToProximateImagingLocus(
     csm::WarningList *warnings) const {
   MESSAGE_LOG(
       spdlog::level::info,
-      "Computing imageToProximateImagingLocus(No ground) for point {}, {}, {}, "
+      "Computing imageToProximateImagingLocus(No ground) for point {}, {}, "
       "with desired precision {}",
       imagePt.line, imagePt.samp, desiredPrecision);
 
@@ -362,7 +376,7 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(
     double *achievedPrecision, csm::WarningList *warnings) const {
   MESSAGE_LOG(
       spdlog::level::info,
-      "Computing imageToProximateImagingLocus for {}, {}, {}, with desired "
+      "Computing imageToRemoteImagingLocus for {}, {} with desired "
       "precision {}",
       imagePt.line, imagePt.samp, desiredPrecision);
   // Find the line,sample on the focal plane (mm)
@@ -373,15 +387,30 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(
       m_startingDetectorLine, &m_iTransS[0], &m_iTransL[0], focalPlaneX,
       focalPlaneY);
 
+  MESSAGE_LOG(
+      spdlog::level::trace,
+      "Found focalPlaneX: {}, and focalPlaneY: {}",
+      focalPlaneX, focalPlaneY);
+      
   // Distort
   double undistortedFocalPlaneX, undistortedFocalPlaneY;
   removeDistortion(focalPlaneX, focalPlaneY, undistortedFocalPlaneX,
                    undistortedFocalPlaneY, m_opticalDistCoeffs,
                    m_distortionType);
 
+  MESSAGE_LOG(
+      spdlog::level::trace,
+      "Found undistortedFocalPlaneX: {}, and undistortedFocalPlaneY: {}",
+      undistortedFocalPlaneX, undistortedFocalPlaneY);
+
   // Get rotation matrix and transform to a body-fixed frame
   double m[3][3];
   calcRotationMatrix(m);
+  MESSAGE_LOG(
+      spdlog::level::trace,
+      "Calculated rotation matrix [{}, {}, {}], [{}, {}, {}], [{}, {}, {}]",
+      m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1],
+      m[2][2]);
   std::vector<double> lookC{undistortedFocalPlaneX, undistortedFocalPlaneY,
                             m_focalLength};
   std::vector<double> lookB{
@@ -1250,6 +1279,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(
   // We don't pass the pixel to focal plane transformation so invert the
   // focal plane to pixel transformation
   try {
+    // "focal2pixel_lines":[0,136.4988453771169,0],"focal2pixel_samples":[136.4988453771169,0,0]
     double determinant = state["m_iTransL"][1].get<double>() *
                              state["m_iTransS"][2].get<double>() -
                          state["m_iTransL"][2].get<double>() *
