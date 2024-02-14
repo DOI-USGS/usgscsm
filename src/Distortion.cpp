@@ -3,6 +3,21 @@
 #include <Error.h>
 #include <string>
 
+
+/**
+ * @description Calculates the Jacobian matrix of the distortion function at a specific point (x, y). 
+ * The distortion model is based on the given optical distortion coefficients.
+ *
+ * @param x The x-coordinate of the point for which the Jacobian of the distortion is to be computed.
+ * @param y The y-coordinate of the point for which the Jacobian of the distortion is to be computed.
+ * @param jacobian A pointer to an array where the resulting Jacobian matrix will be stored. This 
+ * matrix is represented as an array of doubles corresponding to the 2x2 Jacobian matrix flattened: 
+ * [dxdx, dxdy, dydx, dydy].
+ * @param opticalDistCoeffs A vector of optical distortion coefficients.
+ * 
+ * @returns distortedJacobian The function does not return a value but instead fills the provided 'jacobian' 
+ * array with the distorted Jacobian matrix elements.
+ */
 void distortionJacobian(double x, double y, double *jacobian,
                         const std::vector<double> opticalDistCoeffs) {
   double d_dx[10];
@@ -49,10 +64,10 @@ void distortionJacobian(double x, double y, double *jacobian,
  * undistorted focal plane (ux,uy) coordinate. This uses the third order Taylor
  * approximation to the distortion model.
  *
- * @param ux Undistored x
- * @param uy Undistored y
+ * @param ux Undistorted x
+ * @param uy Undistorted y
  * @param opticalDistCoeffs For both X and Y coefficients
- *
+ * 
  * @returns distortedPoint Newly adjusted focal plane coordinates as an x, y
  * tuple
  */
@@ -82,6 +97,21 @@ void computeTransverseDistortion(double ux, double uy, double &dx, double &dy,
   }
 }
 
+/**
+ * @description Removes distortion based on Line Scanner/Camera Sensor Model in use
+ *
+ * @param dx Distorted x
+ * @param dy Distorted y
+ * @param ux Undistorted x
+ * @param uy Undistorted y
+ * @param opticalDistCoeffs For both X and Y coefficients
+ * @param distortionType The type of distortion being removed, based on the distortion 
+ * model used
+ * @param tolerance Accepted tolerance to permit in calculations, set as 1.0E-6 by 
+ * default
+ * 
+ * @returns undistortedPoint Re-adjusted focal plane coordinates as an x, y tuple
+ */
 void removeDistortion(double dx, double dy, double &ux, double &uy,
                       const std::vector<double> opticalDistCoeffs,
                       DistortionType distortionType, const double tolerance) {
@@ -300,6 +330,21 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
   }
 }
 
+/**
+ * @description Applies distortion model based on Line Scanner/Camera Sensor Model in use
+ *
+ * @param ux Undistorted x
+ * @param uy Undistorted y
+ * @param dx Resulting distorted x
+ * @param dy Resulting distorted y
+ * @param opticalDistCoeffs For both X and Y coefficients
+ * @param desiredPrecision Amount of desired precision, set as 1.0E-6 by default
+ * @param tolerance Accepted tolerance to permit in calculations, set as 1.0E-6 by 
+ * default
+ * 
+ * @returns distortedPoint Newly distorted focal plane coordinates as an x, y
+ * tuple 
+ */
 void applyDistortion(double ux, double uy, double &dx, double &dy,
                      const std::vector<double> opticalDistCoeffs,
                      DistortionType distortionType,
@@ -449,7 +494,7 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
 
     // The LRO LROC NAC distortion model uses an iterative approach to go from
     // undistorted x,y to distorted x,y
-    // Algorithum adapted from ISIS3 LRONarrowAngleDistortionMap.cpp
+    // Algorithm adapted from ISIS3 LRONarrowAngleDistortionMap.cpp
     case LROLROCNAC: {
       double yt = uy;
 
@@ -472,11 +517,11 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
 
       double dk1 = opticalDistCoeffs[0];
 
-      // Owing to the odd distotion model employed in this senser if |y| is >
+      // Owing to the odd distortion model employed in this sensor if |y| is >
       // 116.881145553046 then there is no root to find.  Further, the greatest
-      // y that any measure on the sensor will acutally distort to is less
-      // than 20.  Thus, if any distorted measure is greater that that skip the
-      // iterations.  The points isn't in the cube, and exactly how far outside
+      // y that any measure on the sensor will actually distort to is less
+      // than 20.  Thus, if any distorted measure is greater than that skip the
+      // iterations.  The points aren't in the cube, and exactly how far outside
       // the cube is irrelevant.  Just let the camera model know its not in the
       // cube....
       if (fabs(uy) > 40) {  // if the point is way off the image.....
