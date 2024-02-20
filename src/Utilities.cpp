@@ -13,9 +13,25 @@
 
 using json = nlohmann::json;
 
-// Calculates a rotation matrix from Euler angles
-// in - euler[3]
-// out - rotationMatrix[9]
+/**
+ * @description Calculates a rotation matrix from Euler angles. This function takes
+ * in Euler angles (yaw, pitch, and roll) and calculates the corresponding rotation 
+ * matrix. Euler angles are expected in radians and in the order of rotation about 
+ * the Z-axis (yaw), Y-axis (pitch), and X-axis (roll). The resulting rotation matrix
+ * is in the row-major order and represents the rotation in three-dimensional space 
+ * according to the right-hand rule.
+ * 
+ * @param euler An array of three doubles representing the Euler angles in radians:
+ * - euler[0]: Rotation angle about the Z-axis (yaw).
+ * - euler[1]: Rotation angle about the Y-axis (pitch).
+ * - euler[2]: Rotation angle about the X-axis (roll).
+ * @param rotationMatrix An array of nine doubles where the resulting rotation matrix 
+ * will be stored. The matrix is stored in row-major order as follows:
+ * [ R[0], R[1], R[2],
+ *   R[3], R[4], R[5],
+ *   R[6], R[7], R[8] ]
+ * where R[] represents the elements of the rotation matrix.
+ */
 void calculateRotationMatrixFromEuler(double euler[], double rotationMatrix[]) {
   double cos_a = cos(euler[0]);
   double sin_a = sin(euler[0]);
@@ -35,9 +51,26 @@ void calculateRotationMatrixFromEuler(double euler[], double rotationMatrix[]) {
   rotationMatrix[8] = cos_a * cos_b;
 }
 
-// uses a quaternion to calculate a rotation matrix.
-// in - q[4]
-// out - rotationMatrix[9]
+/**
+ * @description Calculates a rotation matrix from a quaternion representation. This 
+ * function converts a given quaternion into its corresponding rotation matrix. 
+ * Quaternions provide a compact and efficient way to encode the orientation of an 
+ * object in three-dimensional space. The input quaternion should be normalized or 
+ * will be normalized within the function to ensure the rotation matrix is orthogonal 
+ * and properly represents a rotation. The resulting rotation matrix is in row-major 
+ * order and reflects the rotation in 3D space as described by the quaternion.
+ * 
+ * @param q An array of four doubles representing the quaternion components in the 
+ * order: q[0] (w), q[1] (x), q[2] (y), q[3] (z). The quaternion should represent a 
+ * unit quaternion to correctly encode a rotation.
+ * @param rotationMatrix An array of nine doubles where the resulting rotation matrix 
+ * will be stored. The matrix is stored in row-major order as follows:
+ * [ R[0], R[1], R[2],
+ *   R[3], R[4], R[5],
+ *   R[6], R[7], R[8] ]
+ * where R[] represents the elements of the rotation matrix. This matrix represents 
+ * the rotation in three-dimensional space according to the quaternion provided.
+ */
 void calculateRotationMatrixFromQuaternions(double q[4],
                                             double rotationMatrix[9]) {
   double norm = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
@@ -57,15 +90,38 @@ void calculateRotationMatrixFromQuaternions(double q[4],
   rotationMatrix[8] = -q[0] * q[0] - q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
 }
 
-// Compute the distorted focal plane coordinate for a given image pixel
-// in - line
-// in - sample
-// in - sampleOrigin - the origin of the ccd coordinate system relative to the
-// top left of the ccd in - lineOrigin - the origin of the ccd coordinate system
-// relative to the top left of the ccd in - sampleSumming in - startingSample -
-// first ccd sample for the image in - iTransS[3] - the transformation from
-// focal plane to ccd samples in - iTransL[3] - the transformation from focal
-// plane to ccd lines out - distortedX out - distortedY
+/**
+ * @description Computes the distorted focal plane coordinates for a given image pixel. 
+ * This function calculates the position of a pixel in the distorted focal plane given its 
+ * position in the CCD (Charge-Coupled Device) image sensor coordinate system. The 
+ * calculation accounts for the CCD coordinate system's origin, pixel summing, and the 
+ * starting position of the CCD readout. It uses transformation matrices from the focal 
+ * plane to CCD samples and lines to perform the conversion. The result is the distorted 
+ * (x, y) coordinates in the focal plane.
+ * 
+ * @param line The line (y-coordinate) of the pixel in the CCD coordinate system.
+ * @param sample The sample (x-coordinate) of the pixel in the CCD coordinate system.
+ * @param sampleOrigin The origin of the CCD coordinate system relative to the top left of 
+ * the CCD in the x-direction.
+ * @param lineOrigin The origin of the CCD coordinate system relative to the top left of 
+ * the CCD in the y-direction.
+ * @param sampleSumming The summing mode of samples (x-direction), indicating how many 
+ * physical pixels are combined into a single image pixel.
+ * @param lineSumming The summing mode of lines (y-direction), indicating how many physical 
+ * pixels are combined into a single image pixel.
+ * @param startingSample The first CCD sample (x-coordinate) corresponding to the start of 
+ * the image.
+ * @param startingLine The first CCD line (y-coordinate) corresponding to the start of the 
+ * image.
+ * @param iTransS An array of three doubles representing the transformation from focal plane 
+ * to CCD samples. It includes the offset and scaling factors.
+ * @param iTransL An array of three doubles representing the transformation from focal plane 
+ * to CCD lines. It includes the offset and scaling factors.
+ * @param distortedX Reference to a double where the x-coordinate of the distorted focal 
+ * plane position will be stored.
+ * @param distortedY Reference to a double where the y-coordinate of the distorted focal 
+ * plane position will be stored.
+ */
 void computeDistortedFocalPlaneCoordinates(
     const double &line, const double &sample, const double &sampleOrigin,
     const double &lineOrigin, const double &sampleSumming,
@@ -90,11 +146,35 @@ void computeDistortedFocalPlaneCoordinates(
   distortedY = p21 * t1 + p22 * t2;
 }
 
-
-// Compute the de-jittered pixel coordinate given a jittered image coordinate
-// a set of jitter coefficients and line exposure times for rolling shutter.
-// Jitter coefficients are in largest power first order. There is no constant
-// coefficient. For example {1, 2, 3} would correspond to 1*t^3 + 2*t&2 + 3*t.
+/**
+ * @description Computes the de-jittered pixel coordinates given jittered image
+ * coordinates, a set of jitter coefficients for both line and sample 
+ * dimensions, and line exposure times. This function is designed to correct 
+ * for jitter in images, typically caused by motion or instability during image 
+ * capture, especially in systems with a rolling shutter. The jitter 
+ * coefficients should be provided in descending order of power, with the 
+ * highest power coefficient first and no constant term. For instance, 
+ * coefficients {1, 2, 3} would correspond to the polynomial 1*t^3 + 2*t^2 + 3*t, 
+ * where t is the time variable.
+ * 
+ * @param line The original line (y-coordinate) of the jittered pixel.
+ * @param sample The original sample (x-coordinate) of the jittered pixel.
+ * @param lineJitterCoeffs A vector of doubles representing the jitter 
+ * coefficients for the line dimension.
+ * @param sampleJitterCoeffs A vector of doubles representing the jitter 
+ * coefficients for the sample dimension.
+ * @param lineTimes A vector of doubles representing the exposure times for each 
+ * line, used to calculate the actual time at which each line was exposed. This is 
+ * particularly relevant for rolling shutter cameras where each line of the sensor 
+ * is exposed at a slightly different time.
+ * @param dejitteredLine Reference to a double where the de-jittered line 
+ * coordinate will be stored.
+ * @param dejitteredSample Reference to a double where the de-jittered sample 
+ * coordinate will be stored.
+ * 
+ * @throws csm::Error If the sizes of the jitter coefficient vectors do not match or 
+ * if the lineTimes vector is empty.
+ */
 void removeJitter(
     const double &line, const double &sample,
     const std::vector<double> lineJitterCoeffs, const std::vector<double> sampleJitterCoeffs,
@@ -129,13 +209,40 @@ void removeJitter(
   return;
 }
 
-
-// Compute the jittered pixel coordinate given a de-jittered image coordinate
-// a set of jitter coefficients and line exposure times for rolling shutter.
-// Jitter coefficients are in largest power first order. There is no constant
-// coefficient. For example {1, 2, 3} would correspond to 1*t^3 + 2*t&2 + 3*t.
-// This uses an iterative method so a tolerance and maximum number of iteration
-// are required to determine when to stop iterating.
+/**
+ * @description Adds jitter to a given pixel coordinate based on specified 
+ * jitter coefficients and line exposure times. This function simulates the 
+ * effect of jitter on image coordinates by applying a reverse process of the 
+ * jitter removal algorithm. It iteratively applies jitter until the change in 
+ * the jittered coordinates falls below a specified tolerance or the maximum 
+ * number of iterations is reached. This approach is useful for testing or 
+ * simulating the impact of jitter on image data, especially in imaging systems 
+ * with a rolling shutter.
+ *
+ * @param line The original line (y-coordinate) of the pixel before adding 
+ * jitter.
+ * @param sample The original sample (x-coordinate) of the pixel before adding 
+ * jitter.
+ * @param tolerance The tolerance within which the difference between the 
+ * jittered and original coordinates must fall to consider the jittering 
+ * process complete.
+ * @param maxIts The maximum number of iterations to attempt adding jitter. 
+ * This prevents infinite loops in cases where the specified tolerance cannot 
+ * be met.
+ * @param lineJitterCoeffs A vector of doubles representing the coefficients 
+ * for jitter in the line dimension. These coefficients define the polynomial 
+ * used to model jitter as a function of time.
+ * @param sampleJitterCoeffs A vector of doubles representing the coefficients 
+ * for jitter in the sample dimension. Similar to lineJitterCoeffs, these 
+ * define the polynomial for modeling jitter.
+ * @param lineTimes A vector of doubles representing the exposure times for 
+ * each line, used to calculate the actual time at which each line was exposed 
+ * for the purpose of adding jitter based on time.
+ * @param jitteredLine Reference to a double where the line coordinate after
+ * adding jitter will be stored.
+ * @param jitteredSample Reference to a double where the sample coordinate 
+ * after adding jitter will be stored.
+ */
 void addJitter(
     const double &line, const double &sample,
     const double &tolerance, const int &maxIts,
@@ -171,15 +278,38 @@ void addJitter(
 }
 
 
-// Compute the image pixel for a distorted focal plane coordinate
-// in - line
-// in - sample
-// in - sampleOrigin - the origin of the ccd coordinate system relative to the
-// top left of the ccd in - lineOrigin - the origin of the ccd coordinate system
-// relative to the top left of the ccd in - sampleSumming in - startingSample -
-// first ccd sample for the image in - iTransS[3] - the transformation from
-// focal plane to ccd samples in - iTransL[3] - the transformation from focal
-// plane to ccd lines out - natFocalPlane
+/**
+ * @description Computes the image pixel coordinates from a distorted focal 
+ * plane coordinate. This function converts coordinates from the distorted 
+ * focal plane back to the image sensor (CCD) coordinate system, taking into 
+ * account the CCD's origin, pixel summing, and starting positions for the 
+ * sample and line. It uses transformation matrices to map from the focal 
+ * plane to the CCD coordinates, adjusting for distortion effects that may 
+ * have been applied previously.
+ * 
+ * @param distortedX The x-coordinate in the distorted focal plane.
+ * @param distortedY The y-coordinate in the distorted focal plane.
+ * @param sampleOrigin The x-coordinate of the origin of the CCD coordinate 
+ * system relative to the top left of the CCD.
+ * @param lineOrigin The y-coordinate of the origin of the CCD coordinate 
+ * system relative to the top left of the CCD.
+ * @param sampleSumming The number of physical pixels combined into a single 
+ * image pixel along the x-direction, affecting resolution and sensitivity.
+ * @param lineSumming The number of physical pixels combined into a single 
+ * image pixel along the y-direction, affecting resolution and sensitivity.
+ * @param startingSample The x-coordinate of the first CCD sample corresponding 
+ * to the start of the image area.
+ * @param startingLine The y-coordinate of the first CCD line corresponding 
+ * to the start of the image area.
+ * @param iTransS An array of three doubles representing the transformation 
+ * from the focal plane to CCD samples, including translation and scaling factors.
+ * @param iTransL An array of three doubles representing the transformation 
+ * from the focal plane to CCD lines, including translation and scaling factors.
+ * @param line Reference to a double where the computed line (y-coordinate) in 
+ * the image pixel coordinate system will be stored.
+ * @param sample Reference to a double where the computed sample (x-coordinate) 
+ * in the image pixel coordinate system will be stored.
+ */
 void computePixel(const double &distortedX, const double &distortedY,
                   const double &sampleOrigin, const double &lineOrigin,
                   const double &sampleSumming, const double &lineSumming,
@@ -196,10 +326,33 @@ void computePixel(const double &distortedX, const double &distortedY,
   line = (detLine - startingLine) / lineSumming;
 }
 
-// Define imaging ray in image space (In other words, create a look vector in
-// camera space) in - undistortedFocalPlaneX in - undistortedFocalPlaneY in -
-// zDirection - Either 1 or -1. The direction of the boresight in - focalLength
-// out - cameraLook[3]
+/**
+ * @description Creates a normalized look vector (also known as an imaging ray) 
+ * in camera space, given coordinates on the undistorted focal plane and the 
+ * camera's focal length. This function computes the direction vector from the 
+ * camera's optical center through a point on the undistorted focal plane, 
+ * effectively defining the direction in which the camera is looking at a 
+ * specific point in the scene. The zDirection parameter allows for adjusting 
+ * the look vector based on the orientation of the camera's boresight.
+ * 
+ * @param undistortedFocalPlaneX The x-coordinate on the undistorted focal 
+ * plane, typically in units of length (e.g., millimeters), representing the 
+ * horizontal displacement from the optical axis.
+ * @param undistortedFocalPlaneY The y-coordinate on the undistorted focal 
+ * plane, typically in units of length, representing the vertical displacement 
+ * from the optical axis.
+ * @param zDirection The direction of the camera's boresight along the z-axis. 
+ * This should be either 1 or -1, indicating whether the look vector should be 
+ * oriented along or against the optical axis.
+ * @param focalLength The focal length of the camera, defining the distance 
+ * from the optical center to the focal plane. This value is crucial for 
+ * determining the depth component of the look vector.
+ * @param cameraLook An array of three doubles where the normalized look vector 
+ * will be stored. The vector is represented as [x, y, z] components in camera 
+ * space, where the z-axis aligns with the optical axis, and the x and y axes 
+ * correspond to the horizontal and vertical displacements on the focal plane, 
+ * respectively.
+ */
 void createCameraLookVector(const double &undistortedFocalPlaneX,
                             const double &undistortedFocalPlaneY,
                             const double &zDirection, const double &focalLength,
@@ -215,7 +368,40 @@ void createCameraLookVector(const double &undistortedFocalPlaneX,
   cameraLook[2] /= magnitude;
 }
 
-// Lagrange Interpolation for equally spaced data
+/**
+ * @description Performs Lagrange interpolation for equally spaced data to 
+ * estimate the value at a given time point. This function is designed for 
+ * uniform data intervals and supports up to 8th order interpolation. It 
+ * gracefully handles points far from the data center to avoid calculation 
+ * failures. The interpolation order is dynamically adjusted based on the 
+ * proximity of the desired time to the data points, ensuring optimal accuracy 
+ * while avoiding overfitting. The function is particularly useful for 
+ * estimating values from a discrete set of data points in applications such as 
+ * signal processing or numerical analysis.
+ *
+ * @param numTime The number of time points in the dataset.
+ * @param valueArray Pointer to the array of values corresponding to each time 
+ * point. The values for each point are assumed to be stored consecutively in 
+ * memory.
+ * @param startTime The start time of the dataset.
+ * @param delTime The uniform time interval between consecutive data points.
+ * @param time The time at which the value is to be estimated using 
+ * interpolation.
+ * @param vectorLength The length of the vectors stored in valueArray. This 
+ * parameter allows the function to handle multidimensional data by treating 
+ * each set of vectorLength consecutive elements in valueArray as a vector 
+ * associated with a single time point.
+ * @param i_order The maximum order of interpolation desired. The actual order 
+ * used may be less than this value depending on the proximity of the 
+ * interpolation point to the data boundaries.
+ * @param valueVector Pointer to the array where the interpolated value(s) will 
+ * be stored. This array must be pre-allocated with at least vectorLength 
+ * elements. The interpolated values are stored as a vector of length 
+ * vectorLength.
+ *
+ * @throws csm::Error If numTime is less than 2, indicating insufficient data 
+ * points for interpolation.
+ */
 void lagrangeInterp(const int &numTime, const double *valueArray,
                     const double &startTime, const double &delTime,
                     const double &time, const int &vectorLength,
@@ -322,6 +508,36 @@ void lagrangeInterp(const int &numTime, const double *valueArray,
   }
 }
 
+/**
+ * @description Finds a root of a function within a specified interval using 
+ * Brent's method. Brent's method is an efficient algorithm for finding roots 
+ * of a function. It combines the bisection method, the secant method, and 
+ * inverse quadratic interpolation. It has the reliability of bisection but 
+ * can converge much faster when close to the root. The function to find the 
+ * root of is provided as a parameter, allowing for flexible usage with any 
+ * continuous function.
+ *
+ * @param lowerBound The lower bound of the interval in which to search for the 
+ * root.
+ * @param upperBound The upper bound of the interval in which to search for the 
+ * root. It is assumed that the function crosses the x-axis at least once in 
+ * the interval [lowerBound, upperBound].
+ * @param func The function for which to find the root. This is a std::function 
+ * object that takes a double and returns a double. The function should be 
+ * continuous, and func(lowerBound) and func(upperBound) should have opposite 
+ * signs.
+ * @param epsilon The tolerance for convergence. The algorithm stops when the 
+ * interval between the current best guess of the root and the previous best 
+ * guess is less than epsilon, or when the function value at the current guess 
+ * is within epsilon of zero.
+ *
+ * @return The estimated root of the function within the specified interval and 
+ * tolerance.
+ * 
+ * @throws std::invalid_argument If func(lowerBound) and func(upperBound) have 
+ * the same sign, indicating that Brent's method may not be applicable as there 
+ * might not be a root within the interval or the function is not continuous.
+ */
 double brentRoot(double lowerBound, double upperBound,
                  std::function<double(double)> func, double epsilon) {
   double counterPoint = lowerBound;
@@ -401,7 +617,36 @@ double brentRoot(double lowerBound, double upperBound,
   return nextPoint;
 }
 
-// Use the Newton-Raphson method undistort a pixel (dx, dy), producing (ux, uy).
+/**
+ * @description Applies the Newton-Raphson method to un-distort a pixel 
+ * coordinate (dx, dy), producing the undistorted coordinate (ux, uy).
+ * 
+ * @param dx The distorted x-coordinate of the pixel.
+ * @param dy The distorted y-coordinate of the pixel.
+ * @param ux Reference to a double where the undistorted x-coordinate will be 
+ * stored.
+ * @param uy Reference to a double where the undistorted y-coordinate will be 
+ * stored.
+ * @param opticalDistCoeffs A constant reference to a vector of doubles 
+ * containing the optical distortion coefficients. These coefficients are 
+ * specific to the distortion model being used.
+ * @param distortionType An enumeration of the type of distortion model to be 
+ * corrected. This parameter dictates how the distortion and its Jacobian 
+ * functions interpret the distortion coefficients.
+ * @param tolerance The tolerance level for the convergence of the 
+ * Newton-Raphson method. The iterative process will stop when the sum of the 
+ * absolute differences between the distorted coordinates and their corrections 
+ * falls below this tolerance or when the maximum number of iterations is 
+ * reached.
+ * @param distortionFunction A std::function object representing the distortion 
+ * function. It takes distorted coordinates (x, y), a reference to the 
+ * distortion coefficients, and outputs the distortion effects (fx, fy) to be 
+ * applied to (x, y).
+ * @param distortionJacobian A std::function object representing the Jacobian 
+ * of the distortion function. It takes distorted coordinates (x, y) and 
+ * outputs the Jacobian matrix as an array of 4 doubles, which is used to 
+ * calculate the next iteration's correction.
+ */
 void newtonRaphson(double dx, double dy, double &ux, double &uy,
                     std::vector<double> const& opticalDistCoeffs,
                     DistortionType distortionType, const double tolerance,
@@ -466,6 +711,24 @@ double evaluatePolynomial(const std::vector<double> &coeffs, double x) {
   return value;
 }
 
+/**
+ * @description Evaluates a polynomial at a given point x. The polynomial is defined by its coefficients, with the
+ * coefficients provided in ascending order of power. This function calculates the value of the polynomial
+ * for a specific x-value using Horner's method, which is efficient and minimizes the number of multiplications.
+ *
+ * @param coeffs A constant reference to a vector of doubles representing the coefficients of the polynomial.
+ *               The first element represents the coefficient of the lowest power term, and the last element
+ *               represents the coefficient of the highest power term.
+ * @param x The point at which to evaluate the polynomial.
+ *
+ * @return The value of the polynomial at the given point x.
+ *
+ * @throws std::invalid_argument If the coeffs vector is empty, as a polynomial requires at least one coefficient.
+ *
+ * Note: This function assumes that the polynomial coefficients are provided in a vector with the lowest power
+ *       coefficient first and the highest power coefficient last. It uses Horner's method for efficient computation,
+ *       making it suitable for polynomials of any degree.
+ */
 double evaluatePolynomialDerivative(const std::vector<double> &coeffs,
                                     double x) {
   if (coeffs.empty()) {
