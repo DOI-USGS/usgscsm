@@ -1347,6 +1347,18 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
   return stateString;
 }
 
+/**
+ * @brief Applies a geometric transform to the sensor model's state.
+ * @description Updates the sensor model state by applying a rotation and translation
+ * transform.
+ * 
+ * @param r The rotation to be applied to the sensor model state, represented as an
+ * ale::Rotation object.
+ * @param t The translation to be applied to the sensor model state, represented as an
+ * ale::Vec3d object.
+ * @param stateString A reference to a string containing the JSON-encoded state of the
+ * sensor model. This string will be updated in-place with the transformed state.
+ */
 void UsgsAstroFrameSensorModel::applyTransformToState(ale::Rotation const& r, ale::Vec3d const& t,
                                                       std::string& stateString) {
 
@@ -1397,6 +1409,19 @@ void UsgsAstroFrameSensorModel::applyTransformToState(ale::Rotation const& r, al
   stateString = getModelNameFromModelState(stateString) + "\n" + j.dump(2);
 }
 
+/**
+ * @brief Checks if the provided model state string represents a valid state for the sensor model.
+ * @description Validates the JSON-encoded sensor model state string by checking for the presence
+ * of all required keywords and comparing the model name against the expected name.
+ * 
+ * @param stringState A JSON-encoded string representing the state of the sensor model.
+ * @param warnings A pointer to a csm::WarningList for logging any issues found during
+ * the validation process. This includes missing required keywords and incorrect model names.
+ * 
+ * @return A boolean value indicating whether the provided model state string is valid. Returns
+ * true if all required keywords are present and the model name matches the expected name;
+ * otherwise, returns false.
+ */
 bool UsgsAstroFrameSensorModel::isValidModelState(
     const std::string &stringState, csm::WarningList *warnings) {
   MESSAGE_LOG(spdlog::level::debug, "Checking if model has valid state");
@@ -1460,6 +1485,20 @@ bool UsgsAstroFrameSensorModel::isValidModelState(
   return modelName == _SENSOR_MODEL_NAME && missingKeywords.empty();
 }
 
+/**
+ * @brief Validates the Imaging Support Data (ISD) for constructing a sensor model.
+ * @description Checks if the provided ISD string can be converted into a valid
+ * sensor model state. This serves as a preliminary validation step before attempting
+ * to use the ISD for sensor model construction, ensuring that the ISD contains
+ * the necessary information.
+ * 
+ * @param Isd A JSON-encoded string representing the ISD.
+ * @param warnings A pointer to a csm::WarningList for logging any issues found during
+ * the validation of the ISD.
+ * 
+ * @return A boolean indicating whether the ISD is valid for model construction.
+ * True if a valid model state can be constructed from the ISD, false otherwise.
+ */
 bool UsgsAstroFrameSensorModel::isValidIsd(const std::string &Isd,
                                            csm::WarningList *warnings) {
   // no obvious clean way to truely validate ISD with it's nested structure,
@@ -1475,6 +1514,18 @@ bool UsgsAstroFrameSensorModel::isValidIsd(const std::string &Isd,
   }
 }
 
+/**
+ * @brief Replaces the current model state with a new state.
+ * @description Updates the sensor model's state based on a JSON-encoded state
+ * string. This allows for dynamic modification of the sensor model's
+ * parameters and settings, effectively reconfiguring the model.
+ * 
+ * @param stringState A JSON-encoded string representing the new state of the sensor model.
+ * 
+ * @throws csm::Error If any required state keywords are missing or if the state
+ * cannot be successfully parsed and applied, indicating that the new state is
+ * invalid or incomplete.
+ */
 void UsgsAstroFrameSensorModel::replaceModelState(
     const std::string &stringState) {
 
@@ -1552,6 +1603,20 @@ void UsgsAstroFrameSensorModel::replaceModelState(
   }
 }
 
+/**
+ * @brief Constructs the sensor model state from an Imaging Support Data (ISD) string.
+ * @description Parses a JSON-encoded ISD string to extract necessary parameters
+ * and constructs the state of the sensor model.
+ * 
+ * @param jsonIsd A JSON-encoded string representing the ISD from which the state is to be constructed.
+ * @param warnings A pointer to a csm::WarningList for logging any issues encountered during
+ * the parsing of the ISD or the construction of the state.
+ * 
+ * @return A JSON-encoded string representing the constructed state of the sensor model.
+ * 
+ * @throws csm::Error If the ISD does not contain required information or if any errors occur
+ * during the parsing process, indicating that the ISD is invalid for creating the sensor model.
+ */
 std::string UsgsAstroFrameSensorModel::constructStateFromIsd(
     const std::string &jsonIsd, csm::WarningList *warnings) {
   MESSAGE_LOG(spdlog::level::debug, "Constructing state from isd");
@@ -1796,6 +1861,13 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(
   return state.dump();
 }
 
+/**
+ * @brief Retrieves the reference point of the sensor model in ECEF coordinates.
+ * @description Returns the Earth-Centered, Earth-Fixed (ECEF) coordinates of the
+ * reference point.
+ * 
+ * @return A csm::EcefCoord object representing the reference point in ECEF coordinates.
+ */
 csm::EcefCoord UsgsAstroFrameSensorModel::getReferencePoint() const {
   MESSAGE_LOG(
       spdlog::level::debug,
@@ -1805,6 +1877,13 @@ csm::EcefCoord UsgsAstroFrameSensorModel::getReferencePoint() const {
   return m_referencePointXyz;
 }
 
+/**
+ * @brief Sets the reference point of the sensor model.
+ * @description Updates the sensor model's reference point to a new location specified
+ * by the given ECEF coordinates.
+ * 
+ * @param groundPt The new reference point in ECEF coordinates.
+ */
 void UsgsAstroFrameSensorModel::setReferencePoint(
     const csm::EcefCoord &groundPt) {
   MESSAGE_LOG(
@@ -1814,16 +1893,38 @@ void UsgsAstroFrameSensorModel::setReferencePoint(
   m_referencePointXyz = groundPt;
 }
 
+/**
+ * @brief Retrieves the number of parameters of the sensor model.
+ * @description Returns the total number of adjustable parameters within the sensor model.
+ * 
+ * @return The number of adjustable parameters in the sensor model.
+ */
 int UsgsAstroFrameSensorModel::getNumParameters() const {
   MESSAGE_LOG(spdlog::level::debug, "Accessing num parameters: {}", NUM_PARAMETERS);
   return NUM_PARAMETERS;
 }
 
+/**
+ * @brief Retrieves the name of a specific parameter by its index.
+ * @description Provides the name of the parameter at the specified index.
+ * 
+ * @param index The index of the parameter.
+ * 
+ * @return A string representing the name of the parameter.
+ */
 std::string UsgsAstroFrameSensorModel::getParameterName(int index) const {
   MESSAGE_LOG(spdlog::level::debug, "Setting parameter name to {}", index);
   return m_parameterName[index];
 }
 
+/**
+ * @brief Retrieves the units of a specific parameter by its index.
+ * @description Provides the units in which a parameter is measured.
+ * 
+ * @param index The index of the parameter.
+ * 
+ * @return A string representing the units of the parameter.
+ */
 std::string UsgsAstroFrameSensorModel::getParameterUnits(int index) const {
   MESSAGE_LOG(spdlog::level::debug, "Accessing parameter units for {}", index);
   if (index < 3) {
@@ -1833,16 +1934,42 @@ std::string UsgsAstroFrameSensorModel::getParameterUnits(int index) const {
   }
 }
 
+/**
+ * @brief Checks if the sensor model has any parameters that can be shared.
+ * @description Determines if any of the sensor model's parameters are designed to be
+ * shareable with other models or entities.
+ * 
+ * @return A boolean indicating if the model has shareable parameters.
+ */
 bool UsgsAstroFrameSensorModel::hasShareableParameters() const {
   MESSAGE_LOG(spdlog::level::debug, "Checking for shareable parameters");
   return false;
 }
 
+/**
+ * @brief Checks if a specific parameter is shareable.
+ * @description Determines if the parameter at the given index is designed to be
+ * shareable with other models or entities.
+ * 
+ * @param index The index of the parameter.
+ * 
+ * @return A boolean indicating if the parameter is shareable.
+ */
 bool UsgsAstroFrameSensorModel::isParameterShareable(int index) const {
   MESSAGE_LOG(spdlog::level::debug, "Checking is parameter: {} is shareable", index);
   return false;
 }
 
+/**
+ * @brief Retrieves the sharing criteria for a specific parameter.
+ * @description Provides the criteria under which a parameter can be shared with
+ * other models or entities, if sharing is supported.
+ * 
+ * @param index The index of the parameter.
+ * 
+ * @return A csm::SharingCriteria object describing the conditions under which the
+ * parameter can be shared.
+ */
 csm::SharingCriteria UsgsAstroFrameSensorModel::getParameterSharingCriteria(
     int index) const {
   MESSAGE_LOG(
@@ -1853,6 +1980,15 @@ csm::SharingCriteria UsgsAstroFrameSensorModel::getParameterSharingCriteria(
   return csm::SharingCriteria();
 }
 
+/**
+ * @brief Retrieves the value of a specific parameter by its index.
+ * @description Provides the current value of the parameter identified by the given
+ * index.
+ * 
+ * @param index The index of the parameter.
+ * 
+ * @return The current value of the specified parameter.
+ */
 double UsgsAstroFrameSensorModel::getParameterValue(int index) const {
   MESSAGE_LOG(
       spdlog::level::debug,
@@ -1861,23 +1997,57 @@ double UsgsAstroFrameSensorModel::getParameterValue(int index) const {
   return m_currentParameterValue[index];
 }
 
+/**
+ * @brief Sets the value of a specific parameter by its index.
+ * @description Updates the value of the parameter identified by the given index.
+ * 
+ * @param index The index of the parameter to be updated.
+ * @param value The new value for the specified parameter.
+ */
 void UsgsAstroFrameSensorModel::setParameterValue(int index, double value) {
   MESSAGE_LOG(spdlog::level::debug, "Setting parameter value: {} at index: {}", value, index);
   m_currentParameterValue[index] = value;
 }
 
+/**
+ * @brief Retrieves the type of a specific parameter by its index.
+ * @description Provides the type classification of the parameter, indicating whether
+ * it is adjustable, fixed, or another category defined by the csm::param::Type enumeration.
+ * 
+ * @param index The index of the parameter.
+ * 
+ * @return The type of the specified parameter as defined by the csm::param::Type enumeration.
+ */
 csm::param::Type UsgsAstroFrameSensorModel::getParameterType(int index) const {
   MESSAGE_LOG(spdlog::level::debug, "Accessing parameter type: {} at index: {}",
               m_parameterType[index], index);
   return m_parameterType[index];
 }
 
+/**
+ * @brief Sets the type of a specific parameter by its index.
+ * @description Updates the type classification of the parameter, allowing for changes
+ * in how the parameter is treated by the model or algorithms that use the model.
+ * 
+ * @param index The index of the parameter to be updated.
+ * @param pType The new type for the specified parameter as defined by the csm::param::Type enumeration.
+ */
 void UsgsAstroFrameSensorModel::setParameterType(int index,
                                                  csm::param::Type pType) {
   MESSAGE_LOG(spdlog::level::debug, "Setting parameter type: {} at index: {}", pType, index);
   m_parameterType[index] = pType;
 }
 
+/**
+ * @brief Retrieves the covariance between two parameters.
+ * @description Provides the covariance value between the parameters identified by
+ * the two indexes.
+ * 
+ * @param index1 The index of the first parameter.
+ * @param index2 The index of the second parameter.
+ * 
+ * @return The covariance between the specified parameters.
+ */
 double UsgsAstroFrameSensorModel::getParameterCovariance(int index1,
                                                          int index2) const {
   int index = UsgsAstroFrameSensorModel::NUM_PARAMETERS * index1 + index2;
@@ -1888,6 +2058,15 @@ double UsgsAstroFrameSensorModel::getParameterCovariance(int index1,
   return m_currentParameterCovariance[index];
 }
 
+/**
+ * @brief Sets the covariance between two parameters.
+ * @description Updates the covariance value between the parameters identified by the
+ * two indexes.
+ * 
+ * @param index1 The index of the first parameter.
+ * @param index2 The index of the second parameter.
+ * @param covariance The new covariance value between the specified parameters.
+ */
 void UsgsAstroFrameSensorModel::setParameterCovariance(int index1, int index2,
                                                        double covariance) {
   MESSAGE_LOG(
@@ -1898,11 +2077,29 @@ void UsgsAstroFrameSensorModel::setParameterCovariance(int index1, int index2,
   m_currentParameterCovariance[index] = covariance;
 }
 
+/**
+ * @brief Retrieves the number of geometric correction switches.
+ * @description Provides the total number of geometric correction switches available
+ * in the sensor model. 
+ * 
+ * @return The number of geometric correction switches in the sensor model.
+ */
 int UsgsAstroFrameSensorModel::getNumGeometricCorrectionSwitches() const {
   MESSAGE_LOG(spdlog::level::debug, "Accessing num geom correction switches");
   return 0;
 }
 
+/**
+ * @brief Retrieves the name of a specific geometric correction switch by its index.
+ * @description Provides the name of the geometric correction switch identified by the
+ * given index. This method is not supported in this model, as geometric corrections are
+ * not applicable.
+ * 
+ * @param index The index of the geometric correction switch.
+ * 
+ * @throws csm::Error If the method is called, indicating that geometric correction switches
+ * are not supported by this sensor model.
+ */
 std::string UsgsAstroFrameSensorModel::getGeometricCorrectionName(
     int index) const {
   MESSAGE_LOG(
@@ -1915,6 +2112,19 @@ std::string UsgsAstroFrameSensorModel::getGeometricCorrectionName(
                    "UsgsAstroLsSensorModel::getGeometricCorrectionName");
 }
 
+/**
+ * @brief Sets the state of a specific geometric correction switch by its index.
+ * @description Updates the state of the geometric correction switch identified by the
+ * given index. This method is not supported in this model, as geometric corrections are
+ * not applicable.
+ * 
+ * @param index The index of the geometric correction switch to be updated.
+ * @param value The new state for the specified geometric correction switch.
+ * @param pType The parameter type associated with the geometric correction switch.
+ * 
+ * @throws csm::Error If the method is called, indicating that geometric correction switches
+ * are not supported by this sensor model.
+ */
 void UsgsAstroFrameSensorModel::setGeometricCorrectionSwitch(
     int index, bool value, csm::param::Type pType) {
   MESSAGE_LOG(
@@ -1928,6 +2138,17 @@ void UsgsAstroFrameSensorModel::setGeometricCorrectionSwitch(
                    "UsgsAstroLsSensorModel::setGeometricCorrectionSwitch");
 }
 
+/**
+ * @brief Retrieves the state of a specific geometric correction switch by its index.
+ * @description Provides the state of the geometric correction switch identified by the
+ * given index. This method is not supported in this model, as geometric corrections are
+ * not applicable.
+ * 
+ * @param index The index of the geometric correction switch.
+ * 
+ * @throws csm::Error If the method is called, indicating that geometric correction switches
+ * are not supported by this sensor model.
+ */
 bool UsgsAstroFrameSensorModel::getGeometricCorrectionSwitch(int index) const {
   MESSAGE_LOG(
       spdlog::level::debug,
@@ -1939,6 +2160,19 @@ bool UsgsAstroFrameSensorModel::getGeometricCorrectionSwitch(int index) const {
                    "UsgsAstroLsSensorModel::getGeometricCorrectionSwitch");
 }
 
+/**
+ * @brief Retrieves the cross-covariance matrix between this model and a comparison model.
+ * @description Provides a matrix representing the cross-covariance between the adjustable
+ * parameters of this model and those of another geometric model. Since no correlation is
+ * assumed between models, a matrix of zeroes is returned.
+ * 
+ * @param comparisonModel The model with which to compare.
+ * @param pSet The set of parameters to consider in the covariance computation.
+ * @param otherModels A list of other geometric models in the scene; not used as no cross-model
+ * covariance is supported.
+ * 
+ * @return A vector of doubles representing the flattened cross-covariance matrix, filled with zeroes.
+ */
 std::vector<double> UsgsAstroFrameSensorModel::getCrossCovarianceMatrix(
     const GeometricModel &comparisonModel, csm::param::Set pSet,
     const GeometricModelList &otherModels) const {
@@ -1954,11 +2188,25 @@ std::vector<double> UsgsAstroFrameSensorModel::getCrossCovarianceMatrix(
   return std::vector<double>(num_rows * num_cols, 0.0);
 }
 
+/**
+ * @brief Retrieves the ellipsoid associated with the sensor model.
+ * @description Provides the ellipsoid used by the sensor model, defined by its major
+ * and minor radii.
+ * 
+ * @return A csm::Ellipsoid object representing the ellipsoid used by the sensor model.
+ */
 csm::Ellipsoid UsgsAstroFrameSensorModel::getEllipsoid() const {
   MESSAGE_LOG(spdlog::level::debug, "Accessing ellipsoid radii {} {}", m_majorAxis, m_minorAxis);
   return csm::Ellipsoid(m_majorAxis, m_minorAxis);
 }
 
+/**
+ * @brief Sets the ellipsoid to be used by the sensor model.
+ * @description Updates the ellipsoid used by the sensor model to a new one specified by
+ * the given csm::Ellipsoid object.
+ * 
+ * @param ellipsoid The new ellipsoid to be used by the sensor model.
+ */
 void UsgsAstroFrameSensorModel::setEllipsoid(const csm::Ellipsoid &ellipsoid) {
   MESSAGE_LOG(spdlog::level::debug, "Setting ellipsoid radii {} {}", ellipsoid.getSemiMajorRadius(),
               ellipsoid.getSemiMinorRadius());
@@ -1966,6 +2214,14 @@ void UsgsAstroFrameSensorModel::setEllipsoid(const csm::Ellipsoid &ellipsoid) {
   m_minorAxis = ellipsoid.getSemiMinorRadius();
 }
 
+/**
+ * @brief Calculates the rotation matrix from the sensor model state or adjusted state.
+ * @description Computes the rotation matrix used to rotate vectors from the sensor
+ * frame to the earth-centered, earth-fixed (ECEF) frame. This method relies on the
+ * quaternion parameters stored in the sensor model's state.
+ * 
+ * @param m A 3x3 matrix to store the resulting rotation matrix.
+ */
 void UsgsAstroFrameSensorModel::calcRotationMatrix(double m[3][3]) const {
   MESSAGE_LOG(spdlog::level::trace, "Calculating rotation matrix");
   // Trigonometric functions for rotation matrix
@@ -1991,6 +2247,15 @@ void UsgsAstroFrameSensorModel::calcRotationMatrix(double m[3][3]) const {
   m[2][2] = w * w - x * x - y * y + z * z;
 }
 
+/**
+ * @brief Calculates the rotation matrix given a set of adjustments.
+ * @description Computes the rotation matrix using quaternion parameters adjusted
+ * by a given set of adjustments.
+ * 
+ * @param m A 3x3 matrix to store the resulting rotation matrix.
+ * @param adjustments A vector of doubles representing the adjustments to the quaternion
+ * parameters of the sensor model.
+ */
 void UsgsAstroFrameSensorModel::calcRotationMatrix(
     double m[3][3], const std::vector<double> &adjustments) const {
   MESSAGE_LOG(spdlog::level::trace, "Calculating rotation matrix with adjustments");
@@ -2011,6 +2276,25 @@ void UsgsAstroFrameSensorModel::calcRotationMatrix(
   m[2][2] = w * w - x * x - y * y + z * z;
 }
 
+/**
+ * @brief Computes the intersection of a line-of-sight vector with an ellipsoid.
+ * @description This method calculates the point at which a line-of-sight vector,
+ * emanating from a given point in space, intersects an ellipsoid model of a planetary body.
+ * The ellipsoid is defined by the sensor model's major and minor axis parameters and can be
+ * expanded by a given height to model atmospheric effects or terrain.
+ * 
+ * @param height The height above the ellipsoid at which to calculate the intersection.
+ * @param xc The X-coordinate of the camera position in ECEF space.
+ * @param yc The Y-coordinate of the camera position in ECEF space.
+ * @param zc The Z-coordinate of the camera position in ECEF space.
+ * @param xl The X component of the line-of-sight vector.
+ * @param yl The Y component of the line-of-sight vector.
+ * @param zl The Z component of the line-of-sight vector.
+ * @param x Reference to a double to store the X-coordinate of the intersection point.
+ * @param y Reference to a double to store the Y-coordinate of the intersection point.
+ * @param z Reference to a double to store the Z-coordinate of the intersection point.
+ * @param warnings Optional pointer to a list to store any warnings generated during computation.
+ */
 void UsgsAstroFrameSensorModel::losEllipsoidIntersect(
     const double height, const double xc, const double yc, const double zc,
     const double xl, const double yl, const double zl, double &x, double &y,
@@ -2068,6 +2352,15 @@ void UsgsAstroFrameSensorModel::losEllipsoidIntersect(
 
 /***** Helper Functions *****/
 
+/**
+ * @brief Retrieves a parameter value, optionally adjusted by a given set of adjustments.
+ * @description Accesses the value of a parameter identified by its index and applies
+ * a given adjustment if provided.
+ * 
+ * @param index The index of the parameter whose value is to be retrieved.
+ * @param adjustments A vector of doubles representing adjustments to the sensor model's parameters.
+ * @return The adjusted value of the parameter.
+ */
 double UsgsAstroFrameSensorModel::getValue(
     int index, const std::vector<double> &adjustments) const {
   MESSAGE_LOG(
@@ -2077,10 +2370,22 @@ double UsgsAstroFrameSensorModel::getValue(
   return m_currentParameterValue[index] + adjustments[index];
 }
 
+/**
+ * @brief Accessor for the sensor model's logger.
+ * @description Provides access to the sensor model's logger for logging messages.
+ * 
+ * @return A shared pointer to the sensor model's spdlog logger.
+ */
 std::shared_ptr<spdlog::logger> UsgsAstroFrameSensorModel::getLogger() {
   return m_logger;
 }
 
+/**
+ * @brief Sets the logger for the sensor model.
+ * @description Assigns a logger to the sensor model for logging messages.
+ * 
+ * @param logName The name of the logger to be used by the sensor model.
+ */
 void UsgsAstroFrameSensorModel::setLogger(std::string logName) {
   m_logger = spdlog::get(logName);
 }
