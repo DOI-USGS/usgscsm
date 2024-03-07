@@ -7,3 +7,15 @@ imager that is capable of capturing grayscale images with a resolution of up to
 
 Processing MRO CTX Images
 -------------------------
+
+MRO HiRISE
+==========
+
+Processing MRO HiRISE Images
+----------------------------
+
+MRO Marci
+=========
+
+Processing MRO Marci Images
+---------------------------
