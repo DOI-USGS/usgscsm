@@ -1,25 +1,25 @@
-MiniRF
-======
-MiniRF is the Lunar Reconnaissance Orbiter's Miniature Radio Frequency instrument.
-This instrument features two wavelength bands, and has a resolution of 30 meters
+Lunar Reconnaissance Orbiter Miniature Radio-Frequency
+======================================================
+Lunar Reconnaissance Orbiter (LRO) Miniature Radio Frequency (MiniRF) instrument
+features two wavelength bands, and has a resolution of 30 meters
 per pixel.
 
 
 Processing MiniRF Images
 ------------------------
 
-LRO Narrow Angle Camera
+Lunar Reconnaissance Orbiter Narrow Angle Camera
 =======================
-LRO Narrow Angle Camera (NAC) is the Lunar Reconnaissance Orbiter's Narrow Angle Camera.  It is a
+Lunar Reconnaissance Orbiter (LRO) Narrow Angle Camera (NAC) is a
 panchromatic linescan imager with a resolution of .5 meters per pixel over a 5km
 swath.
 
 Processing LRO NAC Images
 -------------------------
 
-LRO Wide Angle Camera
+Lunar Reconnaissance Orbiter Wide Angle Camera
 =====================
-LRO Wide Angle Camera (WAC) is the Lunar Reconnaissance Orbiter's Wide Angle Camera.  This is a
+Lunar Reconnaissance Orbiter (LRO) Wide Angle Camera (WAC) is a
 pushframe camera with a resolution of 100 meters per pixel over a 65km swath.
 This instrument captures data in 7 bands.
 
