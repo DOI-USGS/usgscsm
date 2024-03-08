@@ -9,7 +9,7 @@ Processing MiniRF Images
 ------------------------
 
 Lunar Reconnaissance Orbiter Narrow Angle Camera
-=======================
+================================================
 Lunar Reconnaissance Orbiter (LRO) Narrow Angle Camera (NAC) is a
 panchromatic linescan imager with a resolution of .5 meters per pixel over a 5km
 swath.
@@ -18,7 +18,7 @@ Processing LRO NAC Images
 -------------------------
 
 Lunar Reconnaissance Orbiter Wide Angle Camera
-=====================
+==============================================
 Lunar Reconnaissance Orbiter (LRO) Wide Angle Camera (WAC) is a
 pushframe camera with a resolution of 100 meters per pixel over a 65km swath.
 This instrument captures data in 7 bands.
