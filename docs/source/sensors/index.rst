@@ -8,14 +8,14 @@ Cameras that can be used with USGSCSM
   MarsExpress
   MarsReconnaissanceOrbiter
   Messenger
-  Selene
+  Kaguya
 
 ##############################################
 Available Cameras that have not been evaluated
 ##############################################
 
 If there is a camera on this list that you would like to be verified for use
-please make an issue_ and we will get to the camera in a timely manner
+please make an issue_ and we will get to the evaluation in a timely manner
 
 .. toctree::
   Apollo

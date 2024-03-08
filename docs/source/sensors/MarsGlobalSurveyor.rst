@@ -1,5 +1,5 @@
-MarsGlobalSurveyor MOC WAC
-==========================
+MarsGlobalSurveyor Mars Orbiter Camera Wide Angle Camera
+========================================================
 
-MarsGlobalSurveyor MOC NAC
-==========================
+MarsGlobalSurveyor Mars Orbiter Camera Narrow Angle Camera
+==========================================================

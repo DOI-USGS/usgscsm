@@ -1,2 +1,8 @@
-OsirisRex OCAMS
-===============
+OsirisRex SamCam
+================
+
+OsirisRex PolyCam
+=================
+
+OsirisRex NavCam
+================

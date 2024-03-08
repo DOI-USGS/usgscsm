@@ -1,5 +1,5 @@
-Hayabusa Amica
-==============
+Hayabusa Asteroid Multi-band Imaging Camera
+===========================================
 
-Hayabusa Nirs
-=============
+Hayabusa Near Infrared Spectrometer
+===================================

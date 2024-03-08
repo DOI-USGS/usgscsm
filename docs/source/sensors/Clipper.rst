@@ -1,2 +1,2 @@
-Clipper EIS
-===========
+Clipper Europa Imaging System
+=============================

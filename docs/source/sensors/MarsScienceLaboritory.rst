@@ -1,5 +1,5 @@
-MarsScienceLaboritory MastCam
-=============================
+Mars Science Laboritory Mast Camera
+===================================
 
-MarsScienceLaboritory NavCam
-=============================
+Mars Science Laboritory Navigation Camera
+=========================================

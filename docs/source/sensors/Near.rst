@@ -1,2 +1,2 @@
-Near MSI
-========
+Near MultiSpectral Imager
+=========================

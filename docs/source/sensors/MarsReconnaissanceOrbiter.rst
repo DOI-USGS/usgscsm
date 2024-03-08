@@ -1,6 +1,6 @@
-MRO CTX
-=======
-The Mars Reconnaissance Orbiter Context Camera (CTX) is a high resolution linescan
+Mars Reconnaissance Orbiter Context Camera
+==========================================
+The Mars Reconnaissance Orbiter (MRO) Context Camera (CTX) is a high resolution linescan
 imager that is capable of capturing grayscale images with a resolution of up to
 6 meters per pixel.
 
@@ -8,14 +8,14 @@ imager that is capable of capturing grayscale images with a resolution of up to
 Processing MRO CTX Images
 -------------------------
 
-MRO HiRISE
-==========
+Mars Reconnaissance Orbiter High Resolution Imaging Science Experiment
+======================================================================
 
 Processing MRO HiRISE Images
 ----------------------------
 
-MRO Marci
-=========
+Mars Reconnaissance Orbiter Mars Color Imager
+=============================================
 
 Processing MRO Marci Images
 ---------------------------
