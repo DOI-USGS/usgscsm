@@ -89,7 +89,7 @@ csm::RasterGM *getUsgsCsmModel(
     return model;
   } else {
     csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
-    std::string aMessage = "Model [" + modelName + "] not supported: ";
+    std::string aMessage = "Model [" + modelName + "] not supported.";
     std::string aFunction = "UsgsAstroPluginSupport::getUsgsCsmModel()";
     throw csm::Error(aErrorType, aMessage, aFunction);
   }
