@@ -329,34 +329,29 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(
   MESSAGE_LOG(spdlog::level::info, "Running constructModelFromISD");
   std::string stringIsd = loadImageSupportData(imageSupportDataOriginal);
 
-  csm::Model *model = getUsgsCsmModel(stringIsd, modelName, warnings);
-
   // Try to get the projected model, if not return the the unprojected model
+  UsgsAstroProjectedSensorModel *projModel = new UsgsAstroProjectedSensorModel();
+
   try {
-    UsgsAstroProjectedSensorModel *projModel = new UsgsAstroProjectedSensorModel();
-    try {
-      MESSAGE_LOG(spdlog::level::debug, "Trying to construct a UsgsAstroProjectedSensorModel");
-      projModel->replaceModelState(
-          projModel->constructStateFromIsd(stringIsd, warnings));
-      MESSAGE_LOG(spdlog::level::debug, "Constructed model: {}", modelName);
-      return projModel;
-    } catch (std::exception &e) {
-      delete projModel;
-      csm::Error::ErrorType aErrorType =
-          csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE;
-      std::string aMessage = "Could not construct model [";
-      aMessage += modelName;
-      aMessage += "] with error [";
-      aMessage += e.what();
-      aMessage += "]";
-      MESSAGE_LOG(spdlog::level::err, aMessage);
-      std::string aFunction = "UsgsAstroPlugin::getUsgsCsmModel()";
-      throw csm::Error(aErrorType, aMessage, aFunction);
-    }
-  } catch(std::exception &e) {
-    MESSAGE_LOG(spdlog::level::info, "Failed to make projected model with error: \n{}", e.what());
-    return model;
+    MESSAGE_LOG(spdlog::level::debug, "Trying to construct a UsgsAstroProjectedSensorModel");
+    projModel->replaceModelState(
+        projModel->constructStateFromIsd(stringIsd, modelName, warnings));
+    MESSAGE_LOG(spdlog::level::debug, "Constructed model: {}", modelName);
+    return projModel;
+  } catch (std::exception &e) {
+    delete projModel;
+    csm::Error::ErrorType aErrorType =
+        csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE;
+    std::string aMessage = "Could not construct model [";
+    aMessage += modelName;
+    aMessage += "] with error [";
+    aMessage += e.what();
+    aMessage += "]";
+    MESSAGE_LOG(spdlog::level::err, aMessage);
   }
+
+  csm::Model *model = getUsgsCsmModel(stringIsd, modelName, warnings);
+  return model;
 }
 
 csm::Model *UsgsAstroPlugin::constructModelFromState(
