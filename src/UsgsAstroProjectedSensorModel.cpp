@@ -805,7 +805,6 @@ std::string UsgsAstroProjectedSensorModel::constructStateFromIsd(
     csm::WarningList *warnings)
 {
   json state = json::parse(imageSupportData);
-  // std::string modelName = ale::getSensorModelName(state);
 
   m_camera = getUsgsCsmModel(imageSupportData, modelName, warnings);
   json projState = stateAsJson(m_camera->getModelState());
