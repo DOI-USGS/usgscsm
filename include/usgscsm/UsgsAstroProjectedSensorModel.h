@@ -38,6 +38,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 
 #include "spdlog/spdlog.h"
 
+#include <proj.h>
+
 #include "UsgsAstroLsSensorModel.h"
 
 class UsgsAstroProjectedSensorModel : public csm::RasterGM,
@@ -66,12 +68,16 @@ public:
     // in the input state string.
     static std::string getModelNameFromModelState(const std::string &model_state);
 
-    std::string constructStateFromIsd(const std::string imageSupportData,
+    std::string constructStateFromIsd(const std::string imageSupportData, 
+                                      const std::string modelName,
                                       csm::WarningList *list);
 
     // State data elements;
     double m_majorAxis;
     double m_minorAxis;
+    PJ *m_isdProj = NULL;
+    PJ *m_ecefProj = NULL;
+    PJ *m_isdProj2ecefProj = NULL;
     std::vector<double> m_geoTransform;
     std::string m_projString;
 
