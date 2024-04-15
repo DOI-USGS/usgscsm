@@ -253,32 +253,6 @@ UsgsAstroProjectedSensorModel::~UsgsAstroProjectedSensorModel() {
 csm::ImageCoord UsgsAstroProjectedSensorModel::groundToImage(
     const csm::EcefCoord &ground_pt, double desired_precision,
     double *achieved_precision, csm::WarningList *warnings) const {
-  
-  // PJ_CONTEXT *C = proj_context_create();
-
-  // /* Create a projection. */
-  // PJ *isdProj = proj_create(C, (m_projString + " +type=crs").c_str());
-  // if (0 == isdProj) {
-  //   MESSAGE_LOG(
-  //       spdlog::level::debug,
-  //       "Failed to create isd transformation object");
-  //   return csm::ImageCoord(0, 0);
-  // }
-
-  // /* Create the geocentric projection for our target */
-  // std::string radius_a = "+a=" + std::to_string(m_majorAxis);
-  // std::string radius_b = "+b=" + std::to_string(m_minorAxis);
-  // std::string projString = "+proj=geocent " + radius_a + " " + radius_b + " +type=crs";
-  // PJ *ecefProj = proj_create(C, projString.c_str());
-  // if (0 == ecefProj) {
-  //   MESSAGE_LOG(
-  //       spdlog::level::debug,
-  //       "Failed to create geocent transformation object");
-  //   return csm::ImageCoord(0, 0);
-  // }
-
-  // // Compute the transformation from our ISIS projection to ecef
-  // PJ *isdProj2ecefProj = proj_create_crs_to_crs_from_pj(C, isdProj, ecefProj, 0, 0);
   PJ_COORD c_in;
   c_in.xyz.x = ground_pt.x;
   c_in.xyz.y = ground_pt.y;
@@ -337,31 +311,6 @@ csm::EcefCoord UsgsAstroProjectedSensorModel::imageToGround(
   MESSAGE_LOG(
       spdlog::level::trace,
       "METERS Y: {0:.15f}", meterSamp);
-  // PJ_CONTEXT *C = proj_context_create();
-
-  // /* Create a projection. */
-  // PJ *isdProj = proj_create(C, (m_projString + " +type=crs").c_str());
-  // if (0 == isdProj) {
-  //   MESSAGE_LOG(
-  //       spdlog::level::debug,
-  //       "Failed to create isd transformation object");
-  //   return csm::EcefCoord(x, y, z);
-  // }
-
-  // /* Create the geocentric projection for our target */
-  // std::string radius_a = "+a=" + std::to_string(m_majorAxis);
-  // std::string radius_b = "+b=" + std::to_string(m_minorAxis);
-  // std::string projString = "+proj=geocent " + radius_a + " " + radius_b + " +type=crs";
-  // PJ *ecefProj = proj_create(C, projString.c_str());
-  // if (0 == ecefProj) {
-  //   MESSAGE_LOG(
-  //       spdlog::level::debug,
-  //       "Failed to create geocent transformation object");
-  //   return csm::EcefCoord(x, y, z);
-  // }
-
-  // // Compute the transformation from our ISIS projection to ecef
-  // PJ *isdProj2ecefProj = proj_create_crs_to_crs_from_pj(C, isdProj, ecefProj, 0, 0);
   PJ_COORD c_in;
   c_in.xy.x = meterSamp;
   c_in.xy.y = meterLine;
