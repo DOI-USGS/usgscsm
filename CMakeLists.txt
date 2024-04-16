@@ -61,7 +61,7 @@ if(USGSCSM_EXTERNAL_DEPS)
   find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
   # ALE
-  find_package(ale REQUIRED)
+  find_package(ale REQUIRED CONFIG)
   set(ALE_TARGET ale::ale)
 
   # Proj
@@ -699,10 +699,12 @@ target_include_directories(usgscsm
 )
 
 target_link_libraries(usgscsm
+                      PUBLIC
+                      nlohmann_json::nlohmann_json
                       ${CSM_LIBRARY}
                       ${ALE_TARGET}
-                      ${PROJ_TARGET}
-                      nlohmann_json::nlohmann_json)
+                      PRIVATE
+                      ${PROJ_TARGET})
 
 add_executable(usgscsm_cam_test bin/usgscsm_cam_test.cc)
 target_link_libraries(usgscsm_cam_test
@@ -724,6 +726,7 @@ if(USGSCSM_BUILD_TESTS)
   find_package (Threads)
 
   target_link_libraries(usgscsm
+                        PUBLIC
                         gtest ${CMAKE_THREAD_LIBS_INIT})
   include(CTest)
   enable_testing()

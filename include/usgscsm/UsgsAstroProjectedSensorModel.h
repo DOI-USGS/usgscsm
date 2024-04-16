@@ -828,7 +828,7 @@ public:
     //<
 
  protected:
-  csm::RasterGM *m_camera;
+  csm::RasterGM *m_camera = NULL;
 };
 
 #endif  // INCLUDE_USGSCSM_USGSASTROPROJECTEDSENSORMODEL_H_

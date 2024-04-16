@@ -18,7 +18,7 @@ if(WIN32)
   option(gtest_disable_pthreads "Disable uses of pthreads in gtest." ON)
   target_link_libraries(runCSMCameraModelTests usgscsm ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES})
 else()
-    target_link_libraries(runCSMCameraModelTests usgscsm ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} pthread)
+  target_link_libraries(runCSMCameraModelTests usgscsm ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} pthread)
 endif()
 
 # Test the test_usgscsm_cam_test program. These tests will be generated
