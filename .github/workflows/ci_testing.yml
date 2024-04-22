@@ -74,7 +74,7 @@ jobs:
           cmake --build . --target ALL_BUILD --config Release
       - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392
         with:
-          name: usgscsm
+          name: usgscsm_py${{ matrix.python-version }}
           path: |
             D:\a\usgscsm\usgscsm\build\Release\usgscsm.dll
             D:\a\usgscsm\usgscsm\build\ale\Release\ale.dll
