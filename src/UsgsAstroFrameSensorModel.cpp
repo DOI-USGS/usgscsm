@@ -33,7 +33,7 @@ const std::string UsgsAstroFrameSensorModel::m_parameterName[] = {
 };
 
 /**
- * @description Initializes the sensor model with default values and logs the 
+ * @brief Initializes the sensor model with default values and logs the 
  * creation of the model.
  */
 UsgsAstroFrameSensorModel::UsgsAstroFrameSensorModel() {
