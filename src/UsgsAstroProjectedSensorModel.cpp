@@ -216,9 +216,6 @@ void UsgsAstroProjectedSensorModel::reset() {
   m_minorAxis = 3350000.0;
   m_geoTransform = std::vector<double>(6, 0.0);
   m_projString = "";
-  if (m_camera) {
-    delete m_camera;
-  }
   if (m_isdProj) {
     proj_destroy(m_isdProj);
   }
@@ -228,7 +225,6 @@ void UsgsAstroProjectedSensorModel::reset() {
   if (m_isdProj2ecefProj) {
     proj_destroy(m_isdProj2ecefProj);
   }
-  m_camera = NULL;
   m_isdProj = NULL;
   m_ecefProj = NULL;
   m_isdProj2ecefProj = NULL;
