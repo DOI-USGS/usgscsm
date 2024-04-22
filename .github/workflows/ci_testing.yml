@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
         with:
           submodules: recursive
-      - uses: conda-incubator/setup-miniconda@3b0f2504dd76ef23b6d31f291f4913fb60ab5ff3
+      - uses: conda-incubator/setup-miniconda@2defc80cc6f4028b1780c50faf08dd505d698976
         with:
           miniconda-version: "latest"
           activate-environment: usgscsm
@@ -55,7 +55,7 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      - uses: conda-incubator/setup-miniconda@3b0f2504dd76ef23b6d31f291f4913fb60ab5ff3
+      - uses: conda-incubator/setup-miniconda@2defc80cc6f4028b1780c50faf08dd505d698976
         with:
           miniconda-version: "latest"
           activate-environment: usgscsm
@@ -91,7 +91,7 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0
-      - uses: conda-incubator/setup-miniconda@3b0f2504dd76ef23b6d31f291f4913fb60ab5ff3
+      - uses: conda-incubator/setup-miniconda@2defc80cc6f4028b1780c50faf08dd505d698976
         with:
           miniconda-version: "latest"
           activate-environment: usgscsm
