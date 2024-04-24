@@ -350,7 +350,7 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(
     MESSAGE_LOG(spdlog::level::err, aMessage);
   }
 
-  csm::Model *model = getUsgsCsmModel(stringIsd, modelName, warnings);
+  csm::Model *model = getUsgsCsmModelFromIsd(stringIsd, modelName, warnings);
   return model;
 }
 
@@ -361,29 +361,15 @@ csm::Model *UsgsAstroPlugin::constructModelFromState(
   std::string modelName = state["m_modelName"];
   MESSAGE_LOG(spdlog::level::debug, "Using model name: {}", modelName);
 
-  if (modelName == UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME) {
-    MESSAGE_LOG(spdlog::level::debug, "Constructing a UsgsAstroFrameSensorModel");
-    UsgsAstroFrameSensorModel *model = new UsgsAstroFrameSensorModel();
-    model->replaceModelState(modelState);
-    return model;
-  } else if (modelName == UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME) {
-    MESSAGE_LOG(spdlog::level::debug, "Constructing a UsgsAstroLsSensorModel");
-    UsgsAstroLsSensorModel *model = new UsgsAstroLsSensorModel();
-    model->replaceModelState(modelState);
-    return model;
-  } else if (modelName == UsgsAstroProjectedSensorModel::_SENSOR_MODEL_NAME) {
-    MESSAGE_LOG(spdlog::level::debug, "Constructing a UsgsAstroProjectedSensorModel");
-    UsgsAstroProjectedSensorModel *model = new UsgsAstroProjectedSensorModel();
-    model->replaceModelState(modelState);
-    return model;
-  }else if (modelName == UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME) {
-    MESSAGE_LOG(spdlog::level::debug, "Constructing a UsgsAstroSarSensorModel");
-    UsgsAstroSarSensorModel *model = new UsgsAstroSarSensorModel();
-    model->replaceModelState(modelState);
-    return model;
-  } else {
+  try {
+    return getUsgsCsmModelFromState(modelState, modelName, warnings);
+  }
+  catch (std::exception &e) {
     csm::Error::ErrorType aErrorType = csm::Error::ISD_NOT_SUPPORTED;
-    std::string aMessage = "Model" + modelName + " not supported: ";
+    std::string aMessage = "Model " + modelName + " not supported";
+    aMessage += " with error: [";
+    aMessage += e.what();
+    aMessage += "]";
     std::string aFunction = "UsgsAstroPlugin::constructModelFromState()";
     MESSAGE_LOG(spdlog::level::err, aMessage);
     throw csm::Error(aErrorType, aMessage, aFunction);

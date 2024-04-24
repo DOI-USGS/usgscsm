@@ -45,6 +45,7 @@ const std::string UsgsAstroProjectedSensorModel::_SENSOR_MODEL_NAME =
 
 const std::string UsgsAstroProjectedSensorModel::_STATE_KEYWORD[] = {
     "m_modelName",
+    "m_subModelName",
     "m_imageIdentifier",
     "m_sensorName",
     "m_nLines",
@@ -104,6 +105,8 @@ void UsgsAstroProjectedSensorModel::replaceModelState(const std::string& stateSt
   reset();
 
   auto j = stateAsJson(stateString);
+  m_subModelName = j["m_subModelName"];
+  m_camera = getUsgsCsmModelFromState(stateString, m_subModelName, NULL);
   m_majorAxis = j["m_majorAxis"];
   m_minorAxis = j["m_minorAxis"];
   m_geoTransform = j["m_geoTransform"].get<std::vector<double>>();
@@ -139,12 +142,12 @@ void UsgsAstroProjectedSensorModel::replaceModelState(const std::string& stateSt
 
   MESSAGE_LOG(
       spdlog::level::trace,
+      "m_subModelName: {} "
       "m_majorAxis: {} "
       "m_minorAxis: {} "
       "m_geoTransform: {} "
       "m_projString: {} ",
-      j["m_majorAxis"].dump(), j["m_minorAxis"].dump(), j["m_geoTransform"].dump(), j["m_projString"].dump());
-  m_camera->replaceModelState(stateString);
+      j["m_subModelName"].dump(), j["m_majorAxis"].dump(), j["m_minorAxis"].dump(), j["m_geoTransform"].dump(), j["m_projString"].dump());
 }
 
 //***************************************************************************
@@ -181,6 +184,7 @@ std::string UsgsAstroProjectedSensorModel::getModelNameFromModelState(
 //***************************************************************************
 std::string UsgsAstroProjectedSensorModel::getModelState() const {
   auto state = stateAsJson(m_camera->getModelState());
+  state["m_subModelName"] = state["m_modelName"];
   state["m_modelName"] = _SENSOR_MODEL_NAME;
   state["m_majorAxis"] = m_majorAxis;
   state["m_minorAxis"] = m_minorAxis;
@@ -188,10 +192,12 @@ std::string UsgsAstroProjectedSensorModel::getModelState() const {
   state["m_projString"] = m_projString;
   MESSAGE_LOG(
       spdlog::level::trace,
+      "m_subModelName: {} "
       "m_majorAxis: {} "
       "m_minorAxis: {} "
       "m_geoTransform: {}, {}, {}, {}, {}, {} "
       "m_projString: {} ",
+      m_subModelName,
       m_majorAxis,
       m_minorAxis,
       m_geoTransform[0], 
@@ -212,10 +218,14 @@ std::string UsgsAstroProjectedSensorModel::getModelState() const {
 void UsgsAstroProjectedSensorModel::reset() {
   MESSAGE_LOG(spdlog::level::debug, "Running reset()");
 
+  m_subModelName = "";
   m_majorAxis = 3400000.0;
   m_minorAxis = 3350000.0;
   m_geoTransform = std::vector<double>(6, 0.0);
   m_projString = "";
+  if (m_camera) {
+    delete m_camera;
+  }
   if (m_isdProj) {
     proj_destroy(m_isdProj);
   }
@@ -225,6 +235,7 @@ void UsgsAstroProjectedSensorModel::reset() {
   if (m_isdProj2ecefProj) {
     proj_destroy(m_isdProj2ecefProj);
   }
+  m_camera = NULL;
   m_isdProj = NULL;
   m_ecefProj = NULL;
   m_isdProj2ecefProj = NULL;
@@ -816,18 +827,21 @@ std::string UsgsAstroProjectedSensorModel::constructStateFromIsd(
 {
   json state = json::parse(imageSupportData);
 
-  m_camera = getUsgsCsmModel(imageSupportData, modelName, warnings);
+  m_camera = getUsgsCsmModelFromIsd(imageSupportData, modelName, warnings);
   json projState = stateAsJson(m_camera->getModelState());
 
   // Force update the modelName
-  projState["m_modelName"] = _SENSOR_MODEL_NAME;
+  projState["m_modelName"] = m_camera->getModelName();
+  projState["m_subModelName"] = projState["m_modelName"];
   projState["m_geoTransform"] = ale::getGeoTransform(state);
   projState["m_projString"] = ale::getProjection(state);
   MESSAGE_LOG(
       spdlog::level::trace,
+      "m_modelName: {} "
+      "m_subModelName: {} "
       "m_geoTransform: {} "
       "m_projString: {} ",
-      projState["m_geoTransform"].dump(), projState["m_projString"].dump());
+      projState["m_modelName"].dump(), projState["m_subModelName"].dump(), projState["m_geoTransform"].dump(), projState["m_projString"].dump());
   // The state data will still be updated when a sensor model is created since
   // some state data is not in the ISD and requires a SM to compute them.
   return projState.dump();

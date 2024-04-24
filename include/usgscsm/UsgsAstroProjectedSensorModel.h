@@ -80,6 +80,7 @@ public:
     PJ *m_isdProj2ecefProj = NULL;
     std::vector<double> m_geoTransform;
     std::string m_projString;
+    std::string m_subModelName;
 
     // Define logging pointer and file content
     std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
