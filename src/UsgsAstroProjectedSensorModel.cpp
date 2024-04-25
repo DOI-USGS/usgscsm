@@ -103,6 +103,12 @@ const std::string UsgsAstroProjectedSensorModel::_STATE_KEYWORD[] = {
 //***************************************************************************
 void UsgsAstroProjectedSensorModel::replaceModelState(const std::string& stateString) {
   reset();
+  MESSAGE_LOG(
+      spdlog::level::warn,
+      "If you are using the projected model, please be aware that the "
+      "sensor only supports projected images against ellipsoids. If "
+      "you have projected using a more detailed shape model this sensor "
+      "will return incorrect ground intersections.");
 
   auto j = stateAsJson(stateString);
   m_subModelName = j["m_subModelName"];
