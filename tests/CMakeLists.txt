@@ -7,6 +7,7 @@ add_executable(runCSMCameraModelTests
                PluginTests.cpp
                FrameCameraTests.cpp
                LineScanCameraTests.cpp
+               ProjectedCameraTests.cpp
                PushFrameCameraTests.cpp
                DistortionTests.cpp
                SarTests.cpp
