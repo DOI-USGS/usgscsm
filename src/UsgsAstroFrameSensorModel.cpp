@@ -172,9 +172,13 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
   // Apply the distortion to the line/sample location and then convert back to
   // line/sample
   double distortedX, distortedY;
+  // Divide by focal length
+  undistortedx /= f; undistortedy /= f;
   applyDistortion(undistortedx, undistortedy, distortedX, distortedY,
                   m_opticalDistCoeffs, m_distortionType);
-
+  // Apply multiplication by focal length
+  distortedX *= f; distortedY *= f;
+  
   MESSAGE_LOG(
       spdlog::level::trace,
       "Found distortedX: {}, and distortedY: {}",
@@ -268,10 +272,17 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(
       m_detectorLineSumming, m_startingDetectorSample, m_startingDetectorLine,
       &m_iTransS[0], &m_iTransL[0], x_camera, y_camera);
 
+  // divide x_camera and y_camera by focal length
+  x_camera /= m_focalLength; y_camera /= m_focalLength;
+  
   // Apply the distortion model (remove distortion)
   double undistortedX, undistortedY;
   removeDistortion(x_camera, y_camera, undistortedX, undistortedY,
                    m_opticalDistCoeffs, m_distortionType);
+  
+  // Multiply by focal length
+  undistortedX *= m_focalLength; undistortedY *= m_focalLength;
+  
   MESSAGE_LOG(
       spdlog::level::trace,
       "Found undistortedX: {}, and undistortedY: {}",
@@ -394,9 +405,13 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(
       
   // Distort
   double undistortedFocalPlaneX, undistortedFocalPlaneY;
+  // divide by focal length
+  focalPlaneX /= m_focalLength; focalPlaneY /= m_focalLength;
   removeDistortion(focalPlaneX, focalPlaneY, undistortedFocalPlaneX,
                    undistortedFocalPlaneY, m_opticalDistCoeffs,
                    m_distortionType);
+  // Multiply by focal length
+  undistortedFocalPlaneX *= m_focalLength; undistortedFocalPlaneY *= m_focalLength;
 
   MESSAGE_LOG(
       spdlog::level::trace,
