@@ -774,7 +774,8 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
   // Invert distortion
   double distortedFocalX, distortedFocalY;
   applyDistortion(detectorView[0], detectorView[1], distortedFocalX,
-                  distortedFocalY, m_opticalDistCoeffs, m_distortionType,
+                  distortedFocalY, m_opticalDistCoeffs, m_focalLength,
+                  m_distortionType,
                   desiredPrecision);
   MESSAGE_LOG(
       spdlog::level::trace,
@@ -1876,7 +1877,7 @@ void UsgsAstroLsSensorModel::losToEcf(
   double undistortedFocalPlaneX, undistortedFocalPlaneY;
   removeDistortion(distortedFocalPlaneX, distortedFocalPlaneY,
                    undistortedFocalPlaneX, undistortedFocalPlaneY,
-                   m_opticalDistCoeffs, m_distortionType);
+                   m_opticalDistCoeffs, m_focalLength, m_distortionType);
   MESSAGE_LOG(
       spdlog::level::trace,
       "losToEcf: undistorted focal plane coordinate {} {}",
@@ -2800,7 +2801,7 @@ double UsgsAstroLsSensorModel::calcDetectorLineErr(double t, csm::ImageCoord con
   // Invert distortion
   double distortedFocalX, distortedFocalY;
   applyDistortion(detectorView[0], detectorView[1], distortedFocalX,
-                  distortedFocalY, m_opticalDistCoeffs, m_distortionType);
+                  distortedFocalY, m_opticalDistCoeffs, m_focalLength, m_distortionType);
 
   // Convert to detector line
   double detectorLine = m_iTransL[0] + m_iTransL[1] * distortedFocalX +
