@@ -77,14 +77,15 @@ TEST(Transverse, distortMe_AllCoefficientsOne) {
 
 TEST(transverse, removeDistortion1) {
   csm::ImageCoord imagePt(7.5, 7.5);
+  double focalLength = 1000.0;
   double ux, uy;
 
   std::vector<double> transverseDistortionCoeffs = {
       0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
       0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
-  removeDistortion(imagePt.samp, imagePt.line, ux, uy,
-                   transverseDistortionCoeffs, DistortionType::TRANSVERSE);
+  removeDistortion(imagePt.samp, imagePt.line, ux, uy, transverseDistortionCoeffs,
+                   focalLength, DistortionType::TRANSVERSE);
 
   EXPECT_NEAR(imagePt.samp, 7.5, 1e-8);
   EXPECT_NEAR(imagePt.line, 7.5, 1e-8);
@@ -94,14 +95,15 @@ TEST(transverse, removeDistortion1) {
 
 TEST(transverse, removeDistortion_AllCoefficientsOne) {
   csm::ImageCoord imagePt(1872.25, 1872.25);
+  double focalLength = 1000.0;
   double ux, uy;
 
   std::vector<double> transverseDistortionCoeffs = {
       1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
       1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 
-  removeDistortion(imagePt.samp, imagePt.line, ux, uy,
-                   transverseDistortionCoeffs, DistortionType::TRANSVERSE);
+  removeDistortion(imagePt.samp, imagePt.line, ux, uy, transverseDistortionCoeffs, 
+                   focalLength, DistortionType::TRANSVERSE);
 
   // The Jacobian is singular, so the setFocalPlane should break out of it's
   // iteration and returns the same distorted coordinates that were passed in.
@@ -111,14 +113,15 @@ TEST(transverse, removeDistortion_AllCoefficientsOne) {
 
 TEST(transverse, removeDistortion_AlternatingOnes) {
   csm::ImageCoord imagePt(963.75, 908.5);
+  double focalLength = 1000.0;
   double ux, uy;
 
   std::vector<double> transverseDistortionCoeffs = {
       1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0,
       0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0};
 
-  removeDistortion(imagePt.samp, imagePt.line, ux, uy,
-                   transverseDistortionCoeffs, DistortionType::TRANSVERSE);
+  removeDistortion(imagePt.samp, imagePt.line, ux, uy, transverseDistortionCoeffs, 
+                   focalLength, DistortionType::TRANSVERSE);
 
   EXPECT_NEAR(ux, 7.5, 1e-8);
   EXPECT_NEAR(uy, 7.5, 1e-8);
@@ -128,18 +131,19 @@ TEST(Radial, testUndistortDistort) {
   
   // Distorted pixel
   csm::ImageCoord imagePt(0.0, 1e-1);
+  double focalLength = 1000.0;
 
   // Undistort
   double ux, uy;
   std::vector<double> coeffs = {0.03, 0.00001, 0.000004};
   double tolerance = 1e-2;
-  removeDistortion(imagePt.samp, imagePt.line, ux, uy, coeffs,
+  removeDistortion(imagePt.samp, imagePt.line, ux, uy, coeffs, focalLength,
                    DistortionType::RADIAL, tolerance);
   
   // Distort back
   double desiredPrecision = 1e-6;
   double dx, dy;
-  applyDistortion(ux, uy, dx, dy, coeffs,
+  applyDistortion(ux, uy, dx, dy, coeffs, focalLength,
                   DistortionType::RADIAL, desiredPrecision, tolerance);
   
   EXPECT_NEAR(dx, imagePt.samp, 1e-8);
@@ -152,10 +156,10 @@ TEST(Radial, testInverseDistortion) {
   csm::ImageCoord imagePt(0.0, 4.0);
 
   double dx, dy;
+  double focalLength = 1000.0;
   double desiredPrecision = 0.01;
   std::vector<double> coeffs = {0, 0, 0};
-
-  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
+  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs, focalLength,
                   DistortionType::RADIAL, desiredPrecision);
 
   EXPECT_NEAR(dx, 4, 1e-8);
@@ -166,10 +170,11 @@ TEST(Radial, testInverseOnesCoeffs) {
   csm::ImageCoord imagePt(0.0, 4.0);
 
   double dx, dy;
+  double focalLength = 1000.0;
   double desiredPrecision = 0.01;
   std::vector<double> coeffs = {1, 1, 1};
 
-  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
+  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs, focalLength,
                   DistortionType::RADIAL, desiredPrecision);
 
   EXPECT_NEAR(dx, 4, 1e-8);
@@ -180,10 +185,11 @@ TEST(DawnFc, testApply) {
   csm::ImageCoord imagePt(10.0, 10.0);
 
   double dx, dy;
+  double focalLength = 1000.0;
   double desiredPrecision = 0.0000001;
   std::vector<double> coeffs = {8.4e-06};
 
-  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
+  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs, focalLength,
                   DistortionType::DAWNFC, desiredPrecision);
 
   ASSERT_DOUBLE_EQ(dx, 10.0168);
@@ -194,11 +200,12 @@ TEST(DawnFc, testRemove) {
   csm::ImageCoord imagePt(10.0168, 10.0168);
 
   double ux, uy;
+  double focalLength = 1000.0;
   double desiredPrecision = 0.0000001;
   // Coeffs obtained from file FC21A0039691_15231053805F1E.IMG
   std::vector<double> coeffs = {8.4e-06};
 
-  removeDistortion(imagePt.samp, imagePt.line, ux, uy, coeffs,
+  removeDistortion(imagePt.samp, imagePt.line, ux, uy, coeffs, focalLength,
                    DistortionType::DAWNFC, desiredPrecision);
 
   EXPECT_NEAR(ux, 10.0, 1e-8);
@@ -209,14 +216,15 @@ TEST(DawnFc, testZeroCoeffs) {
   csm::ImageCoord imagePt(10.0, 10.0);
 
   double ux, uy, dx, dy;
+  double focalLength = 1000.0;
   double desiredPrecision = 0.0000001;
   std::vector<double> coeffs = {0};
 
-  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
+  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs, focalLength,
                   DistortionType::DAWNFC, desiredPrecision);
 
-  removeDistortion(dx, dy, ux, uy, coeffs, DistortionType::DAWNFC,
-                   desiredPrecision);
+  removeDistortion(dx, dy, ux, uy, coeffs, focalLength, 
+                   DistortionType::DAWNFC, desiredPrecision);
 
   ASSERT_DOUBLE_EQ(dx, 10.0);
   ASSERT_DOUBLE_EQ(dy, 10.0);
@@ -228,10 +236,11 @@ TEST(KaguyaLism, testRemoveCoeffs) {
   csm::ImageCoord imagePt(1.0, 1.0);
 
   double ux, uy;
+  double focalLength = 1000.0;
   double desiredPrecision = 0.0000001;
   std::vector<double> distortionCoeffs = {0.5, 1, 2, 3, 4, 0.5, 1, 2, 3, 4};
 
-  removeDistortion(imagePt.samp, imagePt.line, ux, uy, distortionCoeffs,
+  removeDistortion(imagePt.samp, imagePt.line, ux, uy, distortionCoeffs, focalLength,
                    DistortionType::KAGUYALISM, desiredPrecision);
 
   EXPECT_NEAR(ux, 1 + 1 + 2.828427125 + 6 + 11.313708499 + 0.5, 1e-8);
@@ -242,6 +251,7 @@ TEST(KaguyaLism, testCoeffs) {
   csm::ImageCoord imagePt(1.0, 1.0);
 
   double ux, uy, dx, dy;
+  double focalLength = 1000.0;
   double desiredPrecision = 0.0000001;
   // Coeffs obtained from file TC1W2B0_01_05211N095E3380.img
   std::vector<double> coeffs = {-0.0725,     -0.0009649900000000001,
@@ -250,10 +260,10 @@ TEST(KaguyaLism, testCoeffs) {
                                 -0.0013796,  1.3502e-05,
                                 2.7251e-06,  -6.193800000000001e-06};
 
-  removeDistortion(imagePt.samp, imagePt.line, ux, uy, coeffs,
+  removeDistortion(imagePt.samp, imagePt.line, ux, uy, coeffs, focalLength,
                    DistortionType::KAGUYALISM, desiredPrecision);
-  applyDistortion(ux, uy, dx, dy, coeffs, DistortionType::KAGUYALISM,
-                  desiredPrecision);
+  applyDistortion(ux, uy, dx, dy, coeffs, focalLength,
+                  DistortionType::KAGUYALISM, desiredPrecision);
 
   EXPECT_NEAR(ux, 0.9279337415074662, 1e-6);
   EXPECT_NEAR(uy, 1.0200274261995939, 1e-5);
@@ -265,14 +275,15 @@ TEST(KaguyaLism, testZeroCoeffs) {
   csm::ImageCoord imagePt(1.0, 1.0);
 
   double ux, uy, dx, dy;
+  double focalLength = 1000.0;
   double desiredPrecision = 0.0000001;
   std::vector<double> coeffs = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
+  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs, focalLength,
                   DistortionType::KAGUYALISM, desiredPrecision);
 
-  removeDistortion(dx, dy, ux, uy, coeffs, DistortionType::KAGUYALISM,
-                   desiredPrecision);
+  removeDistortion(dx, dy, ux, uy, coeffs, focalLength,
+                   DistortionType::KAGUYALISM, desiredPrecision);
 
   ASSERT_DOUBLE_EQ(dx, 1.0);
   ASSERT_DOUBLE_EQ(dy, 1.0);
@@ -283,15 +294,16 @@ TEST(KaguyaLism, testZeroCoeffs) {
 // Test for LRO LROC NAC
 TEST(LroLrocNac, testLastDetectorSample) {
   double ux, uy, dx, dy;
+  double focalLength = 1000.0;
   double desiredPrecision = 0.0000001;
   // Coeffs obtained from file: lro_lroc_v18.ti
   std::vector<double> coeffs = {1.81E-5};
 
-  removeDistortion(0.0, 5064.0 / 2.0 * 0.007, ux, uy, coeffs,
+  removeDistortion(0.0, 5064.0 / 2.0 * 0.007, ux, uy, coeffs, focalLength,
                    DistortionType::LROLROCNAC, desiredPrecision);
 
-  applyDistortion(ux, uy, dx, dy, coeffs, DistortionType::LROLROCNAC,
-                  desiredPrecision);
+  applyDistortion(ux, uy, dx, dy, coeffs, focalLength, 
+                  DistortionType::LROLROCNAC, desiredPrecision);
 
   EXPECT_NEAR(dx, 0.0, 1e-8);
   EXPECT_NEAR(dy, 17.724, 1e-8);
@@ -301,15 +313,16 @@ TEST(LroLrocNac, testLastDetectorSample) {
 
 TEST(LroLrocNac, testCoeffs) {
   double ux, uy, dx, dy;
+  double focalLength = 1000.0;
   double desiredPrecision = 0.0000001;
   // Coeff obtained from file: lro_lroc_v18.ti
   std::vector<double> coeffs = {1.81E-5};
 
-  applyDistortion(0.0, 0.0, dx, dy, coeffs, DistortionType::LROLROCNAC,
-                  desiredPrecision);
+  applyDistortion(0.0, 0.0, dx, dy, coeffs, focalLength,
+                  DistortionType::LROLROCNAC, desiredPrecision);
 
-  removeDistortion(dx, dy, ux, uy, coeffs, DistortionType::LROLROCNAC,
-                   desiredPrecision);
+  removeDistortion(dx, dy, ux, uy, coeffs, focalLength,
+                   DistortionType::LROLROCNAC, desiredPrecision);
 
   EXPECT_NEAR(dx, 0.0, 1e-8);
   EXPECT_NEAR(dy, 0.0, 1e-8);
@@ -319,14 +332,15 @@ TEST(LroLrocNac, testCoeffs) {
 
 TEST(LroLrocNac, testZeroCoeffs) {
   double ux, uy, dx, dy;
+  double focalLength = 1000.0;
   double desiredPrecision = 0.0000001;
   std::vector<double> coeffs = {0};
 
-  applyDistortion(0.0, 0.0, dx, dy, coeffs, DistortionType::LROLROCNAC,
-                  desiredPrecision);
+  applyDistortion(0.0, 0.0, dx, dy, coeffs, focalLength,
+                  DistortionType::LROLROCNAC, desiredPrecision);
 
-  removeDistortion(dx, dy, ux, uy, coeffs, DistortionType::LROLROCNAC,
-                   desiredPrecision);
+  removeDistortion(dx, dy, ux, uy, coeffs, focalLength, 
+                   DistortionType::LROLROCNAC, desiredPrecision);
 
   ASSERT_DOUBLE_EQ(dx, 0.0);
   ASSERT_DOUBLE_EQ(dy, 0.0);
@@ -343,11 +357,12 @@ TEST_P(CoeffOffsetParameterizedTest, RemoveDistortionCahvorTest)
   csm::ImageCoord imagePt(0.0, 4.0);
 
   double ux, uy;
+  double focalLength = 1000.0;
   std::vector<double> offsets = GetParam();
   std::vector<double> coeffs = {0, 0, 0};
   coeffs.insert(coeffs.end(), offsets.begin(), offsets.end());
 
-  removeDistortion(imagePt.samp, imagePt.line, ux, uy, coeffs,
+  removeDistortion(imagePt.samp, imagePt.line, ux, uy, coeffs, focalLength,
                    DistortionType::CAHVOR);
 
   EXPECT_NEAR(ux, 4, 1e-8);
@@ -361,12 +376,13 @@ TEST_P(CoeffOffsetParameterizedTest, InverseDistortionCahvorTest)
   csm::ImageCoord imagePt(0.0, 4.0);
 
   double dx, dy;
+  double focalLength = 1000.0;
   double desiredPrecision = 0.01;
   std::vector<double> offsets = GetParam();
   std::vector<double> coeffs = {0, 0, 0};
   coeffs.insert(coeffs.end(), offsets.begin(), offsets.end());
 
-  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
+  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs, focalLength,
                   DistortionType::CAHVOR, desiredPrecision);
 
   EXPECT_NEAR(dx, 4, 1e-8);
@@ -378,12 +394,13 @@ TEST_P(CoeffOffsetParameterizedTest, InverseOnesCoeffsCahvorTest)
   csm::ImageCoord imagePt(0.0, 4.0);
 
   double dx, dy;
+  double focalLength = 1000.0;
   double desiredPrecision = 0.01;
   std::vector<double> offsets = GetParam();
   std::vector<double> coeffs = {1, 1, 1};
   coeffs.insert(coeffs.end(), offsets.begin(), offsets.end());
 
-  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs,
+  applyDistortion(imagePt.samp, imagePt.line, dx, dy, coeffs, focalLength,
                   DistortionType::CAHVOR, desiredPrecision);
 
   EXPECT_NEAR(dx, 4, 1e-8);
@@ -400,17 +417,19 @@ TEST_P(RadTanTest, RadTanInversionTest)
   std::vector<double> distCoeffs= {0.000031, -0.000056, 1.3e-5, -1.7e-6, 2.9e-8};
   
   double ux = 5.0, uy = 6.0; 
-  
+  double focalLength = 1000.0;
   // Compute distortion 
   double dx, dy;
-  applyDistortion(ux, uy, dx, dy, distCoeffs, DistortionType::RADTAN, 1e-8, 1e-8);
+  applyDistortion(ux, uy, dx, dy, distCoeffs, focalLength,  
+                  DistortionType::RADTAN, 1e-8, 1e-8);
   
   // Remove distortion (undistort)
   double ux2, uy2;
-  removeDistortion(dx, dy, ux2, uy2, distCoeffs, DistortionType::RADTAN, 1e-8);
+  removeDistortion(dx, dy, ux2, uy2, distCoeffs, focalLength,
+                   DistortionType::RADTAN, 1e-8);
   
-  EXPECT_NEAR(dx, 4.0010785450000004, 1e-8);
-  EXPECT_NEAR(dy, 4.8022116940000013, 1e-8);
+  EXPECT_NEAR(dx, 5.0000006007539586, 1e-8);
+  EXPECT_NEAR(dy, 6.0000016383447505, 1e-8);
   EXPECT_NEAR(ux2, ux, 1e-8);
   EXPECT_NEAR(uy2, uy, 1e-8);
 }
