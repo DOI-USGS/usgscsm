@@ -629,8 +629,10 @@ void UsgsAstroLsSensorModel::updateState() {
       "based on dx {} dy {} dz {}",
       m_gsd, dx, dy, dz)
 
-  // Compute flying height
-  csm::EcefCoord sensorPos = getSensorPosition(0.0);
+  // Compute the flying height. Use the center of the image, as for
+  // m_referencePointXyz and m_gsd.
+  ip = csm::ImageCoord(lineCtr, sampCtr);
+  csm::EcefCoord sensorPos = getSensorPosition(ip);
   dx = sensorPos.x - m_referencePointXyz.x;
   dy = sensorPos.y - m_referencePointXyz.y;
   dz = sensorPos.z - m_referencePointXyz.z;
