@@ -48,22 +48,22 @@ const std::string UsgsAstroPushFrameSensorModel::_SENSOR_MODEL_NAME =
     "USGS_ASTRO_PUSH_FRAME_SENSOR_MODEL";
 const int UsgsAstroPushFrameSensorModel::NUM_PARAMETERS = 16;
 const std::string UsgsAstroPushFrameSensorModel::PARAMETER_NAME[] = {
-    "IT Pos. Bias   ",  // 0
-    "CT Pos. Bias   ",  // 1
-    "Rad Pos. Bias  ",  // 2
-    "IT Vel. Bias   ",  // 3
-    "CT Vel. Bias   ",  // 4
-    "Rad Vel. Bias  ",  // 5
-    "Omega Bias     ",  // 6
-    "Phi Bias       ",  // 7
-    "Kappa Bias     ",  // 8
-    "Omega Rate     ",  // 9
-    "Phi Rate       ",  // 10
-    "Kappa Rate     ",  // 11
-    "Omega Accl     ",  // 12
-    "Phi Accl       ",  // 13
-    "Kappa Accl     ",  // 14
-    "Focal Bias     "   // 15
+    "IT Pos. Bias   ",  // 0 - "In Track Position Bias" - a constant shift in the spacecraft's position parallel to the flight path 
+    "CT Pos. Bias   ",  // 1 - "Cross Track Position Bias" - a constant shift in the spacecraft's position perpendicular to the flight path
+    "Rad Pos. Bias  ",  // 2 - "Radial Position Bias" - a constant shift in the spacecraft's "vertical positioning," i.e. distance from the target
+    "IT Vel. Bias   ",  // 3 - "In Track Velocity Bias" - a time-dependent linear shift in the spacecraft's position parallel to the flight path
+    "CT Vel. Bias   ",  // 4 - "Cross Track Velocity Bias" - a time-dependent linear shift in the spacecraft's position perpendicular to the flight path
+    "Rad Vel. Bias  ",  // 5 - "Radial Velocity Bias" - a time-dependent linear shift in the spacecraft's "vertical positioning," i.e. distance from the target
+    "Omega Bias     ",  // 6 - The initial omega angle (analogous to "roll")
+    "Phi Bias       ",  // 7 - The initial phi angle (analogous to "pitch")
+    "Kappa Bias     ",  // 8 - The initial kappa angle (analogous to "yaw")
+    "Omega Rate     ",  // 9 - An angular rate that allows the omega angle to vary linearly with time
+    "Phi Rate       ",  // 10 - An angular rate that allows the phi angle to vary linearly with time
+    "Kappa Rate     ",  // 11 - An angular rate that allows the kappa angle to vary linearly with time
+    "Omega Accl     ",  // 12 - An angular acceleration that allows the omega angle to vary quadratically with respect to time
+    "Phi Accl       ",  // 13 - An angular acceleration that allows the phi angle to vary quadratically with respect to time
+    "Kappa Accl     ",  // 14 - An angular acceleration that allows the kappa angle to vary quadratically with respect to time
+    "Focal Bias     "   // 15 - Estimated error of the camera's focal length
 };
 
 const std::string UsgsAstroPushFrameSensorModel::_STATE_KEYWORD[] = {
