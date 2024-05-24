@@ -95,12 +95,6 @@ else()
     message(SEND_ERROR "sqlite3 dependency not found!")
   endif()
 
-  # Would build and run with older versions, but with horrible performance
-  # See https://github.com/OSGeo/PROJ/issues/1718
-  if("${SQLITE3_VERSION}" VERSION_LESS "3.11")
-    message(SEND_ERROR "sqlite3 >= 3.11 required!")
-  endif()
-
   include(ProjUtilities)
   include(Ccache)
   ################################################################################
