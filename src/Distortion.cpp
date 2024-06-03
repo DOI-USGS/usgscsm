@@ -84,13 +84,14 @@ void computeTransverseDistortion(double ux, double uy, double &dx, double &dy,
   }
 }
 
-// Compute distorted focal plane coordinates given undistorted coordinates. Use
-// the radial-tangential distortion model with 5 coefficients (k1, k2, k3 for
-// radial distortion, and p1, p2 for tangential distortion). This was tested to
-// give the same results as the OpenCV distortion model, by invoking the
-// function cv::projectPoints() (with zero rotation, zero translation, and
-// identity camera matrix). The parameters are stored in opticalDistCoeffs 
-// in the order: [k1, k2, p1, p2, k3]. 
+// Compute distorted normalized focal plane coordinates given undistorted
+// normalized coordinates. Use the radial-tangential distortion model with 5
+// coefficients (k1, k2, k3 for radial distortion, and p1, p2 for tangential
+// distortion). This was tested to give the same results as the OpenCV
+// distortion model, by invoking the function cv::projectPoints() (with zero
+// rotation, zero translation, and identity camera matrix). The parameters are
+// stored in opticalDistCoeffs in the order: [k1, k2, p1, p2, k3]. 
+// Reference: https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html
 void computeRadTanDistortion(double ux, double uy, double &dx, double &dy,
                              std::vector<double> const& opticalDistCoeffs) {
 
@@ -120,7 +121,7 @@ void computeRadTanDistortion(double ux, double uy, double &dx, double &dy,
      + (p1 * (r2 + 2.0 * y * y) + 2.0 * p2 * x * y);
 }
 
-// Compute the jacobian for radtan distortion
+// Compute the jacobian for radtan distortion at given normalized coordinates
 void radTanDistortionJacobian(double x, double y, double *jacobian,
                               std::vector<double> const& opticalDistCoeffs) {
 
@@ -155,6 +156,7 @@ void radTanDistortionJacobian(double x, double y, double *jacobian,
 
 void removeDistortion(double dx, double dy, double &ux, double &uy,
                       std::vector<double> const& opticalDistCoeffs,
+                      double focalLength,
                       DistortionType distortionType, const double tolerance) {
   ux = dx;
   uy = dy;
@@ -343,8 +345,10 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
     // with the radtan model. See computeRadTanDistortion() for more details.
     case RADTAN:
     {
+      dx /= focalLength; dy /= focalLength; // Find normalized coordinates
       newtonRaphson(dx, dy, ux, uy, opticalDistCoeffs, distortionType, tolerance, 
                     computeRadTanDistortion, radTanDistortionJacobian);
+      ux *= focalLength; uy *= focalLength; // Convert back to pixel coordinates
       
     }
     break;
@@ -354,6 +358,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
 
 void applyDistortion(double ux, double uy, double &dx, double &dy,
                      std::vector<double> const& opticalDistCoeffs,
+                     double focalLength,
                      DistortionType distortionType,
                      const double desiredPrecision, const double tolerance) {
   dx = ux;
@@ -634,7 +639,9 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
     // with the RADTAN model. See computeRadTanDistortion() for more details.
     case RADTAN:
     {
+      ux /= focalLength; uy /= focalLength; // Find normalized coordinates
       computeRadTanDistortion(ux, uy, dx, dy, opticalDistCoeffs);  
+      dx *= focalLength; dy *= focalLength; // Convert back to pixel coordinates
     }  
     break;
     

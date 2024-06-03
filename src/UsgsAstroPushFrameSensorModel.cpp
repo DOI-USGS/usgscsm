@@ -762,8 +762,8 @@ csm::ImageCoord UsgsAstroPushFrameSensorModel::groundToImage(
   // Invert distortion
   double distortedFocalX, distortedFocalY;
   applyDistortion(focalCoord[0], focalCoord[1], distortedFocalX,
-                  distortedFocalY, m_opticalDistCoeffs, m_distortionType,
-                  desiredPrecision);
+                  distortedFocalY, m_opticalDistCoeffs, m_focalLength, 
+                  m_distortionType, desiredPrecision);
 
   // Convert to detector line and sample
   double detectorLine = m_iTransL[0] + m_iTransL[1] * distortedFocalX +
@@ -1793,7 +1793,7 @@ void UsgsAstroPushFrameSensorModel::losToEcf(
   double undistortedFocalPlaneX, undistortedFocalPlaneY;
   removeDistortion(distortedFocalPlaneX, distortedFocalPlaneY,
                    undistortedFocalPlaneX, undistortedFocalPlaneY,
-                   m_opticalDistCoeffs, m_distortionType);
+                   m_opticalDistCoeffs, m_focalLength, m_distortionType);
   MESSAGE_LOG("losToEcf: undistorted focal plane coordinate {} {}",
               undistortedFocalPlaneX, undistortedFocalPlaneY)
 

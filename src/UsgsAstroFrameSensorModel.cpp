@@ -173,8 +173,8 @@ csm::ImageCoord UsgsAstroFrameSensorModel::groundToImage(
   // line/sample
   double distortedX, distortedY;
   applyDistortion(undistortedx, undistortedy, distortedX, distortedY,
-                  m_opticalDistCoeffs, m_distortionType);
-
+                  m_opticalDistCoeffs, m_focalLength, m_distortionType);
+  
   MESSAGE_LOG(
       spdlog::level::trace,
       "Found distortedX: {}, and distortedY: {}",
@@ -271,7 +271,8 @@ csm::EcefCoord UsgsAstroFrameSensorModel::imageToGround(
   // Apply the distortion model (remove distortion)
   double undistortedX, undistortedY;
   removeDistortion(x_camera, y_camera, undistortedX, undistortedY,
-                   m_opticalDistCoeffs, m_distortionType);
+                   m_opticalDistCoeffs, m_focalLength, m_distortionType);
+  
   MESSAGE_LOG(
       spdlog::level::trace,
       "Found undistortedX: {}, and undistortedY: {}",
@@ -396,7 +397,7 @@ csm::EcefLocus UsgsAstroFrameSensorModel::imageToRemoteImagingLocus(
   double undistortedFocalPlaneX, undistortedFocalPlaneY;
   removeDistortion(focalPlaneX, focalPlaneY, undistortedFocalPlaneX,
                    undistortedFocalPlaneY, m_opticalDistCoeffs,
-                   m_distortionType);
+                   m_focalLength, m_distortionType);
 
   MESSAGE_LOG(
       spdlog::level::trace,
