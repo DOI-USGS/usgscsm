@@ -8,7 +8,7 @@ It can perform several operations involving CSM camera models, such as:
 
  - Export the camera as a model state file
 
- - Compute projections from pixels in the camera to the ground and back, and measure the discepancy with the original pixels.
+ - Compute projections from pixels in the camera to the ground and back, and measure the discrepancy with the original pixels.
 
 Example (load a camera model and save the model state)::
 
