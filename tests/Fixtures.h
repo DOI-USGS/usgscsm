@@ -6,6 +6,7 @@
 #include "UsgsAstroPlugin.h"
 #include "UsgsAstroPushFrameSensorModel.h"
 #include "UsgsAstroSarSensorModel.h"
+#include "UsgsAstroProjectedSensorModel.h"
 
 #include <nlohmann/json.hpp>
 
@@ -265,6 +266,33 @@ class ConstVelocityLineScanSensorModel : public ::testing::Test {
     model = std::shared_ptr<csm::Model>(cameraPlugin.constructModelFromISD(
      isd, UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME));
     sensorModel = dynamic_cast<UsgsAstroLsSensorModel *>(model.get());
+
+    ASSERT_NE(sensorModel, nullptr);
+  }
+
+  void TearDown() override {
+    // No deletion is necessary since the resource is managed by the smart pointer in 'model'
+    if (sensorModel)
+      sensorModel = NULL;
+  }
+};
+
+class ConstVelocityProjectedSensorModel : public ::testing::Test {
+ protected:
+  csm::Isd isd;
+  std::shared_ptr<csm::Model> model;
+  UsgsAstroProjectedSensorModel *sensorModel;
+  std::string supFile = "data/output_state.sup";
+
+  void SetUp() override {
+    sensorModel = NULL;
+
+    isd.setFilename("data/constVelocityProj.img");
+    UsgsAstroPlugin cameraPlugin;
+
+    model = std::shared_ptr<csm::Model>(cameraPlugin.constructModelFromISD(
+     isd, UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME));
+    sensorModel = dynamic_cast<UsgsAstroProjectedSensorModel *>(model.get());
 
     ASSERT_NE(sensorModel, nullptr);
   }

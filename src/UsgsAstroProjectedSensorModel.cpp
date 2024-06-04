@@ -45,6 +45,7 @@ const std::string UsgsAstroProjectedSensorModel::_SENSOR_MODEL_NAME =
 
 const std::string UsgsAstroProjectedSensorModel::_STATE_KEYWORD[] = {
     "m_modelName",
+    "m_subModelName",
     "m_imageIdentifier",
     "m_sensorName",
     "m_nLines",
@@ -102,20 +103,57 @@ const std::string UsgsAstroProjectedSensorModel::_STATE_KEYWORD[] = {
 //***************************************************************************
 void UsgsAstroProjectedSensorModel::replaceModelState(const std::string& stateString) {
   reset();
+  MESSAGE_LOG(
+      spdlog::level::warn,
+      "If you are using the projected model, please be aware that the "
+      "sensor only supports projected images against ellipsoids. If "
+      "you have projected using a more detailed shape model this sensor "
+      "will return incorrect ground intersections.");
 
   auto j = stateAsJson(stateString);
+  m_subModelName = j["m_subModelName"];
+  m_camera = getUsgsCsmModelFromState(stateString, m_subModelName, NULL);
   m_majorAxis = j["m_majorAxis"];
   m_minorAxis = j["m_minorAxis"];
   m_geoTransform = j["m_geoTransform"].get<std::vector<double>>();
   m_projString = j["m_projString"];
+  
+  PJ_CONTEXT *C = proj_context_create();
+  
+  /* Create a projection. */
+  m_isdProj = proj_create(C, (m_projString + " +type=crs").c_str());
+  if (0 == m_isdProj) {
+    MESSAGE_LOG(
+        spdlog::level::debug,
+        "Failed to create isd transformation object");
+    return;
+  }
+
+  /* Create the geocentric projection for our target */
+  std::string radius_a = "+a=" + std::to_string(m_majorAxis);
+  std::string radius_b = "+b=" + std::to_string(m_minorAxis);
+  std::string projString = "+proj=geocent " + radius_a + " " + radius_b + " +type=crs";
+  m_ecefProj = proj_create(C, projString.c_str());
+  if (0 == m_ecefProj) {
+    MESSAGE_LOG(
+        spdlog::level::debug,
+        "Failed to create geocent transformation object");
+    return;
+  }
+
+  // Compute the transformation from our ISIS projection to ecef
+  m_isdProj2ecefProj = proj_create_crs_to_crs_from_pj(C, m_isdProj, m_ecefProj, 0, 0);
+
+  proj_context_destroy(C);
+
   MESSAGE_LOG(
       spdlog::level::trace,
+      "m_subModelName: {} "
       "m_majorAxis: {} "
       "m_minorAxis: {} "
       "m_geoTransform: {} "
       "m_projString: {} ",
-      j["m_majorAxis"].dump(), j["m_minorAxis"].dump(), j["m_geoTransform"].dump(), j["m_projString"].dump());
-  m_camera->replaceModelState(stateString);
+      j["m_subModelName"].dump(), j["m_majorAxis"].dump(), j["m_minorAxis"].dump(), j["m_geoTransform"].dump(), j["m_projString"].dump());
 }
 
 //***************************************************************************
@@ -152,6 +190,7 @@ std::string UsgsAstroProjectedSensorModel::getModelNameFromModelState(
 //***************************************************************************
 std::string UsgsAstroProjectedSensorModel::getModelState() const {
   auto state = stateAsJson(m_camera->getModelState());
+  state["m_subModelName"] = state["m_modelName"];
   state["m_modelName"] = _SENSOR_MODEL_NAME;
   state["m_majorAxis"] = m_majorAxis;
   state["m_minorAxis"] = m_minorAxis;
@@ -159,10 +198,12 @@ std::string UsgsAstroProjectedSensorModel::getModelState() const {
   state["m_projString"] = m_projString;
   MESSAGE_LOG(
       spdlog::level::trace,
+      "m_subModelName: {} "
       "m_majorAxis: {} "
       "m_minorAxis: {} "
       "m_geoTransform: {}, {}, {}, {}, {}, {} "
       "m_projString: {} ",
+      m_subModelName,
       m_majorAxis,
       m_minorAxis,
       m_geoTransform[0], 
@@ -183,10 +224,27 @@ std::string UsgsAstroProjectedSensorModel::getModelState() const {
 void UsgsAstroProjectedSensorModel::reset() {
   MESSAGE_LOG(spdlog::level::debug, "Running reset()");
 
+  m_subModelName = "";
   m_majorAxis = 3400000.0;
   m_minorAxis = 3350000.0;
   m_geoTransform = std::vector<double>(6, 0.0);
   m_projString = "";
+  if (m_camera) {
+    delete m_camera;
+  }
+  if (m_isdProj) {
+    proj_destroy(m_isdProj);
+  }
+  if (m_ecefProj) {
+    proj_destroy(m_ecefProj);
+  }
+  if (m_isdProj2ecefProj) {
+    proj_destroy(m_isdProj2ecefProj);
+  }
+  m_camera = NULL;
+  m_isdProj = NULL;
+  m_ecefProj = NULL;
+  m_isdProj2ecefProj = NULL;
 }
 
 //*****************************************************************************
@@ -198,7 +256,18 @@ UsgsAstroProjectedSensorModel::UsgsAstroProjectedSensorModel() {}
 // UsgsAstroProjectedSensorModel Destructor
 //*****************************************************************************
 UsgsAstroProjectedSensorModel::~UsgsAstroProjectedSensorModel() {
-  delete m_camera;
+  if (m_camera) {
+    delete m_camera;
+  }
+  if (m_isdProj) {
+    proj_destroy(m_isdProj);
+  }
+  if (m_ecefProj) {
+    proj_destroy(m_ecefProj);
+  }
+  if (m_isdProj2ecefProj) {
+    proj_destroy(m_isdProj2ecefProj);
+  }
 }
 
 //---------------------------------------------------------------------------
@@ -211,32 +280,6 @@ UsgsAstroProjectedSensorModel::~UsgsAstroProjectedSensorModel() {
 csm::ImageCoord UsgsAstroProjectedSensorModel::groundToImage(
     const csm::EcefCoord &ground_pt, double desired_precision,
     double *achieved_precision, csm::WarningList *warnings) const {
-  
-  PJ_CONTEXT *C = proj_context_create();
-
-  /* Create a projection. */
-  PJ *isdProj = proj_create(C, (m_projString + " +type=crs").c_str());
-  if (0 == isdProj) {
-    MESSAGE_LOG(
-        spdlog::level::debug,
-        "Failed to create isd transformation object");
-    return csm::ImageCoord(0, 0);
-  }
-
-  /* Create the geocentric projection for our target */
-  std::string radius_a = "+a=" + std::to_string(m_majorAxis);
-  std::string radius_b = "+b=" + std::to_string(m_minorAxis);
-  std::string projString = "+proj=geocent " + radius_a + " " + radius_b + " +type=crs";
-  PJ *ecefProj = proj_create(C, projString.c_str());
-  if (0 == ecefProj) {
-    MESSAGE_LOG(
-        spdlog::level::debug,
-        "Failed to create geocent transformation object");
-    return csm::ImageCoord(0, 0);
-  }
-
-  // Compute the transformation from our ISIS projection to ecef
-  PJ *isdProj2ecefProj = proj_create_crs_to_crs_from_pj(C, isdProj, ecefProj, 0, 0);
   PJ_COORD c_in;
   c_in.xyz.x = ground_pt.x;
   c_in.xyz.y = ground_pt.y;
@@ -245,7 +288,7 @@ csm::ImageCoord UsgsAstroProjectedSensorModel::groundToImage(
       spdlog::level::info,
       "Ground point {}, {}, {}",
       c_in.xyz.x, c_in.xyz.y, c_in.xyz.z);
-  PJ_COORD c_out = proj_trans(isdProj2ecefProj, PJ_INV, c_in);
+  PJ_COORD c_out = proj_trans(m_isdProj2ecefProj, PJ_INV, c_in);
   MESSAGE_LOG(
       spdlog::level::info,
       "Meters {}, {}",
@@ -295,35 +338,10 @@ csm::EcefCoord UsgsAstroProjectedSensorModel::imageToGround(
   MESSAGE_LOG(
       spdlog::level::trace,
       "METERS Y: {0:.15f}", meterSamp);
-  PJ_CONTEXT *C = proj_context_create();
-
-  /* Create a projection. */
-  PJ *isdProj = proj_create(C, (m_projString + " +type=crs").c_str());
-  if (0 == isdProj) {
-    MESSAGE_LOG(
-        spdlog::level::debug,
-        "Failed to create isd transformation object");
-    return csm::EcefCoord(x, y, z);
-  }
-
-  /* Create the geocentric projection for our target */
-  std::string radius_a = "+a=" + std::to_string(m_majorAxis);
-  std::string radius_b = "+b=" + std::to_string(m_minorAxis);
-  std::string projString = "+proj=geocent " + radius_a + " " + radius_b + " +type=crs";
-  PJ *ecefProj = proj_create(C, projString.c_str());
-  if (0 == ecefProj) {
-    MESSAGE_LOG(
-        spdlog::level::debug,
-        "Failed to create geocent transformation object");
-    return csm::EcefCoord(x, y, z);
-  }
-
-  // Compute the transformation from our ISIS projection to ecef
-  PJ *isdProj2ecefProj = proj_create_crs_to_crs_from_pj(C, isdProj, ecefProj, 0, 0);
   PJ_COORD c_in;
   c_in.xy.x = meterSamp;
   c_in.xy.y = meterLine;
-  PJ_COORD c_out = proj_trans(isdProj2ecefProj, PJ_FWD, c_in);
+  PJ_COORD c_out = proj_trans(m_isdProj2ecefProj, PJ_FWD, c_in);
   x = c_out.xyz.x, y = c_out.xyz.y, z = c_out.xyz.z;
   MESSAGE_LOG(
       spdlog::level::info,
@@ -810,22 +828,26 @@ void UsgsAstroProjectedSensorModel::setEllipsoid(const csm::Ellipsoid& ellipsoid
 // UsgsAstroLineScannerSensorModel::constructStateFromIsd
 //***************************************************************************
 std::string UsgsAstroProjectedSensorModel::constructStateFromIsd(
-    const std::string imageSupportData, csm::WarningList* warnings) {
+    const std::string imageSupportData, const std::string modelName, 
+    csm::WarningList *warnings)
+{
   json state = json::parse(imageSupportData);
-  std::string modelName = ale::getSensorModelName(state);
 
-  m_camera = getUsgsCsmModel(imageSupportData, modelName, warnings);
+  m_camera = getUsgsCsmModelFromIsd(imageSupportData, modelName, warnings);
   json projState = stateAsJson(m_camera->getModelState());
 
   // Force update the modelName
-  projState["m_modelName"] = _SENSOR_MODEL_NAME;
+  projState["m_modelName"] = m_camera->getModelName();
+  projState["m_subModelName"] = projState["m_modelName"];
   projState["m_geoTransform"] = ale::getGeoTransform(state);
   projState["m_projString"] = ale::getProjection(state);
   MESSAGE_LOG(
       spdlog::level::trace,
+      "m_modelName: {} "
+      "m_subModelName: {} "
       "m_geoTransform: {} "
       "m_projString: {} ",
-      projState["m_geoTransform"].dump(), projState["m_projString"].dump());
+      projState["m_modelName"].dump(), projState["m_subModelName"].dump(), projState["m_geoTransform"].dump(), projState["m_projString"].dump());
   // The state data will still be updated when a sensor model is created since
   // some state data is not in the ISD and requires a SM to compute them.
   return projState.dump();

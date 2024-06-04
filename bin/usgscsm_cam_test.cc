@@ -28,8 +28,9 @@ struct Options {
   std::string modify_sup_file;    // the .sup file needing a modified model state
   std::string output_model_state; // the output model state in .json format
   int sample_rate;
+  bool verbose;
   double subpixel_offset, height_above_datum, desired_precision;
-  Options(): sample_rate(0), subpixel_offset(0.0), height_above_datum(0.0), desired_precision(0.0)
+  Options(): sample_rate(0), subpixel_offset(0.0), height_above_datum(0.0), desired_precision(0.0), verbose(false)
   {}
 };
 
@@ -45,9 +46,14 @@ bool parseOptions(int argc, char **argv, Options & opt) {
 
   std::vector<std::string> params;
   for (int it = 1; it < argc; it++) {
-    if (std::string(argv[it]) == std::string("--help")) {
+    std::string arg = std::string(argv[it]);
+    if (arg == std::string("--help")) {
       printUsage(argv[0]);
       return false;
+    }
+    if (arg == std::string("--verbose") || arg == std::string("-v")) {
+      opt.verbose = true;
+      continue;
     }
     params.push_back(argv[it]);
   }
@@ -132,7 +138,8 @@ double pixDiffNorm(csm::ImageCoord const& a, csm::ImageCoord const& b) {
 
 // Load a CSM camera model from an ISD or state file. Return true on success.
 bool loadCsmCameraModel(std::string const& model_file,
-                       std::shared_ptr<csm::RasterGM> & model) {
+                       std::shared_ptr<csm::RasterGM> & model,
+                       Options & opt) {
 
   // This is needed to trigger loading libusgscsm.so. Otherwise 0
   // plugins are detected.
@@ -163,10 +170,11 @@ bool loadCsmCameraModel(std::string const& model_file,
 
     // First try to construct the model from isd, and if that fails, from the state
     csm::Model *csm = NULL;
-    csm::WarningList* warnings = NULL;
+    csm::WarningList *warnings = new csm::WarningList;
     for (size_t i = 0; i < num_models; i++) {
 
       std::string model_name = (*iter)->getModelName(i);
+
       if (csm_plugin->canModelBeConstructedFromISD(isd, model_name, warnings)) {
         // Try to construct the model from the isd
         csm = csm_plugin->constructModelFromISD(isd, model_name, warnings);
@@ -180,9 +188,19 @@ bool loadCsmCameraModel(std::string const& model_file,
                   << model_file << ".\n";
         success = true;
       } else {
-        // No luck so far
+        if (opt.verbose) {
+          std::string startStr = "<<<<<< Warnings from " + model_name + " <<<<<<";
+          std::cout << startStr << std::endl;
+          for (auto warning : *warnings)
+            std::cout << warning.getMessage() << std::endl;
+          std::string endStr(startStr.size(), '<');
+          std::cout << endStr << std::endl;
+        }
+        warnings->clear();
         continue;
       }
+
+      delete warnings;
 
       csm::RasterGM *modelPtr = dynamic_cast<csm::RasterGM*>(csm);
       if (modelPtr == NULL) {
@@ -192,6 +210,7 @@ bool loadCsmCameraModel(std::string const& model_file,
       } else {
         // Assign to a smart pointer which will handle deallocation
         model = std::shared_ptr<csm::RasterGM>(modelPtr);
+        std::cout << "Final model: " << model->getModelName() << std::endl;
         break;
       }
     }
@@ -240,7 +259,7 @@ int main(int argc, char **argv) {
   // specific model types inherit.
   std::shared_ptr<csm::RasterGM> model;
 
-  if (!loadCsmCameraModel(opt.model, model))
+  if (!loadCsmCameraModel(opt.model, model, opt))
     return 1;
 
   if (opt.output_model_state != "") {
