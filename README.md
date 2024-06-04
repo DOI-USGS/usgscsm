@@ -122,7 +122,7 @@ USGSCSM uses a standard cmake build system. To compile the library and
 tests use the following commands:
 
 1. `mkdir build && cd build`
-2. `cmake .. && cmake --build .`
+2. `cmake -DUSGSCSM_EXTERNAL_DEPS=OFF -DUSGSCSM_BUILD_DOCS=OFF .. && cmake --build .`
 
 If you are using external dependencies via Conda or system level installations
 add the `-DUSGSCSM_EXTERNAL_DEPS=ON` flag to the cmake command.
