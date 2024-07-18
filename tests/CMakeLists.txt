@@ -13,7 +13,9 @@ add_executable(runCSMCameraModelTests
                SarTests.cpp
                ISDParsingTests.cpp
                UtilitiesTests.cpp
-               EigenUtilitiesTests.cpp)
+               EigenUtilitiesTests.cpp
+               ../ale/src/Rotation.cpp
+               ../ale/src/InterpUtils.cpp)
 if(WIN32)
   option(CMAKE_USE_WIN32_THREADS_INIT "using WIN32 threads" ON)
   option(gtest_disable_pthreads "Disable uses of pthreads in gtest." ON)
