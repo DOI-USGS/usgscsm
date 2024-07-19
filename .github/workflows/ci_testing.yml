@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+env:
+  PROJ_IGNORE_CELESTIAL_BODY: Yes
+
 jobs:
   Build-and-Test-LinuxOsX:
     runs-on: ${{ matrix.os }}
