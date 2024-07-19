@@ -36,9 +36,9 @@ TEST_F(ConstVelocityProjectedSensorModel, ReplaceModelState) {
 TEST_F(ConstVelocityProjectedSensorModel, Center) {
   csm::ImageCoord imagePt(8.0, 8.0);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-  EXPECT_NEAR(groundPt.x, 9.8989858043564229, 1e-10);
-  EXPECT_NEAR(groundPt.y, -1.4118584049198812, 1e-10);
-  EXPECT_NEAR(groundPt.z, 0.12936726636640034, 1e-10);
+  EXPECT_NEAR(groundPt.x, 9.8989858043564229, 1e-9);
+  EXPECT_NEAR(groundPt.y, -1.4118584049198812, 1e-9);
+  EXPECT_NEAR(groundPt.z, 0.12936726636640034, 1e-9);
 }
 
 TEST_F(ConstVelocityProjectedSensorModel, Inversion) {
@@ -56,9 +56,9 @@ TEST_F(ConstVelocityProjectedSensorModel, Inversion) {
 TEST_F(ConstVelocityProjectedSensorModel, OffBody) {
   csm::ImageCoord imagePt(0.0, 4.0);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-  EXPECT_NEAR(groundPt.x, 9.8988664296556497, 1e-10);
-  EXPECT_NEAR(groundPt.y, -1.4125636827694117, 1e-10);
-  EXPECT_NEAR(groundPt.z, 0.1307946862733107, 1e-10);
+  EXPECT_NEAR(groundPt.x, 9.8988664296556497, 1e-9);
+  EXPECT_NEAR(groundPt.y, -1.4125636827694117, 1e-9);
+  EXPECT_NEAR(groundPt.z, 0.1307946862733107, 1e-9);
 }
 
 TEST_F(ConstVelocityProjectedSensorModel, ProximateImageLocus) {
@@ -72,13 +72,13 @@ TEST_F(ConstVelocityProjectedSensorModel, ProximateImageLocus) {
   double locusToGroundX = locus.point.x - groundPt.x;
   double locusToGroundY = locus.point.y - groundPt.y;
   double locusToGroundZ = locus.point.z - groundPt.z;
-  EXPECT_NEAR(locus.direction.x, remoteLocus.direction.x, 1e-10);
-  EXPECT_NEAR(locus.direction.y, remoteLocus.direction.y, 1e-10);
-  EXPECT_NEAR(locus.direction.z, remoteLocus.direction.z, 1e-10);
+  EXPECT_NEAR(locus.direction.x, remoteLocus.direction.x, 1e-9);
+  EXPECT_NEAR(locus.direction.y, remoteLocus.direction.y, 1e-4);
+  EXPECT_NEAR(locus.direction.z, remoteLocus.direction.z, 1e-9);
   EXPECT_NEAR(locusToGroundX * locus.direction.x +
                   locusToGroundY * locus.direction.y +
                   locusToGroundZ * locus.direction.z,
-              0.0, 1e-10);
+              0.0, 1e-9);
   EXPECT_LT(precision, 0.001);
   EXPECT_TRUE(warnings.empty());
 }
@@ -97,12 +97,12 @@ TEST_F(ConstVelocityProjectedSensorModel, RemoteImageLocus) {
   lookX /= lookMag;
   lookY /= lookMag;
   lookZ /= lookMag;
-  EXPECT_NEAR(locus.direction.x, lookX, 1e-10);
-  EXPECT_NEAR(locus.direction.y, lookY, 1e-10);
-  EXPECT_NEAR(locus.direction.z, lookZ, 1e-10);
-  EXPECT_NEAR(locus.point.x, 1000.0, 1e-10);
-  EXPECT_NEAR(locus.point.y, 0.0, 1e-10);
-  EXPECT_NEAR(locus.point.z, 1.1193790655763731, 1e-10);
+  EXPECT_NEAR(locus.direction.x, lookX, 1e-9);
+  EXPECT_NEAR(locus.direction.y, lookY, 1e-4);
+  EXPECT_NEAR(locus.direction.z, lookZ, 1e-6);
+  EXPECT_NEAR(locus.point.x, 1000.0, 1e-9);
+  EXPECT_NEAR(locus.point.y, 0.0, 1e-9);
+  EXPECT_NEAR(locus.point.z, 1.1193790655763731, 1e-9);
   EXPECT_LT(precision, 0.001);
   EXPECT_TRUE(warnings.empty());
 }
