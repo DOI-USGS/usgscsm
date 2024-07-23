@@ -84,11 +84,10 @@ TEST_F(ConstVelocityProjectedSensorModel, ProximateImageLocus) {
 }
 
 TEST_F(ConstVelocityProjectedSensorModel, RemoteImageLocus) {
-  csm::ImageCoord imagePt(8.5, 8.0);
+  csm::ImageCoord imagePt(8.0, 8.0);
   double precision;
-  csm::WarningList warnings;
-  csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(
-      imagePt, 0.001, &precision, &warnings);
+  csm::WarningList *warnings = new csm::WarningList();
+  csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(imagePt, 0.001, &precision, warnings);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
   double lookX = groundPt.x - locus.point.x;
   double lookY = groundPt.y - locus.point.y;
@@ -102,7 +101,8 @@ TEST_F(ConstVelocityProjectedSensorModel, RemoteImageLocus) {
   EXPECT_NEAR(locus.direction.z, lookZ, 1e-6);
   EXPECT_NEAR(locus.point.x, 1000.0, 1e-9);
   EXPECT_NEAR(locus.point.y, 0.0, 1e-9);
-  EXPECT_NEAR(locus.point.z, 1.1193790655763731, 1e-9);
+  EXPECT_NEAR(locus.point.z, 1.1194682805620435, 1e-9);
   EXPECT_LT(precision, 0.001);
-  EXPECT_TRUE(warnings.empty());
+  EXPECT_TRUE(warnings->empty());
+  free(warnings);
 }
