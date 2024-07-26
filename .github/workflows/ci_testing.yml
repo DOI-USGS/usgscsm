@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+env:
+  PROJ_IGNORE_CELESTIAL_BODY: Yes
+
 jobs:
   Build-and-Test-LinuxOsX:
     runs-on: ${{ matrix.os }}
@@ -38,6 +41,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
+          export PROJ_DATA=$PWD/PROJ/data
           cmake -DCMAKE_BUILD_TYPE=RELEASE -DUSGSCSM_EXTERNAL_DEPS=OFF -DUSGSCSM_BUILD_DOCS=OFF ..
           cmake --build .
       - name: Test Package

@@ -7,7 +7,7 @@ message(STATUS "CMake Module Path: " ${CMAKE_MODULE_PATH})
 
 include(GNUInstallDirs)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 # Set a default build type if none was specified
 set(default_build_type "Release")
@@ -16,6 +16,8 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE
       STRING "Choose the type of build." FORCE)
 endif()
+
+set(VISIBILITY_INLINES_HIDDEN 1)
 
 # Use external or embedded dependencies
 option(USGSCSM_EXTERNAL_DEPS "If the library should be built with external or embedded dependencies" OFF)
@@ -61,7 +63,7 @@ if(USGSCSM_EXTERNAL_DEPS)
   find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
   # ALE
-  find_package(ale REQUIRED)
+  find_package(ale REQUIRED CONFIG)
   set(ALE_TARGET ale::ale)
 
   # Proj
@@ -160,7 +162,7 @@ else()
 
   # default config is shared
   option(BUILD_SHARED_LIBS
-    "Build PROJ library shared." ON)
+    "Build PROJ library shared." OFF)
 
   find_package(Threads QUIET)
   if(Threads_FOUND AND CMAKE_USE_PTHREADS_INIT)
@@ -516,7 +518,6 @@ else()
     ${ALL_LIBPROJ_HEADERS}
     ${PROJ_RESOURCES}
   )
-  add_library(PROJ::proj ALIAS proj)
 
   if(MSVC OR MINGW)
       target_compile_definitions(proj PRIVATE -DNOMINMAX)
@@ -570,7 +571,9 @@ else()
 
   set_target_properties(proj
     PROPERTIES
-    LINKER_LANGUAGE CXX)
+    LINKER_LANGUAGE CXX
+    CXX_VISIBILITY_PRESET hidden
+  )
 
   ##############################################
   # Link properties
@@ -628,6 +631,7 @@ else()
   # ALE
   # Use Eigen included with ALE
   add_library (eigen INTERFACE)
+  set_target_properties(eigen PROPERTIES CXX_VISIBILITY_PRESET hidden)
   add_library (Eigen3::Eigen ALIAS eigen)
   target_include_directories (eigen INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/ale/eigen)
@@ -643,6 +647,7 @@ else()
                        ${CMAKE_CURRENT_SOURCE_DIR}/ale/src/Vectors.cpp)
 
   add_library(ale OBJECT ${ALE_SOURCE_FILES})
+  set_target_properties(ale PROPERTIES CXX_VISIBILITY_PRESET hidden)
   set(ALE_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/ale/include/ale/")
 
   target_include_directories(ale
@@ -693,10 +698,12 @@ target_include_directories(usgscsm
 )
 
 target_link_libraries(usgscsm
+                      PUBLIC
+                      nlohmann_json::nlohmann_json
                       ${CSM_LIBRARY}
                       ${ALE_TARGET}
-                      ${PROJ_TARGET}
-                      nlohmann_json::nlohmann_json)
+                      PRIVATE
+                      ${PROJ_TARGET})
 
 add_executable(usgscsm_cam_test bin/usgscsm_cam_test.cc)
 target_link_libraries(usgscsm_cam_test
@@ -718,6 +725,7 @@ if(USGSCSM_BUILD_TESTS)
   find_package (Threads)
 
   target_link_libraries(usgscsm
+                        PUBLIC
                         gtest ${CMAKE_THREAD_LIBS_INIT})
   include(CTest)
   enable_testing()
