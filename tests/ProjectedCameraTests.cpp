@@ -17,9 +17,6 @@ TEST_F(ConstVelocityProjectedSensorModel, ConstructFromState) {
   std::string modelState = sensorModel->getModelState();
   csm::RasterGM * model = getUsgsCsmModelFromState(modelState, UsgsAstroProjectedSensorModel::_SENSOR_MODEL_NAME, NULL);
 
-  // When this is different, the output is very hard to parse
-  // TODO implement JSON diff for gtest
-
   EXPECT_EQ(sensorModel->getModelState(), model->getModelState());
 }
 
