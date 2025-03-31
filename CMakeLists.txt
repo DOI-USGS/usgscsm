@@ -121,7 +121,7 @@ else()
     set(CMAKE_C_FLAGS "${_tmp_CMAKE_C_FLAGS}")
   endif()
 
-  # check needed include file
+  # check needed include file
   check_function_exists(localeconv HAVE_LOCALECONV)
   check_function_exists(strerror HAVE_STRERROR)
   if(NOT WIN32)
@@ -713,6 +713,15 @@ target_link_libraries(usgscsm_cam_test
 install(TARGETS usgscsm LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/csmplugins/)
 install(DIRECTORY ${USGSCSM_INSTALL_INCLUDE_DIRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(TARGETS usgscsm_cam_test RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# Ensure usgscsm_cam_test can find the library in csmplugins
+if(APPLE)
+  set_target_properties(usgscsm_cam_test PROPERTIES
+    INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR}/csmplugins")
+else()
+  set_target_properties(usgscsm_cam_test PROPERTIES
+    INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}/csmplugins")
+endif()
 
 # Optional build tests
 option (USGSCSM_BUILD_TESTS "Build tests" ON)
