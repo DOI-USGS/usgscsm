@@ -9,6 +9,9 @@ include(GNUInstallDirs)
 
 set(CMAKE_CXX_STANDARD 14)
 
+# For dependencies minimum version
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
 # Set a default build type if none was specified
 set(default_build_type "Release")
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
