@@ -107,31 +107,76 @@ UsgsAstroPlugin::UsgsAstroPlugin() {
 
 UsgsAstroPlugin::~UsgsAstroPlugin() {}
 
+/**
+ * @brief Retrieves the name of the plugin.
+ * @description This function returns the name of the plugin, identifying it
+ * within the CSM (Community Sensor Model) framework.
+ * 
+ * @return A string containing the plugin's name.
+ */
 std::string UsgsAstroPlugin::getPluginName() const {
   MESSAGE_LOG(spdlog::level::debug, "Get Plugin Name: {}", _PLUGIN_NAME);
   return _PLUGIN_NAME;
 }
 
+/**
+ * @brief Retrieves the manufacturer's name.
+ * @description This function returns the name of the manufacturer of the
+ * plugin.
+ * 
+ * @return A string containing the name of the manufacturer.
+ */
 std::string UsgsAstroPlugin::getManufacturer() const {
   MESSAGE_LOG(spdlog::level::debug, "Get Manufacturer Name: {}", _MANUFACTURER_NAME);
   return _MANUFACTURER_NAME;
 }
 
+/**
+ * @brief Retrieves the release date of the plugin.
+ * @description This function returns the release date of the plugin, indicating
+ * when this version of the plugin was made available.
+ * 
+ * @return A string containing the release date of the plugin.
+ */
 std::string UsgsAstroPlugin::getReleaseDate() const {
   MESSAGE_LOG(spdlog::level::debug, "Get Release Date: {}", _RELEASE_DATE);
   return _RELEASE_DATE;
 }
 
+/**
+ * @brief Retrieves the version of the CSM API the plugin conforms to.
+ * @description This function returns the version of the Community Sensor Model
+ * (CSM) API that this plugin is designed to work with.
+ * 
+ * @return A csm::Version object representing the CSM API version.
+ */
 csm::Version UsgsAstroPlugin::getCsmVersion() const {
   MESSAGE_LOG(spdlog::level::debug, "Get Current CSM Version");
   return CURRENT_CSM_VERSION;
 }
 
+/**
+ * @brief Retrieves the number of sensor models supported by the plugin.
+ * @description This function returns the total number of distinct sensor models
+ * provided by the plugin.
+ * 
+ * @return The number of sensor models supported by the plugin as a size_t.
+ */
 size_t UsgsAstroPlugin::getNumModels() const {
   MESSAGE_LOG(spdlog::level::debug, "Get Number of Sensor Models: {}", _N_SENSOR_MODELS);
   return _N_SENSOR_MODELS;
 }
 
+/**
+ * @brief Retrieves the name of a specific sensor model supported by the plugin.
+ * @description This function returns the name of a sensor model identified by
+ * its index.
+ * 
+ * @param modelIndex The index of the sensor model, within the range of models
+ * supported by the plugin.
+ * 
+ * @return A string containing the name of the specified sensor model.
+ */
 std::string UsgsAstroPlugin::getModelName(size_t modelIndex) const {
   std::vector<std::string> supportedModelNames = {
       UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME,
@@ -144,17 +189,52 @@ std::string UsgsAstroPlugin::getModelName(size_t modelIndex) const {
   return supportedModelNames[modelIndex];
 }
 
+/**
+ * @brief Retrieves the model family for a specific sensor model.
+ * @description This function returns the family type of the sensor model
+ * identified by the provided model index.
+ * 
+ * @param modelIndex The index of the sensor model within the plugin's supported models.
+ * 
+ * @return A string identifying the model's family. For this plugin, all models
+ * belong to the CSM_RASTER_FAMILY.
+ */
 std::string UsgsAstroPlugin::getModelFamily(size_t modelIndex) const {
   MESSAGE_LOG(spdlog::level::debug, "Get Model Familey: {}", CSM_RASTER_FAMILY);
   return CSM_RASTER_FAMILY;
 }
 
+/**
+ * @brief Retrieves the version of a specific sensor model supported by the plugin.
+ * @description This function returns the version of the sensor model identified
+ * by its name.
+ * 
+ * @param modelName The name of the sensor model for which to retrieve the version.
+ * 
+ * @return A csm::Version object representing the version of the specified sensor model.
+ */
 csm::Version UsgsAstroPlugin::getModelVersion(
     const std::string &modelName) const {
   MESSAGE_LOG(spdlog::level::debug, "Get Model Version");
   return csm::Version(1, 0, 0);
 }
 
+/**
+ * @brief Determines if a sensor model can be constructed from a given state string.
+ * @description This function checks if a sensor model with the specified name
+ * can be accurately constructed from a provided state string.
+ * 
+ * @param modelName The name of the sensor model to be constructed.
+ * @param modelState A string representing the state from which the model should 
+ * be constructed.
+ * @param warnings A pointer to a csm::WarningList for logging any warnings that
+ * occur during the model construction check. This can include warnings about
+ * mismatches between the intended model and the constructed model or other 
+ * issues.
+ * 
+ * @return A boolean value indicating whether the model can be constructed from
+ * the provided state. Returns true if the model can be constructed, false otherwise.
+ */
 bool UsgsAstroPlugin::canModelBeConstructedFromState(
     const std::string &modelName, const std::string &modelState,
     csm::WarningList *warnings) const {
@@ -196,6 +276,22 @@ bool UsgsAstroPlugin::canModelBeConstructedFromState(
   return false;
 }
 
+/**
+ * @brief Checks if a sensor model can be constructed from ISD.
+ * @description Determines whether a sensor model specified by modelName
+ * can be accurately constructed from a given ISD (Imaging Support Data).
+ * 
+ * @param imageSupportData The ISD object containing imaging support data
+ * necessary for constructing the model.
+ * @param modelName The name of the sensor model to be constructed.
+ * @param warnings A pointer to a csm::WarningList for logging any warnings
+ * that occur during the model construction check. This includes any issues
+ * encountered while attempting to construct the model from the ISD.
+ * 
+ * @return A boolean value indicating whether the model can be constructed
+ * from the provided ISD. Returns true if construction is possible, false
+ * otherwise.
+ */
 bool UsgsAstroPlugin::canModelBeConstructedFromISD(
     const csm::Isd &imageSupportData, const std::string &modelName,
     csm::WarningList *warnings) const {
@@ -230,9 +326,21 @@ bool UsgsAstroPlugin::canModelBeConstructedFromISD(
   return false;
 }
 
-// This function takes a csm::Isd which only has the image filename set. It uses
-// this filename to find a metadata json file located alongside the image file
-// and returns a json encoded string.
+/**
+ * @brief Loads image support data from a metadata file.
+ * @description Given a csm::Isd object that includes only the image filename,
+ * this function locates a corresponding metadata JSON file in the same
+ * directory, reads it, and returns its content as a JSON-encoded string.
+ * The function appends the image identifier to the JSON object before returning.
+ * 
+ * @param imageSupportDataOriginal A csm::Isd object containing the filename of
+ * the image for which support data is to be loaded.
+ * 
+ * @return A string containing the JSON-encoded image support data.
+ * 
+ * @throws csm::Error If there is an issue reading the metadata file, an error
+ * is thrown with details of the failure.
+ */
 std::string UsgsAstroPlugin::loadImageSupportData(
     const csm::Isd &imageSupportDataOriginal) const {
   // Get image location from the input csm::Isd:
@@ -263,6 +371,20 @@ std::string UsgsAstroPlugin::loadImageSupportData(
   }
 }
 
+/**
+ * @brief Retrieves the model name from a given model state.
+ * @description Extracts the sensor model name from a JSON-encoded string
+ * representing the model's state.
+ * 
+ * @param modelState A JSON-encoded string representing the state of a sensor model.
+ * @param warnings A pointer to a csm::WarningList for logging any warnings that
+ * occur during the extraction of the model name from the state.
+ * 
+ * @return The name of the sensor model extracted from the model state.
+ * 
+ * @throws csm::Error If the 'name_model' key is missing from the model state,
+ * indicating an invalid or incomplete state representation.
+ */
 std::string UsgsAstroPlugin::getModelNameFromModelState(
     const std::string &modelState, csm::WarningList *warnings) const {
   auto state = stateAsJson(modelState);
@@ -282,6 +404,23 @@ std::string UsgsAstroPlugin::getModelNameFromModelState(
   return name;
 }
 
+/**
+ * @brief Checks if ISD can be converted to a model state for a specific model.
+ * @description Determines whether the provided ISD (Imaging Support Data) can
+ * be successfully converted into a model state string for the sensor model
+ * specified by modelName.
+ * 
+ * @param imageSupportData The ISD object containing imaging support data.
+ * @param modelName The name of the sensor model for which the ISD is to be
+ * converted.
+ * @param warnings A pointer to a csm::WarningList for logging any warnings that
+ * occur during the ISD conversion check. This can include issues encountered
+ * while attempting to convert the ISD to a model state.
+ * 
+ * @return A boolean value indicating whether the ISD can be converted to a
+ * model state for the specified model. Returns true if conversion is possible,
+ * false otherwise.
+ */
 bool UsgsAstroPlugin::canISDBeConvertedToModelState(
     const csm::Isd &imageSupportData, const std::string &modelName,
     csm::WarningList *warnings) const {
@@ -305,6 +444,17 @@ bool UsgsAstroPlugin::canISDBeConvertedToModelState(
   return true;
 }
 
+/**
+ * @brief Retrieves a model state from ISD.
+ * @description Extracts and returns a model state string from the provided ISD
+ * by first loading any associated image support data and then converting that
+ * data into a state string that represents the sensor model identified within
+ * the ISD.
+ * 
+ * @param imageSupportData The ISD object from which to derive the model state.
+ * 
+ * @return A string representing the model state derived from the provided ISD.
+ */
 std::string UsgsAstroPlugin::getStateFromISD(csm::Isd imageSupportData) const {
   MESSAGE_LOG(spdlog::level::debug, "Running getStateFromISD");
   std::string stringIsd = loadImageSupportData(imageSupportData);
@@ -313,6 +463,21 @@ std::string UsgsAstroPlugin::getStateFromISD(csm::Isd imageSupportData) const {
   return convertISDToModelState(imageSupportData, jsonIsd.at("name_model"));
 }
 
+/**
+ * @brief Converts ISD to a model state for a specific sensor model.
+ * @description Converts the provided ISD (Imaging Support Data) into a model
+ * state string specifically for the sensor model named modelName.
+ * 
+ * @param imageSupportData The ISD object containing imaging support data.
+ * @param modelName The name of the sensor model for which the ISD is to be
+ * converted.
+ * @param warnings A pointer to a csm::WarningList for logging any warnings that
+ * occur during the ISD to model state conversion. This might include issues
+ * with the ISD content or format that could affect the conversion process.
+ * 
+ * @return A string representing the state of the sensor model as derived from
+ * the provided ISD.
+ */
 std::string UsgsAstroPlugin::convertISDToModelState(
     const csm::Isd &imageSupportData, const std::string &modelName,
     csm::WarningList *warnings) const {
@@ -323,6 +488,22 @@ std::string UsgsAstroPlugin::convertISDToModelState(
   return stateString;
 }
 
+/**
+ * @brief Constructs a sensor model from ISD.
+ * @description Creates a sensor model based on the given ISD (Imaging Support Data)
+ * and the specified model name.
+ * 
+ * @param imageSupportDataOriginal The ISD containing imaging support data necessary
+ * for model construction.
+ * @param modelName The name of the sensor model to be constructed.
+ * @param warnings A pointer to a csm::WarningList for logging any warnings that occur
+ * during model construction.
+ * 
+ * @return A pointer to the constructed csm::Model.
+ * 
+ * @throws csm::Error If the model cannot be constructed from the given ISD, an error
+ * is thrown detailing the reason for failure.
+ */
 csm::Model *UsgsAstroPlugin::constructModelFromISD(
     const csm::Isd &imageSupportDataOriginal, const std::string &modelName,
     csm::WarningList *warnings) const {
@@ -354,6 +535,20 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(
   return model;
 }
 
+/**
+ * @brief Constructs a sensor model from a model state string.
+ * @description Instantiates a sensor model using a given state string that
+ * encapsulates the model's configuration.
+ * 
+ * @param modelState A JSON-encoded string representing the state of the sensor model.
+ * @param warnings A pointer to a csm::WarningList for logging any warnings that occur
+ * during model construction from state.
+ * 
+ * @return A pointer to the reconstructed csm::Model.
+ * 
+ * @throws csm::Error If the model cannot be constructed due to an unsupported model
+ * name or any other issues, an error is thrown with details of the failure.
+ */
 csm::Model *UsgsAstroPlugin::constructModelFromState(
     const std::string &modelState, csm::WarningList *warnings) const {
   MESSAGE_LOG(spdlog::level::info, "Runing constructModelFromState with modelState: {}", modelState);

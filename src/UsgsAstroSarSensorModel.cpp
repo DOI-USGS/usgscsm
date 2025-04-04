@@ -37,6 +37,22 @@ const csm::param::Type UsgsAstroSarSensorModel::PARAM_CHAR_ALL[] = {
     csm::param::NONE, csm::param::FICTITIOUS, csm::param::REAL,
     csm::param::FIXED};
 
+/**
+ * @brief Constructs the sensor model state from ISD (Image Support Data) for SAR sensors.
+ *
+ * @description Parses the ISD to extract necessary information for constructing
+ * the state of a SAR sensor model. This includes setting up the sensor,
+ * platform, and image identifiers, geometric properties, and other SAR-specific
+ * parameters. The function also handles linear interpolation of instrument and
+ * sun states (positions and velocities) based on provided ephemeris times.
+ * Warnings are generated for missing or invalid data.
+ *
+ * @param imageSupportData The ISD in string format containing sensor
+ *                         and image acquisition details.
+ * @param warnings Pointer to a list for recording any warnings encountered
+ *                 during the state construction.
+ * @return A string representing the constructed state in JSON format.
+ */
 string UsgsAstroSarSensorModel::constructStateFromIsd(
     const string imageSupportData, csm::WarningList* warnings) {
   MESSAGE_LOG("UsgsAstroSarSensorModel constructing state from ISD, with {}",
@@ -206,6 +222,17 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
   return state.dump();
 }
 
+/**
+ * @brief Retrieves the model name from the sensor model state JSON.
+ *
+ * @description Parses the model state JSON string to extract the sensor model name.
+ * Throws an error if the model name is missing from the state or if the model
+ * is not supported.
+ *
+ * @param model_state The sensor model state in JSON string format.
+ * @return The name of the sensor model.
+ * @throws csm::Error if "m_modelName" is missing or if the sensor model is not supported.
+ */
 string UsgsAstroSarSensorModel::getModelNameFromModelState(
     const string& model_state) {
   // Parse the string to JSON
@@ -232,11 +259,25 @@ string UsgsAstroSarSensorModel::getModelNameFromModelState(
   return model_name;
 }
 
+/**
+ * @brief Constructor for UsgsAstroSarSensorModel.
+ *
+ * @description Initializes a new instance of the UsgsAstroSarSensorModel class,
+ * setting up the initial state and logging the creation of the model.
+ */
 UsgsAstroSarSensorModel::UsgsAstroSarSensorModel() {
   MESSAGE_LOG("Constructing UsgsAstroSarSensorModel");
   reset();
 }
 
+/**
+ * @brief Resets the sensor model to its default state.
+ *
+ * @description Resets all member variables of the UsgsAstroSarSensorModel to their
+ * default values. This includes setting identifiers to "Unknown", setting
+ * numerical values to 0 or appropriate defaults, clearing vectors, and
+ * preparing the model for a fresh state configuration.
+ */
 void UsgsAstroSarSensorModel::reset() {
   MESSAGE_LOG("Resetting UsgsAstroSarSensorModel");
   m_imageIdentifier = "Unknown";
@@ -276,6 +317,17 @@ void UsgsAstroSarSensorModel::reset() {
   m_noAdjustments = std::vector<double>(NUM_PARAMETERS, 0.0);
 }
 
+/**
+ * @brief Replaces the current model state with a new one.
+ * 
+ * @description This function takes a JSON string representation of a sensor
+ * model's state, parses it, and updates the current model state accordingly.
+ * It resets the model before applying the new state to ensure a clean
+ * update. Throws an error if the look direction is unrecognized.
+ * 
+ * @param argState The new model state in JSON string format.
+ * @throws csm::Error If the look direction from the state is invalid.
+ */
 void UsgsAstroSarSensorModel::replaceModelState(const string& argState) {
   reset();
 
@@ -347,6 +399,17 @@ void UsgsAstroSarSensorModel::replaceModelState(const string& argState) {
   }
 }
 
+/**
+ * @brief Retrieves the current model state as a JSON string.
+ * 
+ * @description Serializes the current state of the sensor model into a JSON
+ * string. This includes all relevant parameters and configurations that
+ * define the sensor model's state. If the look direction is not correctly
+ * defined in the model, it throws an error.
+ * 
+ * @return A JSON string representing the current state of the model.
+ * @throws csm::Error If the look direction is not properly set in the model.
+ */
 string UsgsAstroSarSensorModel::getModelState() const {
   json state = {};
 
@@ -396,9 +459,19 @@ string UsgsAstroSarSensorModel::getModelState() const {
   return stateString;
 }
 
-//***************************************************************************
-// UsgsAstroSarSensorModel::applyTransformToState
-//***************************************************************************
+/**
+ * @brief Applies a geometric transformation to the sensor model state.
+ * 
+ * @description This function applies a rotation and translation to the positions
+ * and velocities within the sensor model's state. The transformation is also
+ * applied to the model's reference point. Note that the Sun's position and velocity are not
+ * altered by this transformation due to their vast distance.
+ * 
+ * @param r The rotation to be applied.
+ * @param t The translation to be applied.
+ * @param stateString The JSON string representation of the model's state
+ * to which the transformation will be applied. This string is modified in place.
+ */
 void UsgsAstroSarSensorModel::applyTransformToState(ale::Rotation const& r, ale::Vec3d const& t,
                                                    std::string& stateString) {
 
@@ -430,6 +503,20 @@ void UsgsAstroSarSensorModel::applyTransformToState(ale::Rotation const& r, ale:
   stateString = getModelNameFromModelState(stateString) + "\n" + j.dump(2);
 }
 
+/**
+ * @brief Computes the image coordinates (line and sample) for a given ground
+ * point using the current model state without adjustments.
+ * 
+ * @description Calculates the image coordinates that correspond to a given
+ * ground point.
+ * 
+ * @param groundPt The ground point in ECEF coordinates.
+ * @param desiredPrecision The desired precision for the ground-to-image
+ * calculation.
+ * @param achievedPrecision Pointer to a double to store the achieved precision.
+ * @param warnings Pointer to a warning list to capture any warnings.
+ * @return The computed image coordinates.
+ */
 csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
     const csm::EcefCoord& groundPt, double desiredPrecision,
     double* achievedPrecision, csm::WarningList* warnings) const {
@@ -444,6 +531,26 @@ csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
   return imagePt;
 }
 
+/**
+ * @brief Computes the image coordinates (line and sample) for a given ground
+ * point using the current model state with adjustments.
+ * 
+ * @description Calculates the image coordinates that correspond to a given
+ * ground point, taking into account any adjustments specified. This function
+ * finds the time of the closest approach to the ground point and the
+ * corresponding slant range, then calculates the ground range using a
+ * polynomial defined by the range coefficient set. It accounts for doppler
+ * shift to accurately determine the position in the image.
+ * 
+ * @param groundPt The ground point in ECEF coordinates.
+ * @param adj Adjustments to be applied to the sensor model state.
+ * @param desiredPrecision The desired precision for the ground-to-image
+ * calculation.
+ * @param achievedPrecision Pointer to a double to store the achieved precision.
+ * @param warnings Pointer to a warning list to capture any warnings.
+ * @return The computed image coordinates.
+ * @throws csm::Error If the computation fails for any reason.
+ */
 csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
     const csm::EcefCoord& groundPt, const std::vector<double> adj,
     double desiredPrecision, double* achievedPrecision,
@@ -481,7 +588,23 @@ csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
   }
 }
 
-// Calculate the root
+/**
+ * @brief Calculates the Doppler shift frequency for a given ground point.
+ * 
+ * @description This function computes the Doppler shift frequency, which is
+ * necessary to find the time of the closest approach of the SAR satellite to
+ * the given ground point. The Doppler shift is calculated using the relative
+ * velocity between the spacecraft and the ground point, the wavelength of the
+ * radar signal, and the slant range distance.
+ * 
+ * @param groundPt The ground point in ECEF coordinates for which the Doppler
+ * shift is calculated.
+ * @param tolerance The tolerance within which the root-finding algorithm should
+ * operate to find the time of closest approach.
+ * @param adj Adjustments to be applied to the sensor model state.
+ * @return The time at which the Doppler shift frequency is minimized, indicating
+ * the closest approach to the ground point.
+ */
 double UsgsAstroSarSensorModel::dopplerShift(
     csm::EcefCoord groundPt, double tolerance,
     const std::vector<double> adj) const {
@@ -510,6 +633,17 @@ double UsgsAstroSarSensorModel::dopplerShift(
                    tolerance);
 }
 
+/**
+ * @brief Calculates the slant range distance between the sensor and a ground point.
+ * 
+ * @description The slant range is the straight-line distance from the satellite
+ * to the ground point at a given time.
+ * 
+ * @param surfPt The ground point in ECEF coordinates.
+ * @param time The time at which the slant range is calculated.
+ * @param adj Adjustments to be applied to the sensor model state.
+ * @return The slant range distance between the satellite and the ground point.
+ */
 double UsgsAstroSarSensorModel::slantRange(csm::EcefCoord surfPt, double time,
                                            std::vector<double> adj) const {
   MESSAGE_LOG("Calculating slant range with: {}, {}, {}, and time {}.",
@@ -519,6 +653,21 @@ double UsgsAstroSarSensorModel::slantRange(csm::EcefCoord surfPt, double time,
   return norm(spacecraftPosition - surfVec);
 }
 
+/**
+ * @brief Converts slant range distance to ground range distance.
+ * 
+ * @description This function finds the ground range distance corresponding to a
+ * given slant range distance for a SAR satellite at a specific time. The
+ * ground range is the projection of the slant range onto the ground (Earth's
+ * surface).
+ * 
+ * @param groundPt The ground point in ECEF coordinates.
+ * @param time The time at which the conversion is performed.
+ * @param slantRange The slant range distance to be converted.
+ * @param tolerance The tolerance within which the solution for the ground range
+ * should be found.
+ * @return The ground range distance corresponding to the given slant range.
+ */
 double UsgsAstroSarSensorModel::slantRangeToGroundRange(
     const csm::EcefCoord& groundPt, double time, double slantRange,
     double tolerance) const {
@@ -537,11 +686,38 @@ double UsgsAstroSarSensorModel::slantRangeToGroundRange(
   return polynomialRoot(coeffs, guess, tolerance);
 }
 
+/**
+ * @brief Converts ground range distance to slant range distance.
+ * 
+ * @description This function calculates the slant range distance from a given
+ * ground range distance using a polynomial defined by the range coefficients.
+ * The slant range is the straight-line distance from the satellite to a point
+ * on the ground, whereas the ground range is the distance along the ground.
+ * 
+ * @param groundRange The ground range distance to be converted to slant range.
+ * @param coeffs The coefficients of the polynomial used for the conversion.
+ * @return The slant range distance corresponding to the given ground range.
+ */
 double UsgsAstroSarSensorModel::groundRangeToSlantRange(
     double groundRange, const std::vector<double>& coeffs) const {
   return evaluatePolynomial(coeffs, groundRange);
 }
 
+/**
+ * @brief Converts a ground point with covariance to an image coordinate with covariance.
+ * 
+ * @description This function converts a ground point, specified in ECEF
+ * coordinates with associated covariance, into an image coordinate with
+ * covariance. It utilizes the groundToImage function for the conversion and
+ * then propagates the uncertainty from the ground point through the
+ * transformation to compute the covariance in the image space.
+ * 
+ * @param groundPt A ground point with covariance in ECEF coordinates.
+ * @param desiredPrecision The desired precision for the conversion.
+ * @param achievedPrecision Pointer to store the achieved precision.
+ * @param warnings Warning list to capture any issues during the process.
+ * @return An image coordinate with covariance resulting from the conversion.
+ */
 csm::ImageCoordCovar UsgsAstroSarSensorModel::groundToImage(
     const csm::EcefCoordCovar& groundPt, double desiredPrecision,
     double* achievedPrecision, csm::WarningList* warnings) const {
@@ -593,6 +769,22 @@ csm::ImageCoordCovar UsgsAstroSarSensorModel::groundToImage(
   return result;
 }
 
+/**
+ * @brief Converts an image coordinate to a ground point in ECEF coordinates.
+ * 
+ * @description This function calculates the ground point corresponding to a given
+ * image coordinate and height above the ellipsoid. The process involves
+ * determining the time of the image acquisition and the ground range, then
+ * converting the ground range to slant range, and finally solving for the
+ * ground point position using the spacecraft position and velocity.
+ * 
+ * @param imagePt The image coordinate (line, sample) for which to find the corresponding ground point.
+ * @param height The height above the ellipsoid at which to find the ground point.
+ * @param desiredPrecision The desired precision for the conversion.
+ * @param achievedPrecision Pointer to store the achieved precision of the conversion.
+ * @param warnings Warning list to capture any issues during the process.
+ * @return The corresponding ground point in ECEF coordinates.
+ */
 csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
     const csm::ImageCoord& imagePt, double height, double desiredPrecision,
     double* achievedPrecision, csm::WarningList* warnings) const {
@@ -665,6 +857,22 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   return groundPt;
 }
 
+/**
+ * @brief Converts an image coordinate with covariance to a ground point with
+ *        covariance.
+ * 
+ * @description Converts an image coordinate with covariance to a ground point
+ * in ECEF coordinates, considering the height and its variance,
+ * sensor modeling, and unmodeled errors for covariance computation.
+ * 
+ * @param imagePt Image coordinate with covariance.
+ * @param height Height above the ellipsoid for the ground point.
+ * @param heightVariance Variance of the height above the ellipsoid.
+ * @param desiredPrecision Desired precision for the conversion.
+ * @param achievedPrecision Pointer to store the achieved precision.
+ * @param warnings Warning list for issues during the process.
+ * @return Ground point in ECEF coordinates with covariance.
+ */
 csm::EcefCoordCovar UsgsAstroSarSensorModel::imageToGround(
     const csm::ImageCoordCovar& imagePt, double height, double heightVariance,
     double desiredPrecision, double* achievedPrecision,
@@ -746,6 +954,21 @@ csm::EcefCoordCovar UsgsAstroSarSensorModel::imageToGround(
   return result;
 }
 
+/**
+ * @brief Computes proximate imaging locus for an image point and ground point.
+ * 
+ * @description Calculates the closest point on the imaging locus to a ground
+ * point, defining the imaging locus as the intersection of the
+ * Doppler cone with the Earth's surface.
+ * 
+ * @param imagePt Image coordinate (line, sample).
+ * @param groundPt Ground point in ECEF coordinates.
+ * @param desiredPrecision Desired precision for the conversion.
+ * @param achievedPrecision Pointer to store the achieved precision.
+ * @param warnings Warning list for issues during the process.
+ * @return Locus of points forming the proximate imaging locus, including
+ *         the direction vector.
+ */
 csm::EcefLocus UsgsAstroSarSensorModel::imageToProximateImagingLocus(
     const csm::ImageCoord& imagePt, const csm::EcefCoord& groundPt,
     double desiredPrecision, double* achievedPrecision,
@@ -782,6 +1005,20 @@ csm::EcefLocus UsgsAstroSarSensorModel::imageToProximateImagingLocus(
                         tangent.y, tangent.z);
 }
 
+/**
+ * @brief Computes the remote imaging locus for an image point.
+ * 
+ * @description Calculates the imaging locus for an image coordinate by
+ * determining the direction from the sensor position through the
+ * image point towards the ground.
+ * 
+ * @param imagePt Image coordinate (line, sample) for locus calculation.
+ * @param desiredPrecision Desired precision for the calculation.
+ * @param achievedPrecision Pointer to store achieved precision.
+ * @param warnings Warning list for issues during the process.
+ * @return Locus of points forming the remote imaging locus, including
+ *         the direction vector.
+ */
 csm::EcefLocus UsgsAstroSarSensorModel::imageToRemoteImagingLocus(
     const csm::ImageCoord& imagePt, double desiredPrecision,
     double* achievedPrecision, csm::WarningList* warnings) const {
@@ -805,14 +1042,40 @@ csm::EcefLocus UsgsAstroSarSensorModel::imageToRemoteImagingLocus(
                         dir.x, dir.y, dir.z);
 }
 
+/**
+ * @brief Returns the starting image coordinate.
+ * 
+ * @description Always returns the origin point (0.0, 0.0) as the start of the image 
+ * coordinates.
+ * 
+ * @return The starting image coordinate.
+ */
 csm::ImageCoord UsgsAstroSarSensorModel::getImageStart() const {
   return csm::ImageCoord(0.0, 0.0);
 }
+
+/**
+ * @brief Returns the size of the image.
+ * 
+ * @description Provides the dimensions of the image in terms of the number of lines 
+ * and samples.
+ * 
+ * @return Image vector indicating the total number of lines and samples.
+ */
 
 csm::ImageVector UsgsAstroSarSensorModel::getImageSize() const {
   return csm::ImageVector(m_nLines, m_nSamples);
 }
 
+/**
+ * @brief Provides the valid range of image coordinates.
+ * 
+ * @description Computes the range of valid image coordinates starting from the origin
+ * to the end of the image based on its size.
+ * 
+ * @return Pair of image coordinates indicating the start and end of the valid image 
+ *         range.
+ */
 pair<csm::ImageCoord, csm::ImageCoord>
 UsgsAstroSarSensorModel::getValidImageRange() const {
   csm::ImageCoord start = getImageStart();
@@ -821,10 +1084,27 @@ UsgsAstroSarSensorModel::getValidImageRange() const {
       start, csm::ImageCoord(start.line + size.line, start.samp + size.samp));
 }
 
+/**
+ * @brief Gets the valid range of heights for the model.
+ * 
+ * @description Returns the minimum and maximum valid elevation values for the sensor 
+ * model.
+ * 
+ * @return Pair of doubles indicating the minimum and maximum valid heights.
+ */
 pair<double, double> UsgsAstroSarSensorModel::getValidHeightRange() const {
   return make_pair(m_minElevation, m_maxElevation);
 }
 
+/**
+ * @brief Computes the illumination direction for a ground point.
+ * 
+ * @description Determines the unit vector from a ground point towards the sun,
+ * indicating the direction of illumination.
+ * 
+ * @param groundPt Ground point in ECEF coordinates.
+ * @return Normalized vector pointing towards the sun from the ground point.
+ */
 csm::EcefVector UsgsAstroSarSensorModel::getIlluminationDirection(
     const csm::EcefCoord& groundPt) const {
   csm::EcefVector groundVec(groundPt.x, groundPt.y, groundPt.z);
@@ -834,11 +1114,29 @@ csm::EcefVector UsgsAstroSarSensorModel::getIlluminationDirection(
   return illuminationDirection;
 }
 
+/**
+ * @brief Computes the image time for a given image coordinate.
+ * 
+ * @description Calculates the time at which a given line in the image was acquired,
+ * based on the starting ephemeris time and exposure duration.
+ * 
+ * @param imagePt Image coordinate (line, sample).
+ * @return The time at which the image line was acquired.
+ */
 double UsgsAstroSarSensorModel::getImageTime(
     const csm::ImageCoord& imagePt) const {
   return m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
 }
 
+/**
+ * @brief Returns the spacecraft position at a given time without adjustments.
+ * 
+ * @description Retrieves the ECEF position of the spacecraft at a specific time,
+ * without considering any model adjustments.
+ * 
+ * @param time The time at which to retrieve the spacecraft position.
+ * @return Vector representing the spacecraft's position in ECEF coordinates.
+ */
 csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftPosition(
     double time) const {
   MESSAGE_LOG("getSpacecraftPosition at {} without adjustments", time)
@@ -847,6 +1145,16 @@ csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftPosition(
                          spacecraftPosition.z);
 }
 
+/**
+ * @brief Returns the adjusted spacecraft position at a given time.
+ * 
+ * @description Retrieves the ECEF position of the spacecraft at a specific time,
+ * considering the provided model adjustments.
+ * 
+ * @param time The time at which to retrieve the spacecraft position.
+ * @param adj Vector of adjustments to apply to the model.
+ * @return Vector representing the adjusted spacecraft's position in ECEF coordinates.
+ */
 csm::EcefVector UsgsAstroSarSensorModel::getAdjustedSpacecraftPosition(
     double time, std::vector<double> adj) const {
   MESSAGE_LOG("getSpacecraftPosition at {} with adjustments", time)
@@ -855,6 +1163,15 @@ csm::EcefVector UsgsAstroSarSensorModel::getAdjustedSpacecraftPosition(
                          spacecraftPosition.z);
 }
 
+/**
+ * @brief Retrieves the sensor position at a given time.
+ * 
+ * @description Retrieves the ECEF position of the sensor at a specific time,
+ * without applying any model adjustments.
+ * 
+ * @param time The time at which to retrieve the sensor position.
+ * @return The ECEF coordinates of the sensor position at the given time.
+ */
 csm::EcefCoord UsgsAstroSarSensorModel::getSensorPosition(double time) const {
   MESSAGE_LOG("getSensorPosition at {}.", time)
   csm::EcefCoord sensorPosition =
@@ -862,6 +1179,16 @@ csm::EcefCoord UsgsAstroSarSensorModel::getSensorPosition(double time) const {
   return sensorPosition;
 }
 
+/**
+ * @brief Retrieves the sensor position for a given image coordinate.
+ * 
+ * @description Calculates the sensor position in ECEF coordinates corresponding 
+ * to a specific image coordinate by first determining the time of the image 
+ * point and then finding the sensor position at that time.
+ * 
+ * @param imagePt The image coordinate for which to find the sensor position.
+ * @return The ECEF coordinates of the sensor position for the given image coordinate.
+ */
 csm::EcefCoord UsgsAstroSarSensorModel::getSensorPosition(
     const csm::ImageCoord& imagePt) const {
   MESSAGE_LOG("getSensorPosition at {}, {}.", imagePt.samp, imagePt.line);
@@ -869,6 +1196,16 @@ csm::EcefCoord UsgsAstroSarSensorModel::getSensorPosition(
   return getSensorPosition(time);
 }
 
+/**
+ * @brief Retrieves the adjusted sensor position at a given time.
+ * 
+ * @description Retrieves the ECEF position of the sensor at a specific time,
+ * considering the provided model adjustments.
+ * 
+ * @param time The time at which to retrieve the sensor position.
+ * @param adj Vector of adjustments to apply to the model.
+ * @return The adjusted ECEF coordinates of the sensor position at the given time.
+ */
 csm::EcefCoord UsgsAstroSarSensorModel::getAdjustedSensorPosition(
     double time, std::vector<double> adj) const {
   MESSAGE_LOG("getSensorPosition at {}. With adjustments: {}.", time);
@@ -894,6 +1231,17 @@ csm::EcefCoord UsgsAstroSarSensorModel::getAdjustedSensorPosition(
                         spacecraftPosition.z);
 }
 
+/**
+ * @brief Retrieves the sensor velocity for a given image coordinate.
+ * 
+ * @description Calculates the sensor velocity in ECEF coordinates corresponding 
+ * to a specific image coordinate by first determining the time of the image 
+ * point and then finding the sensor velocity at that time. No model adjustments 
+ * are applied.
+ * 
+ * @param imagePt The image coordinate for which to find the sensor velocity.
+ * @return The ECEF vector representing the sensor velocity for the given image coordinate.
+ */
 csm::EcefVector UsgsAstroSarSensorModel::getSensorVelocity(
     const csm::ImageCoord& imagePt) const {
   MESSAGE_LOG("getSensorVelocity at {}, {}. No adjustments.", imagePt.samp,
@@ -902,6 +1250,15 @@ csm::EcefVector UsgsAstroSarSensorModel::getSensorVelocity(
   return getSensorVelocity(time);
 }
 
+/**
+ * @brief Retrieves the sensor velocity at a given time.
+ * 
+ * @description Retrieves the ECEF velocity of the sensor at a specific time,
+ * without applying any model adjustments.
+ * 
+ * @param time The time at which to retrieve the sensor velocity.
+ * @return The ECEF vector of the sensor velocity at the given time.
+ */
 csm::EcefVector UsgsAstroSarSensorModel::getSensorVelocity(double time) const {
   MESSAGE_LOG("getSensorVelocity at {}. Without adjustments.", time);
   csm::EcefVector spacecraftVelocity =
@@ -909,6 +1266,16 @@ csm::EcefVector UsgsAstroSarSensorModel::getSensorVelocity(double time) const {
   return spacecraftVelocity;
 }
 
+/**
+ * @brief Retrieves the adjusted sensor velocity at a given time.
+ * 
+ * @description Retrieves the ECEF velocity of the sensor at a specific time,
+ * considering the provided model adjustments.
+ * 
+ * @param time The time at which to retrieve the sensor velocity.
+ * @param adj Vector of adjustments to apply to the model.
+ * @return The adjusted ECEF vector of the sensor velocity at the given time.
+ */
 csm::EcefVector UsgsAstroSarSensorModel::getAdjustedSensorVelocity(
     double time, std::vector<double> adj) const {
   MESSAGE_LOG("getSensorVelocity at {}. With adjustments.", time);
@@ -933,6 +1300,24 @@ csm::EcefVector UsgsAstroSarSensorModel::getAdjustedSensorVelocity(
   return spacecraftVelocity;
 }
 
+/**
+ * @brief Computes the sensor model partial derivatives for a ground point.
+ * 
+ * @description Computes the partial derivatives of the image coordinates with 
+ * respect to the ground point coordinates, using a given ground point in ECEF 
+ * coordinates, desired precision for the computation, and potential adjustments 
+ * applied to the sensor model.
+ * 
+ * @param index Index of the model parameter for which the partial is being 
+ * computed.
+ * @param groundPt Ground point in ECEF coordinates.
+ * @param desiredPrecision The precision desired in the computation of the 
+ * partials.
+ * @param achievedPrecision The precision achieved in the computation.
+ * @param warnings List to accumulate any warnings.
+ * @return SensorPartials object containing the partial derivatives of the image 
+ * coordinates with respect to the model parameter.
+ */
 csm::RasterGM::SensorPartials UsgsAstroSarSensorModel::computeSensorPartials(
     int index, const csm::EcefCoord& groundPt, double desiredPrecision,
     double* achievedPrecision, csm::WarningList* warnings) const {
@@ -950,6 +1335,28 @@ csm::RasterGM::SensorPartials UsgsAstroSarSensorModel::computeSensorPartials(
                                achievedPrecision, warnings);
 }
 
+/**
+ * @brief Computes the sensor model partial derivatives for an image point.
+ * 
+ * @description Computes the partial derivatives of the image coordinates with
+ * respect to a specific sensor model parameter, given an image point, the
+ * corresponding ground point, the desired precision for the computation, and
+ * any adjustments applied to the sensor model.
+ * 
+ * @param index The index of the model parameter for which the partial is being
+ * computed.
+ * @param imagePt The image coordinates (line and sample).
+ * @param groundPt The ground point in ECEF coordinates associated with the image
+ * point.
+ * @param desiredPrecision The precision desired in the computation of the
+ * partials.
+ * @param achievedPrecision Pointer to a variable where the achieved precision
+ * of the computation will be stored. May be NULL if not needed.
+ * @param warnings List to accumulate any warnings that occur during the
+ * computation.
+ * @return SensorPartials object containing the partial derivatives of the image
+ * coordinates (line and sample) with respect to the specified model parameter.
+ */
 csm::RasterGM::SensorPartials UsgsAstroSarSensorModel::computeSensorPartials(
     int index, const csm::ImageCoord& imagePt, const csm::EcefCoord& groundPt,
     double desiredPrecision, double* achievedPrecision,
@@ -976,6 +1383,17 @@ csm::RasterGM::SensorPartials UsgsAstroSarSensorModel::computeSensorPartials(
   return csm::RasterGM::SensorPartials(linePartial, samplePartial);
 }
 
+/**
+ * @brief Computes the ground partial derivatives for a ground point.
+ * 
+ * @description Computes the partial derivatives of the image coordinates with 
+ * respect to the ground point coordinates, using only the ground point 
+ * coordinates.
+ * 
+ * @param groundPt Ground point in ECEF coordinates.
+ * @return Vector containing the six partial derivatives of the image 
+ * coordinates (line and sample) with respect to the ground coordinates (X, Y, Z).
+ */
 vector<double> UsgsAstroSarSensorModel::computeGroundPartials(
     const csm::EcefCoord& groundPt) const {
   double GND_DELTA = m_scaledPixelWidth;
@@ -1000,95 +1418,297 @@ vector<double> UsgsAstroSarSensorModel::computeGroundPartials(
   return partials;
 }
 
+/**
+ * @brief Returns the correlation model used by the sensor model.
+ * 
+ * @description Provides access to the correlation model used for error 
+ * propagation. SAR sensor models do not model correlation between image points, 
+ * so this returns a no-correlation model.
+ * 
+ * @return A reference to a CorrelationModel object representing the correlation 
+ * model used by the sensor model.
+ */
 const csm::CorrelationModel& UsgsAstroSarSensorModel::getCorrelationModel()
     const {
   return _NO_CORR_MODEL;
 }
 
+/**
+ * @brief Computes the unmodeled cross covariance between two image points.
+ * 
+ * @description Computes the covariance matrix between two points in an image 
+ * due to unmodeled errors. Since unmodeled errors are not considered in SAR 
+ * sensor models, this function returns a zero matrix.
+ * 
+ * @param pt1 First image coordinate.
+ * @param pt2 Second image coordinate.
+ * @return Vector representing a 2x2 covariance matrix (flattened) filled with 
+ * zeros.
+ */
 vector<double> UsgsAstroSarSensorModel::getUnmodeledCrossCovariance(
     const csm::ImageCoord& pt1, const csm::ImageCoord& pt2) const {
   return vector<double>(4, 0.0);
 }
 
+/**
+ * @brief Retrieves the current reference point of the model.
+ * 
+ * @description Returns the reference point for the sensor model in ECEF 
+ * coordinates. The reference point is typically the ground point closest to 
+ * the sensor model's center of projection.
+ * 
+ * @return The ECEF coordinates of the reference point.
+ */
 csm::EcefCoord UsgsAstroSarSensorModel::getReferencePoint() const {
   return m_referencePointXyz;
 }
 
+/**
+ * @brief Sets the reference point for the sensor model.
+ * 
+ * @description Updates the sensor model's reference point using the provided 
+ * ECEF coordinates.
+ * 
+ * @param groundPt The new reference point in ECEF coordinates.
+ */
 void UsgsAstroSarSensorModel::setReferencePoint(
     const csm::EcefCoord& groundPt) {
   m_referencePointXyz = groundPt;
 }
 
+/**
+ * @brief Retrieves the number of parameters used by the sensor model.
+ * 
+ * @description Returns the total number of parameters in the sensor model.
+ * 
+ * @return The number of parameters.
+ */
 int UsgsAstroSarSensorModel::getNumParameters() const { return NUM_PARAMETERS; }
 
+/**
+ * @brief Retrieves the name of a parameter by its index.
+ * 
+ * @description Provides the name of the parameter corresponding to the given 
+ * index.
+ * 
+ * @param index The index of the parameter.
+ * @return The name of the parameter at the given index.
+ */
 string UsgsAstroSarSensorModel::getParameterName(int index) const {
   return PARAMETER_NAME[index];
 }
 
+/**
+ * @brief Retrieves the units of a parameter by its index.
+ * 
+ * @description Provides the units of the parameter corresponding to the given 
+ * index. For SAR models, all parameters are in meters.
+ * 
+ * @param index The index of the parameter.
+ * @return The units of the parameter at the given index.
+ */
 string UsgsAstroSarSensorModel::getParameterUnits(int index) const {
   return "m";
 }
 
+/**
+ * @brief Indicates whether the model parameters are shareable.
+ * 
+ * @description Determines if the model parameters can be shared between 
+ * different sensor model instances. SAR sensor models do not support parameter 
+ * sharing.
+ * 
+ * @return False, indicating parameters are not shareable.
+ */
 bool UsgsAstroSarSensorModel::hasShareableParameters() const { return false; }
 
+/**
+ * @brief Indicates if a specific parameter is shareable.
+ * 
+ * @description Determines if the specific model parameter can be shared 
+ * between different sensor model instances. SAR sensor models do not support 
+ * parameter sharing.
+ * 
+ * @param index The index of the parameter.
+ * @return False, indicating the parameter is not shareable.
+ */
 bool UsgsAstroSarSensorModel::isParameterShareable(int index) const {
   return false;
 }
 
+/**
+ * @brief Retrieves the sharing criteria for a parameter.
+ * 
+ * @description Provides the criteria under which a parameter can be shared 
+ * between different sensor model instances. SAR sensor models do not support 
+ * parameter sharing, so this returns a default SharingCriteria object.
+ * 
+ * @param index The index of the parameter.
+ * @return A SharingCriteria object.
+ */
 csm::SharingCriteria UsgsAstroSarSensorModel::getParameterSharingCriteria(
     int index) const {
   return csm::SharingCriteria();
 }
 
+/**
+ * @brief Retrieves the value of a parameter by its index.
+ * 
+ * @description Provides the value of the parameter corresponding to the given 
+ * index.
+ * 
+ * @param index The index of the parameter.
+ * @return The value of the parameter at the given index.
+ */
 double UsgsAstroSarSensorModel::getParameterValue(int index) const {
   return m_currentParameterValue[index];
 }
 
+/**
+ * @brief Sets the value of a parameter by its index.
+ * 
+ * @description Updates the value of the parameter corresponding to the given 
+ * index.
+ * 
+ * @param index The index of the parameter.
+ * @param value The new value for the parameter.
+ */
 void UsgsAstroSarSensorModel::setParameterValue(int index, double value) {
   m_currentParameterValue[index] = value;
 }
 
+/**
+ * @brief Retrieves the type of a parameter by its index.
+ * 
+ * @description Provides the type of the parameter corresponding to the given 
+ * index.
+ * 
+ * @param index The index of the parameter.
+ * @return The type of the parameter at the given index.
+ */
 csm::param::Type UsgsAstroSarSensorModel::getParameterType(int index) const {
   return m_parameterType[index];
 }
 
+/**
+ * @brief Sets the type of a parameter by its index.
+ * 
+ * @description Updates the type of the parameter corresponding to the given 
+ * index.
+ * 
+ * @param index The index of the parameter.
+ * @param pType The new type for the parameter.
+ */
 void UsgsAstroSarSensorModel::setParameterType(int index,
                                                csm::param::Type pType) {
   m_parameterType[index] = pType;
 }
 
+/**
+ * @brief Retrieves the covariance between two parameters.
+ * 
+ * @description Provides the covariance between the parameters corresponding to 
+ * the given indices.
+ * 
+ * @param index1 The index of the first parameter.
+ * @param index2 The index of the second parameter.
+ * @return The covariance between the two parameters.
+ */
 double UsgsAstroSarSensorModel::getParameterCovariance(int index1,
                                                        int index2) const {
   return m_covariance[index1 * NUM_PARAMETERS + index2];
 }
 
+/**
+ * @brief Sets the covariance between two parameters.
+ * 
+ * @description Updates the covariance between the parameters corresponding to 
+ * the given indices.
+ * 
+ * @param index1 The index of the first parameter.
+ * @param index2 The index of the second parameter.
+ * @param covariance The new covariance value.
+ */
 void UsgsAstroSarSensorModel::setParameterCovariance(int index1, int index2,
                                                      double covariance)
-
 {
   m_covariance[index1 * NUM_PARAMETERS + index2] = covariance;
 }
 
+/**
+ * @brief Retrieves the number of geometric correction switches.
+ * 
+ * @description Provides the total number of geometric correction switches in 
+ * the sensor model. SAR sensor models do not use geometric corrections.
+ * 
+ * @return 0, indicating there are no geometric correction switches.
+ */
 int UsgsAstroSarSensorModel::getNumGeometricCorrectionSwitches() const {
   return 0;
 }
 
+/**
+ * @brief Retrieves the name of a geometric correction by its index.
+ * 
+ * @description Provides the name of the geometric correction corresponding to 
+ * the given index. SAR sensor models do not use geometric corrections, so this 
+ * function throws an error if called.
+ * 
+ * @param index The index of the geometric correction.
+ * @return This function will throw an INDEX_OUT_OF_RANGE error.
+ */
 string UsgsAstroSarSensorModel::getGeometricCorrectionName(int index) const {
   throw csm::Error(csm::Error::INDEX_OUT_OF_RANGE, "Index is out of range.",
                    "UsgsAstroSarSensorModel::getGeometricCorrectionName");
 }
 
+/**
+ * @brief Sets a geometric correction switch by its index.
+ * 
+ * @description Updates the state of the geometric correction switch 
+ * corresponding to the given index. SAR sensor models do not use geometric 
+ * corrections, so this function throws an error if called.
+ * 
+ * @param index The index of the geometric correction switch.
+ * @param value The new state for the switch.
+ * @param pType The parameter type for the switch.
+ */
 void UsgsAstroSarSensorModel::setGeometricCorrectionSwitch(
     int index, bool value, csm::param::Type pType) {
   throw csm::Error(csm::Error::INDEX_OUT_OF_RANGE, "Index is out of range.",
                    "UsgsAstroSarSensorModel::setGeometricCorrectionSwitch");
 }
 
+/**
+ * @brief Retrieves the state of a geometric correction switch by its index.
+ * 
+ * @description Provides the state of the geometric correction switch 
+ * corresponding to the given index. SAR sensor models do not use geometric 
+ * corrections, so this function throws an error if called.
+ * 
+ * @param index The index of the geometric correction switch.
+ * @return This function will throw an INDEX_OUT_OF_RANGE error.
+ */
 bool UsgsAstroSarSensorModel::getGeometricCorrectionSwitch(int index) const {
   throw csm::Error(csm::Error::INDEX_OUT_OF_RANGE, "Index is out of range.",
                    "UsgsAstroSarSensorModel::getGeometricCorrectionSwitch");
 }
 
+/**
+ * @brief Retrieves the cross-covariance matrix between this model and another.
+ * 
+ * @description This function computes the cross-covariance matrix between the current
+ * sensor model and another given model. If the given model is the same as the
+ * current model, it returns the covariance matrix of the current model's
+ * parameters. If the models are different, it returns a zero matrix, assuming
+ * no correlation between the models.
+ * 
+ * @param comparisonModel The geometric model to compare with.
+ * @param pSet The parameter set for which the covariance is requested.
+ * @param otherModels List of other geometric models considered in the
+ * covariance computation.
+ * @return Vector of doubles representing the flattened cross-covariance matrix.
+ */
 vector<double> UsgsAstroSarSensorModel::getCrossCovarianceMatrix(
     const csm::GeometricModel& comparisonModel, csm::param::Set pSet,
     const csm::GeometricModel::GeometricModelList& otherModels) const {
@@ -1114,45 +1734,137 @@ vector<double> UsgsAstroSarSensorModel::getCrossCovarianceMatrix(
   return vector<double>(num_rows * num_cols, 0.0);
 }
 
+/**
+ * @brief Returns the version of the sensor model.
+ * 
+ * @description Provides the version information of the sensor model implementation.
+ * 
+ * @return Version object containing the major, minor, and revision numbers.
+ */
 csm::Version UsgsAstroSarSensorModel::getVersion() const {
   return csm::Version(1, 0, 0);
 }
 
+/**
+ * @brief Gets the model name.
+ * 
+ * @description Returns the name of the sensor model.
+ * 
+ * @return String representing the sensor model name.
+ */
 string UsgsAstroSarSensorModel::getModelName() const {
   return _SENSOR_MODEL_NAME;
 }
 
+/**
+ * @brief Returns the pedigree of the sensor model.
+ * 
+ * @description Provides a string that identifies the lineage or source of the
+ * sensor model implementation.
+ * 
+ * @return String representing the sensor model's pedigree.
+ */
 string UsgsAstroSarSensorModel::getPedigree() const { return "USGS_SAR"; }
 
+/**
+ * @brief Retrieves the image identifier.
+ * 
+ * @description Returns the identifier of the image associated with the sensor model.
+ * 
+ * @return String representing the image identifier.
+ */
 string UsgsAstroSarSensorModel::getImageIdentifier() const {
   return m_imageIdentifier;
 }
 
+/**
+ * @brief Sets the image identifier.
+ * 
+ * @description Assigns an identifier to the image associated with the sensor model.
+ * 
+ * @param imageId The new image identifier.
+ * @param warnings Optional pointer to a warning list to collect any warnings.
+ */
 void UsgsAstroSarSensorModel::setImageIdentifier(const string& imageId,
                                                  csm::WarningList* warnings) {
   m_imageIdentifier = imageId;
 }
 
+/**
+ * @brief Retrieves the sensor identifier.
+ * 
+ * @description Returns the identifier of the sensor associated with the sensor model.
+ * 
+ * @return String representing the sensor identifier.
+ */
 string UsgsAstroSarSensorModel::getSensorIdentifier() const {
   return m_sensorIdentifier;
 }
 
+/**
+ * @brief Retrieves the platform identifier.
+ * 
+ * @description Returns the identifier of the platform (satellite/aircraft) associated
+ * with the sensor model.
+ * 
+ * @return String representing the platform identifier.
+ */
 string UsgsAstroSarSensorModel::getPlatformIdentifier() const {
   return m_platformIdentifier;
 }
 
+/**
+ * @brief Retrieves the collection identifier.
+ * 
+ * @description Returns a string identifier for the collection to which the image
+ * belongs.
+ * 
+ * @return String representing the collection identifier.
+ */
 string UsgsAstroSarSensorModel::getCollectionIdentifier() const {
   return m_collectionIdentifier;
 }
 
+/**
+ * @brief Retrieves the trajectory identifier.
+ * 
+ * @description Returns a string identifier for the trajectory associated with the
+ * sensor model.
+ * 
+ * @return String representing the trajectory identifier.
+ */
 string UsgsAstroSarSensorModel::getTrajectoryIdentifier() const {
   return m_trajectoryIdentifier;
 }
 
+/**
+ * @brief Gets the sensor type.
+ * 
+ * @description Returns a string indicating the type of sensor (e.g., SAR for Synthetic
+ * Aperture Radar).
+ * 
+ * @return String representing the sensor type.
+ */
 string UsgsAstroSarSensorModel::getSensorType() const { return "SAR"; }
 
+/**
+ * @brief Gets the sensor mode.
+ * 
+ * @description Returns a string indicating the operating mode of the sensor (e.g.,
+ * "STRIP" for strip mapping).
+ * 
+ * @return String representing the sensor mode.
+ */
 string UsgsAstroSarSensorModel::getSensorMode() const { return "STRIP"; }
 
+/**
+ * @brief Gets the reference date and time for the sensor model.
+ * 
+ * @description Returns a string representing the reference date and time associated
+ * with the sensor model.
+ * 
+ * @return String representing the reference date and time.
+ */
 string UsgsAstroSarSensorModel::getReferenceDateAndTime() const {
   csm::ImageCoord referencePointImage = groundToImage(m_referencePointXyz);
   double relativeTime =
@@ -1162,15 +1874,40 @@ string UsgsAstroSarSensorModel::getReferenceDateAndTime() const {
   return ephemTimeToCalendarTime(ephemTime);
 }
 
+/**
+ * @brief Retrieves the ellipsoid associated with the sensor model.
+ * 
+ * @description Returns the ellipsoid used by the sensor model, defined by its semi-major
+ * and semi-minor axes.
+ * 
+ * @return Ellipsoid object representing the ellipsoid used by the sensor model.
+ */
 csm::Ellipsoid UsgsAstroSarSensorModel::getEllipsoid() const {
   return csm::Ellipsoid(m_majorAxis, m_minorAxis);
 }
 
+/**
+ * @brief Sets the ellipsoid for the sensor model.
+ * 
+ * @description Assigns a new ellipsoid to be used by the sensor model, defined by its
+ * semi-major and semi-minor axes.
+ * 
+ * @param ellipsoid The new ellipsoid to use.
+ */
 void UsgsAstroSarSensorModel::setEllipsoid(const csm::Ellipsoid& ellipsoid) {
   m_majorAxis = ellipsoid.getSemiMajorRadius();
   m_minorAxis = ellipsoid.getSemiMinorRadius();
 }
 
+/**
+ * @brief Determines the sensor covariance in image space.
+ * 
+ * @description Computes the sensor model covariance matrix transformed into image space
+ * for a given ground point.
+ * 
+ * @param gp The ground point for which to determine the covariance.
+ * @param sensor_cov Array to store the resulting 2x2 covariance matrix in image space.
+ */
 void UsgsAstroSarSensorModel::determineSensorCovarianceInImageSpace(
     csm::EcefCoord& gp, double sensor_cov[4]) const {
   int i, j, totalAdjParams;
@@ -1198,6 +1935,17 @@ void UsgsAstroSarSensorModel::determineSensorCovarianceInImageSpace(
   }
 }
 
+/**
+ * @brief Retrieves range coefficients interpolated for a specific time.
+ * 
+ * @description Computes the range coefficients at a given time by interpolating the 
+ * provided scale conversion coefficients. If there are multiple sets of coefficients,
+ * Lagrange interpolation is used based on the scale conversion times. Otherwise,
+ * the single set of coefficients is returned directly.
+ * 
+ * @param time The time at which to compute the range coefficients.
+ * @return Vector of interpolated range coefficients.
+ */
 std::vector<double> UsgsAstroSarSensorModel::getRangeCoefficients(
     double time) const {
   int numCoeffs = m_scaleConversionCoefficients.size();
@@ -1224,6 +1972,18 @@ std::vector<double> UsgsAstroSarSensorModel::getRangeCoefficients(
   return interpCoeffs;
 }
 
+/**
+ * @brief Calculates the sun position at a given image time.
+ * 
+ * @description Determines the sun's position in ECEF coordinates at a specified
+ * image time. If multiple sun positions are available, Lagrange interpolation
+ * is applied. If only one position is available but velocities are provided,
+ * linear extrapolation is used. Otherwise, the single provided position is
+ * returned.
+ * 
+ * @param imageTime The time of the image for which to calculate the sun position.
+ * @return ECEF vector representing the sun's position.
+ */
 csm::EcefVector UsgsAstroSarSensorModel::getSunPosition(
     const double imageTime) const {
   int numSunPositions = m_sunPosition.size();
@@ -1256,6 +2016,17 @@ csm::EcefVector UsgsAstroSarSensorModel::getSunPosition(
   return sunPosition;
 }
 
+/**
+ * @brief Retrieves the value of a parameter with adjustments applied.
+ * 
+ * @description Calculates the value of the specified parameter index by adding
+ * the corresponding adjustment from the adjustments vector to the parameter's
+ * current value.
+ * 
+ * @param index The index of the parameter.
+ * @param adjustments Vector of adjustments to be applied to the parameters.
+ * @return The adjusted value of the parameter.
+ */
 double UsgsAstroSarSensorModel::getValue(
     int index, const std::vector<double>& adjustments) const {
   return m_currentParameterValue[index] + adjustments[index];

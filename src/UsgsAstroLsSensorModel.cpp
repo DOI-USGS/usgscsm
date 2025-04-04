@@ -126,9 +126,17 @@ const csm::param::Type UsgsAstroLsSensorModel::PARAM_CHAR_ALL[] = {
     csm::param::NONE, csm::param::FICTITIOUS, csm::param::REAL,
     csm::param::FIXED};
 
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::replaceModelState
-//***************************************************************************
+/**
+ * @brief Replaces the sensor model's state with a new state.
+ * @description This function updates the internal state of the sensor model based on a 
+ * given state string. The state string is parsed, and its contents are used to update
+ * model parameters. This function is primarily used for sensor model instantiation or 
+ * updating the model state in iterative optimization processes.
+ * 
+ * @param stateString A JSON string representing the new state of the sensor model. This 
+ * string should contain all necessary model parameters and metadata to fully define the 
+ * sensor model state.
+ */
 void UsgsAstroLsSensorModel::replaceModelState(const std::string& stateString) {
   MESSAGE_LOG(spdlog::level::info, "Replacing model state")
 
@@ -292,9 +300,20 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string& stateString) {
   }
 }
 
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::getModelNameFromModelState
-//***************************************************************************
+/**
+ * @brief Retrieves the model name from a model state JSON string.
+ * @description This function extracts and returns the name of the sensor model from 
+ * a given state JSON string. It is primarily used to validate or utilize the model name
+ * stored within a serialized state representation.
+ * 
+ * @param model_state A JSON string representing the serialized state of a sensor model. 
+ * This string must contain a "m_modelName" key with the model's name as its value.
+ * @return std::string The name of the model extracted from the provided state.
+ * 
+ * @throws csm::Error If the "m_modelName" key is missing from the model state or if the 
+ * model name in the state is not supported, indicating either an invalid or incompatible 
+ * state string.
+ */
 std::string UsgsAstroLsSensorModel::getModelNameFromModelState(
     const std::string& model_state) {
   // Parse the string to JSON
@@ -321,9 +340,15 @@ std::string UsgsAstroLsSensorModel::getModelNameFromModelState(
   return model_name;
 }
 
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::getModelState
-//***************************************************************************
+/**
+ * @brief Serializes the sensor model state to a JSON string.
+ * @description This method captures the current state of the sensor model, including all relevant
+ * parameters and configurations, and serializes this information into a structured JSON string.
+ * 
+ * @return std::string A JSON string representing the serialized state of the sensor model.
+ * The string includes key-value pairs for various model parameters, ensuring a comprehensive
+ * snapshot of the model's current configuration and state.
+ */
 std::string UsgsAstroLsSensorModel::getModelState() const {
   MESSAGE_LOG(spdlog::level::info, "Running getModelState")
 
@@ -468,9 +493,22 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
   return stateString;
 }
 
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::applyTransformToState
-//***************************************************************************
+/**
+ * @brief Applies a rotation and translation transform to the sensor model state.
+ * @description This method modifies the sensor model's state by applying a specified rotation
+ * and translation to its elements, including quaternions, positions, and velocities. The operation
+ * affects the sensor's orientation, position, and motion, ensuring that changes in the sensor's
+ * physical setup or perspective are accurately reflected in the model state. The sun's position
+ * and velocity are not modified, assuming their significant distance makes any changes
+ * inconsequential to the model.
+ * 
+ * @param r The rotation to be applied, encapsulated in an `ale::Rotation` object, affecting
+ * the sensor's orientation and angular velocity.
+ * @param t The translation to be applied, represented as an `ale::Vec3d` vector, shifting
+ * the sensor's position.
+ * @param stateString A reference to a string holding the serialized JSON representation of
+ * the sensor model's state. This string is modified in-place to reflect the applied transformation.
+ */
 void UsgsAstroLsSensorModel::applyTransformToState(ale::Rotation const& r, ale::Vec3d const& t,
                                                    std::string& stateString) {
 
@@ -505,9 +543,16 @@ void UsgsAstroLsSensorModel::applyTransformToState(ale::Rotation const& r, ale::
   stateString = getModelNameFromModelState(stateString) + "\n" + j.dump(2);
 }
 
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::reset
-//***************************************************************************
+/**
+ * @brief Resets the sensor model to its default state.
+ * @description This method reinitializes the sensor model to default values, effectively
+ * erasing any adjustments or parameter modifications previously made. It sets all member
+ * variables to their default or zero-values, clears any data structures such as vectors, and
+ * prepares the model for a fresh start. This includes setting the sensor name to a default
+ * value, defining the default focal length, initializing distortion coefficients, and setting
+ * various model parameters like the number of lines, samples, and geometric parameters like
+ * the major and minor axes of the ellipsoid model used for the planet.
+ */
 void UsgsAstroLsSensorModel::reset() {
   MESSAGE_LOG(spdlog::level::debug, "Running reset()")
   m_useApproxInitTrans = false;  // default until an initial approximation is found
@@ -576,25 +621,45 @@ void UsgsAstroLsSensorModel::reset() {
       std::vector<double>(NUM_PARAMETERS * NUM_PARAMETERS, 0.0);  // 52
 }
 
-//*****************************************************************************
-// UsgsAstroLsSensorModel Constructor
-//*****************************************************************************
+/**
+ * @brief Constructor for UsgsAstroLsSensorModel.
+ * @description Initializes a new instance of the UsgsAstroLsSensorModel class, setting up
+ * the necessary structures and preparing the model for use. This includes allocating resources
+ * and setting initial parameter values to their defaults by invoking the reset method.
+ */
 UsgsAstroLsSensorModel::UsgsAstroLsSensorModel() {
   _no_adjustment.assign(UsgsAstroLsSensorModel::NUM_PARAMETERS, 0.0);
 }
 
-//*****************************************************************************
-// UsgsAstroLsSensorModel Destructor
-//*****************************************************************************
+/**
+ * @brief Destructor for UsgsAstroLsSensorModel.
+ * @description Cleans up an instance of UsgsAstroLsSensorModel when it is no longer needed.
+ * This includes releasing any resources allocated during the lifetime of the model instance
+ * and flushing the logger to ensure all messages are written out. This method ensures a clean
+ * shutdown of the sensor model instance, avoiding memory leaks and ensuring that all resources
+ * are properly released.
+ */
 UsgsAstroLsSensorModel::~UsgsAstroLsSensorModel() {
   if (m_logger) {
     m_logger->flush();
   }
 }
 
-//*****************************************************************************
-// UsgsAstroLsSensorModel updateState
-//*****************************************************************************
+/**
+ * @brief Updates the internal state of the sensor model.
+ * @description This method computes and updates several key parameters of the sensor model
+ * based on the current model state, including the reference point (the ground point corresponding
+ * to the center of the image), the ground sample distance (GSD), the flying height of the sensor,
+ * the half swath, and the half time duration of the image capture process.
+ * 
+ * The reference point is calculated by converting the center pixel of the image to a ground point
+ * using the imageToGround method. The GSD is then computed as the distance between adjacent pixels
+ * in ground space, providing a measure of the spatial resolution of the image. The flying height
+ * is determined by calculating the distance from the sensor position to the reference point.
+ * Additionally, the method calculates the half swath, which represents half the width of the
+ * imaged area on the ground, and the half time duration, which estimates half the time taken to
+ * capture the image.
+ */
 void UsgsAstroLsSensorModel::updateState() {
   // If sensor model is being created for the first time
   // This routine will set some parameters not found in the ISD.
@@ -687,13 +752,26 @@ void UsgsAstroLsSensorModel::updateState() {
   m_covariance[15 * num_params + 15] = positionVariance;
 }
 
-//---------------------------------------------------------------------------
-// Core Photogrammetry
-//---------------------------------------------------------------------------
-
-//***************************************************************************
-// UsgsAstroLsSensorModel::groundToImage
-//***************************************************************************
+/**
+ * @brief Converts a ground point to its corresponding image coordinates without adjustments.
+ * 
+ * @description This function estimates the image coordinates (line, sample) for a given 
+ * ground point in Earth-Centered, Earth-Fixed (ECEF) coordinates. It utilizes the 
+ * groundToImage function with an internal version that incorporates adjustments. 
+ * This wrapper function calls the more detailed groundToImage function without providing 
+ * any adjustments, thereby using the default model parameters.
+ * 
+ * @param ground_pt The ground point in ECEF coordinates to be converted to image coordinates.
+ * @param desired_precision The desired precision for the estimated image coordinates. 
+ * This influences the iterative process's termination condition.
+ * @param achieved_precision A pointer to a double where the function stores the achieved 
+ * precision of the estimate. It allows the caller to assess the accuracy of the estimation.
+ * @param warnings A pointer to a list for recording any warnings encountered during 
+ * the computation. It can include warnings about precision not being met.
+ * 
+ * @return csm::ImageCoord The estimated image coordinates (line, sample) corresponding 
+ * to the given ground point.
+ */
 csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
     const csm::EcefCoord& ground_pt, double desired_precision,
     double* achieved_precision, csm::WarningList* warnings) const {
@@ -713,9 +791,27 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
   return imagePt;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::groundToImage (internal version)
-//***************************************************************************
+/**
+ * @brief Detailed conversion from a ground point to image coordinates, considering adjustments.
+ * 
+ * @description Performs a refined computation of the image coordinates that view a specified 
+ * ground point, taking into account model adjustments. This function applies a projective 
+ * approximation for an initial guess of the image coordinates and then iteratively refines 
+ * this guess using the secant method to minimize the error in line estimation. The secant 
+ * method is a numerical technique for finding a root of a function, which in this context 
+ * is the difference between the estimated and actual lines corresponding to the ground point.
+ * The process involves adjusting the initial estimate of the image coordinates based on the 
+ * given adjustments (if any), and iteratively improving the estimate to achieve or exceed 
+ * the desired precision level.
+ * 
+ * @param groundPt The ECEF coordinates of the ground point to project into image space.
+ * @param adj Adjustments to apply to the sensor model parameters for this estimation.
+ * @param desiredPrecision The precision goal for the iterative estimation process.
+ * @param achievedPrecision Pointer to a double where the achieved precision of the estimate is stored.
+ * @param warnings Pointer to a list that will be populated with warnings, should they occur.
+ * 
+ * @return csm::ImageCoord The refined image coordinates (line, sample) for the ground point.
+ */
 csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
     const csm::EcefCoord& groundPt, const std::vector<double>& adj,
     double desiredPrecision, double* achievedPrecision,
@@ -821,9 +917,24 @@ csm::ImageCoord UsgsAstroLsSensorModel::groundToImage(
   return approxPt;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::groundToImage
-//***************************************************************************
+/**
+ * @brief Converts a ground point with covariance to its corresponding image coordinates with covariance.
+ * 
+ * @description This function estimates the image coordinates for a given ground point, including
+ * the propagation of the ground point's covariance through the transformation. It begins by
+ * converting the ECEF ground point to image coordinates using the groundToImage method. It then
+ * computes the partial derivatives of the line and sample coordinates with respect to the ground
+ * point's X, Y, and Z coordinates. These partial derivatives are used to propagate the ground
+ * point's covariance to the image space, taking into account both modeled and unmodeled errors as
+ * well as sensor-specific covariance.
+ * 
+ * @param groundPt The ground point in ECEF coordinates with covariance.
+ * @param desired_precision The desired precision for the image coordinate estimation.
+ * @param achieved_precision A pointer to a double where the achieved precision of the estimate is stored.
+ * @param warnings A pointer to a list that will be populated with warnings, should they occur.
+ * 
+ * @return csm::ImageCoordCovar The image coordinates and their covariance for the given ground point.
+ */
 csm::ImageCoordCovar UsgsAstroLsSensorModel::groundToImage(
     const csm::EcefCoordCovar& groundPt, double desired_precision,
     double* achieved_precision, csm::WarningList* warnings) const {
@@ -881,9 +992,20 @@ csm::ImageCoordCovar UsgsAstroLsSensorModel::groundToImage(
   return result;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::imageToGround
-//***************************************************************************
+/**
+ * @brief Converts an image coordinate to a ground point in ECEF coordinates at a given height.
+ * 
+ * @description This function computes the ground point in Earth-Centered Earth-Fixed (ECEF) coordinates
+ * corresponding to a given image coordinate and a specified height above the ellipsoid model of the Earth.
+ * 
+ * @param image_pt The image coordinate (line and sample) for which to compute the ground point.
+ * @param height The height above the ellipsoid at which to compute the ground point, in meters.
+ * @param desired_precision The desired precision for the ground point calculation, in meters.
+ * @param achieved_precision A pointer to a double where the achieved precision of the computation will be stored.
+ * @param warnings A pointer to a csm::WarningList for logging any warnings that occur during the computation.
+ * 
+ * @return csm::EcefCoord The computed ground point in ECEF coordinates.
+ */
 csm::EcefCoord UsgsAstroLsSensorModel::imageToGround(
     const csm::ImageCoord& image_pt, double height, double desired_precision,
     double* achieved_precision, csm::WarningList* warnings) const {
@@ -917,9 +1039,20 @@ csm::EcefCoord UsgsAstroLsSensorModel::imageToGround(
   return csm::EcefCoord(x, y, z);
 }
 
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::determineSensorCovarianceInImageSpace
-//***************************************************************************
+/**
+ * @brief Calculates sensor covariance in the image coordinate system.
+ * 
+ * @description This function calculates the covariance matrix of the sensor
+ * in the image space for a given ground point. It utilizes the sensor's
+ * partial derivatives with respect to its parameters to transform the
+ * parameter covariance into image space, providing a measure of uncertainty
+ * in image coordinates that originates from sensor model parameters.
+ * 
+ * @param gp The ground point in ECEF coordinates for which to determine sensor covariance.
+ * @param sensor_cov An array to store the 2x2 covariance matrix. The array will contain
+ * the covariance values in row-major order: [line variance, line-sample covariance,
+ * sample-line covariance, sample variance].
+ */
 void UsgsAstroLsSensorModel::determineSensorCovarianceInImageSpace(
     csm::EcefCoord& gp, double sensor_cov[4]) const {
   MESSAGE_LOG(
@@ -952,9 +1085,25 @@ void UsgsAstroLsSensorModel::determineSensorCovarianceInImageSpace(
   }
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::imageToGround
-//***************************************************************************
+/**
+ * @brief Converts an image coordinate with associated uncertainties to a ground point in ECEF coordinates.
+ * 
+ * @description This function computes the ground point in ECEF coordinates corresponding to a given image
+ * coordinate with associated uncertainties. It extends the basic image-to-ground transformation by also
+ * considering the uncertainties in the image coordinate and the specified height above the ellipsoid.
+ * The function calculates the covariance matrix of the resulting ground point by propagating the uncertainties
+ * through the transformation process. This includes uncertainties from the sensor model itself (sensor covariance),
+ * as well as any unmodeled errors and the provided height variance.
+ * 
+ * @param image_pt The image coordinate with covariance (line, sample, and their covariance matrix).
+ * @param height The height above the ellipsoid at which to compute the ground point, in meters.
+ * @param heightVariance The variance of the height above the ellipsoid.
+ * @param desired_precision The desired precision for the ground point calculation, in meters.
+ * @param achieved_precision A pointer to a double where the achieved precision of the computation will be stored.
+ * @param warnings A pointer to a csm::WarningList for logging any warnings that occur during the computation.
+ * 
+ * @return csm::EcefCoordCovar The computed ground point in ECEF coordinates with covariance.
+ */
 csm::EcefCoordCovar UsgsAstroLsSensorModel::imageToGround(
     const csm::ImageCoordCovar& image_pt, double height, double heightVariance,
     double desired_precision, double* achieved_precision,
@@ -1040,9 +1189,22 @@ csm::EcefCoordCovar UsgsAstroLsSensorModel::imageToGround(
   return result;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::imageToProximateImagingLocus
-//***************************************************************************
+/**
+ * @brief Computes the imaging locus for a given image point proximate to a specified ground point.
+ * 
+ * @description This function computes the line-of-sight (imaging locus) for a specific image point that is
+ * proximate to a given ground point. The computed imaging locus is the line that is closest to the given ground
+ * point and lies along the sensor's line-of-sight.
+ * 
+ * @param image_pt The image coordinate (line and sample) for which to compute the imaging locus.
+ * @param ground_pt The ground point in ECEF coordinates near which the imaging locus is to be computed.
+ * @param desired_precision The desired precision for the computation, in meters.
+ * @param achieved_precision A pointer to a double where the achieved precision of the computation will be stored.
+ * @param warnings A pointer to a csm::WarningList for logging any warnings that occur during the computation.
+ * 
+ * @return csm::EcefLocus The computed imaging locus, including a point on the locus and the unit direction vector
+ * of the locus in ECEF coordinates.
+ */
 csm::EcefLocus UsgsAstroLsSensorModel::imageToProximateImagingLocus(
     const csm::ImageCoord& image_pt, const csm::EcefCoord& ground_pt,
     double desired_precision, double* achieved_precision,
@@ -1106,9 +1268,23 @@ csm::EcefLocus UsgsAstroLsSensorModel::imageToProximateImagingLocus(
   return locus;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::imageToRemoteImagingLocus
-//***************************************************************************
+/**
+ * @brief Computes the remote imaging locus for a given image point.
+ * 
+ * @description This function calculates the remote imaging locus, which is an infinitely extending line from
+ * the sensor through the given image point and into space. It is used to model the direction from which the
+ * sensor is viewing the Earth's surface at the specified image coordinate.
+ * 
+ * @param image_pt The image coordinate (line and sample) for which to compute the remote imaging locus.
+ * @param desired_precision The desired precision for the calculation, in meters. This parameter influences
+ * the accuracy of the computed direction vector but is not directly used in the current implementation.
+ * @param achieved_precision A pointer to a double where the achieved precision of the computation will be stored.
+ * This is set to 0.0 as the calculation is deterministic.
+ * @param warnings A pointer to a csm::WarningList for logging any warnings that occur during the computation.
+ * 
+ * @return csm::EcefLocus The computed remote imaging locus, including a point on the locus (sensor position)
+ * and a direction vector indicating the line of sight from the sensor through the image point.
+ */
 csm::EcefLocus UsgsAstroLsSensorModel::imageToRemoteImagingLocus(
     const csm::ImageCoord& image_pt, double desired_precision,
     double* achieved_precision, csm::WarningList* warnings) const {
@@ -1145,9 +1321,17 @@ csm::EcefLocus UsgsAstroLsSensorModel::imageToRemoteImagingLocus(
 // Uncertainty Propagation
 //---------------------------------------------------------------------------
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::computeGroundPartials
-//***************************************************************************
+/**
+ * @brief Computes partial derivatives of the image coordinates with respect to the ground point coordinates.
+ * 
+ * @description This function calculates the partial derivatives of the image line and sample (image coordinates)
+ * with respect to the ground point X, Y, and Z coordinates (ECEF).
+ * 
+ * @param ground_pt The ground point in ECEF coordinates for which to compute partial derivatives.
+ * 
+ * @return std::vector<double> A vector containing the six partial derivatives:
+ * [dLine/dX, dLine/dY, dLine/dZ, dSample/dX, dSample/dY, dSample/dZ].
+ */
 std::vector<double> UsgsAstroLsSensorModel::computeGroundPartials(
     const csm::EcefCoord& ground_pt) const {
   MESSAGE_LOG(
@@ -1177,9 +1361,20 @@ std::vector<double> UsgsAstroLsSensorModel::computeGroundPartials(
   return partials;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::computeSensorPartials
-//***************************************************************************
+/**
+ * @brief Computes the partial derivatives of the image coordinates with respect to a specific sensor model parameter.
+ * 
+ * @description This function calculates how changes in a specific sensor model parameter affect the image
+ * coordinates of a ground point.
+ * 
+ * @param index The index of the sensor model parameter.
+ * @param ground_pt The ground point in ECEF coordinates.
+ * @param desired_precision The desired computational precision.
+ * @param achieved_precision A pointer to a double where the achieved precision will be stored.
+ * @param warnings A pointer to a csm::WarningList for logging any warnings.
+ * 
+ * @return csm::RasterGM::SensorPartials The partial derivatives of the image line and sample with respect to the specified parameter.
+ */
 csm::RasterGM::SensorPartials UsgsAstroLsSensorModel::computeSensorPartials(
     int index, const csm::EcefCoord& ground_pt, double desired_precision,
     double* achieved_precision, csm::WarningList* warnings) const {
@@ -1198,9 +1393,21 @@ csm::RasterGM::SensorPartials UsgsAstroLsSensorModel::computeSensorPartials(
                                achieved_precision, warnings);
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::computeSensorPartials
-//***************************************************************************
+/**
+ * @brief Overloaded method to compute sensor partials using image coordinates.
+ * 
+ * @description This function calculates how changes in a specific sensor model parameter affect the image
+ * coordinates of a ground point; starts with known image coordinates, avoiding the need to recompute them.
+ * 
+ * @param index The index of the sensor model parameter.
+ * @param image_pt The image coordinates.
+ * @param ground_pt The ground point in ECEF coordinates.
+ * @param desired_precision The desired computational precision.
+ * @param achieved_precision A pointer to a double where the achieved precision will be stored.
+ * @param warnings A pointer to a csm::WarningList for logging any warnings.
+ * 
+ * @return csm::RasterGM::SensorPartials The partial derivatives of the image line and sample with respect to the specified parameter.
+ */
 csm::RasterGM::SensorPartials UsgsAstroLsSensorModel::computeSensorPartials(
     int index, const csm::ImageCoord& image_pt, const csm::EcefCoord& ground_pt,
     double desired_precision, double* achieved_precision,
@@ -1227,9 +1434,20 @@ csm::RasterGM::SensorPartials UsgsAstroLsSensorModel::computeSensorPartials(
   return csm::RasterGM::SensorPartials(line_partial, sample_partial);
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::computeAllSensorPartials
-//***************************************************************************
+/**
+ * @brief Computes all sensor partial derivatives for a ground point.
+ * 
+ * @description This function calculates the partial derivatives of the image coordinates with respect to all
+ * sensor model parameters for a given ground point.
+ * 
+ * @param ground_pt The ground point in ECEF coordinates.
+ * @param pSet The set of parameters for which partials are to be computed.
+ * @param desired_precision The desired computational precision.
+ * @param achieved_precision A pointer to a double where the achieved precision will be stored.
+ * @param warnings A pointer to a csm::WarningList for logging any warnings.
+ * 
+ * @return std::vector<csm::RasterGM::SensorPartials> A vector of sensor partials for all parameters.
+ */
 std::vector<csm::RasterGM::SensorPartials>
 UsgsAstroLsSensorModel::computeAllSensorPartials(
     const csm::EcefCoord& ground_pt, csm::param::Set pSet,
@@ -1247,9 +1465,21 @@ UsgsAstroLsSensorModel::computeAllSensorPartials(
                                   achieved_precision, warnings);
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::computeAllSensorPartials
-//***************************************************************************
+/**
+ * @brief Computes sensor partial derivatives for an image point with respect to all parameters.
+ * 
+ * @description This function calculates the partial derivatives of the image line and sample coordinates with respect to
+ * all adjustable parameters in the sensor model for a given image and ground point.
+ * 
+ * @param image_pt The image point coordinates (line, sample).
+ * @param ground_pt The ground point in ECEF coordinates.
+ * @param pSet The set of parameters to consider in the computation.
+ * @param desired_precision The desired precision for the computation.
+ * @param achieved_precision A pointer to store the achieved precision.
+ * @param warnings A pointer to a csm::WarningList for logging any warnings.
+ * 
+ * @return A vector of csm::RasterGM::SensorPartials representing the partial derivatives for all parameters.
+ */
 std::vector<csm::RasterGM::SensorPartials>
 UsgsAstroLsSensorModel::computeAllSensorPartials(
     const csm::ImageCoord& image_pt, const csm::EcefCoord& ground_pt,
@@ -1266,9 +1496,16 @@ UsgsAstroLsSensorModel::computeAllSensorPartials(
                                             achieved_precision, warnings);
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getParameterCovariance
-//***************************************************************************
+/**
+ * @brief Retrieves the covariance between two sensor model parameters.
+ * 
+ * @description Given two parameter indices, this function returns the covariance between them.
+ * 
+ * @param index1 The index of the first parameter.
+ * @param index2 The index of the second parameter.
+ * 
+ * @return The covariance between the two parameters.
+ */
 double UsgsAstroLsSensorModel::getParameterCovariance(int index1,
                                                       int index2) const {
   int index = UsgsAstroLsSensorModel::NUM_PARAMETERS * index1 + index2;
@@ -1281,9 +1518,15 @@ double UsgsAstroLsSensorModel::getParameterCovariance(int index1,
   return m_covariance[index];
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::setParameterCovariance
-//***************************************************************************
+/**
+ * @brief Sets the covariance between two sensor model parameters.
+ * 
+ * @description Allows for setting the covariance between two specific sensor model parameters.
+ * 
+ * @param index1 The index of the first parameter.
+ * @param index2 The index of the second parameter.
+ * @param covariance The new covariance value to set.
+ */
 void UsgsAstroLsSensorModel::setParameterCovariance(int index1, int index2,
                                                     double covariance) {
   int index = UsgsAstroLsSensorModel::NUM_PARAMETERS * index1 + index2;
@@ -1300,16 +1543,25 @@ void UsgsAstroLsSensorModel::setParameterCovariance(int index1, int index2,
 // Time and Trajectory
 //---------------------------------------------------------------------------
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getTrajectoryIdentifier
-//***************************************************************************
+/**
+ * @brief Retrieves the trajectory identifier.
+ * 
+ * @description Returns a string that identifies the trajectory of the sensor. This could include information like
+ * mission name, trajectory number, etc.
+ * 
+ * @return A string identifying the trajectory.
+ */
 std::string UsgsAstroLsSensorModel::getTrajectoryIdentifier() const {
   return "UNKNOWN";
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getReferenceDateAndTime
-//***************************************************************************
+/**
+ * @brief Retrieves the reference date and time for the sensor model.
+ * 
+ * @description This function calculates and returns the reference date and time corresponding to the sensor model.
+ * 
+ * @return A string representing the reference date and time.
+ */
 std::string UsgsAstroLsSensorModel::getReferenceDateAndTime() const {
   csm::EcefCoord referencePointGround =
     UsgsAstroLsSensorModel::getReferencePoint();
@@ -1322,9 +1574,15 @@ std::string UsgsAstroLsSensorModel::getReferenceDateAndTime() const {
   return ephemTimeToCalendarTime(ephemTime);
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getImageTime
-//***************************************************************************
+/**
+ * @brief Computes the image time for a given image point.
+ * 
+ * @description Calculates the time at which a specific image line (and implicitly, the entire image frame) was acquired.
+ * 
+ * @param image_pt The image point (line, sample) for which to calculate the image acquisition time.
+ * 
+ * @return The image acquisition time for the specified image point.
+ */
 double UsgsAstroLsSensorModel::getImageTime(
     const csm::ImageCoord& image_pt) const {
   MESSAGE_LOG(
@@ -1354,9 +1612,16 @@ double UsgsAstroLsSensorModel::getImageTime(
   return time;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getSensorPosition
-//***************************************************************************
+/**
+ * @brief Retrieves the sensor position for a specified image point.
+ * 
+ * @description This function calculates the sensor's position in Earth-Centered Earth-Fixed (ECEF) coordinates at the
+ * time the specified image point was acquired.
+ * 
+ * @param imagePt The image coordinates (line, sample) for which to calculate the sensor position.
+ * 
+ * @return The sensor's position in ECEF coordinates.
+ */
 csm::EcefCoord UsgsAstroLsSensorModel::getSensorPosition(
     const csm::ImageCoord& imagePt) const {
   MESSAGE_LOG(
@@ -1367,9 +1632,16 @@ csm::EcefCoord UsgsAstroLsSensorModel::getSensorPosition(
   return getSensorPosition(getImageTime(imagePt));
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getSensorPosition
-//***************************************************************************
+/**
+ * @brief Retrieves the sensor position for a specified time.
+ * 
+ * @description Calculates the sensor's position in Earth-Centered Earth-Fixed (ECEF) coordinates at a specific
+ * time relative to the start of the image acquisition.
+ * 
+ * @param time The time at which to calculate the sensor's position.
+ * 
+ * @return The sensor's position in ECEF coordinates.
+ */
 csm::EcefCoord UsgsAstroLsSensorModel::getSensorPosition(double time) const {
   MESSAGE_LOG(
       spdlog::level::debug,
@@ -1386,9 +1658,16 @@ csm::EcefCoord UsgsAstroLsSensorModel::getSensorPosition(double time) const {
   return csm::EcefCoord(x, y, z);
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getSensorVelocity
-//***************************************************************************
+/**
+ * @brief Retrieves the sensor velocity for a specified image point.
+ * 
+ * @description This function calculates the sensor's velocity in Earth-Centered Earth-Fixed (ECEF) coordinates at the
+ * time the specified image point was acquired.
+ * 
+ * @param imagePt The image coordinates (line, sample) for which to calculate the sensor velocity.
+ * 
+ * @return The sensor's velocity as a vector in ECEF coordinates.
+ */
 csm::EcefVector UsgsAstroLsSensorModel::getSensorVelocity(
     const csm::ImageCoord& imagePt) const {
   MESSAGE_LOG(
@@ -1398,9 +1677,16 @@ csm::EcefVector UsgsAstroLsSensorModel::getSensorVelocity(
   return getSensorVelocity(getImageTime(imagePt));
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getSensorVelocity
-//***************************************************************************
+/**
+ * @brief Retrieves the sensor velocity for a specified time.
+ * 
+ * @description Calculates the sensor's velocity in Earth-Centered Earth-Fixed (ECEF) coordinates at a specific
+ * time relative to the start of the image acquisition.
+ * 
+ * @param time The time at which to calculate the sensor's velocity.
+ * 
+ * @return The sensor's velocity as a vector in ECEF coordinates.
+ */
 csm::EcefVector UsgsAstroLsSensorModel::getSensorVelocity(double time) const {
   MESSAGE_LOG(
       spdlog::level::debug,
@@ -1421,49 +1707,84 @@ csm::EcefVector UsgsAstroLsSensorModel::getSensorVelocity(double time) const {
 // Sensor Model Parameters
 //---------------------------------------------------------------------------
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::setParameterValue
-//***************************************************************************
+/**
+ * @brief Sets the value of a specific sensor model parameter.
+ * 
+ * @description Allows updating the value of a specific sensor parameter identified by its index.
+ * 
+ * @param index The index of the parameter to update.
+ * @param value The new value to set for the parameter.
+ */
 void UsgsAstroLsSensorModel::setParameterValue(int index, double value) {
   m_currentParameterValue[index] = value;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getParameterValue
-//***************************************************************************
+/**
+ * @brief Retrieves the value of a specific sensor model parameter.
+ * 
+ * @description Given the index of a sensor parameter, this function returns its current value.
+ * 
+ * @param index The index of the parameter whose value is to be retrieved.
+ * 
+ * @return The current value of the specified parameter.
+ */
 double UsgsAstroLsSensorModel::getParameterValue(int index) const {
   return m_currentParameterValue[index];
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getParameterName
-//***************************************************************************
+/**
+ * @brief Retrieves the name of a specific sensor model parameter.
+ * 
+ * @description Given the index of a sensor parameter, this function returns its name.
+ * 
+ * @param index The index of the parameter whose name is to be retrieved.
+ * 
+ * @return The name of the specified parameter.
+ */
 std::string UsgsAstroLsSensorModel::getParameterName(int index) const {
   return PARAMETER_NAME[index];
 }
 
+/**
+ * @brief Retrieves the units of a specific sensor model parameter.
+ * 
+ * @description Given the index of a sensor parameter, this function returns its units.
+ * 
+ * @param index The index of the parameter whose units are to be retrieved.
+ * 
+ * @return The units of the specified parameter.
+ */
 std::string UsgsAstroLsSensorModel::getParameterUnits(int index) const {
   // All parameters are meters or scaled to meters
   return "m";
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getNumParameters
-//***************************************************************************
+/**
+ * @brief Retrieves the total number of parameters in the sensor model.
+ * 
+ * @return The number of parameters.
+ */
 int UsgsAstroLsSensorModel::getNumParameters() const {
   return UsgsAstroLsSensorModel::NUM_PARAMETERS;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getParameterType
-//***************************************************************************
+/**
+ * @brief Retrieves the type of a specific parameter.
+ * 
+ * @param index The index of the parameter.
+ * 
+ * @return The type of the parameter.
+ */
 csm::param::Type UsgsAstroLsSensorModel::getParameterType(int index) const {
   return m_parameterType[index];
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::setParameterType
-//***************************************************************************
+/**
+ * @brief Sets the type for a specific parameter.
+ * 
+ * @param index The index of the parameter to set.
+ * @param pType The parameter type to set.
+ */
 void UsgsAstroLsSensorModel::setParameterType(int index,
                                               csm::param::Type pType) {
   m_parameterType[index] = pType;
@@ -1473,76 +1794,97 @@ void UsgsAstroLsSensorModel::setParameterType(int index,
 // Sensor Model Information
 //---------------------------------------------------------------------------
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getPedigree
-//***************************************************************************
+/**
+ * @brief Retrieves the sensor model's pedigree.
+ * 
+ * @return The pedigree of the sensor model.
+ */
 std::string UsgsAstroLsSensorModel::getPedigree() const {
   return "USGS_LINE_SCANNER";
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getImageIdentifier
-//***************************************************************************
+/**
+ * @brief Retrieves the image identifier.
+ * 
+ * @return The image identifier.
+ */
 std::string UsgsAstroLsSensorModel::getImageIdentifier() const {
   return m_imageIdentifier;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::setImageIdentifier
-//***************************************************************************
+/**
+ * @brief Sets the image identifier.
+ * 
+ * @param imageId The new image identifier.
+ * @param warnings List to populate with any warnings.
+ */
 void UsgsAstroLsSensorModel::setImageIdentifier(const std::string& imageId,
                                                 csm::WarningList* warnings) {
   // Image id should include the suffix without the path name
   m_imageIdentifier = imageId;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getSensorIdentifier
-//***************************************************************************
+/**
+ * @brief Retrieves the sensor identifier.
+ * 
+ * @return The sensor identifier.
+ */
 std::string UsgsAstroLsSensorModel::getSensorIdentifier() const {
   return m_sensorIdentifier;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getPlatformIdentifier
-//***************************************************************************
+/**
+ * @brief Retrieves the platform identifier.
+ * 
+ * @return The platform identifier.
+ */
 std::string UsgsAstroLsSensorModel::getPlatformIdentifier() const {
   return m_platformIdentifier;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::setReferencePoint
-//***************************************************************************
+/**
+ * @brief Sets the reference point in ECEF coordinates.
+ * 
+ * @param ground_pt The new reference point.
+ */
 void UsgsAstroLsSensorModel::setReferencePoint(
     const csm::EcefCoord& ground_pt) {
   m_referencePointXyz = ground_pt;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getReferencePoint
-//***************************************************************************
+/**
+ * @brief Retrieves the reference point in ECEF coordinates.
+ * 
+ * @return The current reference point.
+ */
 csm::EcefCoord UsgsAstroLsSensorModel::getReferencePoint() const {
   // Return ground point at image center
   return m_referencePointXyz;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getSensorModelName
-//***************************************************************************
+/**
+ * @brief Retrieves the name of the sensor model.
+ * 
+ * @return The sensor model name.
+ */
 std::string UsgsAstroLsSensorModel::getModelName() const {
   return UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getImageStart
-//***************************************************************************
+/**
+ * @brief Retrieves the start coordinate of the image.
+ * 
+ * @return The start coordinate of the image.
+ */
 csm::ImageCoord UsgsAstroLsSensorModel::getImageStart() const {
   return csm::ImageCoord(0.0, 0.0);
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getImageSize
-//***************************************************************************
+/**
+ * @brief Retrieves the size of the image.
+ * 
+ * @return The size of the image.
+ */
 csm::ImageVector UsgsAstroLsSensorModel::getImageSize() const {
   return csm::ImageVector(m_nLines, m_nSamples);
 }
@@ -1551,16 +1893,23 @@ csm::ImageVector UsgsAstroLsSensorModel::getImageSize() const {
 //  Monoscopic Mensuration
 //---------------------------------------------------------------------------
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getValidHeightRange
-//***************************************************************************
+/**
+ * @brief Retrieves the valid height range for the sensor model.
+ * 
+ * @return A pair representing the minimum and maximum valid heights.
+ */
 std::pair<double, double> UsgsAstroLsSensorModel::getValidHeightRange() const {
   return std::pair<double, double>(m_minElevation, m_maxElevation);
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getValidImageRange
-//***************************************************************************
+
+/**
+ * @brief Retrieves the valid range of image coordinates for this sensor model.
+ * 
+ * @return A pair of image coordinates specifying the valid range, where the first
+ * element is the start coordinate (top-left corner) and the second element
+ * is the end coordinate (bottom-right corner).
+ */
 std::pair<csm::ImageCoord, csm::ImageCoord>
 UsgsAstroLsSensorModel::getValidImageRange() const {
   return std::pair<csm::ImageCoord, csm::ImageCoord>(
@@ -1570,9 +1919,13 @@ UsgsAstroLsSensorModel::getValidImageRange() const {
                                      // image in a zero based system.
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getIlluminationDirection
-//***************************************************************************
+/**
+ * @brief Retrieves the illumination direction for a given ground point.
+ * 
+ * @param groundPt The ground point for which the illumination direction is queried.
+ * 
+ * @return The unit vector representing the direction of illumination.
+ */
 csm::EcefVector UsgsAstroLsSensorModel::getIlluminationDirection(
     const csm::EcefCoord& groundPt) const {
   MESSAGE_LOG(
@@ -1601,16 +1954,22 @@ csm::EcefVector UsgsAstroLsSensorModel::getIlluminationDirection(
 //  Error Correction
 //---------------------------------------------------------------------------
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getNumGeometricCorrectionSwitches
-//***************************************************************************
+/**
+ * @brief Retrieves the number of geometric correction switches available in the model.
+ * 
+ * @return The number of geometric correction switches.
+ */
 int UsgsAstroLsSensorModel::getNumGeometricCorrectionSwitches() const {
   return 0;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getGeometricCorrectionName
-//***************************************************************************
+/**
+ * @brief Retrieves the name of a specific geometric correction switch.
+ * 
+ * @param index The index of the correction switch.
+ * 
+ * @return The name of the geometric correction switch.
+ */
 std::string UsgsAstroLsSensorModel::getGeometricCorrectionName(
     int index) const {
   MESSAGE_LOG(
@@ -1623,9 +1982,13 @@ std::string UsgsAstroLsSensorModel::getGeometricCorrectionName(
                    "UsgsAstroLsSensorModel::getGeometricCorrectionName");
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::setGeometricCorrectionSwitch
-//***************************************************************************
+/**
+ * @brief Sets the state of a specific geometric correction switch.
+ * 
+ * @param index The index of the correction switch to set.
+ * @param value The new state of the correction switch.
+ * @param pType The parameter type associated with the correction switch.
+ */
 void UsgsAstroLsSensorModel::setGeometricCorrectionSwitch(
     int index, bool value, csm::param::Type pType) {
   MESSAGE_LOG(
@@ -1639,9 +2002,13 @@ void UsgsAstroLsSensorModel::setGeometricCorrectionSwitch(
                    "UsgsAstroLsSensorModel::setGeometricCorrectionSwitch");
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getGeometricCorrectionSwitch
-//***************************************************************************
+/**
+ * @brief Retrieves the state of a specific geometric correction switch.
+ * 
+ * @param index The index of the correction switch.
+ * 
+ * @return The state of the geometric correction switch.
+ */
 bool UsgsAstroLsSensorModel::getGeometricCorrectionSwitch(int index) const {
   MESSAGE_LOG(
       spdlog::level::debug,
@@ -1653,9 +2020,15 @@ bool UsgsAstroLsSensorModel::getGeometricCorrectionSwitch(int index) const {
                    "UsgsAstroLsSensorModel::getGeometricCorrectionSwitch");
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getCrossCovarianceMatrix
-//***************************************************************************
+/**
+ * @brief Retrieves the cross covariance matrix between this model and another model.
+ * 
+ * @param comparisonModel The other geometric model to compare against.
+ * @param pSet The parameter set for which the covariance is requested.
+ * @param otherModels A list of other geometric models in the scene.
+ * 
+ * @return A vector representing the cross covariance matrix.
+ */
 std::vector<double> UsgsAstroLsSensorModel::getCrossCovarianceMatrix(
     const csm::GeometricModel& comparisonModel, csm::param::Set pSet,
     const csm::GeometricModel::GeometricModelList& otherModels) const {
@@ -1682,50 +2055,69 @@ std::vector<double> UsgsAstroLsSensorModel::getCrossCovarianceMatrix(
   return std::vector<double>(num_rows * num_cols, 0.0);
 }
 
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::getCorrelationModel
-//***************************************************************************
+/**
+ * @brief Retrieves the correlation model for the sensor.
+ * 
+ * @return A reference to the correlation model.
+ */
 const csm::CorrelationModel& UsgsAstroLsSensorModel::getCorrelationModel()
     const {
   // All Line Scanner images are assumed uncorrelated
   return _no_corr_model;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getUnmodeledCrossCovariance
-//***************************************************************************
+/**
+ * @brief Retrieves the unmodeled cross covariance between two image points.
+ * 
+ * @param pt1 The first image point.
+ * @param pt2 The second image point.
+ * 
+ * @return A vector containing the unmodeled cross covariance values.
+ */
 std::vector<double> UsgsAstroLsSensorModel::getUnmodeledCrossCovariance(
     const csm::ImageCoord& pt1, const csm::ImageCoord& pt2) const {
   // No unmodeled error
   return std::vector<double>(4, 0.0);
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getCollectionIdentifier
-//***************************************************************************
+/**
+ * @brief Retrieves the identifier for the collection to which this sensor model belongs.
+ * 
+ * @return A string representing the collection identifier.
+ */
 std::string UsgsAstroLsSensorModel::getCollectionIdentifier() const {
   return "UNKNOWN";
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::hasShareableParameters
-//***************************************************************************
+/**
+ * @brief Checks if the sensor model has parameters that can be shared across multiple instances.
+ * 
+ * @return True if parameters can be shared, false otherwise.
+ */
 bool UsgsAstroLsSensorModel::hasShareableParameters() const {
   // Parameter sharing is not supported for this sensor
   return false;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::isParameterShareable
-//***************************************************************************
+/**
+ * @brief Determines if a specific parameter can be shared across multiple sensor model instances.
+ * 
+ * @param index The index of the parameter.
+ * 
+ * @return True if the parameter can be shared, false otherwise.
+ */
 bool UsgsAstroLsSensorModel::isParameterShareable(int index) const {
   // Parameter sharing is not supported for this sensor
   return false;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getParameterSharingCriteria
-//***************************************************************************
+/**
+ * @brief Retrieves the criteria for sharing a specific parameter.
+ * 
+ * @param index The index of the parameter.
+ * 
+ * @return The sharing criteria for the specified parameter.
+ */
 csm::SharingCriteria UsgsAstroLsSensorModel::getParameterSharingCriteria(
     int index) const {
   MESSAGE_LOG(
@@ -1736,50 +2128,71 @@ csm::SharingCriteria UsgsAstroLsSensorModel::getParameterSharingCriteria(
   return csm::SharingCriteria();
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getSensorType
-//***************************************************************************
+/**
+ * @brief Retrieves the sensor type.
+ * 
+ * @return A string representing the sensor type.
+ */
 std::string UsgsAstroLsSensorModel::getSensorType() const {
   return CSM_SENSOR_TYPE_EO;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getSensorMode
-//***************************************************************************
+/**
+ * @brief Retrieves the sensor mode.
+ * 
+ * @return A string representing the sensor mode.
+ */
 std::string UsgsAstroLsSensorModel::getSensorMode() const {
   return CSM_SENSOR_MODE_PB;
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::getVersion
-//***************************************************************************
+/**
+ * @brief Retrieves the version of the sensor model.
+ * 
+ * @return A csm::Version object representing the version.
+ */
 csm::Version UsgsAstroLsSensorModel::getVersion() const {
   return csm::Version(1, 0, 0);
 }
 
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::getEllipsoid
-//***************************************************************************
+/**
+ * @brief Retrieves the ellipsoid used by the sensor model.
+ * 
+ * @return A csm::Ellipsoid object representing the ellipsoid.
+ */
 csm::Ellipsoid UsgsAstroLsSensorModel::getEllipsoid() const {
   return csm::Ellipsoid(m_majorAxis, m_minorAxis);
 }
 
+/**
+ * @brief Sets the ellipsoid used by the sensor model.
+ * 
+ * @param ellipsoid The new ellipsoid to use.
+ */
 void UsgsAstroLsSensorModel::setEllipsoid(const csm::Ellipsoid& ellipsoid) {
   m_majorAxis = ellipsoid.getSemiMajorRadius();
   m_minorAxis = ellipsoid.getSemiMinorRadius();
 }
 
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::getValue
-//***************************************************************************
+/**
+ * @brief Retrieves the value of a parameter, adjusted by the specified adjustments.
+ * 
+ * @param index The index of the parameter.
+ * @param adjustments The adjustments to apply to the parameter value.
+ * 
+ * @return The adjusted parameter value.
+ */
 double UsgsAstroLsSensorModel::getValue(
     int index, const std::vector<double>& adjustments) const {
   return m_currentParameterValue[index] + adjustments[index];
 }
 
-//***************************************************************************
-// Functions pulled out of losToEcf and computeViewingPixel
-// **************************************************************************
+/**
+ * @brief Retrieves the quaternions representing the sensor's orientation at a given time.
+ * 
+ * @param time The time at which to retrieve the quaternions.
+ * @param q The array to store the quaternion values.
+ */
 void UsgsAstroLsSensorModel::getQuaternions(const double& time,
                                             double q[4]) const {
   int nOrder = 8;
@@ -1796,9 +2209,13 @@ void UsgsAstroLsSensorModel::getQuaternions(const double& time,
                  time, 4, nOrderQuat, q);
 }
 
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::calculateAttitudeCorrection
-//***************************************************************************
+/**
+ * @brief Calculates the attitude correction matrix for a given time and set of adjustments.
+ * 
+ * @param time The time at which to calculate the attitude correction.
+ * @param adj The adjustments to apply.
+ * @param attCorr The array to store the attitude correction matrix.
+ */
 void UsgsAstroLsSensorModel::calculateAttitudeCorrection(
     const double& time, const std::vector<double>& adj,
     double attCorr[9]) const {
@@ -1828,9 +2245,26 @@ void UsgsAstroLsSensorModel::calculateAttitudeCorrection(
   calculateRotationMatrixFromEuler(euler, attCorr);
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::losToEcf
-//***************************************************************************
+/**
+ * @brief Transforms a line-of-sight vector in image coordinates to the Earth-Centered Fixed (ECF) coordinate system.
+ * 
+ * @description Computes the ECF coordinates of the sensor position and velocity, as well as the line-of-sight vector
+ * in the body-fixed frame. The function accounts for distortion and corrects the line-of-sight vector using the sensor
+ * model parameters and adjustments.
+ * 
+ * @param line The image line coordinate (zero-based).
+ * @param sample The image sample coordinate (zero-based, UL pixel center == (0.5, 0.5)).
+ * @param adj Adjustments to the sensor model parameters.
+ * @param xc Output sensor X coordinate in ECF.
+ * @param yc Output sensor Y coordinate in ECF.
+ * @param zc Output sensor Z coordinate in ECF.
+ * @param vx Output sensor velocity along the X axis.
+ * @param vy Output sensor velocity along the Y axis.
+ * @param vz Output sensor velocity along the Z axis.
+ * @param bodyLookX Output line-of-sight vector X component in body-fixed frame.
+ * @param bodyLookY Output line-of-sight vector Y component in body-fixed frame.
+ * @param bodyLookZ Output line-of-sight vector Z component in body-fixed frame.
+ */
 void UsgsAstroLsSensorModel::losToEcf(
     const double& line,              // CSM image convention
     const double& sample,            // UL pixel center == (0.5, 0.5)
@@ -1935,9 +2369,24 @@ void UsgsAstroLsSensorModel::losToEcf(
       bodyLookX, bodyLookY, bodyLookZ)
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::lightAberrationCorr
-//**************************************************************************
+/**
+ * @brief Corrects the line-of-sight vector for light aberration.
+ * 
+ * @description The correction is based on the relative motion between the sensor and the observed surface.
+ * This function calculates the correction vector due to light aberration, which is the apparent displacement
+ * of the position of a celestial object from its true position (or geometric position), caused by the motion
+ * of the observer.
+ * 
+ * @param vx Sensor velocity along the X axis.
+ * @param vy Sensor velocity along the Y axis.
+ * @param vz Sensor velocity along the Z axis.
+ * @param xl Initial line-of-sight vector X component.
+ * @param yl Initial line-of-sight vector Y component.
+ * @param zl Initial line-of-sight vector Z component.
+ * @param dxl Output corrected line-of-sight vector X component.
+ * @param dyl Output corrected line-of-sight vector Y component.
+ * @param dzl Output corrected line-of-sight vector Z component.
+ */
 void UsgsAstroLsSensorModel::lightAberrationCorr(
     const double& vx, const double& vy, const double& vz, const double& xl,
     const double& yl, const double& zl, double& dxl, double& dyl,
@@ -1992,9 +2441,28 @@ void UsgsAstroLsSensorModel::lightAberrationCorr(
       dxl, dyl, dzl)
 }
 
-//***************************************************************************
-// UsgsAstroLsSensorModel::losEllipsoidIntersect
-//**************************************************************************
+/**
+ * @brief Computes the intersection of a line-of-sight vector with an ellipsoid representing the Earth.
+ * 
+ * @description This function calculates the intersection point of a ray originating from a given camera position
+ * (xc, yc, zc) and directed along a vector (xl, yl, zl) with an ellipsoid defined by the sensor model's major
+ * and minor axes. The function also provides the achieved precision of the calculation compared to the
+ * desired precision and warns if the line-of-sight does not intersect the ellipsoid.
+ * 
+ * @param height The height above the ellipsoid at which to calculate the intersection.
+ * @param xc The X coordinate of the camera position in ECF.
+ * @param yc The Y coordinate of the camera position in ECF.
+ * @param zc The Z coordinate of the camera position in ECF.
+ * @param xl The X component of the line-of-sight vector.
+ * @param yl The Y component of the line-of-sight vector.
+ * @param zl The Z component of the line-of-sight vector.
+ * @param x Output X coordinate of the intersection point in ECF.
+ * @param y Output Y coordinate of the intersection point in ECF.
+ * @param z Output Z coordinate of the intersection point in ECF.
+ * @param achieved_precision The achieved precision of the intersection calculation.
+ * @param desired_precision The desired precision for the intersection calculation.
+ * @param warnings A list to hold any warnings generated during the calculation.
+ */
 void UsgsAstroLsSensorModel::losEllipsoidIntersect(
     const double& height, const double& xc, const double& yc, const double& zc,
     const double& xl, const double& yl, const double& zl, double& x, double& y,
@@ -2066,9 +2534,23 @@ void UsgsAstroLsSensorModel::losEllipsoidIntersect(
       x, y, z, achieved_precision)
 }
 
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::getAdjSensorPosVel
-//***************************************************************************
+/**
+ * @brief Adjusts the sensor position and velocity based on the model parameters and adjustments.
+ * 
+ * @description This function calculates the adjusted sensor position (xc, yc, zc) and velocity (vx, vy, vz)
+ * at a specified time. It considers both nominal sensor positions/velocities and model parameter adjustments.
+ * The function can optionally calculate the sensor velocity.
+ * 
+ * @param time The time at which to calculate the sensor position and velocity.
+ * @param adj A vector of adjustments to the sensor model parameters.
+ * @param xc Output adjusted sensor X position in ECF.
+ * @param yc Output adjusted sensor Y position in ECF.
+ * @param zc Output adjusted sensor Z position in ECF.
+ * @param vx Output adjusted sensor X velocity.
+ * @param vy Output adjusted sensor Y velocity.
+ * @param vz Output adjusted sensor Z velocity.
+ * @param calc_vel Flag indicating whether to calculate the velocity.
+ */
 void UsgsAstroLsSensorModel::getAdjSensorPosVel(const double& time,
                                                 const std::vector<double>& adj,
                                                 double& xc, double& yc,
@@ -2179,9 +2661,18 @@ void UsgsAstroLsSensorModel::getAdjSensorPosVel(const double& time,
       xc, yc, zc, vx, vy, vz)
 }
 
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::computeDetectorView
-//***************************************************************************
+/**
+ * @brief Computes the detector view for a ground point with adjustments.
+ * 
+ * @description Calculates focal plane coordinates (x, y) corresponding to a
+ * ground point at a specific time, considering model adjustments.
+ * 
+ * @param time Time at which the observation is made.
+ * @param groundPoint The ground point being observed.
+ * @param adj Adjustments to the sensor model parameters.
+ * 
+ * @return Vector containing the focal plane coordinates (x, y).
+ */
 std::vector<double> UsgsAstroLsSensorModel::computeDetectorView(
     const double& time, const csm::EcefCoord& groundPoint,
     const std::vector<double>& adj) const {
@@ -2261,9 +2752,17 @@ std::vector<double> UsgsAstroLsSensorModel::computeDetectorView(
   return std::vector<double>{focalX, focalY};
 }
 
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::computeProjectiveApproximation
-//***************************************************************************
+/**
+ * @brief Computes a projective approximation for ground to image conversion.
+ * 
+ * @description Provides a rapid, approximate conversion from ground
+ * coordinates to image coordinates using a projective transformation. If the
+ * projective transform has not been initialized, it defaults to the image
+ * center.
+ * 
+ * @param gp The ground point to be approximated.
+ * @param ip Reference to store the approximate image point.
+ */
 void UsgsAstroLsSensorModel::computeProjectiveApproximation(const csm::EcefCoord& gp,
                                                             csm::ImageCoord& ip) const {
   MESSAGE_LOG(
@@ -2318,9 +2817,13 @@ void UsgsAstroLsSensorModel::computeProjectiveApproximation(const csm::EcefCoord
       ip.line, ip.samp);
 }
 
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::createProjectiveApproximation
-//***************************************************************************
+/**
+ * @brief Creates a projective transformation approximation.
+ * 
+ * @description Calculates coefficients for a projective transformation based
+ * on selected ground to image point mappings, enabling rapid approximate
+ * conversions from ground points to image points.
+ */
 void UsgsAstroLsSensorModel::createProjectiveApproximation() {
   MESSAGE_LOG(
       spdlog::level::debug,
@@ -2385,9 +2888,19 @@ void UsgsAstroLsSensorModel::createProjectiveApproximation() {
       "Completed createProjectiveApproximation");
 }
 
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::constructStateFromIsd
-//***************************************************************************
+/**
+ * @brief Constructs the sensor model state from ISD (Image Support Data).
+ *
+ * @description Parses the ISD, extracts relevant information, and populates the
+ * model state necessary for sensor model operations. This includes sensor,
+ * platform, and image identifiers, along with geometric and optical properties.
+ * Warnings are collected if any issues arise during parsing.
+ *
+ * @param imageSupportData The ISD in string format.
+ * @param warnings A pointer to a list for recording any warnings.
+ * 
+ * @return A string representation of the sensor model state.
+ */
 std::string UsgsAstroLsSensorModel::constructStateFromIsd(
     const std::string imageSupportData, csm::WarningList* warnings) {
   json state = {};
@@ -2746,17 +3259,40 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(
   return state.dump();
 }
 
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::getLogger
-//***************************************************************************
+/**
+ * @brief Retrieves the logger associated with the sensor model.
+ *
+ * @description Accessor for the sensor model's logging mechanism, allowing for
+ * logging of operations and errors.
+ *
+ * @return Shared pointer to the logger.
+ */
 std::shared_ptr<spdlog::logger> UsgsAstroLsSensorModel::getLogger() {
   return m_logger;
 }
 
+/**
+ * @brief Sets the logger for the sensor model.
+ *
+ * @description Associates a named logger with the sensor model, enabling
+ * logging of messages under a specific log name.
+ *
+ * @param logName The name of the logger.
+ */
 void UsgsAstroLsSensorModel::setLogger(std::string logName) {
   m_logger = spdlog::get(logName);
 }
 
+/**
+ * @brief Computes the position of the Sun at a given image time.
+ *
+ * @description Determines the Sun's position in ECEF coordinates at a specified
+ * time during the image capture.
+ *
+ * @param imageTime The time of interest within the image capture timeline.
+ * 
+ * @return The ECEF vector representing the Sun's position.
+ */
 csm::EcefVector UsgsAstroLsSensorModel::getSunPosition(
     const double imageTime) const {
   int numSunPositions = m_sunPosition.size();
@@ -2787,9 +3323,20 @@ csm::EcefVector UsgsAstroLsSensorModel::getSunPosition(
   return sunPosition;
 }
 
-// A function whose value will be 0 when the line a given ground point
-// projects into is found. The obtained line will be approxPt.line +
-// t.
+/**
+ * @brief Calculates the line error for detector positioning.
+ *
+ * @description A helper function for ground to image transformations, which
+ * computes the error in detector line positioning relative to an approximated
+ * image point and a given ground point.
+ *
+ * @param t The time step for adjustment.
+ * @param approxPt The approximated image point.
+ * @param groundPt The target ground point.
+ * @param adj Adjustments to the sensor model parameters.
+ * 
+ * @return The calculated line error.
+ */
 double UsgsAstroLsSensorModel::calcDetectorLineErr(double t, csm::ImageCoord const& approxPt,
                                                    const csm::EcefCoord& groundPt,
                                                    const std::vector<double>& adj) const {

@@ -4,7 +4,20 @@
 #include <Error.h>
 #include <string>
 
-// Jacobian for Transverse distortion
+/**
+ * @description Calculates the Jacobian matrix of the distortion function at a specific point (x, y). 
+ * The distortion model is based on the given optical distortion coefficients.
+ *
+ * @param x The x-coordinate of the point for which the Jacobian of the distortion is to be computed.
+ * @param y The y-coordinate of the point for which the Jacobian of the distortion is to be computed.
+ * @param jacobian A pointer to an array where the resulting Jacobian matrix will be stored. This 
+ * matrix is represented as an array of doubles corresponding to the 2x2 Jacobian matrix flattened: 
+ * [dxdx, dxdy, dydx, dydy].
+ * @param opticalDistCoeffs A vector of optical distortion coefficients.
+ * 
+ * @returns distortedJacobian The function does not return a value but instead fills the provided 'jacobian' 
+ * array with the distorted Jacobian matrix elements.
+ */
 void transverseDistortionJacobian(double x, double y, double *jacobian,
                                   std::vector<double> const& opticalDistCoeffs) {
   double d_dx[10];
@@ -51,8 +64,8 @@ void transverseDistortionJacobian(double x, double y, double *jacobian,
  * undistorted focal plane (ux,uy) coordinate. This uses the third order Taylor
  * approximation to the distortion model.
  *
- * @param ux Undistored x
- * @param uy Undistored y
+ * @param ux Undistorted x
+ * @param uy Undistorted y
  * @param opticalDistCoeffs For both X and Y coefficients
  *
  * @returns distortedPoint Newly adjusted focal plane coordinates as an x, y
@@ -84,14 +97,23 @@ void computeTransverseDistortion(double ux, double uy, double &dx, double &dy,
   }
 }
 
-// Compute distorted normalized focal plane coordinates given undistorted
-// normalized coordinates. Use the radial-tangential distortion model with 5
-// coefficients (k1, k2, k3 for radial distortion, and p1, p2 for tangential
-// distortion). This was tested to give the same results as the OpenCV
-// distortion model, by invoking the function cv::projectPoints() (with zero
-// rotation, zero translation, and identity camera matrix). The parameters are
-// stored in opticalDistCoeffs in the order: [k1, k2, p1, p2, k3]. 
-// Reference: https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html
+
+/**
+ * @description Computes the distorted focal plane coordinates (dx, dy) from undistorted coordinates 
+ * (ux, uy) using the radial-tangential distortion model. This model uses 5 coefficients: 3 for
+ * radial distortion (k1, k2, k3) and 2 for tangential distortion (p1, p2). The function is designed
+ * to align with the results of the OpenCV's cv::projectPoints() function when used with zero rotation,
+ * zero translation, and an identity camera matrix. The distortion coefficients are expected in the
+ * order [k1, k2, p1, p2, k3] within opticalDistCoeffs.
+ * 
+ * @param ux The x-coordinate of the undistorted point.
+ * @param uy The y-coordinate of the undistorted point.
+ * @param dx Reference to a double where the x-coordinate of the distorted point will be stored.
+ * @param dy Reference to a double where the y-coordinate of the distorted point will be stored.
+ * @param opticalDistCoeffs Constant reference to a vector containing the distortion coefficients.
+ * 
+ * @throws csm::Error If opticalDistCoeffs does not contain exactly 5 elements.
+ */
 void computeRadTanDistortion(double ux, double uy, double &dx, double &dy,
                              std::vector<double> const& opticalDistCoeffs) {
 
@@ -121,7 +143,21 @@ void computeRadTanDistortion(double ux, double uy, double &dx, double &dy,
      + (p1 * (r2 + 2.0 * y * y) + 2.0 * p2 * x * y);
 }
 
-// Compute the jacobian for radtan distortion at given normalized coordinates
+/**
+ * @description Computes the Jacobian matrix of the radial-tangential distortion model at a 
+ * given point (x, y). This function provides partial derivatives of the distorted 
+ * coordinates with respect to the undistorted coordinates, facilitating calibration and 
+ * error estimation tasks. It assumes a distortion model characterized by five coefficients:
+ * (k1, k2, p1, p2, k3) stored in opticalDistCoeffs in the specified order. The computed 
+ * Jacobian is stored in the provided 'jacobian' array, organized as:
+ * [dfx/dx, dfx/dy, dfy/dx, dfy/dy].
+ * 
+ * @param x The x-coordinate of the point.
+ * @param y The y-coordinate of the point.
+ * @param jacobian Pointer to an array where the resulting 2x2 Jacobian matrix will be stored.
+ * @param opticalDistCoeffs Constant reference to a vector containing the optical distortion 
+ * coefficients.
+ */
 void radTanDistortionJacobian(double x, double y, double *jacobian,
                               std::vector<double> const& opticalDistCoeffs) {
 
@@ -154,6 +190,21 @@ void radTanDistortionJacobian(double x, double y, double *jacobian,
               + p1 * (dr2dy + 4.0 * y) + 2.0 * p2 * x;
 }
 
+/**
+ * @description Removes distortion based on Line Scanner/Camera Sensor Model in use
+ *
+ * @param dx Distorted x
+ * @param dy Distorted y
+ * @param ux Undistorted x
+ * @param uy Undistorted y
+ * @param opticalDistCoeffs For both X and Y coefficients
+ * @param distortionType The type of distortion being removed, based on the distortion 
+ * model used
+ * @param tolerance Accepted tolerance to permit in calculations, set as 1.0E-6 by 
+ * default
+ * 
+ * @returns undistortedPoint Re-adjusted focal plane coordinates as an x, y tuple
+ */
 void removeDistortion(double dx, double dy, double &ux, double &uy,
                       std::vector<double> const& opticalDistCoeffs,
                       double focalLength,
@@ -353,6 +404,21 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
   }
 }
 
+/**
+ * @description Applies distortion model based on Line Scanner/Camera Sensor Model in use
+ *
+ * @param ux Undistorted x
+ * @param uy Undistorted y
+ * @param dx Resulting distorted x
+ * @param dy Resulting distorted y
+ * @param opticalDistCoeffs For both X and Y coefficients
+ * @param desiredPrecision Amount of desired precision, set as 1.0E-6 by default
+ * @param tolerance Accepted tolerance to permit in calculations, set as 1.0E-6 by 
+ * default
+ * 
+ * @returns distortedPoint Newly distorted focal plane coordinates as an x, y
+ * tuple 
+ */
 void applyDistortion(double ux, double uy, double &dx, double &dy,
                      std::vector<double> const& opticalDistCoeffs,
                      double focalLength,

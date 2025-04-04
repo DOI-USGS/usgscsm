@@ -19,5 +19,5 @@ This project is hosted on `GitHub`_. If you run into a problem, please open an `
    user/isd_generation
    tools/usgscsm_cam_test
 
-.. _GitHub: http://github.com/USGS-Astrogeology/usgscsm
-.. _issue: https://github.com/USGS-Astrogeology/usgscsm/issues?state=open
+.. _GitHub: http://github.com/DOI-USGS/usgscsm
+.. _issue: https://github.com/DOI-USGS/usgscsm/issues?state=open
