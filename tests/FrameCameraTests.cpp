@@ -533,7 +533,10 @@ TEST_F(FrameSensorModelLogging, GetSensorPositionPixel) {
 
 TEST_F(FrameSensorModelLogging, GetSensorPositionPixelExceedsBounds) {
   csm::ImageCoord imagePt(-1, -1);
-  sensorModel->getSensorPosition(imagePt);
+  csm::EcefCoord sensorPos = sensorModel->getSensorPosition(imagePt);
+  EXPECT_EQ(sensorPos.x, 1000);
+  EXPECT_EQ(sensorPos.y, 0);
+  EXPECT_EQ(sensorPos.z, 0);
 }
 
 TEST_F(FrameSensorModelLogging, GetSensorPositionTime) {
