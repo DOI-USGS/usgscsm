@@ -36,6 +36,7 @@ release.
 ## [Unreleased]
 
 ### Fixed
+- Removed boundary checks for Frame Sensor Model getSensorPosition [#492](https://github.com/DOI-USGS/usgscsm/pull/492)
 - Fixed CAHVOR model optical shifts by removing tolerance check [#488](https://github.com/DOI-USGS/usgscsm/issues/488)
 
 ## [2.0.1] - 2024-01-23
