@@ -723,26 +723,13 @@ csm::EcefCoord UsgsAstroFrameSensorModel::getSensorPosition(
     spdlog::level::debug,
     "Accessing sensor position for image point {}, {}",
     imagePt.line, imagePt.samp);
-  // check if the image point is in range
-  if (imagePt.samp >= m_startingDetectorSample &&
-      imagePt.samp <= (m_startingDetectorSample + m_nSamples) &&
-      imagePt.line >= m_startingDetectorSample &&
-      imagePt.line <= (m_startingDetectorLine + m_nLines)) {
-    csm::EcefCoord sensorPosition;
-    sensorPosition.x = m_currentParameterValue[0];
-    sensorPosition.y = m_currentParameterValue[1];
-    sensorPosition.z = m_currentParameterValue[2];
+    
+  csm::EcefCoord sensorPosition;
+  sensorPosition.x = m_currentParameterValue[0];
+  sensorPosition.y = m_currentParameterValue[1];
+  sensorPosition.z = m_currentParameterValue[2];
 
-    return sensorPosition;
-  } else {
-    MESSAGE_LOG(
-        spdlog::level::err,
-        "ERROR: UsgsAstroFrameSensorModel::getSensorPosition: "
-        "Image Coordinate {},{} out of Bounds",
-        imagePt.line, imagePt.samp);
-    throw csm::Error(csm::Error::BOUNDS, "Image Coordinate out of Bounds",
-                     "UsgsAstroFrameSensorModel::getSensorPosition");
-  }
+  return sensorPosition;
 }
 
 /**

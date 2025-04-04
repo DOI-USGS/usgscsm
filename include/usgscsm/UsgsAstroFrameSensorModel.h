@@ -118,7 +118,7 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM,
    *
    * @return @b csm::EcefCoord Returns the body-fixed sensor position.
    *
-   * @throw csm::Error::BOUNDS "Image coordinate () out of bounds."
+   * @throw csm::Error::BOUNDS "Image time () out of bounds."
    */
   virtual csm::EcefCoord getSensorPosition(
       const csm::ImageCoord &imagePt) const;
