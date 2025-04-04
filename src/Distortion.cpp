@@ -97,6 +97,7 @@ void computeTransverseDistortion(double ux, double uy, double &dx, double &dy,
   }
 }
 
+
 /**
  * @description Computes the distorted focal plane coordinates (dx, dy) from undistorted coordinates 
  * (ux, uy) using the radial-tangential distortion model. This model uses 5 coefficients: 3 for
@@ -157,7 +158,6 @@ void computeRadTanDistortion(double ux, double uy, double &dx, double &dy,
  * @param opticalDistCoeffs Constant reference to a vector containing the optical distortion 
  * coefficients.
  */
-
 void radTanDistortionJacobian(double x, double y, double *jacobian,
                               std::vector<double> const& opticalDistCoeffs) {
 
@@ -207,6 +207,7 @@ void radTanDistortionJacobian(double x, double y, double *jacobian,
  */
 void removeDistortion(double dx, double dy, double &ux, double &uy,
                       std::vector<double> const& opticalDistCoeffs,
+                      double focalLength,
                       DistortionType distortionType, const double tolerance) {
   ux = dx;
   uy = dy;
@@ -378,16 +379,13 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       double shiftedDy = dy - opticalDistCoeffs[4];
       double rr = shiftedDx * shiftedDx + shiftedDy * shiftedDy;
 
-      if (rr > tolerance)
-      {
-        double dr = opticalDistCoeffs[0] +
-                    (rr * (opticalDistCoeffs[1] + rr * opticalDistCoeffs[2]));
+      double dr = opticalDistCoeffs[0] +
+                  (rr * (opticalDistCoeffs[1] + rr * opticalDistCoeffs[2]));
 
-        ux = shiftedDx * (1.0 - dr);
-        uy = shiftedDy * (1.0 - dr);
-        ux += opticalDistCoeffs[3];
-        uy += opticalDistCoeffs[4];
-      }
+      ux = shiftedDx * (1.0 - dr);
+      uy = shiftedDy * (1.0 - dr);
+      ux += opticalDistCoeffs[3];
+      uy += opticalDistCoeffs[4];
     }
     break;
     
@@ -395,8 +393,10 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
     // with the radtan model. See computeRadTanDistortion() for more details.
     case RADTAN:
     {
+      dx /= focalLength; dy /= focalLength; // Find normalized coordinates
       newtonRaphson(dx, dy, ux, uy, opticalDistCoeffs, distortionType, tolerance, 
                     computeRadTanDistortion, radTanDistortionJacobian);
+      ux *= focalLength; uy *= focalLength; // Convert back to pixel coordinates
       
     }
     break;
@@ -421,6 +421,7 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
  */
 void applyDistortion(double ux, double uy, double &dx, double &dy,
                      std::vector<double> const& opticalDistCoeffs,
+                     double focalLength,
                      DistortionType distortionType,
                      const double desiredPrecision, const double tolerance) {
   dx = ux;
@@ -649,51 +650,48 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
       double shiftedUx = ux - opticalDistCoeffs[3];
       double shiftedUy = uy - opticalDistCoeffs[4];
       double rp2 = (ux * ux) + (uy * uy);
+      double rp = sqrt(rp2);
+      // Compute first fractional distortion using rp
+      double drOverR =
+          opticalDistCoeffs[0] +
+          (rp2 * (opticalDistCoeffs[1] + (rp2 * opticalDistCoeffs[2])));
 
-      if (rp2 > tolerance)
+      // Compute first distorted point estimate, r
+      double r = rp + (drOverR * rp);
+      double r_prev, r2_prev;
+      int iteration = 0;
+
+      do
       {
-        double rp = sqrt(rp2);
-        // Compute first fractional distortion using rp
-        double drOverR =
-            opticalDistCoeffs[0] +
-            (rp2 * (opticalDistCoeffs[1] + (rp2 * opticalDistCoeffs[2])));
-
-        // Compute first distorted point estimate, r
-        double r = rp + (drOverR * rp);
-        double r_prev, r2_prev;
-        int iteration = 0;
-
-        do
+        // Don't get in an end-less loop.  This algorithm should
+        // converge quickly.  If not then we are probably way outside
+        // of the focal plane.  Just set the distorted position to the
+        // undistorted position. Also, make sure the focal plane is less
+        // than 1km, it is unreasonable for it to grow larger than that.
+        if (iteration >= 20 || r > 1E9)
         {
-          // Don't get in an end-less loop.  This algorithm should
-          // converge quickly.  If not then we are probably way outside
-          // of the focal plane.  Just set the distorted position to the
-          // undistorted position. Also, make sure the focal plane is less
-          // than 1km, it is unreasonable for it to grow larger than that.
-          if (iteration >= 20 || r > 1E9)
-          {
-            drOverR = 0.0;
-            break;
-          }
+          drOverR = 0.0;
+          break;
+        }
 
-          r_prev = r;
-          r2_prev = r * r;
+        r_prev = r;
+        r2_prev = r * r;
 
-          // Compute new fractional distortion:
-          drOverR = opticalDistCoeffs[0] +
-                    (r2_prev *
-                     (opticalDistCoeffs[1] + (r2_prev * opticalDistCoeffs[2])));
+        // Compute new fractional distortion:
+        drOverR = opticalDistCoeffs[0] +
+                  (r2_prev *
+                    (opticalDistCoeffs[1] + (r2_prev * opticalDistCoeffs[2])));
 
-          // Compute new estimate of r
-          r = rp + (drOverR * r_prev);
-          iteration++;
-        } while (fabs(r - r_prev) > desiredPrecision);
+        // Compute new estimate of r
+        r = rp + (drOverR * r_prev);
+        iteration++;
+      } while (fabs(r - r_prev) > desiredPrecision);
 
-        dx = shiftedUx / (1.0 - drOverR);
-        dy = shiftedUy / (1.0 - drOverR);
-        dx += opticalDistCoeffs[3];
-        dy += opticalDistCoeffs[4];
-      }
+      dx = shiftedUx / (1.0 - drOverR);
+      dy = shiftedUy / (1.0 - drOverR);
+      dx += opticalDistCoeffs[3];
+      dy += opticalDistCoeffs[4];
+    
     }
     break;
     
@@ -701,7 +699,9 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
     // with the RADTAN model. See computeRadTanDistortion() for more details.
     case RADTAN:
     {
+      ux /= focalLength; uy /= focalLength; // Find normalized coordinates
       computeRadTanDistortion(ux, uy, dx, dy, opticalDistCoeffs);  
+      dx *= focalLength; dy *= focalLength; // Convert back to pixel coordinates
     }  
     break;
     

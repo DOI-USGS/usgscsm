@@ -10,3 +10,4 @@ dependencies:
   - eigen
   - nlohmann_json
   - proj
+  - sqlite>=3.11

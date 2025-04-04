@@ -1,8 +1,8 @@
-MEX HRSC
-========
-* HRSC has 9 different filters. Each has it's own instrument id, as well as
+Mars Express High Resolution Stereo Camera
+==========================================
+* High Resolution Stereo Camera (HRSC) has 9 different filters. Each has it's own instrument id, as well as
   the main/"HEAD" camera composing those filters. There is also another
-  "SRC" channel, making-up a total of 11 distinct sensors. It is very
+  "Super-Resolution Channel" (SRC) channel, making-up a total of 11 distinct sensors. It is very
   important to understand which code is needed when/where.
 
 * HRSC is a variable rate line scanner, and so does not maintain one exposure

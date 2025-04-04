@@ -2,11 +2,13 @@ usgscsm_cam_test
 ================
 
 This program is shipped with the USGSCSM library in the ``bin`` directory.
-It can be used for performing several operations involving CSM camera
-models, such as loading a camera model, whether in the original ISD format,
-model state representation, or GXP .sup file exporting the model state, computing
-projections from pixels in the camera to the ground and back, and
-then verifying that the original pixels are obtained.
+It can perform several operations involving CSM camera models, such as:
+
+ - Load a camera model, whether in the original ISD format, model state representation, or GXP .sup file
+
+ - Export the camera as a model state file
+
+ - Compute projections from pixels in the camera to the ground and back, and measure the discrepancy with the original pixels.
 
 Example (load a camera model and save the model state)::
 

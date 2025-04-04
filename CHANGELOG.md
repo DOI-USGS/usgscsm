@@ -35,6 +35,9 @@ release.
 
 ## [Unreleased]
 
+### Fixed
+- Fixed CAHVOR model optical shifts by removing tolerance check [#488](https://github.com/DOI-USGS/usgscsm/issues/488)
+
 ## [2.0.1] - 2024-01-23
 
 ### Changed

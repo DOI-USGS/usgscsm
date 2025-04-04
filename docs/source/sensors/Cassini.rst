@@ -1,6 +1,6 @@
-Cassini ISS
-===========
-The Cassini Imaging Subsystem comprises two instruments -- a narrow angle camera
+Cassini Imaging Subsystem
+=========================
+The Cassini Imaging Subsystem (ISS) comprises two instruments -- a narrow angle camera
 and a wide angle camera.  The narrow angle camera contains 24 filters, and the
 wide angle camera contains 18 filters.
 

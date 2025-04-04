@@ -1,6 +1,6 @@
-Kaguya TC
-=========
-The Kaguya Terrain Camera is a dual-band, stereo, linescan camera with a spatial
+Kaguya Terrain Camera
+=====================
+The Kaguya Terrain Camera (TC) is a dual-band, stereo, linescan camera with a spatial
 resolution of 20 meters per pixel.  This set of sensors uses two telescopic
 imaging instruments, one pointed forward, and one pointed backward. Together,
 these instruments provide data necessary to create stereoscopic imagery.
@@ -37,9 +37,9 @@ Begin by generating an ISD as described in the section on :ref:`isd_generation`.
     isd = csmapi.Isd(alelabel)
     camera = plugin.constructModelFromISD(isd, model)
 
-Kaguya MI
-=========
-The Kaguya Multiband Imagery platform comprises two different instruments -- a
+Kaguya Multiband Imagery platform
+=================================
+The Kaguya Multiband Imagery (MI) platform comprises two different instruments -- a
 visible light sensor (VIS) and a near infrared sensor (NIR).  The visible light
 sensor has a spatial resolution of 20 meters per pixel, and collects 5 bands of
 data via a bandpass filter.  The near infrared sensor is responsible for
