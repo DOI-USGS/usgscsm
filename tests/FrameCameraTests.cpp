@@ -531,6 +531,11 @@ TEST_F(FrameSensorModelLogging, GetSensorPositionPixel) {
   sensorModel->getSensorPosition(imagePt);
 }
 
+TEST_F(FrameSensorModelLogging, GetSensorPositionPixelExceedsBounds) {
+  csm::ImageCoord imagePt(-1, -1);
+  sensorModel->getSensorPosition(imagePt);
+}
+
 TEST_F(FrameSensorModelLogging, GetSensorPositionTime) {
   csm::ImageCoord imagePt(7.5, 7.5);
   double time = sensorModel->getImageTime(imagePt);
