@@ -1560,6 +1560,8 @@ void UsgsAstroFrameSensorModel::replaceModelState(
         state.at("m_currentParameterCovariance").get<std::vector<double>>();
 
     // These are optional and may not exist in all state files
+    if (state.find("m_targetName") != state.end())
+      m_targetName = state.at("m_targetName").get<std::string>();
     if (state.find("m_maxElevation") != state.end())
       m_maxElevation = state.at("m_maxElevation").get<double>();
     if (state.find("m_minElevation") != state.end())
