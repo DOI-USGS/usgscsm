@@ -1,11 +1,10 @@
 name: usgscsm
 channels:
   - conda-forge
-  - default
 
 dependencies:
   - ale>=0.8.8
-  - cmake>=3.15
+  - cmake>=3.15,<4.0
   - csm
   - eigen
   - nlohmann_json
