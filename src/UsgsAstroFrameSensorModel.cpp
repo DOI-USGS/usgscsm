@@ -1534,7 +1534,7 @@ void UsgsAstroFrameSensorModel::replaceModelState(
     m_focalLengthEpsilon = state.at("m_focalLengthEpsilon").get<double>();
     m_nLines = state.at("m_nLines").get<int>();
     m_nSamples = state.at("m_nSamples").get<int>();
-    m_ephemerisTime = state.at("m_ephemerisTime").get<int>();
+    m_ephemerisTime = state.at("m_ephemerisTime").get<double>();
     m_currentParameterValue =
         state.at("m_currentParameterValue").get<std::vector<double>>();
     m_ccdCenter = state.at("m_ccdCenter").get<std::vector<double>>();
