@@ -36,6 +36,7 @@ release.
 ## [Unreleased]
 
 ### Fixed
+- Fix a bug in the Frame Sensor Model, the ephemeris time was rounded to it. [#497](https://github.com/DOI-USGS/usgscsm/pull/497)
 - Removed boundary checks for Frame Sensor Model getSensorPosition [#492](https://github.com/DOI-USGS/usgscsm/pull/492)
 - Fixed CAHVOR model optical shifts by removing tolerance check [#488](https://github.com/DOI-USGS/usgscsm/issues/488)
 
