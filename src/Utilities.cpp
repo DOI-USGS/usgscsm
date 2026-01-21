@@ -2591,12 +2591,12 @@ void applyRotationTranslationToXyzVec(ale::Rotation const& r, ale::Vec3d const& 
 
 /**
  * @description Converts ephemeris time, given in seconds since January 1, 2000 
- * 12:00:00 AM GMT, to a calendar time string formatted as 
+ * 12:00:00 PM TT, to a calendar time string formatted as 
  * "YYYY-MM-DDTHH:MM:SSZ". The function accounts for the base time and converts 
  * the input ephemeris time to the equivalent calendar time in UTC.
  *
  * @param ephemTime The ephemeris time in seconds since the epoch 
- * (January 1, 2000 12:00:00 AM GMT).
+ * (January 1, 2000 12:00:00 PM TT).
  *
  * @return A string representing the calendar time in UTC format 
  * "YYYY-MM-DDTHH:MM:SSZ".
@@ -2606,7 +2606,7 @@ std::string ephemTimeToCalendarTime(double ephemTime) {
   // Care must be taken to not use mktime() or localtime() as their
   // precise value depends on if a location respects Daylight Savings Time.
 
-  std::time_t y2k = 946684800; // January 1, 2000 12:00:00 AM GMT
+  std::time_t y2k = 946728000; // January 1, 2000 12:00:00 PM TT
   std::time_t finalTime = ephemTime + y2k;
   char buffer[22];
   strftime(buffer, 22, "%Y-%m-%dT%H:%M:%SZ", std::gmtime(&finalTime));
