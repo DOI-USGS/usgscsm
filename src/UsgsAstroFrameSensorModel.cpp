@@ -1583,12 +1583,12 @@ void UsgsAstroFrameSensorModel::populateModel(const nlohmann::json& state) {
         spdlog::level::err,
         "State keywords required to generate sensor model missing: " +
         std::string(e.what()) +
-        "UsgsAstroFrameSensorModel::replaceModelState");
+        "UsgsAstroFrameSensorModel::populateModel");
     throw csm::Error(
         csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
         "State keywords required to generate sensor model missing: " +
             std::string(e.what()),
-        "UsgsAstroFrameSensorModel::replaceModelState");
+        "UsgsAstroFrameSensorModel::populateModel");
   }
 }
 
