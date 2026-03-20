@@ -1516,10 +1516,11 @@ bool UsgsAstroFrameSensorModel::isValidIsd(const std::string &Isd,
  */
 void UsgsAstroFrameSensorModel::replaceModelState(
     const std::string &stringState) {
-
-  json state = stateAsJson(stringState);
-
   MESSAGE_LOG(spdlog::level::debug, "Replacing model state");
+  populateModel(stateAsJson(stringState));
+}
+
+void UsgsAstroFrameSensorModel::populateModel(const nlohmann::json& state) {
   // The json library's .at() will except if key is missing
   try {
     m_modelName = state.at("m_modelName").get<std::string>();
@@ -1581,12 +1582,12 @@ void UsgsAstroFrameSensorModel::replaceModelState(
     MESSAGE_LOG(
         spdlog::level::err,
         "State keywords required to generate sensor model missing: " +
-        std::string(e.what()) + "\nUsing model string: " + stringState +
+        std::string(e.what()) +
         "UsgsAstroFrameSensorModel::replaceModelState");
     throw csm::Error(
         csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
         "State keywords required to generate sensor model missing: " +
-            std::string(e.what()) + "\nUsing model string: " + stringState,
+            std::string(e.what()),
         "UsgsAstroFrameSensorModel::replaceModelState");
   }
 }

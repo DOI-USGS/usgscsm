@@ -14,6 +14,8 @@
 #include "RasterGM.h"
 #include "Utilities.h"
 
+#include <nlohmann/json_fwd.hpp> // forward declaration
+
 #include "spdlog/spdlog.h"
 
 class UsgsAstroFrameSensorModel : public csm::RasterGM,
@@ -296,6 +298,10 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM,
   //
   //  If the argument state string is empty, the model remains unchanged.
   //<
+
+  // Populate model fields directly from a json object, bypassing string
+  // serialization. Used by replaceModelState() and binary state loading.
+  void populateModel(const nlohmann::json& j);
 
   // Implement methods from the SettableEllipsoid class
 

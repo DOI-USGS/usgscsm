@@ -102,6 +102,10 @@ const std::string UsgsAstroProjectedSensorModel::_STATE_KEYWORD[] = {
 // UsgsAstroLineScannerSensorModel::replaceModelState
 //***************************************************************************
 void UsgsAstroProjectedSensorModel::replaceModelState(const std::string& stateString) {
+  populateModel(stateAsJson(stateString));
+}
+
+void UsgsAstroProjectedSensorModel::populateModel(const nlohmann::json& j) {
   reset();
   MESSAGE_LOG(
       spdlog::level::warn,
@@ -110,16 +114,17 @@ void UsgsAstroProjectedSensorModel::replaceModelState(const std::string& stateSt
       "you have projected using a more detailed shape model this sensor "
       "will return incorrect ground intersections.");
 
-  auto j = stateAsJson(stateString);
   m_subModelName = j["m_subModelName"];
+  // Reconstruct the state string for the sub-model
+  std::string stateString = m_subModelName + "\n" + j.dump(2);
   m_camera = getUsgsCsmModelFromState(stateString, m_subModelName, NULL);
   m_majorAxis = j["m_majorAxis"];
   m_minorAxis = j["m_minorAxis"];
   m_geoTransform = j["m_geoTransform"].get<std::vector<double>>();
   m_projString = j["m_projString"];
-  
+
   PJ_CONTEXT *C = proj_context_create();
-  
+
   /* Create a projection. */
   m_isdProj = proj_create(C, (m_projString + " +type=crs").c_str());
   if (0 == m_isdProj) {

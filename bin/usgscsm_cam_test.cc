@@ -152,11 +152,11 @@ bool loadCsmCameraModel(std::string const& model_file,
   // Peek at first byte to detect binary (msgpack) model state.
   // msgpack map16 starts with 0xDE, map32 with 0xDF.
   // JSON starts with '{' (0x7B) or whitespace.
-  // TODO(oalexan1): This binary loading bypasses the plugin API
-  // (canModelBeConstructedFromState / constructModelFromState) which
-  // are part of the public CSM spec inherited interface. Eventually
-  // the lib needs a proper entry point for binary state, but that
-  // requires care with the CSM API contract.
+  // Peek at first byte to detect binary (msgpack) model state.
+  // msgpack map16 starts with 0xDE, map32 with 0xDF.
+  // TODO(oalexan1): This bypasses the CSM plugin API. Eventually the
+  // lib needs a proper entry point for binary state, but that requires
+  // care with the CSM API contract. For now, only linescan is supported.
   {
     std::ifstream peek_ifs(model_file, std::ios::binary);
     uint8_t first_byte = 0;
@@ -168,19 +168,19 @@ bool loadCsmCameraModel(std::string const& model_file,
                                 std::istreambuf_iterator<char>());
       nlohmann::json j = nlohmann::json::from_msgpack(data);
       std::string model_name = j.at("m_modelName").get<std::string>();
-      // TODO(oalexan1): This .dump() re-serializes to JSON string just to
-      // feed the existing API. The real fix is a constructModelFromState()
-      // overload that takes a json object directly.
-      std::string state_str = model_name + "\n" + j.dump();
-      csm::WarningList warnings;
-      csm::Model *csm = csm::Plugin::getList().front()->
-        constructModelFromState(state_str, &warnings);
-      csm::RasterGM *modelPtr = dynamic_cast<csm::RasterGM*>(csm);
-      if (modelPtr == NULL) {
-        std::cerr << "Could not load model from binary state: " << model_file << "\n";
+
+      // TODO(oalexan1): Add support for other model types (frame, pushframe,
+      // SAR, projected) as they get populateModel().
+      if (model_name == UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME) {
+        UsgsAstroLsSensorModel *lsModel = new UsgsAstroLsSensorModel();
+        lsModel->populateModel(j);
+        model = std::shared_ptr<csm::RasterGM>(lsModel);
+      } else {
+        std::cerr << "Binary state loading not yet supported for model: "
+                  << model_name << "\n";
         return false;
       }
-      model = std::shared_ptr<csm::RasterGM>(modelPtr);
+
       std::cout << "Loaded model of type " << model_name
                 << " from binary state.\n";
       return true;

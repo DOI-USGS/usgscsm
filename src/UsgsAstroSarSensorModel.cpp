@@ -329,10 +329,12 @@ void UsgsAstroSarSensorModel::reset() {
  * @throws csm::Error If the look direction from the state is invalid.
  */
 void UsgsAstroSarSensorModel::replaceModelState(const string& argState) {
-  reset();
-
   MESSAGE_LOG("Replacing model state with: {}", argState);
-  auto stateJson = stateAsJson(argState);
+  populateModel(stateAsJson(argState));
+}
+
+void UsgsAstroSarSensorModel::populateModel(const nlohmann::json& stateJson) {
+  reset();
 
   m_imageIdentifier = stateJson["m_imageIdentifier"].get<string>();
   m_platformIdentifier = stateJson["m_platformIdentifier"].get<string>();

@@ -139,9 +139,11 @@ const csm::param::Type UsgsAstroLsSensorModel::PARAM_CHAR_ALL[] = {
  */
 void UsgsAstroLsSensorModel::replaceModelState(const std::string& stateString) {
   MESSAGE_LOG(spdlog::level::info, "Replacing model state")
+  populateModel(stateAsJson(stateString));
+}
 
+void UsgsAstroLsSensorModel::populateModel(const nlohmann::json& j) {
   reset();
-  auto j = stateAsJson(stateString);
   int num_params = NUM_PARAMETERS;
 
   m_imageIdentifier = j["m_imageIdentifier"].get<std::string>();

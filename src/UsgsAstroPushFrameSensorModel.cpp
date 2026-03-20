@@ -136,8 +136,14 @@ const csm::param::Type UsgsAstroPushFrameSensorModel::PARAM_CHAR_ALL[] = {
 void UsgsAstroPushFrameSensorModel::replaceModelState(const std::string& stateString) {
   MESSAGE_LOG("Replacing model state");
 
+  populateModel(stateAsJson(stateString));
+}
+
+//***************************************************************************
+// UsgsAstroPushFrameSensorModel::populateModel
+//***************************************************************************
+void UsgsAstroPushFrameSensorModel::populateModel(const nlohmann::json& j) {
   reset();
-  auto j = stateAsJson(stateString);
   int num_params = NUM_PARAMETERS;
 
   m_imageIdentifier = j["m_imageIdentifier"].get<std::string>();
@@ -294,7 +300,7 @@ void UsgsAstroPushFrameSensorModel::replaceModelState(const std::string& stateSt
       "Half this many lines will be removed from the top and bottom of each framelet.";
     MESSAGE_LOG(msg.c_str());
     throw csm::Error(csm::Error::INVALID_USE, msg.c_str(),
-                     "UsgsAstroPushFrameSensorModel::replaceModelState");
+                     "UsgsAstroPushFrameSensorModel::populateModel");
   }
 
   // If computed state values are still default, then compute them. This must
