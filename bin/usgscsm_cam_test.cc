@@ -162,10 +162,7 @@ bool loadCsmCameraModel(std::string const& model_file,
   // plugins are detected. Do not remove this.
   UsgsAstroLsSensorModel lsModel;
 
-  // Distinguish between three input model formats: binary model state, json
-  // model state, and ISD.
-
-  // Binary model state case
+  // Binary model state: detect by first byte, load directly via populateModel
   if (isMsgpack(model_file)) {
     std::cout << "Detected msgpack binary model state: " << model_file << "\n";
     std::ifstream ifs(model_file, std::ios::binary);
@@ -180,30 +177,15 @@ bool loadCsmCameraModel(std::string const& model_file,
     return true;
   }
 
-  // Read the file into a string for the JSON paths
+  // Try to read the model as an ISD
+  csm::Isd isd(model_file);
+
+  // Read the model in a string, for potentially finding parsing the
+  // model state from it.
   std::string model_state;
   if (!readFileInString(model_file, model_state))
     return false;
 
-  // JSON model state case
-  if (model_state.substr(0, 10) == "USGS_ASTRO") {
-    std::string model_name = model_state.substr(0, model_state.find('\n'));
-    csm::WarningList warnings;
-    csm::Model *csm = csm::Plugin::getList().front()->
-      constructModelFromState(model_state, &warnings);
-    csm::RasterGM *modelPtr = dynamic_cast<csm::RasterGM*>(csm);
-    if (modelPtr == NULL) {
-      std::cerr << "Could not load model from state: " << model_file << "\n";
-      return false;
-    }
-    model = std::shared_ptr<csm::RasterGM>(modelPtr);
-    std::cout << "Loaded a CSM model of type " << model_name
-              << " from model state file " << model_file << ".\n";
-    return true;
-  }
-
-  // JSON ISD case
-  csm::Isd isd(model_file);
   bool success = false;
 
   // Try all detected plugins and all models for each plugin.
@@ -227,6 +209,12 @@ bool loadCsmCameraModel(std::string const& model_file,
         csm = csm_plugin->constructModelFromISD(isd, model_name, warnings);
         std::cout << "Loaded a CSM model of type " << model_name << " from ISD file "
                   << model_file << ".\n";
+        success = true;
+      } else if (csm_plugin->canModelBeConstructedFromState(model_name, model_state, warnings)) {
+        // Try to construct it from the model state (handles .sup files)
+        csm = csm_plugin->constructModelFromState(model_state, warnings);
+        std::cout << "Loaded a CSM model of type " << model_name
+                  << " from model state file " << model_file << ".\n";
         success = true;
       } else {
         if (opt.verbose) {

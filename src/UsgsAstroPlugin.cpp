@@ -295,25 +295,8 @@ bool UsgsAstroPlugin::canModelBeConstructedFromState(
 bool UsgsAstroPlugin::canModelBeConstructedFromISD(
     const csm::Isd &imageSupportData, const std::string &modelName,
     csm::WarningList *warnings) const {
-  // First check if the ISD's name_model matches the requested model name.
-  // This avoids fully constructing the model for non-matching types, which
-  // is very expensive. Only attempt full construction if the name matches.
   try {
-    std::string stringIsd = loadImageSupportData(imageSupportData);
-    json jsonIsd = json::parse(stringIsd);
-
-    if (jsonIsd.find("name_model") == jsonIsd.end())
-      return false;
-
-    // No need for case-insensitive comparison since the model names are
-    // expected to be in a specific case format.
-    std::string isdModelName = jsonIsd.at("name_model").get<std::string>();
-    if (isdModelName != modelName)
-      return false;
-
-    // Name matches. Try full construction to verify the ISD is valid.
-    std::shared_ptr<csm::Model> model(
-      constructModelFromISD(imageSupportData, modelName, warnings));
+    std::shared_ptr<csm::Model> model(constructModelFromISD(imageSupportData, modelName, warnings));
     if (model)
       return true;
 
