@@ -141,11 +141,11 @@ double pixDiffNorm(csm::ImageCoord const& a, csm::ImageCoord const& b) {
   return sqrt((a.line - b.line) * (a.line - b.line) + (a.samp - b.samp) * (a.samp - b.samp));
 }
 
-// Check if a file is in msgpack binary format by peeking at the first byte.
-// Per the msgpack spec (github.com/msgpack/msgpack/blob/master/spec.md),
-// a map object starts with 0x80-0x8F (fixmap, up to 15 entries),
-// 0xDE (map16, up to 65535 entries), or 0xDF (map32). JSON starts
-// with '{' (0x7B) or whitespace, so there is no ambiguity.
+// Check if a file is in msgpack binary format by peeking at the first byte. Per
+// the msgpack spec (github.com/msgpack/msgpack/blob/master/spec.md), a map
+// object starts with 0x80-0x8F (fixmap, up to 15 entries), 0xDE (map16, up to
+// 65535 entries), or 0xDF (map32). JSON starts with '{' (0x7B ascii code) or
+// whitespace, so there is no ambiguity.
 bool isMsgpack(std::string const& filename) {
   std::ifstream ifs(filename, std::ios::binary);
   uint8_t b = 0;
@@ -159,9 +159,13 @@ bool loadCsmCameraModel(std::string const& model_file,
                        Options & opt) {
 
   // This is needed to trigger loading libusgscsm.so. Otherwise 0
-  // plugins are detected.
+  // plugins are detected. Do not remove this.
   UsgsAstroLsSensorModel lsModel;
 
+  // Distinguish between three input model formats: binary model state, json
+  // model state, and ISD.
+
+  // Binary model state case
   if (isMsgpack(model_file)) {
     std::cout << "Detected msgpack binary model state: " << model_file << "\n";
     std::ifstream ifs(model_file, std::ios::binary);
@@ -176,16 +180,30 @@ bool loadCsmCameraModel(std::string const& model_file,
     return true;
   }
 
-  // Try to read the model as an ISD
-  csm::Isd isd(model_file);
-
-  // Read the model in a string, for potentially finding parsing the
-  // model state from it.
+  // Read the file into a string for the JSON paths
   std::string model_state;
   if (!readFileInString(model_file, model_state))
     return false;
 
-  // Check if loading the model worked
+  // JSON model state case
+  if (model_state.substr(0, 10) == "USGS_ASTRO") {
+    std::string model_name = model_state.substr(0, model_state.find('\n'));
+    csm::WarningList warnings;
+    csm::Model *csm = csm::Plugin::getList().front()->
+      constructModelFromState(model_state, &warnings);
+    csm::RasterGM *modelPtr = dynamic_cast<csm::RasterGM*>(csm);
+    if (modelPtr == NULL) {
+      std::cerr << "Could not load model from state: " << model_file << "\n";
+      return false;
+    }
+    model = std::shared_ptr<csm::RasterGM>(modelPtr);
+    std::cout << "Loaded a CSM model of type " << model_name
+              << " from model state file " << model_file << ".\n";
+    return true;
+  }
+
+  // JSON ISD case
+  csm::Isd isd(model_file);
   bool success = false;
 
   // Try all detected plugins and all models for each plugin.
@@ -198,7 +216,6 @@ bool loadCsmCameraModel(std::string const& model_file,
     size_t num_models = csm_plugin->getNumModels();
     std::cout << "Number of models for this plugin: " << num_models << "\n";
 
-    // First try to construct the model from isd, and if that fails, from the state
     csm::Model *csm = NULL;
     csm::WarningList *warnings = new csm::WarningList;
     for (size_t i = 0; i < num_models; i++) {
@@ -206,15 +223,9 @@ bool loadCsmCameraModel(std::string const& model_file,
       std::string model_name = (*iter)->getModelName(i);
 
       if (csm_plugin->canModelBeConstructedFromISD(isd, model_name, warnings)) {
-        // Try to construct the model from the isd
+        // Try to construct the model from the ISD
         csm = csm_plugin->constructModelFromISD(isd, model_name, warnings);
         std::cout << "Loaded a CSM model of type " << model_name << " from ISD file "
-                  << model_file << ".\n";
-        success = true;
-      } else if (csm_plugin->canModelBeConstructedFromState(model_name, model_state, warnings)) {
-        // Try to construct it from the model state
-        csm = csm_plugin->constructModelFromState(model_state, warnings);
-        std::cout << "Loaded a CSM model of type " << model_name << " from model state file "
                   << model_file << ".\n";
         success = true;
       } else {
