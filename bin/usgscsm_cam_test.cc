@@ -16,6 +16,7 @@
 //   and compare with the original pixel values.
 
 #include <UsgsAstroPlugin.h>
+#include <UsgsAstroPluginSupport.h>
 #include <RasterGM.h>
 #include <UsgsAstroLsSensorModel.h>
 #include <Utilities.h>
@@ -140,6 +141,18 @@ double pixDiffNorm(csm::ImageCoord const& a, csm::ImageCoord const& b) {
   return sqrt((a.line - b.line) * (a.line - b.line) + (a.samp - b.samp) * (a.samp - b.samp));
 }
 
+// Check if a file is in msgpack binary format by peeking at the first byte.
+// Per the msgpack spec (github.com/msgpack/msgpack/blob/master/spec.md),
+// a map object starts with 0x80-0x8F (fixmap, up to 15 entries),
+// 0xDE (map16, up to 65535 entries), or 0xDF (map32). JSON starts
+// with '{' (0x7B) or whitespace, so there is no ambiguity.
+bool isMsgpack(std::string const& filename) {
+  std::ifstream ifs(filename, std::ios::binary);
+  uint8_t b = 0;
+  ifs.read(reinterpret_cast<char*>(&b), 1);
+  return (b >= 0x80 && b <= 0x8F) || b == 0xDE || b == 0xDF;
+}
+
 // Load a CSM camera model from an ISD or state file. Return true on success.
 bool loadCsmCameraModel(std::string const& model_file,
                        std::shared_ptr<csm::RasterGM> & model,
@@ -149,42 +162,18 @@ bool loadCsmCameraModel(std::string const& model_file,
   // plugins are detected.
   UsgsAstroLsSensorModel lsModel;
 
-  // Peek at first byte to detect binary (msgpack) model state.
-  // msgpack map16 starts with 0xDE, map32 with 0xDF.
-  // JSON starts with '{' (0x7B) or whitespace.
-  // Peek at first byte to detect binary (msgpack) model state.
-  // msgpack map16 starts with 0xDE, map32 with 0xDF.
-  // TODO(oalexan1): This bypasses the CSM plugin API. Eventually the
-  // lib needs a proper entry point for binary state, but that requires
-  // care with the CSM API contract. For now, only linescan is supported.
-  {
-    std::ifstream peek_ifs(model_file, std::ios::binary);
-    uint8_t first_byte = 0;
-    peek_ifs.read(reinterpret_cast<char*>(&first_byte), 1);
-    if (first_byte == 0xDE || first_byte == 0xDF) {
-      std::cout << "Detected msgpack binary model state: " << model_file << "\n";
-      peek_ifs.seekg(0);
-      std::vector<uint8_t> data((std::istreambuf_iterator<char>(peek_ifs)),
-                                std::istreambuf_iterator<char>());
-      nlohmann::json j = nlohmann::json::from_msgpack(data);
-      std::string model_name = j.at("m_modelName").get<std::string>();
-
-      // TODO(oalexan1): Add support for other model types (frame, pushframe,
-      // SAR, projected) as they get populateModel().
-      if (model_name == UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME) {
-        UsgsAstroLsSensorModel *lsModel = new UsgsAstroLsSensorModel();
-        lsModel->populateModel(j);
-        model = std::shared_ptr<csm::RasterGM>(lsModel);
-      } else {
-        std::cerr << "Binary state loading not yet supported for model: "
-                  << model_name << "\n";
-        return false;
-      }
-
-      std::cout << "Loaded model of type " << model_name
-                << " from binary state.\n";
-      return true;
-    }
+  if (isMsgpack(model_file)) {
+    std::cout << "Detected msgpack binary model state: " << model_file << "\n";
+    std::ifstream ifs(model_file, std::ios::binary);
+    std::vector<uint8_t> data((std::istreambuf_iterator<char>(ifs)),
+                              std::istreambuf_iterator<char>());
+    nlohmann::json j = nlohmann::json::from_msgpack(data);
+    std::string model_name = j.at("m_modelName").get<std::string>();
+    model = std::shared_ptr<csm::RasterGM>(
+      getUsgsCsmModelFromJson(j, model_name, NULL));
+    std::cout << "Loaded model of type " << model_name
+              << " from binary state.\n";
+    return true;
   }
 
   // Try to read the model as an ISD

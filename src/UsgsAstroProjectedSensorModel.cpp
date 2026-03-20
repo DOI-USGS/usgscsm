@@ -115,14 +115,12 @@ void UsgsAstroProjectedSensorModel::populateModel(const nlohmann::json& j) {
       "will return incorrect ground intersections.");
 
   m_subModelName = j["m_subModelName"];
-  // Reconstruct the state string for the sub-model
-  std::string stateString = m_subModelName + "\n" + j.dump(2);
-  m_camera = getUsgsCsmModelFromState(stateString, m_subModelName, NULL);
+  m_camera = getUsgsCsmModelFromJson(j, m_subModelName, NULL);
   m_majorAxis = j["m_majorAxis"];
   m_minorAxis = j["m_minorAxis"];
   m_geoTransform = j["m_geoTransform"].get<std::vector<double>>();
   m_projString = j["m_projString"];
-
+  
   PJ_CONTEXT *C = proj_context_create();
 
   /* Create a projection. */

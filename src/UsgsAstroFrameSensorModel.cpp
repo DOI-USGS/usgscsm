@@ -1516,11 +1516,13 @@ bool UsgsAstroFrameSensorModel::isValidIsd(const std::string &Isd,
  */
 void UsgsAstroFrameSensorModel::replaceModelState(
     const std::string &stringState) {
+
   MESSAGE_LOG(spdlog::level::debug, "Replacing model state");
   populateModel(stateAsJson(stringState));
 }
 
 void UsgsAstroFrameSensorModel::populateModel(const nlohmann::json& state) {
+
   // The json library's .at() will except if key is missing
   try {
     m_modelName = state.at("m_modelName").get<std::string>();
