@@ -20,13 +20,16 @@
 #include <UsgsAstroLsSensorModel.h>
 #include <Utilities.h>
 
+#include <nlohmann/json.hpp>
+
 #include <iostream>
 #include <fstream>
 
 struct Options {
-  std::string model;              // the .json file in isd or model state format
-  std::string modify_sup_file;    // the .sup file needing a modified model state
-  std::string output_model_state; // the output model state in .json format
+  std::string model;               // .json file in isd or model state format
+  std::string modify_sup_file;     // .sup file needing a modified model state
+  std::string output_model_state;  // output model state in .json format
+  std::string output_binary_state; // output model state in msgpack binary format
   int sample_rate;
   bool verbose;
   double subpixel_offset, height_above_datum, desired_precision;
@@ -101,11 +104,12 @@ bool parseOptions(int argc, char **argv, Options & opt) {
     parsed_options["desired-precision"] = "0.001"; // set default value
 
   // Collect all other option values. If not set, the values will default to 0.
-  opt.modify_sup_file    = parsed_options["modify-sup-file"];
-  opt.output_model_state = parsed_options["output-model-state"];
-  opt.sample_rate        = sample_rate_double;
-  opt.subpixel_offset    = atof(parsed_options["subpixel-offset"].c_str());
-  opt.height_above_datum = atof(parsed_options["height-above-datum"].c_str());
+  opt.modify_sup_file     = parsed_options["modify-sup-file"];
+  opt.output_model_state  = parsed_options["output-model-state"];
+  opt.output_binary_state = parsed_options["output-binary-model-state"];
+  opt.sample_rate         = sample_rate_double;
+  opt.subpixel_offset     = atof(parsed_options["subpixel-offset"].c_str());
+  opt.height_above_datum  = atof(parsed_options["height-above-datum"].c_str());
   opt.desired_precision  = atof(parsed_options["desired-precision"].c_str());
 
   return true;
@@ -145,6 +149,44 @@ bool loadCsmCameraModel(std::string const& model_file,
   // plugins are detected.
   UsgsAstroLsSensorModel lsModel;
 
+  // Peek at first byte to detect binary (msgpack) model state.
+  // msgpack map16 starts with 0xDE, map32 with 0xDF.
+  // JSON starts with '{' (0x7B) or whitespace.
+  // TODO(oalexan1): This binary loading bypasses the plugin API
+  // (canModelBeConstructedFromState / constructModelFromState) which
+  // are part of the public CSM spec inherited interface. Eventually
+  // the lib needs a proper entry point for binary state, but that
+  // requires care with the CSM API contract.
+  {
+    std::ifstream peek_ifs(model_file, std::ios::binary);
+    uint8_t first_byte = 0;
+    peek_ifs.read(reinterpret_cast<char*>(&first_byte), 1);
+    if (first_byte == 0xDE || first_byte == 0xDF) {
+      std::cout << "Detected msgpack binary model state: " << model_file << "\n";
+      peek_ifs.seekg(0);
+      std::vector<uint8_t> data((std::istreambuf_iterator<char>(peek_ifs)),
+                                std::istreambuf_iterator<char>());
+      nlohmann::json j = nlohmann::json::from_msgpack(data);
+      std::string model_name = j.at("m_modelName").get<std::string>();
+      // TODO(oalexan1): This .dump() re-serializes to JSON string just to
+      // feed the existing API. The real fix is a constructModelFromState()
+      // overload that takes a json object directly.
+      std::string state_str = model_name + "\n" + j.dump();
+      csm::WarningList warnings;
+      csm::Model *csm = csm::Plugin::getList().front()->
+        constructModelFromState(state_str, &warnings);
+      csm::RasterGM *modelPtr = dynamic_cast<csm::RasterGM*>(csm);
+      if (modelPtr == NULL) {
+        std::cerr << "Could not load model from binary state: " << model_file << "\n";
+        return false;
+      }
+      model = std::shared_ptr<csm::RasterGM>(modelPtr);
+      std::cout << "Loaded model of type " << model_name
+                << " from binary state.\n";
+      return true;
+    }
+  }
+
   // Try to read the model as an ISD
   csm::Isd isd(model_file);
 
@@ -153,7 +195,6 @@ bool loadCsmCameraModel(std::string const& model_file,
   std::string model_state;
   if (!readFileInString(model_file, model_state))
     return false;
-
 
   // Check if loading the model worked
   bool success = false;
@@ -267,6 +308,23 @@ int main(int argc, char **argv) {
     std::ofstream ofs(opt.output_model_state.c_str());
     ofs << model->getModelState() << "\n";
     ofs.close();
+  }
+
+  if (opt.output_binary_state != "") {
+    std::cout << "Writing model state in msgpack binary format: "
+              << opt.output_binary_state << "\n";
+    // TODO(oalexan1): This round-trips through a JSON string (getModelState()
+    // serializes internal fields to text, then we parse it back to json, then
+    // convert to msgpack). Eventually the model should produce the packed binary
+    // state directly from its internal fields, bypassing the string intermediary.
+    std::string state_str = model->getModelState();
+    nlohmann::json j = stateAsJson(state_str);
+    std::vector<uint8_t> msgpack_data = nlohmann::json::to_msgpack(j);
+    std::ofstream ofs(opt.output_binary_state, std::ios::binary);
+    ofs.write(reinterpret_cast<const char*>(msgpack_data.data()), msgpack_data.size());
+    ofs.close();
+    std::cout << "JSON model state size:   " << state_str.size() << " bytes\n";
+    std::cout << "Binary model state size: " << msgpack_data.size() << " bytes\n";
   }
 
   if (opt.modify_sup_file != "") {
