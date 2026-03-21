@@ -280,11 +280,13 @@ void UsgsAstroLsSensorModel::populateModel(const nlohmann::json& j) {
   m_sunPosition = j["m_sunPosition"].get<std::vector<double>>();
   m_sunVelocity = j["m_sunVelocity"].get<std::vector<double>>();
 
-  for (int i = 0; i < num_params; i++) {
-    for (int k = 0; k < NUM_PARAM_TYPES; k++) {
-      if (j["m_parameterType"][i] == PARAM_STRING_ALL[k]) {
-        m_parameterType[i] = PARAM_CHAR_ALL[k];
-        break;
+  if (j.contains("m_parameterType")) {
+    for (int i = 0; i < num_params; i++) {
+      for (int k = 0; k < NUM_PARAM_TYPES; k++) {
+        if (j["m_parameterType"][i] == PARAM_STRING_ALL[k]) {
+          m_parameterType[i] = PARAM_CHAR_ALL[k];
+          break;
+        }
       }
     }
   }
@@ -3239,6 +3241,9 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(
       "m_minElevation: {}"
       "m_maxElevation: {}",
       state["m_minElevation"].dump(), state["m_maxElevation"].dump())
+
+  // Default parameter types to REAL
+  state["m_parameterType"] = std::vector<std::string>(NUM_PARAMETERS, "REAL");
 
   // Default to identity covariance
   state["m_covariance"] =
