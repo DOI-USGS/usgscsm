@@ -657,43 +657,32 @@ void newtonRaphson(double dx, double dy, double &ux, double &uy,
 
   const int maxTries = 20;
 
-  double x, y, fx, fy, jacobian[4];
+  // Initial guess: undistorted = distorted. Initialize all other variables to 0.
+  ux = dx;
+  uy = dy;
+  double fx = 0.0, fy = 0.0;
+  double jacobian[4] = {0.0, 0.0, 0.0, 0.0};
 
-  // Initial guess for the root
-  x = dx;
-  y = dy;
-
-  distortionFunction(x, y, fx, fy, opticalDistCoeffs);
+  // Compute the distortion at the initial guess
+  distortionFunction(ux, uy, fx, fy, opticalDistCoeffs);
 
   for (int count = 1;
         ((fabs(fx) + fabs(fy)) > tolerance) && (count < maxTries); count++) {
-    distortionFunction(x, y, fx, fy, opticalDistCoeffs);
+    distortionFunction(ux, uy, fx, fy, opticalDistCoeffs);
 
     fx = dx - fx;
     fy = dy - fy;
 
-    distortionJacobian(x, y, jacobian, opticalDistCoeffs);
+    distortionJacobian(ux, uy, jacobian, opticalDistCoeffs);
 
     // Jxx * Jyy - Jxy * Jyx
     double determinant =
         jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2];
-    if (fabs(determinant) < 1e-6) {
-      ux = x;
-      uy = y;
-      // Near-zero determinant. Cannot continue. Return most recent result.
-      return;
-    }
+    if (fabs(determinant) < 1e-6)
+      return; // Near-zero determinant. Return most recent result.
 
-    x = x + (jacobian[3] * fx - jacobian[1] * fy) / determinant;
-    y = y + (jacobian[0] * fy - jacobian[2] * fx) / determinant;
-  }
-
-  if ((fabs(fx) + fabs(fy)) <= tolerance) {
-    // The method converged to a root.
-    ux = x;
-    uy = y;
-
-    return;
+    ux += (jacobian[3] * fx - jacobian[1] * fy) / determinant;
+    uy += (jacobian[0] * fy - jacobian[2] * fx) / determinant;
   }
 }
 

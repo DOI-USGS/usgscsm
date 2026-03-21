@@ -50,4 +50,10 @@ add_test(NAME test_usgscsm_cam_test_radtan
     COMMAND usgscsm_cam_test --model data/dawnfc_radtan.json  --sample-rate 100 --output-model-state dawnfc_radtan_model_state.json
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
     
-gtest_discover_tests(runCSMCameraModelTests WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
+# The projected sensor test fixture (constVelocityProj.json) uses a sinusoidal
+# projection with Mars radius (+R=3396190) but body radii of 10 m (synthetic
+# test body). Newer PROJ versions reject this mismatch. The test geometry is
+# intentionally synthetic, so suppress the check.
+gtest_discover_tests(runCSMCameraModelTests
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests
+  PROPERTIES ENVIRONMENT "PROJ_IGNORE_CELESTIAL_BODY=YES")
