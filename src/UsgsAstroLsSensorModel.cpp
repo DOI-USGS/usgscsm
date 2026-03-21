@@ -280,6 +280,7 @@ void UsgsAstroLsSensorModel::populateModel(const nlohmann::json& j) {
   m_sunPosition = j["m_sunPosition"].get<std::vector<double>>();
   m_sunVelocity = j["m_sunVelocity"].get<std::vector<double>>();
 
+  // Optional field: absent in older JSON and in ISDs from constructStateFromIsd
   if (j.contains("m_parameterType")) {
     for (int i = 0; i < num_params; i++) {
       for (int k = 0; k < NUM_PARAM_TYPES; k++) {

@@ -657,13 +657,12 @@ void newtonRaphson(double dx, double dy, double &ux, double &uy,
 
   const int maxTries = 20;
 
-  // Initial guess: undistorted = distorted. Initialize all other variables to 0.
+  // Initial guess: undistorted = distorted
   ux = dx;
   uy = dy;
   double fx = 0.0, fy = 0.0;
   double jacobian[4] = {0.0, 0.0, 0.0, 0.0};
 
-  // Compute the distortion at the initial guess
   distortionFunction(ux, uy, fx, fy, opticalDistCoeffs);
 
   for (int count = 1;
@@ -684,6 +683,9 @@ void newtonRaphson(double dx, double dy, double &ux, double &uy,
     ux += (jacobian[3] * fx - jacobian[1] * fy) / determinant;
     uy += (jacobian[0] * fy - jacobian[2] * fx) / determinant;
   }
+
+  if ((fabs(fx) + fabs(fy)) <= tolerance)
+    return; // The method converged to a root
 }
 
 double evaluatePolynomial(const std::vector<double> &coeffs, double x) {

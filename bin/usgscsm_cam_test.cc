@@ -111,7 +111,7 @@ bool parseOptions(int argc, char **argv, Options & opt) {
   opt.sample_rate         = sample_rate_double;
   opt.subpixel_offset     = atof(parsed_options["subpixel-offset"].c_str());
   opt.height_above_datum  = atof(parsed_options["height-above-datum"].c_str());
-  opt.desired_precision  = atof(parsed_options["desired-precision"].c_str());
+  opt.desired_precision   = atof(parsed_options["desired-precision"].c_str());
 
   return true;
 }
@@ -173,6 +173,7 @@ bool loadCsmCameraModel(std::string const& model_file,
   if (!readFileInString(model_file, model_state))
     return false;
 
+  // Check if loading the model worked
   bool success = false;
 
   // Try all detected plugins and all models for each plugin.

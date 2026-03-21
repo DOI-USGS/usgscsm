@@ -137,6 +137,9 @@ nlohmann::json getUsgsCsmModelJson(csm::RasterGM *model) {
     return sar->getModelJson();
   if (auto *proj = dynamic_cast<UsgsAstroProjectedSensorModel*>(model))
     return proj->getModelJson();
-  // Fallback: round-trip through string
-  return stateAsJson(model->getModelState());
+  // Throw for unsupported model, as in the other dispatch functions
+  csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
+  std::string aMessage = "Unsupported model type in getUsgsCsmModelJson()";
+  std::string aFunction = "UsgsAstroPluginSupport::getUsgsCsmModelJson()";
+  throw csm::Error(aErrorType, aMessage, aFunction);
 }
