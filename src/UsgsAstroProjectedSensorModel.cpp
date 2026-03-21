@@ -192,7 +192,7 @@ std::string UsgsAstroProjectedSensorModel::getModelNameFromModelState(
 // UsgsAstroLineScannerSensorModel::getModelState
 //***************************************************************************
 nlohmann::json UsgsAstroProjectedSensorModel::getModelJson() const {
-  auto state = stateAsJson(m_camera->getModelState());
+  auto state = getUsgsCsmModelJson(m_camera);
   state["m_subModelName"] = state["m_modelName"];
   state["m_modelName"] = _SENSOR_MODEL_NAME;
   state["m_majorAxis"] = m_majorAxis;
