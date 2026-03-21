@@ -110,6 +110,10 @@ csm::RasterGM *getUsgsCsmModelFromJson(const nlohmann::json &j, const std::strin
     UsgsAstroProjectedSensorModel *model = new UsgsAstroProjectedSensorModel();
     model->populateModel(j);
     return model;
+  } else if (modelName == UsgsAstroPushFrameSensorModel::_SENSOR_MODEL_NAME) {
+    UsgsAstroPushFrameSensorModel *model = new UsgsAstroPushFrameSensorModel();
+    model->populateModel(j);
+    return model;
   } else if (modelName == UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME) {
     UsgsAstroSarSensorModel *model = new UsgsAstroSarSensorModel();
     model->populateModel(j);
