@@ -2483,6 +2483,22 @@ json stateAsJson(std::string modelState) {
 }
 
 /**
+ * @brief Check if a file is in msgpack binary format by peeking at the first byte.
+ * @description Per the msgpack spec (github.com/msgpack/msgpack/blob/master/spec.md),
+ * a map object starts with 0x80-0x8F (fixmap), 0xDE (map16), or 0xDF (map32).
+ * JSON starts with '{' (0x7B), so there is no ambiguity.
+ *
+ * @param filename The path to the file to check.
+ * @return True if the file starts with a msgpack map byte, false otherwise.
+ */
+bool isMsgpack(std::string const& filename) {
+  std::ifstream ifs(filename, std::ios::binary);
+  uint8_t b = 0;
+  ifs.read(reinterpret_cast<char*>(&b), 1);
+  return (b >= 0x80 && b <= 0x8F) || b == 0xDE || b == 0xDF;
+}
+
+/**
  * @description Sanitizes a given string by replacing characters that are not 
  * printable with newlines. This function modifies the original string.
  *

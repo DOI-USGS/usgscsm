@@ -412,7 +412,7 @@ void UsgsAstroSarSensorModel::populateModel(const nlohmann::json& stateJson) {
  * @return A JSON string representing the current state of the model.
  * @throws csm::Error If the look direction is not properly set in the model.
  */
-string UsgsAstroSarSensorModel::getModelState() const {
+nlohmann::json UsgsAstroSarSensorModel::getModelJson() const {
   json state = {};
 
   state["m_modelName"] = _SENSOR_MODEL_NAME;
@@ -456,9 +456,12 @@ string UsgsAstroSarSensorModel::getModelState() const {
   state["m_scaleConversionTimes"] = m_scaleConversionTimes;
   state["m_covariance"] = m_covariance;
 
+  return state;
+}
+
+string UsgsAstroSarSensorModel::getModelState() const {
   // Use dump(2) to avoid creating the model string as a single long line
-  std::string stateString = getModelName() + "\n" + state.dump(2);
-  return stateString;
+  return getModelName() + "\n" + getModelJson().dump(2);
 }
 
 /**

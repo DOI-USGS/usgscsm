@@ -341,8 +341,7 @@ std::string UsgsAstroPushFrameSensorModel::getModelNameFromModelState(
 //***************************************************************************
 // UsgsAstroLineScannerSensorModel::getModelState
 //***************************************************************************
-std::string UsgsAstroPushFrameSensorModel::getModelState() const {
-  MESSAGE_LOG("Running getModelState");
+nlohmann::json UsgsAstroPushFrameSensorModel::getModelJson() const {
   json state;
   state["m_modelName"] = _SENSOR_MODEL_NAME;
   state["m_startingDetectorSample"] = m_startingDetectorSample;
@@ -495,8 +494,12 @@ std::string UsgsAstroPushFrameSensorModel::getModelState() const {
       state["m_numLinesOverlap"].dump(), state["m_reducedFrameletHeight"].dump(),
       state["m_nReducedLines"].dump());
 
-  std::string stateString = getModelName() + "\n" + state.dump(2);
-  return stateString;
+  return state;
+}
+
+std::string UsgsAstroPushFrameSensorModel::getModelState() const {
+  MESSAGE_LOG("Running getModelState");
+  return getModelName() + "\n" + getModelJson().dump(2);
 }
 
 //***************************************************************************

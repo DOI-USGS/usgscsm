@@ -125,3 +125,18 @@ csm::RasterGM *getUsgsCsmModelFromJson(const nlohmann::json &j, const std::strin
 csm::RasterGM *getUsgsCsmModelFromState(const std::string &stringState, const std::string &modelName, csm::WarningList *warnings) {
   return getUsgsCsmModelFromJson(stateAsJson(stringState), modelName, warnings);
 }
+
+nlohmann::json getUsgsCsmModelJson(csm::RasterGM *model) {
+  if (auto *ls = dynamic_cast<UsgsAstroLsSensorModel*>(model))
+    return ls->getModelJson();
+  if (auto *fr = dynamic_cast<UsgsAstroFrameSensorModel*>(model))
+    return fr->getModelJson();
+  if (auto *pf = dynamic_cast<UsgsAstroPushFrameSensorModel*>(model))
+    return pf->getModelJson();
+  if (auto *sar = dynamic_cast<UsgsAstroSarSensorModel*>(model))
+    return sar->getModelJson();
+  if (auto *proj = dynamic_cast<UsgsAstroProjectedSensorModel*>(model))
+    return proj->getModelJson();
+  // Fallback: round-trip through string
+  return stateAsJson(model->getModelState());
+}

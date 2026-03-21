@@ -191,7 +191,7 @@ std::string UsgsAstroProjectedSensorModel::getModelNameFromModelState(
 //***************************************************************************
 // UsgsAstroLineScannerSensorModel::getModelState
 //***************************************************************************
-std::string UsgsAstroProjectedSensorModel::getModelState() const {
+nlohmann::json UsgsAstroProjectedSensorModel::getModelJson() const {
   auto state = stateAsJson(m_camera->getModelState());
   state["m_subModelName"] = state["m_modelName"];
   state["m_modelName"] = _SENSOR_MODEL_NAME;
@@ -199,6 +199,10 @@ std::string UsgsAstroProjectedSensorModel::getModelState() const {
   state["m_minorAxis"] = m_minorAxis;
   state["m_geoTransform"] = m_geoTransform;
   state["m_projString"] = m_projString;
+  return state;
+}
+
+std::string UsgsAstroProjectedSensorModel::getModelState() const {
   MESSAGE_LOG(
       spdlog::level::trace,
       "m_subModelName: {} "
@@ -209,16 +213,15 @@ std::string UsgsAstroProjectedSensorModel::getModelState() const {
       m_subModelName,
       m_majorAxis,
       m_minorAxis,
-      m_geoTransform[0], 
-      m_geoTransform[1], 
-      m_geoTransform[2], 
-      m_geoTransform[3], 
-      m_geoTransform[4], 
-      m_geoTransform[5], 
+      m_geoTransform[0],
+      m_geoTransform[1],
+      m_geoTransform[2],
+      m_geoTransform[3],
+      m_geoTransform[4],
+      m_geoTransform[5],
       m_projString);
   // Use dump(2) to avoid creating the model string as a single long line
-  std::string stateString = getModelName() + "\n" + state.dump(2);
-  return stateString;
+  return getModelName() + "\n" + getModelJson().dump(2);
 }
 
 //***************************************************************************

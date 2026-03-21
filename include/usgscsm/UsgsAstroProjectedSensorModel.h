@@ -70,6 +70,9 @@ public:
     // serialization. Used by replaceModelState() and binary state loading.
     void populateModel(const nlohmann::json& j);
 
+    // Return model state as a json object, bypassing string serialization.
+    nlohmann::json getModelJson() const;
+
     // This method checks to see if the model name is recognized
     // in the input state string.
     static std::string getModelNameFromModelState(const std::string &model_state);

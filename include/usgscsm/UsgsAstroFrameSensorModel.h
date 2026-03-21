@@ -303,6 +303,9 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM,
   // serialization. Used by replaceModelState() and binary state loading.
   void populateModel(const nlohmann::json& j);
 
+  // Return model state as a json object, bypassing string serialization.
+  nlohmann::json getModelJson() const;
+
   // Implement methods from the SettableEllipsoid class
 
   virtual csm::Ellipsoid getEllipsoid() const;

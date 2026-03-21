@@ -193,6 +193,12 @@ std::vector<double> getSensorOrientations(nlohmann::json isd,
 double getWavelength(nlohmann::json isd, csm::WarningList *list = nullptr);
 nlohmann::json stateAsJson(std::string modelState);
 
+// Check if a file is in msgpack binary format by peeking at the first byte.
+// Per the msgpack spec (github.com/msgpack/msgpack/blob/master/spec.md),
+// a map object starts with 0x80-0x8F (fixmap), 0xDE (map16), or 0xDF (map32).
+// JSON starts with '{' (0x7B), so there is no ambiguity.
+bool isMsgpack(std::string const& filename);
+
 // Read the contents of the file out as a string
 bool readFileInString(std::string const& filename, std::string & str);
 

@@ -141,22 +141,10 @@ double pixDiffNorm(csm::ImageCoord const& a, csm::ImageCoord const& b) {
   return sqrt((a.line - b.line) * (a.line - b.line) + (a.samp - b.samp) * (a.samp - b.samp));
 }
 
-// Check if a file is in msgpack binary format by peeking at the first byte. Per
-// the msgpack spec (github.com/msgpack/msgpack/blob/master/spec.md), a map
-// object starts with 0x80-0x8F (fixmap, up to 15 entries), 0xDE (map16, up to
-// 65535 entries), or 0xDF (map32). JSON starts with '{' (0x7B ascii code) or
-// whitespace, so there is no ambiguity.
-bool isMsgpack(std::string const& filename) {
-  std::ifstream ifs(filename, std::ios::binary);
-  uint8_t b = 0;
-  ifs.read(reinterpret_cast<char*>(&b), 1);
-  return (b >= 0x80 && b <= 0x8F) || b == 0xDE || b == 0xDF;
-}
-
 // Load a CSM camera model from an ISD or state file. Return true on success.
 bool loadCsmCameraModel(std::string const& model_file,
-                       std::shared_ptr<csm::RasterGM> & model,
-                       Options & opt) {
+                        std::shared_ptr<csm::RasterGM> & model,
+                        Options & opt) {
 
   // This is needed to trigger loading libusgscsm.so. Otherwise 0
   // plugins are detected. Do not remove this.
@@ -170,8 +158,7 @@ bool loadCsmCameraModel(std::string const& model_file,
                               std::istreambuf_iterator<char>());
     nlohmann::json j = nlohmann::json::from_msgpack(data);
     std::string model_name = j.at("m_modelName").get<std::string>();
-    model = std::shared_ptr<csm::RasterGM>(
-      getUsgsCsmModelFromJson(j, model_name, NULL));
+    model = std::shared_ptr<csm::RasterGM>(getUsgsCsmModelFromJson(j, model_name, NULL));
     std::cout << "Loaded model of type " << model_name
               << " from binary state.\n";
     return true;
@@ -301,17 +288,11 @@ int main(int argc, char **argv) {
   if (opt.output_binary_state != "") {
     std::cout << "Writing model state in msgpack binary format: "
               << opt.output_binary_state << "\n";
-    // TODO(oalexan1): This round-trips through a JSON string (getModelState()
-    // serializes internal fields to text, then we parse it back to json, then
-    // convert to msgpack). Eventually the model should produce the packed binary
-    // state directly from its internal fields, bypassing the string intermediary.
-    std::string state_str = model->getModelState();
-    nlohmann::json j = stateAsJson(state_str);
+    nlohmann::json j = getUsgsCsmModelJson(model.get());
     std::vector<uint8_t> msgpack_data = nlohmann::json::to_msgpack(j);
     std::ofstream ofs(opt.output_binary_state, std::ios::binary);
     ofs.write(reinterpret_cast<const char*>(msgpack_data.data()), msgpack_data.size());
     ofs.close();
-    std::cout << "JSON model state size:   " << state_str.size() << " bytes\n";
     std::cout << "Binary model state size: " << msgpack_data.size() << " bytes\n";
   }
 

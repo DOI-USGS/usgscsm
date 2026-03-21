@@ -27,6 +27,9 @@ class UsgsAstroSarSensorModel : public csm::RasterGM,
   // serialization.
   void populateModel(const nlohmann::json& j);
 
+  // Return model state as a json object, bypassing string serialization.
+  nlohmann::json getModelJson() const;
+
   virtual std::string getModelState() const;
 
   std::string constructStateFromIsd(const std::string imageSupportData,

@@ -1280,8 +1280,7 @@ std::string UsgsAstroFrameSensorModel::getModelNameFromModelState(
  * starts with the model name for identification, followed by the serialized JSON state
  * with a two-space indentation for readability.
  */
-std::string UsgsAstroFrameSensorModel::getModelState() const {
-  MESSAGE_LOG(spdlog::level::debug, "Dumping model state");
+nlohmann::json UsgsAstroFrameSensorModel::getModelJson() const {
   json state = {
       {"m_modelName", _SENSOR_MODEL_NAME},
       {"m_sensorName", m_sensorName},
@@ -1330,9 +1329,13 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
        {m_referencePointXyz.x, m_referencePointXyz.y, m_referencePointXyz.z}},
       {"m_currentParameterCovariance", m_currentParameterCovariance}};
 
+  return state;
+}
+
+std::string UsgsAstroFrameSensorModel::getModelState() const {
+  MESSAGE_LOG(spdlog::level::debug, "Dumping model state");
   // Use dump(2) to avoid creating the model string as a single long line
-  std::string stateString = getModelName() + "\n" + state.dump(2);
-  return stateString;
+  return getModelName() + "\n" + getModelJson().dump(2);
 }
 
 /**

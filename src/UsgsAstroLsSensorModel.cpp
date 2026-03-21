@@ -351,9 +351,7 @@ std::string UsgsAstroLsSensorModel::getModelNameFromModelState(
  * The string includes key-value pairs for various model parameters, ensuring a comprehensive
  * snapshot of the model's current configuration and state.
  */
-std::string UsgsAstroLsSensorModel::getModelState() const {
-  MESSAGE_LOG(spdlog::level::info, "Running getModelState")
-
+nlohmann::json UsgsAstroLsSensorModel::getModelJson() const {
   json state;
   state["m_modelName"] = _SENSOR_MODEL_NAME;
   state["m_startingDetectorSample"] = m_startingDetectorSample;
@@ -490,9 +488,12 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
   state["m_sunVelocity"] = m_sunVelocity;
   MESSAGE_LOG(spdlog::level::trace, "num sun velocities: {} ", m_sunVelocity.size());
 
-  // Use dump(2) to avoid creating the model string as a single long line
-  std::string stateString = getModelName() + "\n" + state.dump(2);
-  return stateString;
+  return state;
+}
+
+std::string UsgsAstroLsSensorModel::getModelState() const {
+  MESSAGE_LOG(spdlog::level::info, "Running getModelState")
+  return getModelName() + "\n" + getModelJson().dump(2);
 }
 
 /**
