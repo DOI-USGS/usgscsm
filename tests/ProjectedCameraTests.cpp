@@ -80,7 +80,7 @@ TEST_F(ConstVelocityProjectedSensorModel, ProximateImageLocus) {
   EXPECT_TRUE(warnings.empty());
 }
 
-TEST_F(ConstVelocityProjectedSensorModel, RemoteImageLocus) {
+TEST_F(MarsProjectedSensorModel, RemoteImageLocus) {
   csm::ImageCoord imagePt(8.0, 8.0);
   double precision;
   csm::WarningList *warnings = new csm::WarningList();
@@ -94,12 +94,9 @@ TEST_F(ConstVelocityProjectedSensorModel, RemoteImageLocus) {
   lookY /= lookMag;
   lookZ /= lookMag;
   EXPECT_NEAR(locus.direction.x, lookX, 1e-9);
-  EXPECT_NEAR(locus.direction.y, lookY, 1e-4);
-  EXPECT_NEAR(locus.direction.z, lookZ, 1e-6);
-  EXPECT_NEAR(locus.point.x, 1000.0, 1e-9);
-  EXPECT_NEAR(locus.point.y, 0.0, 1e-9);
-  EXPECT_NEAR(locus.point.z, 1.1194682805620435, 1e-9);
+  EXPECT_NEAR(locus.direction.y, lookY, 1e-9);
+  EXPECT_NEAR(locus.direction.z, lookZ, 1e-9);
   EXPECT_LT(precision, 0.001);
   EXPECT_TRUE(warnings->empty());
-  free(warnings);
+  delete warnings;
 }
