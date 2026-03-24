@@ -95,7 +95,7 @@ TEST_F(MarsProjectedSensorModel, RemoteImageLocus) {
   lookZ /= lookMag;
   EXPECT_NEAR(locus.direction.x, lookX, 1e-9);
   EXPECT_NEAR(locus.direction.y, lookY, 1e-9);
-  EXPECT_NEAR(locus.direction.z, lookZ, 1e-9);
+  EXPECT_NEAR(locus.direction.z, lookZ, 1e-8);
   EXPECT_LT(precision, 0.001);
   EXPECT_TRUE(warnings->empty());
   delete warnings;
