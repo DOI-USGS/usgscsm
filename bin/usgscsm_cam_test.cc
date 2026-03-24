@@ -3,13 +3,17 @@
 // Functionality:
 //--------------
 //
-// - Load a CSM model in ISD format, model state, or GXP .sup file format, via:
+// - Load a CSM model in ISD format, model state, binary msgpack model state,
+//   or GXP .sup file format, via:
 //   --model <model file>
 //
-// - Save the model state if invoked with:
+// - Save the model state in JSON format:
 //   --output-model-state <model state .json file>
 //
-// - Modify GXP .sup file's model state with inputed model:
+// - Save the model state in binary msgpack format:
+//   --output-binary-model-state <model state .isd file>
+//
+// - Modify GXP .sup file's model state with input model:
 //   --modify-sup-file <GXP .sup file>
 //
 // - Test projecting rays from the camera to ground, then back,

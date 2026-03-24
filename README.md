@@ -47,10 +47,19 @@ JSON-formatted file, be used interchangeably with the
 original ISD model, and also shared among various photogrammetric
 packages.
 
+The model state can also be saved in binary msgpack format, which is
+smaller and much faster to load than JSON. The `.isd` extension is
+suggested for binary model state files but is not enforced. When
+loading, the format is determined by inspecting the first bytes of
+the file.
+
 The camera model state can be modified by an application of a rotation
 and translation, which is necessary in order to refine a camera's
 position and orientation in photogrammetry, while these operations are
 not easy to express in the original ISD format.
+
+The GXP `.sup` file format is also supported for interoperability with the
+GXP software suite.
 
 This library provides functionality for saving the model state file,
 as discussed in the next section.
@@ -58,9 +67,10 @@ as discussed in the next section.
 ## Camera model processsing
 
 USGSCSM ships with a program named ``usgscsm_cam_test``, which is
-able to load a CSM camera model, whether in the original ISD format or its
-model state representation, export the model state, and perform basic
-camera operations, as described in its
+able to load a CSM camera model, whether in the original ISD format,
+its model state representation, or binary msgpack model state, export
+the model state in JSON or binary format, and perform basic camera
+operations, as described in its
 [documentation](docs/source/tools/usgscsm_cam_test.rst).
 
 ## Enabling logging
