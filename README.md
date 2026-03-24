@@ -64,7 +64,7 @@ GXP software suite.
 This library provides functionality for saving the model state file,
 as discussed in the next section.
 
-## Camera model processsing
+## Camera model processing
 
 USGSCSM ships with a program named ``usgscsm_cam_test``, which is
 able to load a CSM camera model, whether in the original ISD format,
