@@ -47,8 +47,7 @@ accomplished via Python builtin functions such as:
 Testing the ISD
 ---------------
 USGSCSM includes a test utility that can be used to verify the integrity of an
-ISD by loading a camera model and performing basic tests. See
-`usgscsm_cam_test <../tools/usgscsm_cam_test.rst>`_ for full documentation.
+ISD by loading a camera model and performing basic tests. See :ref:`usgscsm_cam_test` for full documentation.
 The utility is located in the USGSCSM build directory, and requires only the
 path to the ISD from the previous step.
 

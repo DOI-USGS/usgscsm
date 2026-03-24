@@ -1,3 +1,5 @@
+.. _usgscsm_cam_test:
+
 usgscsm_cam_test
 ================
 
