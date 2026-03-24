@@ -60,10 +60,10 @@ TEST_F(ConstVelocityProjectedSensorModel, OffBody) {
 
 TEST_F(MarsProjectedSensorModel, ProximateImageLocus) {
   csm::ImageCoord imagePt(8.0, 8.0);
-  csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
   double precision;
   csm::WarningList warnings;
   csm::EcefLocus remoteLocus = sensorModel->imageToRemoteImagingLocus(imagePt);
+  csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
   csm::EcefLocus locus = sensorModel->imageToProximateImagingLocus(
       imagePt, groundPt, 0.001, &precision, &warnings);
   double locusToGroundX = locus.point.x - groundPt.x;
