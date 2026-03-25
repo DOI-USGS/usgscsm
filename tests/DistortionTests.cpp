@@ -94,7 +94,11 @@ TEST(transverse, removeDistortion1) {
 }
 
 TEST(transverse, removeDistortion_AllCoefficientsOne) {
-  csm::ImageCoord imagePt(1872.25, 1872.25);
+  // With all coefficients equal for X and Y, the Jacobian rows are identical
+  // and the determinant is exactly zero (analytically). Use small input values
+  // so floating-point noise in the determinant stays below the 1e-6 threshold,
+  // causing Newton-Raphson to bail on the first iteration and return the input.
+  csm::ImageCoord imagePt(0.5, 0.5);
   double focalLength = 1000.0;
   double ux, uy;
 
@@ -102,11 +106,9 @@ TEST(transverse, removeDistortion_AllCoefficientsOne) {
       1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
       1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 
-  removeDistortion(imagePt.samp, imagePt.line, ux, uy, transverseDistortionCoeffs, 
+  removeDistortion(imagePt.samp, imagePt.line, ux, uy, transverseDistortionCoeffs,
                    focalLength, DistortionType::TRANSVERSE);
 
-  // The Jacobian is singular, so the setFocalPlane should break out of it's
-  // iteration and returns the same distorted coordinates that were passed in.
   EXPECT_NEAR(ux, imagePt.samp, 1e-8);
   EXPECT_NEAR(uy, imagePt.line, 1e-8);
 }

@@ -657,44 +657,35 @@ void newtonRaphson(double dx, double dy, double &ux, double &uy,
 
   const int maxTries = 20;
 
-  double x, y, fx, fy, jacobian[4];
+  // Initial guess: undistorted = distorted
+  ux = dx;
+  uy = dy;
+  double fx = 0.0, fy = 0.0;
+  double jacobian[4] = {0.0, 0.0, 0.0, 0.0};
 
-  // Initial guess for the root
-  x = dx;
-  y = dy;
-
-  distortionFunction(x, y, fx, fy, opticalDistCoeffs);
+  distortionFunction(ux, uy, fx, fy, opticalDistCoeffs);
 
   for (int count = 1;
         ((fabs(fx) + fabs(fy)) > tolerance) && (count < maxTries); count++) {
-    distortionFunction(x, y, fx, fy, opticalDistCoeffs);
+    distortionFunction(ux, uy, fx, fy, opticalDistCoeffs);
 
     fx = dx - fx;
     fy = dy - fy;
 
-    distortionJacobian(x, y, jacobian, opticalDistCoeffs);
+    distortionJacobian(ux, uy, jacobian, opticalDistCoeffs);
 
     // Jxx * Jyy - Jxy * Jyx
     double determinant =
         jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2];
-    if (fabs(determinant) < 1e-6) {
-      ux = x;
-      uy = y;
-      // Near-zero determinant. Cannot continue. Return most recent result.
-      return;
-    }
+    if (fabs(determinant) < 1e-6)
+      return; // Near-zero determinant. Return most recent result.
 
-    x = x + (jacobian[3] * fx - jacobian[1] * fy) / determinant;
-    y = y + (jacobian[0] * fy - jacobian[2] * fx) / determinant;
+    ux += (jacobian[3] * fx - jacobian[1] * fy) / determinant;
+    uy += (jacobian[0] * fy - jacobian[2] * fx) / determinant;
   }
 
-  if ((fabs(fx) + fabs(fy)) <= tolerance) {
-    // The method converged to a root.
-    ux = x;
-    uy = y;
-
-    return;
-  }
+  if ((fabs(fx) + fabs(fy)) <= tolerance)
+    return; // The method converged to a root
 }
 
 double evaluatePolynomial(const std::vector<double> &coeffs, double x) {
@@ -2480,6 +2471,22 @@ json stateAsJson(std::string modelState) {
     foundFirst = 0;
   }
   return json::parse(modelState.begin() + foundFirst, modelState.begin() + foundLast + 1);
+}
+
+/**
+ * @brief Check if a file is in msgpack binary format by peeking at the first byte.
+ * @description Per the msgpack spec (github.com/msgpack/msgpack/blob/master/spec.md),
+ * a map object starts with 0x80-0x8F (fixmap), 0xDE (map16), or 0xDF (map32).
+ * JSON starts with '{' (0x7B), so there is no ambiguity.
+ *
+ * @param filename The path to the file to check.
+ * @return True if the file starts with a msgpack map byte, false otherwise.
+ */
+bool isMsgpack(std::string const& filename) {
+  std::ifstream ifs(filename, std::ios::binary);
+  uint8_t b = 0;
+  ifs.read(reinterpret_cast<char*>(&b), 1);
+  return (b >= 0x80 && b <= 0x8F) || b == 0xDE || b == 0xDF;
 }
 
 /**

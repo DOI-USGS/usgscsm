@@ -139,9 +139,11 @@ const csm::param::Type UsgsAstroLsSensorModel::PARAM_CHAR_ALL[] = {
  */
 void UsgsAstroLsSensorModel::replaceModelState(const std::string& stateString) {
   MESSAGE_LOG(spdlog::level::info, "Replacing model state")
+  populateModel(stateAsJson(stateString));
+}
 
+void UsgsAstroLsSensorModel::populateModel(const nlohmann::json& j) {
   reset();
-  auto j = stateAsJson(stateString);
   int num_params = NUM_PARAMETERS;
 
   m_imageIdentifier = j["m_imageIdentifier"].get<std::string>();
@@ -278,11 +280,14 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string& stateString) {
   m_sunPosition = j["m_sunPosition"].get<std::vector<double>>();
   m_sunVelocity = j["m_sunVelocity"].get<std::vector<double>>();
 
-  for (int i = 0; i < num_params; i++) {
-    for (int k = 0; k < NUM_PARAM_TYPES; k++) {
-      if (j["m_parameterType"][i] == PARAM_STRING_ALL[k]) {
-        m_parameterType[i] = PARAM_CHAR_ALL[k];
-        break;
+  // Optional field: absent in older JSON and in ISDs from constructStateFromIsd
+  if (j.contains("m_parameterType")) {
+    for (int i = 0; i < num_params; i++) {
+      for (int k = 0; k < NUM_PARAM_TYPES; k++) {
+        if (j["m_parameterType"][i] == PARAM_STRING_ALL[k]) {
+          m_parameterType[i] = PARAM_CHAR_ALL[k];
+          break;
+        }
       }
     }
   }
@@ -349,9 +354,7 @@ std::string UsgsAstroLsSensorModel::getModelNameFromModelState(
  * The string includes key-value pairs for various model parameters, ensuring a comprehensive
  * snapshot of the model's current configuration and state.
  */
-std::string UsgsAstroLsSensorModel::getModelState() const {
-  MESSAGE_LOG(spdlog::level::info, "Running getModelState")
-
+nlohmann::json UsgsAstroLsSensorModel::getModelJson() const {
   json state;
   state["m_modelName"] = _SENSOR_MODEL_NAME;
   state["m_startingDetectorSample"] = m_startingDetectorSample;
@@ -488,9 +491,12 @@ std::string UsgsAstroLsSensorModel::getModelState() const {
   state["m_sunVelocity"] = m_sunVelocity;
   MESSAGE_LOG(spdlog::level::trace, "num sun velocities: {} ", m_sunVelocity.size());
 
-  // Use dump(2) to avoid creating the model string as a single long line
-  std::string stateString = getModelName() + "\n" + state.dump(2);
-  return stateString;
+  return state;
+}
+
+std::string UsgsAstroLsSensorModel::getModelState() const {
+  MESSAGE_LOG(spdlog::level::info, "Running getModelState")
+  return getModelName() + "\n" + getModelJson().dump(2);
 }
 
 /**
@@ -3236,6 +3242,9 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(
       "m_minElevation: {}"
       "m_maxElevation: {}",
       state["m_minElevation"].dump(), state["m_maxElevation"].dump())
+
+  // Default parameter types to REAL
+  state["m_parameterType"] = std::vector<std::string>(NUM_PARAMETERS, "REAL");
 
   // Default to identity covariance
   state["m_covariance"] =

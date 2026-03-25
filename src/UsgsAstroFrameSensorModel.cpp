@@ -1280,8 +1280,7 @@ std::string UsgsAstroFrameSensorModel::getModelNameFromModelState(
  * starts with the model name for identification, followed by the serialized JSON state
  * with a two-space indentation for readability.
  */
-std::string UsgsAstroFrameSensorModel::getModelState() const {
-  MESSAGE_LOG(spdlog::level::debug, "Dumping model state");
+nlohmann::json UsgsAstroFrameSensorModel::getModelJson() const {
   json state = {
       {"m_modelName", _SENSOR_MODEL_NAME},
       {"m_sensorName", m_sensorName},
@@ -1330,9 +1329,13 @@ std::string UsgsAstroFrameSensorModel::getModelState() const {
        {m_referencePointXyz.x, m_referencePointXyz.y, m_referencePointXyz.z}},
       {"m_currentParameterCovariance", m_currentParameterCovariance}};
 
+  return state;
+}
+
+std::string UsgsAstroFrameSensorModel::getModelState() const {
+  MESSAGE_LOG(spdlog::level::debug, "Dumping model state");
   // Use dump(2) to avoid creating the model string as a single long line
-  std::string stateString = getModelName() + "\n" + state.dump(2);
-  return stateString;
+  return getModelName() + "\n" + getModelJson().dump(2);
 }
 
 /**
@@ -1517,9 +1520,12 @@ bool UsgsAstroFrameSensorModel::isValidIsd(const std::string &Isd,
 void UsgsAstroFrameSensorModel::replaceModelState(
     const std::string &stringState) {
 
-  json state = stateAsJson(stringState);
-
   MESSAGE_LOG(spdlog::level::debug, "Replacing model state");
+  populateModel(stateAsJson(stringState));
+}
+
+void UsgsAstroFrameSensorModel::populateModel(const nlohmann::json& state) {
+
   // The json library's .at() will except if key is missing
   try {
     m_modelName = state.at("m_modelName").get<std::string>();
@@ -1560,6 +1566,8 @@ void UsgsAstroFrameSensorModel::replaceModelState(
         state.at("m_currentParameterCovariance").get<std::vector<double>>();
 
     // These are optional and may not exist in all state files
+    if (state.find("m_targetName") != state.end())
+      m_targetName = state.at("m_targetName").get<std::string>();
     if (state.find("m_maxElevation") != state.end())
       m_maxElevation = state.at("m_maxElevation").get<double>();
     if (state.find("m_minElevation") != state.end())
@@ -1581,13 +1589,13 @@ void UsgsAstroFrameSensorModel::replaceModelState(
     MESSAGE_LOG(
         spdlog::level::err,
         "State keywords required to generate sensor model missing: " +
-        std::string(e.what()) + "\nUsing model string: " + stringState +
-        "UsgsAstroFrameSensorModel::replaceModelState");
+        std::string(e.what()) +
+        "UsgsAstroFrameSensorModel::populateModel");
     throw csm::Error(
         csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
         "State keywords required to generate sensor model missing: " +
-            std::string(e.what()) + "\nUsing model string: " + stringState,
-        "UsgsAstroFrameSensorModel::replaceModelState");
+            std::string(e.what()),
+        "UsgsAstroFrameSensorModel::populateModel");
   }
 }
 

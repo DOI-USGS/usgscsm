@@ -136,8 +136,14 @@ const csm::param::Type UsgsAstroPushFrameSensorModel::PARAM_CHAR_ALL[] = {
 void UsgsAstroPushFrameSensorModel::replaceModelState(const std::string& stateString) {
   MESSAGE_LOG("Replacing model state");
 
+  populateModel(stateAsJson(stateString));
+}
+
+//***************************************************************************
+// UsgsAstroPushFrameSensorModel::populateModel
+//***************************************************************************
+void UsgsAstroPushFrameSensorModel::populateModel(const nlohmann::json& j) {
   reset();
-  auto j = stateAsJson(stateString);
   int num_params = NUM_PARAMETERS;
 
   m_imageIdentifier = j["m_imageIdentifier"].get<std::string>();
@@ -268,11 +274,14 @@ void UsgsAstroPushFrameSensorModel::replaceModelState(const std::string& stateSt
   m_sunPosition = j["m_sunPosition"].get<std::vector<double>>();
   m_sunVelocity = j["m_sunVelocity"].get<std::vector<double>>();
 
-  for (int i = 0; i < num_params; i++) {
-    for (int k = 0; k < NUM_PARAM_TYPES; k++) {
-      if (j["m_parameterType"][i] == PARAM_STRING_ALL[k]) {
-        m_parameterType[i] = PARAM_CHAR_ALL[k];
-        break;
+  // Optional field: absent in older JSON and in ISDs from constructStateFromIsd
+  if (j.contains("m_parameterType")) {
+    for (int i = 0; i < num_params; i++) {
+      for (int k = 0; k < NUM_PARAM_TYPES; k++) {
+        if (j["m_parameterType"][i] == PARAM_STRING_ALL[k]) {
+          m_parameterType[i] = PARAM_CHAR_ALL[k];
+          break;
+        }
       }
     }
   }
@@ -294,7 +303,7 @@ void UsgsAstroPushFrameSensorModel::replaceModelState(const std::string& stateSt
       "Half this many lines will be removed from the top and bottom of each framelet.";
     MESSAGE_LOG(msg.c_str());
     throw csm::Error(csm::Error::INVALID_USE, msg.c_str(),
-                     "UsgsAstroPushFrameSensorModel::replaceModelState");
+                     "UsgsAstroPushFrameSensorModel::populateModel");
   }
 
   // If computed state values are still default, then compute them. This must
@@ -335,8 +344,7 @@ std::string UsgsAstroPushFrameSensorModel::getModelNameFromModelState(
 //***************************************************************************
 // UsgsAstroLineScannerSensorModel::getModelState
 //***************************************************************************
-std::string UsgsAstroPushFrameSensorModel::getModelState() const {
-  MESSAGE_LOG("Running getModelState");
+nlohmann::json UsgsAstroPushFrameSensorModel::getModelJson() const {
   json state;
   state["m_modelName"] = _SENSOR_MODEL_NAME;
   state["m_startingDetectorSample"] = m_startingDetectorSample;
@@ -489,8 +497,12 @@ std::string UsgsAstroPushFrameSensorModel::getModelState() const {
       state["m_numLinesOverlap"].dump(), state["m_reducedFrameletHeight"].dump(),
       state["m_nReducedLines"].dump());
 
-  std::string stateString = getModelName() + "\n" + state.dump(2);
-  return stateString;
+  return state;
+}
+
+std::string UsgsAstroPushFrameSensorModel::getModelState() const {
+  MESSAGE_LOG("Running getModelState");
+  return getModelName() + "\n" + getModelJson().dump(2);
 }
 
 //***************************************************************************
@@ -2440,6 +2452,9 @@ std::string UsgsAstroPushFrameSensorModel::constructStateFromIsd(
       "m_minElevation: {}"
       "m_maxElevation: {}",
       state["m_minElevation"].dump(), state["m_maxElevation"].dump())
+
+  // Default parameter types to REAL
+  state["m_parameterType"] = std::vector<std::string>(NUM_PARAMETERS, "REAL");
 
   // Default to identity covariance
   state["m_covariance"] =

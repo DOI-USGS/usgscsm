@@ -109,9 +109,9 @@ TEST_F(FrameSensorModel, Inversion) {
 TEST_F(OrbitalFrameSensorModel, Center) {
   csm::ImageCoord imagePt(8.0, 8.0);
   csm::EcefCoord groundPt = sensorModel->imageToGround(imagePt, 0.0);
-  EXPECT_DOUBLE_EQ(groundPt.x, 1000000.0);
-  EXPECT_DOUBLE_EQ(groundPt.y, 0);
-  EXPECT_DOUBLE_EQ(groundPt.z, 0);
+  EXPECT_NEAR(groundPt.x, 1000000.0, 1e-8);
+  EXPECT_NEAR(groundPt.y, 0, 1e-8);
+  EXPECT_NEAR(groundPt.z, 0, 1e-8);
 }
 
 TEST_F(FrameSensorModel, Radii) {

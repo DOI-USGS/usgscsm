@@ -102,6 +102,10 @@ const std::string UsgsAstroProjectedSensorModel::_STATE_KEYWORD[] = {
 // UsgsAstroLineScannerSensorModel::replaceModelState
 //***************************************************************************
 void UsgsAstroProjectedSensorModel::replaceModelState(const std::string& stateString) {
+  populateModel(stateAsJson(stateString));
+}
+
+void UsgsAstroProjectedSensorModel::populateModel(const nlohmann::json& j) {
   reset();
   MESSAGE_LOG(
       spdlog::level::warn,
@@ -110,16 +114,15 @@ void UsgsAstroProjectedSensorModel::replaceModelState(const std::string& stateSt
       "you have projected using a more detailed shape model this sensor "
       "will return incorrect ground intersections.");
 
-  auto j = stateAsJson(stateString);
   m_subModelName = j["m_subModelName"];
-  m_camera = getUsgsCsmModelFromState(stateString, m_subModelName, NULL);
+  m_camera = getUsgsCsmModelFromJson(j, m_subModelName, NULL);
   m_majorAxis = j["m_majorAxis"];
   m_minorAxis = j["m_minorAxis"];
   m_geoTransform = j["m_geoTransform"].get<std::vector<double>>();
   m_projString = j["m_projString"];
   
   PJ_CONTEXT *C = proj_context_create();
-  
+
   /* Create a projection. */
   m_isdProj = proj_create(C, (m_projString + " +type=crs").c_str());
   if (0 == m_isdProj) {
@@ -188,14 +191,19 @@ std::string UsgsAstroProjectedSensorModel::getModelNameFromModelState(
 //***************************************************************************
 // UsgsAstroLineScannerSensorModel::getModelState
 //***************************************************************************
-std::string UsgsAstroProjectedSensorModel::getModelState() const {
-  auto state = stateAsJson(m_camera->getModelState());
+nlohmann::json UsgsAstroProjectedSensorModel::getModelJson() const {
+  // Read json state from the underlying camera model (linescan, frame, etc.)
+  auto state = getUsgsCsmModelJson(m_camera);
   state["m_subModelName"] = state["m_modelName"];
   state["m_modelName"] = _SENSOR_MODEL_NAME;
   state["m_majorAxis"] = m_majorAxis;
   state["m_minorAxis"] = m_minorAxis;
   state["m_geoTransform"] = m_geoTransform;
   state["m_projString"] = m_projString;
+  return state;
+}
+
+std::string UsgsAstroProjectedSensorModel::getModelState() const {
   MESSAGE_LOG(
       spdlog::level::trace,
       "m_subModelName: {} "
@@ -206,16 +214,15 @@ std::string UsgsAstroProjectedSensorModel::getModelState() const {
       m_subModelName,
       m_majorAxis,
       m_minorAxis,
-      m_geoTransform[0], 
-      m_geoTransform[1], 
-      m_geoTransform[2], 
-      m_geoTransform[3], 
-      m_geoTransform[4], 
-      m_geoTransform[5], 
+      m_geoTransform[0],
+      m_geoTransform[1],
+      m_geoTransform[2],
+      m_geoTransform[3],
+      m_geoTransform[4],
+      m_geoTransform[5],
       m_projString);
   // Use dump(2) to avoid creating the model string as a single long line
-  std::string stateString = getModelName() + "\n" + state.dump(2);
-  return stateString;
+  return getModelName() + "\n" + getModelJson().dump(2);
 }
 
 //***************************************************************************

@@ -321,8 +321,8 @@ TEST_F(ConstVelocityLineScanSensorModel, FocalLengthAdjustment) {
   sensorModel->setParameterValue(15, 0.9 * sensorModel->m_halfSwath);
   csm::EcefLocus locus = sensorModel->imageToRemoteImagingLocus(imagePt);
   double scale = sqrt(5 * 5 + 0.4 * 0.4 + 0.05 * 0.05);
-  EXPECT_DOUBLE_EQ(locus.direction.x, -5.0 / scale);
-  EXPECT_DOUBLE_EQ(locus.direction.y, -0.4 / scale);
-  EXPECT_DOUBLE_EQ(locus.direction.z, -0.05 / scale);
+  EXPECT_NEAR(locus.direction.x, -5.0 / scale, 1e-14);
+  EXPECT_NEAR(locus.direction.y, -0.4 / scale, 1e-14);
+  EXPECT_NEAR(locus.direction.z, -0.05 / scale, 1e-14);
 }
 

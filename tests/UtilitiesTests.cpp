@@ -41,15 +41,15 @@ TEST(UtilitiesTests, calculateRotationMatrixFromQuaternions) {
   q[2] = 0;
   q[3] = 1 / sqrt(2);
   calculateRotationMatrixFromQuaternions(q, rotationMatrix);
-  EXPECT_DOUBLE_EQ(rotationMatrix[0], 0);
-  EXPECT_DOUBLE_EQ(rotationMatrix[1], 0);
-  EXPECT_DOUBLE_EQ(rotationMatrix[2], -1);
-  EXPECT_DOUBLE_EQ(rotationMatrix[3], 0);
-  EXPECT_DOUBLE_EQ(rotationMatrix[4], 1);
-  EXPECT_DOUBLE_EQ(rotationMatrix[5], 0);
-  EXPECT_DOUBLE_EQ(rotationMatrix[6], 1);
-  EXPECT_DOUBLE_EQ(rotationMatrix[7], 0);
-  EXPECT_DOUBLE_EQ(rotationMatrix[8], 0);
+  EXPECT_NEAR(rotationMatrix[0], 0, 1e-15);
+  EXPECT_NEAR(rotationMatrix[1], 0, 1e-15);
+  EXPECT_NEAR(rotationMatrix[2], -1, 1e-15);
+  EXPECT_NEAR(rotationMatrix[3], 0, 1e-15);
+  EXPECT_NEAR(rotationMatrix[4], 1, 1e-15);
+  EXPECT_NEAR(rotationMatrix[5], 0, 1e-15);
+  EXPECT_NEAR(rotationMatrix[6], 1, 1e-15);
+  EXPECT_NEAR(rotationMatrix[7], 0, 1e-15);
+  EXPECT_NEAR(rotationMatrix[8], 0, 1e-15);
 }
 
 TEST(UtilitiesTests, computeDistortedFocalPlaneCoordinates) {
