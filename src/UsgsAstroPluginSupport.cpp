@@ -147,3 +147,34 @@ nlohmann::json getUsgsCsmModelJson(csm::RasterGM *model) {
   std::string aFunction = "UsgsAstroPluginSupport::getUsgsCsmModelJson()";
   throw csm::Error(aErrorType, aMessage, aFunction);
 }
+
+// Quick check if the given string is a USGS CSM JSON ISD (not a model state,
+// .sup, etc.). If yes, extract the model name. No JSON parsing is done, just
+// raw string searches.
+bool isUsgsCsmIsd(const std::string &str, std::string &modelName) {
+  modelName.clear();
+
+  // Model state strings have a text prefix before '{'. ISDs start with '{'.
+  auto pos = str.find_first_not_of(" \t\n\r");
+  if (pos == std::string::npos || str[pos] != '{')
+    return false;
+
+  // Check for ISD-only keys (never present in model state)
+  if (str.find("\"body_rotation\"") == std::string::npos)
+    return false;
+  if (str.find("\"instrument_position\"") == std::string::npos)
+    return false;
+
+  // Extract the name_model value. Search for the model name prefix
+  // which immediately follows the "name_model" key's value quote.
+  std::string prefix = "\"USGS_ASTRO_";
+  pos = str.find(prefix);
+  if (pos == std::string::npos)
+    return false;
+  auto end = str.find("\"", pos + 1);
+  if (end == std::string::npos)
+    return false;
+
+  modelName = str.substr(pos + 1, end - pos - 1);
+  return !modelName.empty();
+}

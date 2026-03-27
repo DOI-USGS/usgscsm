@@ -168,19 +168,31 @@ bool loadCsmCameraModel(std::string const& model_file,
     return true;
   }
 
-  // Try to read the model as an ISD
-  csm::Isd isd(model_file);
-
-  // Read the model in a string, for potentially finding parsing the
-  // model state from it.
+  // Read the file into a string
   std::string model_state;
   if (!readFileInString(model_file, model_state))
     return false;
 
-  // Check if loading the model worked
-  bool success = false;
+  // Quick peek: if this is a JSON ISD, we know the model name without
+  // expensive trial-and-error. Construct only the matching model.
+  std::string isd_model_name;
+  if (isUsgsCsmIsd(model_state, isd_model_name)) {
+    std::cout << "Detected JSON ISD with model: " << isd_model_name << "\n";
+    csm::Isd isd(model_file);
+    UsgsAstroPlugin cameraPlugin;
+    csm::Model *csm = cameraPlugin.constructModelFromISD(isd, isd_model_name, NULL);
+    if (!csm) {
+      std::cerr << "Failed to construct model from ISD: " << model_file << ".\n";
+      return false;
+    }
+    model = std::shared_ptr<csm::RasterGM>(dynamic_cast<csm::RasterGM*>(csm));
+    std::cout << "Loaded a CSM model of type " << isd_model_name
+              << " from ISD file " << model_file << ".\n";
+    return true;
+  }
 
-  // Try all detected plugins and all models for each plugin.
+  // Not an ISD. Try model state path (JSON state, .sup, etc.) via plugin iteration.
+  bool success = false;
   csm::PluginList plugins = csm::Plugin::getList();
   for (auto iter = plugins.begin(); iter != plugins.end(); iter++) {
 
@@ -196,14 +208,7 @@ bool loadCsmCameraModel(std::string const& model_file,
 
       std::string model_name = (*iter)->getModelName(i);
 
-      if (csm_plugin->canModelBeConstructedFromISD(isd, model_name, warnings)) {
-        // Try to construct the model from the ISD
-        csm = csm_plugin->constructModelFromISD(isd, model_name, warnings);
-        std::cout << "Loaded a CSM model of type " << model_name << " from ISD file "
-                  << model_file << ".\n";
-        success = true;
-      } else if (csm_plugin->canModelBeConstructedFromState(model_name, model_state, warnings)) {
-        // Try to construct it from the model state (handles .sup files)
+      if (csm_plugin->canModelBeConstructedFromState(model_name, model_state, warnings)) {
         csm = csm_plugin->constructModelFromState(model_state, warnings);
         std::cout << "Loaded a CSM model of type " << model_name
                   << " from model state file " << model_file << ".\n";
