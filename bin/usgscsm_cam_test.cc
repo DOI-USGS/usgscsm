@@ -191,63 +191,24 @@ bool loadCsmCameraModel(std::string const& model_file,
     return true;
   }
 
-  // Not an ISD. Try model state path (JSON state, .sup, etc.) via plugin iteration.
-  bool success = false;
-  csm::PluginList plugins = csm::Plugin::getList();
-  for (auto iter = plugins.begin(); iter != plugins.end(); iter++) {
-
-    const csm::Plugin* csm_plugin = (*iter);
-    std::cout << "Detected CSM plugin: " << csm_plugin->getPluginName()  << "\n";
-
-    size_t num_models = csm_plugin->getNumModels();
-    std::cout << "Number of models for this plugin: " << num_models << "\n";
-
-    csm::Model *csm = NULL;
-    csm::WarningList *warnings = new csm::WarningList;
-    for (size_t i = 0; i < num_models; i++) {
-
-      std::string model_name = (*iter)->getModelName(i);
-
-      if (csm_plugin->canModelBeConstructedFromState(model_name, model_state, warnings)) {
-        csm = csm_plugin->constructModelFromState(model_state, warnings);
-        std::cout << "Loaded a CSM model of type " << model_name
-                  << " from model state file " << model_file << ".\n";
-        success = true;
-      } else {
-        if (opt.verbose) {
-          std::string startStr = "<<<<<< Warnings from " + model_name + " <<<<<<";
-          std::cout << startStr << std::endl;
-          for (auto warning : *warnings)
-            std::cout << warning.getMessage() << std::endl;
-          std::string endStr(startStr.size(), '<');
-          std::cout << endStr << std::endl;
-        }
-        warnings->clear();
-        continue;
-      }
-
-      delete warnings;
-
-      csm::RasterGM *modelPtr = dynamic_cast<csm::RasterGM*>(csm);
-      if (modelPtr == NULL) {
-        // Normally earlier checks should be enough and this should not happen
-        std::cerr << "Could not load correctly a CSM model.\n";
-        return false;
-      } else {
-        // Assign to a smart pointer which will handle deallocation
-        model = std::shared_ptr<csm::RasterGM>(modelPtr);
-        std::cout << "Final model: " << model->getModelName() << std::endl;
-        break;
-      }
+  // Quick peek for model state (JSON state or .sup)
+  std::string state_model_name;
+  if (isUsgsCsmState(model_state, state_model_name)) {
+    std::cout << "Detected model state with model: " << state_model_name << "\n";
+    UsgsAstroPlugin cameraPlugin;
+    csm::Model *csm = cameraPlugin.constructModelFromState(model_state, NULL);
+    if (!csm) {
+      std::cerr << "Failed to construct model from state: " << model_file << ".\n";
+      return false;
     }
+    model = std::shared_ptr<csm::RasterGM>(dynamic_cast<csm::RasterGM*>(csm));
+    std::cout << "Loaded a CSM model of type " << state_model_name
+              << " from model state file " << model_file << ".\n";
+    return true;
   }
 
-  if (!success) {
-    std::cerr << "Failed to load a CSM model from: " << model_file << ".\n";
-    return false;
-  }
-
-  return true;
+  std::cerr << "Failed to load a CSM model from: " << model_file << ".\n";
+  return false;
 }
 
 bool updateSupModel(std::string& sup_string, std::string model) {

@@ -178,3 +178,33 @@ bool isUsgsCsmIsd(const std::string &str, std::string &modelName) {
   modelName = str.substr(pos + 1, end - pos - 1);
   return !modelName.empty();
 }
+
+// Quick check if the given string is a USGS CSM model state (JSON state or GXP
+// .sup format). If yes, extract the model name. No JSON parsing is done, just
+// raw string searches. Following the logic in stateAsJson() (Utilities.cpp),
+// skip to the first '{' to bypass any .sup preamble, then search within the
+// JSON portion only.
+bool isUsgsCsmState(const std::string &str, std::string &modelName) {
+  modelName.clear();
+
+  // Find the start of the JSON blob (skips .sup preamble if present)
+  auto brace = str.find_first_of("{");
+  if (brace == std::string::npos)
+    return false;
+
+  // Model state uses m_modelName; ISDs use name_model
+  if (str.find("\"m_modelName\"", brace) == std::string::npos)
+    return false;
+
+  // Extract the model name value
+  std::string prefix = "\"USGS_ASTRO_";
+  auto pos = str.find(prefix, brace);
+  if (pos == std::string::npos)
+    return false;
+  auto end = str.find("\"", pos + 1);
+  if (end == std::string::npos)
+    return false;
+
+  modelName = str.substr(pos + 1, end - pos - 1);
+  return !modelName.empty();
+}
