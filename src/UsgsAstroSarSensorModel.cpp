@@ -57,7 +57,7 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
     const string imageSupportData, csm::WarningList* warnings) {
   MESSAGE_LOG("UsgsAstroSarSensorModel constructing state from ISD, with {}",
               imageSupportData);
-  json isd = json::parse(imageSupportData);
+  json isd = stateAsJson(imageSupportData);
   json state = {};
 
   std::shared_ptr<csm::WarningList> parsingWarnings(new csm::WarningList);
@@ -330,10 +330,11 @@ void UsgsAstroSarSensorModel::reset() {
  */
 void UsgsAstroSarSensorModel::replaceModelState(const string& argState) {
   MESSAGE_LOG("Replacing model state with: {}", argState);
-  populateModel(stateAsJson(argState));
+  populateModel(argState);
 }
 
-void UsgsAstroSarSensorModel::populateModel(const nlohmann::json& stateJson) {
+void UsgsAstroSarSensorModel::populateModel(const std::string& stateJsonStr) {
+  json stateJson = stateAsJson(stateJsonStr);
   reset();
 
   m_imageIdentifier = stateJson["m_imageIdentifier"].get<string>();
@@ -412,7 +413,7 @@ void UsgsAstroSarSensorModel::populateModel(const nlohmann::json& stateJson) {
  * @return A JSON string representing the current state of the model.
  * @throws csm::Error If the look direction is not properly set in the model.
  */
-nlohmann::json UsgsAstroSarSensorModel::getModelJson() const {
+std::string UsgsAstroSarSensorModel::getModelJson() const {
   json state = {};
 
   state["m_modelName"] = _SENSOR_MODEL_NAME;
@@ -456,12 +457,12 @@ nlohmann::json UsgsAstroSarSensorModel::getModelJson() const {
   state["m_scaleConversionTimes"] = m_scaleConversionTimes;
   state["m_covariance"] = m_covariance;
 
-  return state;
+  return state.dump(2);
 }
 
 string UsgsAstroSarSensorModel::getModelState() const {
   // Use dump(2) to avoid creating the model string as a single long line
-  return getModelName() + "\n" + getModelJson().dump(2);
+  return getModelName() + "\n" + getModelJson();
 }
 
 /**

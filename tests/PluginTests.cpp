@@ -124,8 +124,13 @@ TEST_F(ConstVelLineScanIsdTest, Constructible) {
 TEST_F(ConstVelLineScanIsdTest, ConstructibleFromState) {
   UsgsAstroPlugin testPlugin;
   std::string modelState = testPlugin.getStateFromISD(isd);
+  std::cout << "Model state from ISD: " << modelState << std::endl;
+  csm::WarningList *warnings = new csm::WarningList;
   EXPECT_TRUE(testPlugin.canModelBeConstructedFromState(
-      "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", modelState));
+      "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", modelState, warnings));
+  for (auto warning : *warnings)
+            std::cout << warning.getMessage() << std::endl;
+   
 }
 
 TEST_F(ConstVelLineScanIsdTest, NotConstructible) {
@@ -166,6 +171,7 @@ TEST_F(ConstVelocityLineScanSensorModel, ConstructibleFromSupState) {
   std::string modelState;
   EXPECT_TRUE(readFileInString(supFile, modelState));
   sanitize(modelState);
+  std::cout << "Model state from .sup file: " << modelState << std::endl;
   EXPECT_TRUE(testPlugin.canModelBeConstructedFromState(
       "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", modelState));
 }

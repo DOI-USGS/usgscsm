@@ -5,8 +5,6 @@
 #include <RasterGM.h>
 #include <SettableEllipsoid.h>
 
-#include <nlohmann/json_fwd.hpp> // forward declaration
-
 #include "ale/Rotation.h"
 
 #include "spdlog/spdlog.h"
@@ -25,10 +23,10 @@ class UsgsAstroSarSensorModel : public csm::RasterGM,
 
   // Populate model fields directly from a json object, bypassing string
   // serialization.
-  void populateModel(const nlohmann::json& j);
+  void populateModel(const std::string& j);
 
   // Return model state as a json object, bypassing string serialization.
-  nlohmann::json getModelJson() const;
+  std::string getModelJson() const;
 
   virtual std::string getModelState() const;
 

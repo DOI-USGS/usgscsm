@@ -557,7 +557,7 @@ csm::Model *UsgsAstroPlugin::constructModelFromState(
   MESSAGE_LOG(spdlog::level::debug, "Using model name: {}", modelName);
 
   try {
-    return getUsgsCsmModelFromState(modelState, modelName, warnings);
+    return getUsgsCsmModelFromJsonState(modelState, modelName, warnings);
   }
   catch (std::exception &e) {
     csm::Error::ErrorType aErrorType = csm::Error::ISD_NOT_SUPPORTED;

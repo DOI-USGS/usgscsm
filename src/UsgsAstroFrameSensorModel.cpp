@@ -1280,7 +1280,7 @@ std::string UsgsAstroFrameSensorModel::getModelNameFromModelState(
  * starts with the model name for identification, followed by the serialized JSON state
  * with a two-space indentation for readability.
  */
-nlohmann::json UsgsAstroFrameSensorModel::getModelJson() const {
+std::string UsgsAstroFrameSensorModel::getModelJson() const {
   json state = {
       {"m_modelName", _SENSOR_MODEL_NAME},
       {"m_sensorName", m_sensorName},
@@ -1329,13 +1329,13 @@ nlohmann::json UsgsAstroFrameSensorModel::getModelJson() const {
        {m_referencePointXyz.x, m_referencePointXyz.y, m_referencePointXyz.z}},
       {"m_currentParameterCovariance", m_currentParameterCovariance}};
 
-  return state;
+  return state.dump(2);
 }
 
 std::string UsgsAstroFrameSensorModel::getModelState() const {
   MESSAGE_LOG(spdlog::level::debug, "Dumping model state");
   // Use dump(2) to avoid creating the model string as a single long line
-  return getModelName() + "\n" + getModelJson().dump(2);
+  return  getModelName() + "\n" + getModelJson();
 }
 
 /**
@@ -1521,10 +1521,11 @@ void UsgsAstroFrameSensorModel::replaceModelState(
     const std::string &stringState) {
 
   MESSAGE_LOG(spdlog::level::debug, "Replacing model state");
-  populateModel(stateAsJson(stringState));
+  populateModel(stringState);
 }
 
-void UsgsAstroFrameSensorModel::populateModel(const nlohmann::json& state) {
+void UsgsAstroFrameSensorModel::populateModel(const std::string& stateStr) {
+  json state = stateAsJson(stateStr);
 
   // The json library's .at() will except if key is missing
   try {
@@ -1616,7 +1617,7 @@ void UsgsAstroFrameSensorModel::populateModel(const nlohmann::json& state) {
 std::string UsgsAstroFrameSensorModel::constructStateFromIsd(
     const std::string &jsonIsd, csm::WarningList *warnings) {
   MESSAGE_LOG(spdlog::level::debug, "Constructing state from isd");
-  json parsedIsd = json::parse(jsonIsd);
+  json parsedIsd = stateAsJson(jsonIsd);
   json state = {};
 
   std::shared_ptr<csm::WarningList> parsingWarnings(new csm::WarningList);

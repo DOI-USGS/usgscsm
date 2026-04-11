@@ -39,7 +39,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include "ale/Orientations.h"
 #include "ale/States.h"
 
-#include <nlohmann/json_fwd.hpp> // forward declaration
 #include "spdlog/spdlog.h"
 
 class UsgsAstroLsSensorModel : public csm::RasterGM,
@@ -65,11 +64,11 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
 
   // Populate model fields directly from a json object, bypassing string
   // serialization. Used by replaceModelState() and binary state loading.
-  void populateModel(const nlohmann::json& j);
+  void populateModel(const std::string& j);
 
   // Return model state as a json object, bypassing string serialization.
   // Used by getModelState() and binary state saving.
-  nlohmann::json getModelJson() const;
+  std::string getModelJson() const;
 
   // This method checks to see if the model name is recognized
   // in the input state string.

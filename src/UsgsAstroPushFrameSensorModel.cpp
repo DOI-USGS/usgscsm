@@ -42,6 +42,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
     m_logger->info(__VA_ARGS__); \
   }
 
+#include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
 const std::string UsgsAstroPushFrameSensorModel::_SENSOR_MODEL_NAME =
@@ -136,13 +137,14 @@ const csm::param::Type UsgsAstroPushFrameSensorModel::PARAM_CHAR_ALL[] = {
 void UsgsAstroPushFrameSensorModel::replaceModelState(const std::string& stateString) {
   MESSAGE_LOG("Replacing model state");
 
-  populateModel(stateAsJson(stateString));
+  populateModel(stateString);
 }
 
 //***************************************************************************
 // UsgsAstroPushFrameSensorModel::populateModel
 //***************************************************************************
-void UsgsAstroPushFrameSensorModel::populateModel(const nlohmann::json& j) {
+void UsgsAstroPushFrameSensorModel::populateModel(const std::string& stateString) {
+  json j = stateAsJson(stateString);
   reset();
   int num_params = NUM_PARAMETERS;
 
@@ -344,7 +346,7 @@ std::string UsgsAstroPushFrameSensorModel::getModelNameFromModelState(
 //***************************************************************************
 // UsgsAstroLineScannerSensorModel::getModelState
 //***************************************************************************
-nlohmann::json UsgsAstroPushFrameSensorModel::getModelJson() const {
+std::string UsgsAstroPushFrameSensorModel::getModelJson() const {
   json state;
   state["m_modelName"] = _SENSOR_MODEL_NAME;
   state["m_startingDetectorSample"] = m_startingDetectorSample;
@@ -497,12 +499,12 @@ nlohmann::json UsgsAstroPushFrameSensorModel::getModelJson() const {
       state["m_numLinesOverlap"].dump(), state["m_reducedFrameletHeight"].dump(),
       state["m_nReducedLines"].dump());
 
-  return state;
+  return state.dump(2);
 }
 
 std::string UsgsAstroPushFrameSensorModel::getModelState() const {
   MESSAGE_LOG("Running getModelState");
-  return getModelName() + "\n" + getModelJson().dump(2);
+  return getModelName() + "\n" + getModelJson();
 }
 
 //***************************************************************************
@@ -2147,7 +2149,7 @@ std::string UsgsAstroPushFrameSensorModel::constructStateFromIsd(
   json state = {};
   MESSAGE_LOG("Constructing state from Isd");
   // Instantiate UsgsAstroLineScanner sensor model
-  json jsonIsd = json::parse(imageSupportData);
+  json jsonIsd = stateAsJson(imageSupportData);
   std::shared_ptr<csm::WarningList> parsingWarnings(new csm::WarningList);
 
   state["m_modelName"] = ale::getSensorModelName(jsonIsd);

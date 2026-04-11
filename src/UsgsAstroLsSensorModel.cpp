@@ -34,7 +34,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include <sstream>
 
 #include <Error.h>
-#include <nlohmann/json.hpp>
 
 #include "ale/Util.h"
 
@@ -43,6 +42,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
     m_logger->log(__VA_ARGS__); \
   }
 
+#include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
 const std::string UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME =
@@ -139,10 +139,11 @@ const csm::param::Type UsgsAstroLsSensorModel::PARAM_CHAR_ALL[] = {
  */
 void UsgsAstroLsSensorModel::replaceModelState(const std::string& stateString) {
   MESSAGE_LOG(spdlog::level::info, "Replacing model state")
-  populateModel(stateAsJson(stateString));
+  populateModel(stateString);
 }
 
-void UsgsAstroLsSensorModel::populateModel(const nlohmann::json& j) {
+void UsgsAstroLsSensorModel::populateModel(const std::string& stateString) {
+  json j = stateAsJson(stateString);
   reset();
   int num_params = NUM_PARAMETERS;
 
@@ -354,7 +355,7 @@ std::string UsgsAstroLsSensorModel::getModelNameFromModelState(
  * The string includes key-value pairs for various model parameters, ensuring a comprehensive
  * snapshot of the model's current configuration and state.
  */
-nlohmann::json UsgsAstroLsSensorModel::getModelJson() const {
+std::string UsgsAstroLsSensorModel::getModelJson() const {
   json state;
   state["m_modelName"] = _SENSOR_MODEL_NAME;
   state["m_startingDetectorSample"] = m_startingDetectorSample;
@@ -491,12 +492,12 @@ nlohmann::json UsgsAstroLsSensorModel::getModelJson() const {
   state["m_sunVelocity"] = m_sunVelocity;
   MESSAGE_LOG(spdlog::level::trace, "num sun velocities: {} ", m_sunVelocity.size());
 
-  return state;
+  return state.dump(2);
 }
 
 std::string UsgsAstroLsSensorModel::getModelState() const {
   MESSAGE_LOG(spdlog::level::info, "Running getModelState")
-  return getModelName() + "\n" + getModelJson().dump(2);
+  return getModelName() + "\n" + getModelJson();
 }
 
 /**

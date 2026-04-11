@@ -745,7 +745,7 @@ if(USGSCSM_BUILD_TESTS)
 
 endif()
 
-option (USGSCSM_BUILD_DOCS "Build the USGSCSM Docs" ON)
+option (USGSCSM_BUILD_DOCS "Build the USGSCSM Docs" OFF)
 if(USGSCSM_BUILD_DOCS)
   add_subdirectory ("docs")
 else()

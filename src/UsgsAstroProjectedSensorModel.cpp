@@ -105,7 +105,8 @@ void UsgsAstroProjectedSensorModel::replaceModelState(const std::string& stateSt
   populateModel(stateAsJson(stateString));
 }
 
-void UsgsAstroProjectedSensorModel::populateModel(const nlohmann::json& j) {
+void UsgsAstroProjectedSensorModel::populateModel(const std::string& stateString) {
+  json j = stateAsJson(stateString);
   reset();
   MESSAGE_LOG(
       spdlog::level::warn,
@@ -115,7 +116,7 @@ void UsgsAstroProjectedSensorModel::populateModel(const nlohmann::json& j) {
       "will return incorrect ground intersections.");
 
   m_subModelName = j["m_subModelName"];
-  m_camera = getUsgsCsmModelFromJson(j, m_subModelName, NULL);
+  m_camera = getUsgsCsmModelFromJsonState(stateString, m_subModelName, NULL);
   m_majorAxis = j["m_majorAxis"];
   m_minorAxis = j["m_minorAxis"];
   m_geoTransform = j["m_geoTransform"].get<std::vector<double>>();
@@ -191,16 +192,16 @@ std::string UsgsAstroProjectedSensorModel::getModelNameFromModelState(
 //***************************************************************************
 // UsgsAstroLineScannerSensorModel::getModelState
 //***************************************************************************
-nlohmann::json UsgsAstroProjectedSensorModel::getModelJson() const {
+std::string UsgsAstroProjectedSensorModel::getModelJson() const {
   // Read json state from the underlying camera model (linescan, frame, etc.)
-  auto state = getUsgsCsmModelJson(m_camera);
+  auto state = stateAsJson(getUsgsCsmModelJson(m_camera));
   state["m_subModelName"] = state["m_modelName"];
   state["m_modelName"] = _SENSOR_MODEL_NAME;
   state["m_majorAxis"] = m_majorAxis;
   state["m_minorAxis"] = m_minorAxis;
   state["m_geoTransform"] = m_geoTransform;
   state["m_projString"] = m_projString;
-  return state;
+  return state.dump(2);
 }
 
 std::string UsgsAstroProjectedSensorModel::getModelState() const {
@@ -222,7 +223,7 @@ std::string UsgsAstroProjectedSensorModel::getModelState() const {
       m_geoTransform[5],
       m_projString);
   // Use dump(2) to avoid creating the model string as a single long line
-  return getModelName() + "\n" + getModelJson().dump(2);
+  getModelName() + "\n" + getModelJson();
 }
 
 //***************************************************************************
