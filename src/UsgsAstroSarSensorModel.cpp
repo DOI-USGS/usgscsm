@@ -333,18 +333,17 @@ void UsgsAstroSarSensorModel::replaceModelState(const string& argState) {
   populateModel(argState);
 }
 
-void UsgsAstroSarSensorModel::populateModel(const std::string& stateJsonStr) {
-  json stateJson = stateAsJson(stateJsonStr);
+void UsgsAstroSarSensorModel::populateModel(const VariantMap& state) {
   reset();
 
-  m_imageIdentifier = stateJson["m_imageIdentifier"].get<string>();
-  m_platformIdentifier = stateJson["m_platformIdentifier"].get<string>();
-  m_sensorName = stateJson["m_sensorName"].get<string>();
-  m_nLines = stateJson["m_nLines"];
-  m_nSamples = stateJson["m_nSamples"];
-  m_exposureDuration = stateJson["m_exposureDuration"];
-  m_scaledPixelWidth = stateJson["m_scaledPixelWidth"];
-  std::string lookStr = stateJson["m_lookDirection"];
+  m_imageIdentifier = state.get<std::string>("m_imageIdentifier");
+  m_platformIdentifier = state.get<std::string>("m_platformIdentifier");
+  m_sensorName = state.get<std::string>("m_sensorName");
+  m_nLines = state.get<int>("m_nLines");
+  m_nSamples = state.get<int>("m_nSamples");
+  m_exposureDuration = state.get<double>("m_exposureDuration");
+  m_scaledPixelWidth = state.get<double>("m_scaledPixelWidth");
+  std::string lookStr = state.get<std::string>("m_lookDirection");
   if (lookStr.compare("right") == 0) {
     m_lookDirection = UsgsAstroSarSensorModel::RIGHT;
   } else if (lookStr.compare("left") == 0) {
@@ -355,35 +354,31 @@ void UsgsAstroSarSensorModel::populateModel(const std::string& stateJsonStr) {
     throw csm::Error(csm::Error::INVALID_SENSOR_MODEL_STATE, message,
                      "UsgsAstroSarSensorModel::replaceModelState");
   }
-  m_wavelength = stateJson["m_wavelength"];
-  m_startingEphemerisTime = stateJson["m_startingEphemerisTime"];
-  m_centerEphemerisTime = stateJson["m_centerEphemerisTime"];
-  m_endingEphemerisTime = stateJson["m_endingEphemerisTime"];
-  m_majorAxis = stateJson["m_majorAxis"];
-  m_minorAxis = stateJson["m_minorAxis"];
-  m_platformIdentifier = stateJson["m_platformIdentifier"].get<string>();
-  m_sensorIdentifier = stateJson["m_sensorIdentifier"].get<string>();
-  m_minElevation = stateJson["m_minElevation"];
-  m_maxElevation = stateJson["m_maxElevation"];
-  m_dtEphem = stateJson["m_dtEphem"];
-  m_t0Ephem = stateJson["m_t0Ephem"];
-  m_scaleConversionCoefficients =
-      stateJson["m_scaleConversionCoefficients"].get<vector<double>>();
-  m_scaleConversionTimes =
-      stateJson["m_scaleConversionTimes"].get<vector<double>>();
-  m_positions = stateJson["m_positions"].get<vector<double>>();
-  m_velocities = stateJson["m_velocities"].get<vector<double>>();
-  m_currentParameterValue =
-      stateJson["m_currentParameterValue"].get<vector<double>>();
-  m_referencePointXyz.x = stateJson["m_referencePointXyz"][0];
-  m_referencePointXyz.y = stateJson["m_referencePointXyz"][1];
-  m_referencePointXyz.z = stateJson["m_referencePointXyz"][2];
-  m_covariance = stateJson["m_covariance"].get<vector<double>>();
-  m_sunPosition = stateJson["m_sunPosition"].get<vector<double>>();
-  m_sunVelocity = stateJson["m_sunVelocity"].get<vector<double>>();
+  m_wavelength = state.get<double>("m_wavelength");
+  m_startingEphemerisTime = state.get<double>("m_startingEphemerisTime");
+  m_centerEphemerisTime = state.get<double>("m_centerEphemerisTime");
+  m_endingEphemerisTime = state.get<double>("m_endingEphemerisTime");
+  m_majorAxis = state.get<double>("m_majorAxis");
+  m_minorAxis = state.get<double>("m_minorAxis");
+  m_platformIdentifier = state.get<std::string>("m_platformIdentifier");
+  m_sensorIdentifier = state.get<std::string>("m_sensorIdentifier");
+  m_minElevation = state.get<double>("m_minElevation");
+  m_maxElevation = state.get<double>("m_maxElevation");
+  m_dtEphem = state.get<double>("m_dtEphem");
+  m_t0Ephem = state.get<double>("m_t0Ephem");
+  m_scaleConversionCoefficients = state.get<std::vector<double>>("m_scaleConversionCoefficients");
+  m_scaleConversionTimes = state.get<std::vector<double>>("m_scaleConversionTimes");
+  m_positions = state.get<std::vector<double>>("m_positions");
+  m_velocities = state.get<std::vector<double>>("m_velocities");
+  m_currentParameterValue = state.get<std::vector<double>>("m_currentParameterValue");
+  std::vector<double> refPt = state.get<std::vector<double>>("m_referencePointXyz");
+  m_referencePointXyz.x = refPt[0];
+  m_referencePointXyz.y = refPt[1];
+  m_referencePointXyz.z = refPt[2];
+  m_covariance = state.get<std::vector<double>>("m_covariance");
+  m_sunPosition = state.get<std::vector<double>>("m_sunPosition");
+  m_sunVelocity = state.get<std::vector<double>>("m_sunVelocity");
 
-  // If sensor model is being created for the first time, this routine will set
-  // the reference point
   if (m_referencePointXyz.x == 0 && m_referencePointXyz.y == 0 &&
       m_referencePointXyz.z == 0) {
     MESSAGE_LOG("Updating State")
@@ -402,62 +397,56 @@ void UsgsAstroSarSensorModel::populateModel(const std::string& stateJsonStr) {
   }
 }
 
-/**
- * @brief Retrieves the current model state as a JSON string.
- * 
- * @description Serializes the current state of the sensor model into a JSON
- * string. This includes all relevant parameters and configurations that
- * define the sensor model's state. If the look direction is not correctly
- * defined in the model, it throws an error.
- * 
- * @return A JSON string representing the current state of the model.
- * @throws csm::Error If the look direction is not properly set in the model.
- */
-std::string UsgsAstroSarSensorModel::getModelJson() const {
-  json state = {};
+void UsgsAstroSarSensorModel::populateModel(const std::string& stateStr) {
+  populateModel(variantMapFromJson(stateAsJson(stateStr)));
+}
 
-  state["m_modelName"] = _SENSOR_MODEL_NAME;
-  state["m_imageIdentifier"] = m_imageIdentifier;
-  state["m_sensorName"] = m_sensorName;
-  state["m_platformName"] = m_platformName;
-  state["m_nLines"] = m_nLines;
-  state["m_nSamples"] = m_nSamples;
-  state["m_referencePointXyz"] = {m_referencePointXyz.x, m_referencePointXyz.y,
-                                  m_referencePointXyz.z};
-  state["m_sunPosition"] = m_sunPosition;
-  state["m_sunVelocity"] = m_sunVelocity;
-  state["m_centerEphemerisTime"] = m_centerEphemerisTime;
-  state["m_startingEphemerisTime"] = m_startingEphemerisTime;
-  state["m_endingEphemerisTime"] = m_endingEphemerisTime;
-  state["m_exposureDuration"] = m_exposureDuration;
-  state["m_dtEphem"] = m_dtEphem;
-  state["m_t0Ephem"] = m_t0Ephem;
-  state["m_positions"] = m_positions;
-  state["m_velocities"] = m_velocities;
-  state["m_currentParameterValue"] = m_currentParameterValue;
-  state["m_minorAxis"] = m_minorAxis;
-  state["m_majorAxis"] = m_majorAxis;
-  state["m_platformIdentifier"] = m_platformIdentifier;
-  state["m_sensorIdentifier"] = m_sensorIdentifier;
-  state["m_minElevation"] = m_minElevation;
-  state["m_maxElevation"] = m_maxElevation;
-  state["m_scaledPixelWidth"] = m_scaledPixelWidth;
+VariantMap UsgsAstroSarSensorModel::getModelMap() const {
+  VariantMap state;
+  state.set<std::string>("m_modelName", _SENSOR_MODEL_NAME);
+  state.set<std::string>("m_imageIdentifier", m_imageIdentifier);
+  state.set<std::string>("m_sensorName", m_sensorName);
+  state.set<std::string>("m_platformName", m_platformName);
+  state.set<int>("m_nLines", m_nLines);
+  state.set<int>("m_nSamples", m_nSamples);
+  state.set<std::vector<double>>("m_referencePointXyz", {m_referencePointXyz.x, m_referencePointXyz.y, m_referencePointXyz.z});
+  state.set<std::vector<double>>("m_sunPosition", m_sunPosition);
+  state.set<std::vector<double>>("m_sunVelocity", m_sunVelocity);
+  state.set<double>("m_centerEphemerisTime", m_centerEphemerisTime);
+  state.set<double>("m_startingEphemerisTime", m_startingEphemerisTime);
+  state.set<double>("m_endingEphemerisTime", m_endingEphemerisTime);
+  state.set<double>("m_exposureDuration", m_exposureDuration);
+  state.set<double>("m_dtEphem", m_dtEphem);
+  state.set<double>("m_t0Ephem", m_t0Ephem);
+  state.set<std::vector<double>>("m_positions", m_positions);
+  state.set<std::vector<double>>("m_velocities", m_velocities);
+  state.set<std::vector<double>>("m_currentParameterValue", m_currentParameterValue);
+  state.set<double>("m_minorAxis", m_minorAxis);
+  state.set<double>("m_majorAxis", m_majorAxis);
+  state.set<std::string>("m_platformIdentifier", m_platformIdentifier);
+  state.set<std::string>("m_sensorIdentifier", m_sensorIdentifier);
+  state.set<double>("m_minElevation", m_minElevation);
+  state.set<double>("m_maxElevation", m_maxElevation);
+  state.set<double>("m_scaledPixelWidth", m_scaledPixelWidth);
   if (m_lookDirection == 0) {
-    state["m_lookDirection"] = "left";
+    state.set<std::string>("m_lookDirection", "left");
   } else if (m_lookDirection == 1) {
-    state["m_lookDirection"] = "right";
+    state.set<std::string>("m_lookDirection", "right");
   } else {
     std::string message = "Could not parse look direction from json state.";
     MESSAGE_LOG(message);
     throw csm::Error(csm::Error::INVALID_SENSOR_MODEL_STATE, message,
                      "UsgsAstroSarSensorModel::getModelState");
   }
-  state["m_wavelength"] = m_wavelength;
-  state["m_scaleConversionCoefficients"] = m_scaleConversionCoefficients;
-  state["m_scaleConversionTimes"] = m_scaleConversionTimes;
-  state["m_covariance"] = m_covariance;
+  state.set<double>("m_wavelength", m_wavelength);
+  state.set<std::vector<double>>("m_scaleConversionCoefficients", m_scaleConversionCoefficients);
+  state.set<std::vector<double>>("m_scaleConversionTimes", m_scaleConversionTimes);
+  state.set<std::vector<double>>("m_covariance", m_covariance);
+  return state;
+}
 
-  return state.dump(2);
+std::string UsgsAstroSarSensorModel::getModelJson() const {
+  return jsonFromVariantMap(getModelMap()).dump(2);
 }
 
 string UsgsAstroSarSensorModel::getModelState() const {

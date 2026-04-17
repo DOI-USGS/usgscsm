@@ -42,6 +42,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include <proj.h>
 
 #include "UsgsAstroLsSensorModel.h"
+#include "VariantMap.h"
 
 class UsgsAstroProjectedSensorModel : public csm::RasterGM,
                                       virtual public csm::SettableEllipsoid {
@@ -65,11 +66,10 @@ public:
     //  If the argument state string is empty, the model remains unchanged.
     //<
 
-    // Populate model fields directly from a json object, bypassing string
-    // serialization. Used by replaceModelState() and binary state loading.
-    void populateModel(const std::string& stateString);
+    void populateModel(const VariantMap& vm);
+    VariantMap getModelMap() const;
 
-    // Return model state as a json object, bypassing string serialization.
+    void populateModel(const std::string& stateString);
     std::string getModelJson() const;
 
     // This method checks to see if the model name is recognized

@@ -1280,62 +1280,62 @@ std::string UsgsAstroFrameSensorModel::getModelNameFromModelState(
  * starts with the model name for identification, followed by the serialized JSON state
  * with a two-space indentation for readability.
  */
-std::string UsgsAstroFrameSensorModel::getModelJson() const {
-  json state = {
-      {"m_modelName", _SENSOR_MODEL_NAME},
-      {"m_sensorName", m_sensorName},
-      {"m_platformName", m_platformName},
-      {"m_focalLength", m_focalLength},
-      {"m_iTransS", {m_iTransS[0], m_iTransS[1], m_iTransS[2]}},
-      {"m_iTransL", {m_iTransL[0], m_iTransL[1], m_iTransL[2]}},
-      {"m_boresight", {m_boresight[0], m_boresight[1], m_boresight[2]}},
-      {"m_transX", {m_transX[0], m_transX[1], m_transX[2]}},
-      {"m_transY", {m_transY[0], m_transY[1], m_transY[2]}},
-      {"m_iTransS", {m_iTransS[0], m_iTransS[1], m_iTransS[2]}},
-      {"m_iTransL", {m_iTransL[0], m_iTransL[1], m_iTransL[2]}},
-      {"m_lineJitter", m_lineJitter},
-      {"m_sampleJitter", m_sampleJitter},
-      {"m_lineTimes", m_lineTimes},
-      {"m_majorAxis", m_majorAxis},
-      {"m_minorAxis", m_minorAxis},
-      {"m_spacecraftVelocity",
-       {m_spacecraftVelocity[0], m_spacecraftVelocity[1],
-        m_spacecraftVelocity[2]}},
-      {"m_sunPosition", {m_sunPosition[0], m_sunPosition[1], m_sunPosition[2]}},
-      {"m_startingDetectorSample", m_startingDetectorSample},
-      {"m_startingDetectorLine", m_startingDetectorLine},
-      {"m_detectorSampleSumming", m_detectorSampleSumming},
-      {"m_detectorLineSumming", m_detectorLineSumming},
-      {"m_targetName", m_targetName},
-      {"m_ifov", m_ifov},
-      {"m_instrumentID", m_instrumentID},
-      {"m_focalLengthEpsilon", m_focalLengthEpsilon},
-      {"m_ccdCenter", {m_ccdCenter[0], m_ccdCenter[1]}},
-      {"m_minElevation", m_minElevation},
-      {"m_maxElevation", m_maxElevation},
-      {"m_distortionType", m_distortionType},
-      {"m_opticalDistCoeffs", m_opticalDistCoeffs},
-      {"m_originalHalfLines", m_originalHalfLines},
-      {"m_originalHalfSamples", m_originalHalfSamples},
-      {"m_spacecraftName", m_spacecraftName},
-      {"m_pixelPitch", m_pixelPitch},
-      {"m_ephemerisTime", m_ephemerisTime},
-      {"m_nLines", m_nLines},
-      {"m_nSamples", m_nSamples},
-      {"m_currentParameterValue", m_currentParameterValue},
-      {"m_imageIdentifier", m_imageIdentifier},
-      {"m_collectionIdentifier", m_collectionIdentifier},
-      {"m_referencePointXyz",
-       {m_referencePointXyz.x, m_referencePointXyz.y, m_referencePointXyz.z}},
-      {"m_currentParameterCovariance", m_currentParameterCovariance}};
+VariantMap UsgsAstroFrameSensorModel::getModelMap() const {
+  MESSAGE_LOG(spdlog::level::debug, "Serializing model state to VariantMap");
+  VariantMap state;
+  state.set<std::string>("m_modelName", _SENSOR_MODEL_NAME);
+  state.set<std::string>("m_sensorName", m_sensorName);
+  state.set<std::string>("m_platformName", m_platformName);
+  state.set<double>("m_focalLength", m_focalLength);
+  state.set<std::vector<double>>("m_iTransS", {m_iTransS[0], m_iTransS[1], m_iTransS[2]});
+  state.set<std::vector<double>>("m_iTransL", {m_iTransL[0], m_iTransL[1], m_iTransL[2]});
+  state.set<std::vector<double>>("m_boresight", {m_boresight[0], m_boresight[1], m_boresight[2]});
+  state.set<std::vector<double>>("m_transX", {m_transX[0], m_transX[1], m_transX[2]});
+  state.set<std::vector<double>>("m_transY", {m_transY[0], m_transY[1], m_transY[2]});
+  state.set<std::vector<double>>("m_lineJitter", m_lineJitter);
+  state.set<std::vector<double>>("m_sampleJitter", m_sampleJitter);
+  state.set<std::vector<double>>("m_lineTimes", m_lineTimes);
+  state.set<double>("m_majorAxis", m_majorAxis);
+  state.set<double>("m_minorAxis", m_minorAxis);
+  state.set<std::vector<double>>("m_spacecraftVelocity", {m_spacecraftVelocity[0], m_spacecraftVelocity[1], m_spacecraftVelocity[2]});
+  state.set<std::vector<double>>("m_sunPosition", {m_sunPosition[0], m_sunPosition[1], m_sunPosition[2]});
+  state.set<double>("m_startingDetectorSample", m_startingDetectorSample);
+  state.set<double>("m_startingDetectorLine", m_startingDetectorLine);
+  state.set<double>("m_detectorSampleSumming", m_detectorSampleSumming);
+  state.set<double>("m_detectorLineSumming", m_detectorLineSumming);
+  state.set<std::string>("m_targetName", m_targetName);
+  state.set<double>("m_ifov", m_ifov);
+  state.set<std::string>("m_instrumentID", m_instrumentID);
+  state.set<double>("m_focalLengthEpsilon", m_focalLengthEpsilon);
+  state.set<std::vector<double>>("m_ccdCenter", {m_ccdCenter[0], m_ccdCenter[1]});
+  state.set<double>("m_minElevation", m_minElevation);
+  state.set<double>("m_maxElevation", m_maxElevation);
+  state.set<int>("m_distortionType", m_distortionType);
+  state.set<std::vector<double>>("m_opticalDistCoeffs", m_opticalDistCoeffs);
+  state.set<double>("m_originalHalfLines", m_originalHalfLines);
+  state.set<double>("m_originalHalfSamples", m_originalHalfSamples);
+  state.set<std::string>("m_spacecraftName", m_spacecraftName);
+  state.set<double>("m_pixelPitch", m_pixelPitch);
+  state.set<double>("m_ephemerisTime", m_ephemerisTime);
+  state.set<int>("m_nLines", m_nLines);
+  state.set<int>("m_nSamples", m_nSamples);
+  state.set<std::vector<double>>("m_currentParameterValue", m_currentParameterValue);
+  state.set<std::string>("m_imageIdentifier", m_imageIdentifier);
+  state.set<std::string>("m_collectionIdentifier", m_collectionIdentifier);
+  state.set<std::vector<double>>("m_referencePointXyz", {m_referencePointXyz.x, m_referencePointXyz.y, m_referencePointXyz.z});
+  state.set<std::vector<double>>("m_currentParameterCovariance", m_currentParameterCovariance);
+  MESSAGE_LOG(spdlog::level::trace, "Model state\n{}", state.dumps());
+  return state;
+}
 
-  return state.dump(2);
+std::string UsgsAstroFrameSensorModel::getModelJson() const {
+  MESSAGE_LOG(spdlog::level::debug, "Serializing model state to JSON");
+  return jsonFromVariantMap(getModelMap()).dump(2);
 }
 
 std::string UsgsAstroFrameSensorModel::getModelState() const {
   MESSAGE_LOG(spdlog::level::debug, "Dumping model state");
-  // Use dump(2) to avoid creating the model string as a single long line
-  return  getModelName() + "\n" + getModelJson();
+  return getModelName() + "\n" + getModelJson();
 }
 
 /**
@@ -1524,69 +1524,143 @@ void UsgsAstroFrameSensorModel::replaceModelState(
   populateModel(stringState);
 }
 
-void UsgsAstroFrameSensorModel::populateModel(const std::string& stateStr) {
-  json state = stateAsJson(stateStr);
-
-  // The json library's .at() will except if key is missing
+void UsgsAstroFrameSensorModel::populateModel(const VariantMap& state) {
   try {
-    m_modelName = state.at("m_modelName").get<std::string>();
-    m_majorAxis = state.at("m_majorAxis").get<double>();
-    m_minorAxis = state.at("m_minorAxis").get<double>();
-    m_focalLength = state.at("m_focalLength").get<double>();
-    m_startingDetectorSample =
-        state.at("m_startingDetectorSample").get<double>();
-    m_startingDetectorLine = state.at("m_startingDetectorLine").get<double>();
-    m_detectorSampleSumming = state.at("m_detectorSampleSumming").get<double>();
-    m_detectorLineSumming = state.at("m_detectorLineSumming").get<double>();
-    m_focalLengthEpsilon = state.at("m_focalLengthEpsilon").get<double>();
-    m_nLines = state.at("m_nLines").get<int>();
-    m_nSamples = state.at("m_nSamples").get<int>();
-    m_ephemerisTime = state.at("m_ephemerisTime").get<double>();
-    m_currentParameterValue =
-        state.at("m_currentParameterValue").get<std::vector<double>>();
-    m_ccdCenter = state.at("m_ccdCenter").get<std::vector<double>>();
-    m_spacecraftVelocity =
-        state.at("m_spacecraftVelocity").get<std::vector<double>>();
-    m_sunPosition = state.at("m_sunPosition").get<std::vector<double>>();
-    m_distortionType = (DistortionType)state.at("m_distortionType").get<int>();
-    m_opticalDistCoeffs =
-        state.at("m_opticalDistCoeffs").get<std::vector<double>>();
-    m_transX = state.at("m_transX").get<std::vector<double>>();
-    m_transY = state.at("m_transY").get<std::vector<double>>();
-    m_iTransS = state.at("m_iTransS").get<std::vector<double>>();
-    m_iTransL = state.at("m_iTransL").get<std::vector<double>>();
-    m_imageIdentifier = state.at("m_imageIdentifier").get<std::string>();
-    m_platformName = state.at("m_platformName").get<std::string>();
-    m_sensorName = state.at("m_sensorName").get<std::string>();
-    m_collectionIdentifier =
-        state.at("m_collectionIdentifier").get<std::string>();
-    // Set reference point to the center of the image
-    m_referencePointXyz =
-        imageToGround(csm::ImageCoord(m_nLines / 2.0, m_nSamples / 2.0));
-    m_currentParameterCovariance =
-        state.at("m_currentParameterCovariance").get<std::vector<double>>();
+    MESSAGE_LOG(spdlog::level::trace, "State contents:\n" + state.dumps());
 
-    // These are optional and may not exist in all state files
-    if (state.find("m_targetName") != state.end())
-      m_targetName = state.at("m_targetName").get<std::string>();
-    if (state.find("m_maxElevation") != state.end())
-      m_maxElevation = state.at("m_maxElevation").get<double>();
-    if (state.find("m_minElevation") != state.end())
-      m_minElevation = state.at("m_minElevation").get<double>();
-    if (state.find("m_originalHalfLines") != state.end())
-      m_originalHalfLines = state.at("m_originalHalfLines").get<double>();
-    if (state.find("m_originalHalfSamples") != state.end())
-      m_originalHalfSamples = state.at("m_originalHalfSamples").get<double>();
-    if (state.find("m_pixelPitch") != state.end())
-      m_pixelPitch = state.at("m_pixelPitch").get<double>();
-    if (state.find("m_lineJitter") != state.end())
-      m_lineJitter = state.at("m_lineJitter").get<std::vector<double>>();
-    if (state.find("m_sampleJitter") != state.end())
-      m_sampleJitter = state.at("m_sampleJitter").get<std::vector<double>>();
-    if (state.find("m_lineTimes") != state.end())
-      m_lineTimes = state.at("m_lineTimes").get<std::vector<double>>();
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_modelName");
+    m_modelName = state.get<std::string>("m_modelName");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_majorAxis");
+    m_majorAxis = state.get<double>("m_majorAxis");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_minorAxis");
+    m_minorAxis = state.get<double>("m_minorAxis");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_focalLength");
+    m_focalLength = state.get<double>("m_focalLength");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_startingDetectorSample");
+    m_startingDetectorSample = state.get<double>("m_startingDetectorSample");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_startingDetectorLine");
+    m_startingDetectorLine = state.get<double>("m_startingDetectorLine");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_detectorSampleSumming");
+    m_detectorSampleSumming = state.get<int>("m_detectorSampleSumming");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_detectorLineSumming");
+    m_detectorLineSumming = state.get<int>("m_detectorLineSumming");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_focalLengthEpsilon");
+    m_focalLengthEpsilon = state.get<double>("m_focalLengthEpsilon");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_nLines");
+    m_nLines = state.get<int>("m_nLines");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_nSamples");
+    m_nSamples = state.get<int>("m_nSamples");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_ephemerisTime");
+    m_ephemerisTime = state.get<double>("m_ephemerisTime");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_currentParameterValue");
+    m_currentParameterValue = state.get<std::vector<double>>("m_currentParameterValue");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_ccdCenter");
+    m_ccdCenter = state.get<std::vector<double>>("m_ccdCenter");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_spacecraftVelocity");
+    m_spacecraftVelocity = state.get<std::vector<double>>("m_spacecraftVelocity");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_sunPosition");
+    m_sunPosition = state.get<std::vector<double>>("m_sunPosition");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_distortionType");
+    m_distortionType = (DistortionType)state.get<int>("m_distortionType");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_opticalDistCoeffs");
+    m_opticalDistCoeffs = state.get<std::vector<double>>("m_opticalDistCoeffs");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_transX");
+    m_transX = state.get<std::vector<double>>("m_transX");
 
-  } catch (std::out_of_range &e) {
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_transY");
+    m_transY = state.get<std::vector<double>>("m_transY");
+
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_iTransS");
+    m_iTransS = state.get<std::vector<double>>("m_iTransS");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_iTransL");
+    m_iTransL = state.get<std::vector<double>>("m_iTransL");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_imageIdentifier");
+    m_imageIdentifier = state.get<std::string>("m_imageIdentifier");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_platformName");
+    m_platformName = state.get<std::string>("m_platformName");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_sensorName");
+    m_sensorName = state.get<std::string>("m_sensorName");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_collectionIdentifier");
+    m_collectionIdentifier = state.get<std::string>("m_collectionIdentifier");
+    
+    MESSAGE_LOG(spdlog::level::trace, "Computing m_referencePointXyz");
+    m_referencePointXyz = imageToGround(csm::ImageCoord(m_nLines / 2.0, m_nSamples / 2.0));
+    
+    MESSAGE_LOG(spdlog::level::trace, "Getting m_currentParameterCovariance");
+    m_currentParameterCovariance = state.get<std::vector<double>>("m_currentParameterCovariance");
+
+    if (state.contains("m_targetName")) {
+      MESSAGE_LOG(spdlog::level::trace, "Getting m_targetName");
+      m_targetName = state.get<std::string>("m_targetName");
+    }
+    if (state.contains("m_maxElevation")) {
+      MESSAGE_LOG(spdlog::level::trace, "Getting m_maxElevation");
+      m_maxElevation = state.get<double>("m_maxElevation");
+    }
+    if (state.contains("m_minElevation")) {
+      MESSAGE_LOG(spdlog::level::trace, "Getting m_minElevation");
+      m_minElevation = state.get<double>("m_minElevation");
+    }
+    if (state.contains("m_originalHalfLines")) {
+      MESSAGE_LOG(spdlog::level::trace, "Getting m_originalHalfLines");
+      m_originalHalfLines = state.get<double>("m_originalHalfLines");
+    }
+    if (state.contains("m_originalHalfSamples")) {
+      MESSAGE_LOG(spdlog::level::trace, "Getting m_originalHalfSamples");
+      m_originalHalfSamples = state.get<double>("m_originalHalfSamples");
+    }
+    if (state.contains("m_pixelPitch")) {
+      MESSAGE_LOG(spdlog::level::trace, "Getting m_pixelPitch");
+      m_pixelPitch = state.get<double>("m_pixelPitch");
+    }
+    if (state.contains("m_lineJitter")) {
+      MESSAGE_LOG(spdlog::level::trace, "Getting m_lineJitter");
+      m_lineJitter = state.get<std::vector<double>>("m_lineJitter");
+    }
+    if (state.contains("m_sampleJitter")) {
+      MESSAGE_LOG(spdlog::level::trace, "Getting m_sampleJitter");
+      m_sampleJitter = state.get<std::vector<double>>("m_sampleJitter");
+    }
+    if (state.contains("m_lineTimes")) {
+      MESSAGE_LOG(spdlog::level::trace, "Getting m_lineTimes");
+      m_lineTimes = state.get<std::vector<double>>("m_lineTimes");
+    }
+
+  } 
+  catch (std::bad_variant_access &e) {
+    MESSAGE_LOG(
+        spdlog::level::err,
+        "State keywords have wrong type: " + std::string(e.what()) +
+            "UsgsAstroFrameSensorModel::populateModel");
+    throw csm::Error(
+        csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
+        "State keywords have wrong type: " + std::string(e.what()),
+        "UsgsAstroFrameSensorModel::populateModel");
+  }
+  catch (std::exception &e) {
     MESSAGE_LOG(
         spdlog::level::err,
         "State keywords required to generate sensor model missing: " +
@@ -1598,6 +1672,11 @@ void UsgsAstroFrameSensorModel::populateModel(const std::string& stateStr) {
             std::string(e.what()),
         "UsgsAstroFrameSensorModel::populateModel");
   }
+  MESSAGE_LOG(spdlog::level::debug, "Model state populated successfully");
+}
+
+void UsgsAstroFrameSensorModel::populateModel(const std::string& stateStr) {
+  populateModel(variantMapFromJson(stateAsJson(stateStr)));
 }
 
 /**
@@ -1690,7 +1769,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(
   } else {
     state["m_spacecraftVelocity"] = velocities;
   }
-
+  
   // get sun_position
   // sun position is not strictly necessary, but is required for
   // getIlluminationDirection.
@@ -1799,7 +1878,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(
     state["m_sampleJitter"] = parsedIsd.at("jitter").at("sampleJitterCoefficients");
     state["m_lineTimes"] = parsedIsd.at("jitter").at("lineExposureTimes");
   }
-
+  
   // We don't pass the pixel to focal plane transformation so invert the
   // focal plane to pixel transformation
   try {
@@ -1835,13 +1914,13 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(
   }
 
   state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
-  state["m_currentParameterCovariance"] =
-      std::vector<double>(NUM_PARAMETERS * NUM_PARAMETERS, 0.0);
+  state["m_currentParameterCovariance"] = std::vector<double>(NUM_PARAMETERS * NUM_PARAMETERS, 0.0);
   for (int i = 0; i < NUM_PARAMETERS * NUM_PARAMETERS;
        i += NUM_PARAMETERS + 1) {
     state["m_currentParameterCovariance"][i] = 1;
   }
   state["m_collectionIdentifier"] = "";
+  std::cout << "set the covariance to identity" << std::endl;
 
   if (!parsingWarnings->empty()) {
     if (warnings) {
@@ -1854,7 +1933,6 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(
                      "ISD is invalid for creating the sensor model.",
                      "UsgsAstroFrameSensorModel::constructStateFromIsd");
   }
-
   return state.dump();
 }
 

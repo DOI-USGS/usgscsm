@@ -26,7 +26,7 @@
 #include <Utilities.h>
 
 #include <nlohmann/json.hpp>
-
+using json = nlohmann::json;
 #include <iostream>
 #include <fstream>
 
@@ -162,7 +162,7 @@ bool loadCsmCameraModel(std::string const& model_file,
                               std::istreambuf_iterator<char>());
     nlohmann::json j = nlohmann::json::from_msgpack(data);
     std::string model_name = j.at("m_modelName").get<std::string>();
-    model = std::shared_ptr<csm::RasterGM>(getUsgsCsmModelFromJson(j, model_name, NULL));
+    model = std::shared_ptr<csm::RasterGM>(getUsgsCsmModelFromJsonState(j, model_name, NULL));
     std::cout << "Loaded model of type " << model_name
               << " from binary state.\n";
     return true;
@@ -293,7 +293,7 @@ int main(int argc, char **argv) {
   if (opt.output_binary_state != "") {
     std::cout << "Writing model state in msgpack binary format: "
               << opt.output_binary_state << "\n";
-    nlohmann::json j = getUsgsCsmModelJson(model.get());
+    nlohmann::json j = json::parse(getUsgsCsmModelJson(model.get()));
     std::vector<uint8_t> msgpack_data = nlohmann::json::to_msgpack(j);
     std::ofstream ofs(opt.output_binary_state, std::ios::binary);
     ofs.write(reinterpret_cast<const char*>(msgpack_data.data()), msgpack_data.size());

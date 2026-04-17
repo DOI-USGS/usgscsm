@@ -29,6 +29,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include <RasterGM.h>
 #include <SettableEllipsoid.h>
 #include "Distortion.h"
+#include "VariantMap.h"
 
 #include<utility>
 #include<memory>
@@ -63,11 +64,10 @@ class UsgsAstroPushFrameSensorModel : public csm::RasterGM,
   //  If the argument state string is empty, the model remains unchanged.
   //<
 
-  // Populate model fields directly from a json object, bypassing string
-  // serialization. Used by replaceModelState() and binary state loading.
-  void populateModel(const std::string& j);
+  void populateModel(const VariantMap& vm);
+  VariantMap getModelMap() const;
 
-  // Return model state as a json object, bypassing string serialization.
+  void populateModel(const std::string& j);
   std::string getModelJson() const;
 
   // This method checks to see if the model name is recognized

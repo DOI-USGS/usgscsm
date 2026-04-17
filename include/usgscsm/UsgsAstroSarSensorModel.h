@@ -6,6 +6,7 @@
 #include <SettableEllipsoid.h>
 
 #include "ale/Rotation.h"
+#include "VariantMap.h"
 
 #include "spdlog/spdlog.h"
 
@@ -21,11 +22,10 @@ class UsgsAstroSarSensorModel : public csm::RasterGM,
 
   virtual void replaceModelState(const std::string& argState);
 
-  // Populate model fields directly from a json object, bypassing string
-  // serialization.
-  void populateModel(const std::string& j);
+  void populateModel(const VariantMap& vm);
+  VariantMap getModelMap() const;
 
-  // Return model state as a json object, bypassing string serialization.
+  void populateModel(const std::string& j);
   std::string getModelJson() const;
 
   virtual std::string getModelState() const;

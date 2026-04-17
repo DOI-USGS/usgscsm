@@ -80,6 +80,7 @@ TEST_F(FrameIsdTest, Constructible) {
 TEST_F(FrameIsdTest, ConstructibleFromState) {
   UsgsAstroPlugin testPlugin;
   std::string modelState = testPlugin.getStateFromISD(isd);
+  std::cout << "==================================================" << std::endl;
   EXPECT_TRUE(testPlugin.canModelBeConstructedFromState(
       "USGS_ASTRO_FRAME_SENSOR_MODEL", modelState));
 }

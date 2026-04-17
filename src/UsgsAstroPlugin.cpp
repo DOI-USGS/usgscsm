@@ -509,7 +509,7 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(
     csm::WarningList *warnings) const {
   MESSAGE_LOG(spdlog::level::info, "Running constructModelFromISD");
   std::string stringIsd = loadImageSupportData(imageSupportDataOriginal);
-
+  MESSAGE_LOG(spdlog::level::trace, "ISD string: {}", stringIsd);
   // Try to get the projected model, if not return the the unprojected model
   UsgsAstroProjectedSensorModel *projModel = new UsgsAstroProjectedSensorModel();
 

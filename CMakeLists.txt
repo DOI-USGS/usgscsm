@@ -7,7 +7,7 @@ message(STATUS "CMake Module Path: " ${CMAKE_MODULE_PATH})
 
 include(GNUInstallDirs)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 # For dependencies minimum version
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
@@ -41,6 +41,7 @@ set(USGSCSM_SRC_FILES src/UsgsAstroPlugin.cpp
                       src/UsgsAstroSarSensorModel.cpp
                       src/Distortion.cpp
                       src/Utilities.cpp
+                      src/VariantMap.cpp
                       src/EigenUtilities.cpp
 )
 
