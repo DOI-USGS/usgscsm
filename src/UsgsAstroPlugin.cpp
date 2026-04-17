@@ -515,8 +515,8 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(
 
   try {
     MESSAGE_LOG(spdlog::level::debug, "Trying to construct a UsgsAstroProjectedSensorModel");
-    projModel->replaceModelState(
-        projModel->constructStateFromIsd(stringIsd, modelName, warnings));
+    VariantMap vm = projModel->constructStateFromIsd(stringIsd, modelName, warnings);
+    projModel->populateModel(vm);
     MESSAGE_LOG(spdlog::level::debug, "Constructed model: {}", modelName);
     return projModel;
   } catch (std::exception &e) {

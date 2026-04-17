@@ -1498,8 +1498,9 @@ bool UsgsAstroFrameSensorModel::isValidIsd(const std::string &Isd,
   // we can change this.
   MESSAGE_LOG(spdlog::level::debug, "Building isd to check model state");
   try {
-    std::string state = constructStateFromIsd(Isd, warnings);
-    return isValidModelState(state, warnings);
+    VariantMap state = constructStateFromIsd(Isd, warnings);
+    std::string stateStr = getModelName() + "\n" + jsonFromVariantMap(state).dump(2);
+    return isValidModelState(stateStr, warnings);
   } catch (...) {
     return false;
   }
@@ -1693,7 +1694,7 @@ void UsgsAstroFrameSensorModel::populateModel(const std::string& stateStr) {
  * @throws csm::Error If the ISD does not contain required information or if any errors occur
  * during the parsing process, indicating that the ISD is invalid for creating the sensor model.
  */
-std::string UsgsAstroFrameSensorModel::constructStateFromIsd(
+VariantMap UsgsAstroFrameSensorModel::constructStateFromIsd(
     const std::string &jsonIsd, csm::WarningList *warnings) {
   MESSAGE_LOG(spdlog::level::debug, "Constructing state from isd");
   json parsedIsd = stateAsJson(jsonIsd);
@@ -1933,7 +1934,7 @@ std::string UsgsAstroFrameSensorModel::constructStateFromIsd(
                      "ISD is invalid for creating the sensor model.",
                      "UsgsAstroFrameSensorModel::constructStateFromIsd");
   }
-  return state.dump();
+  return variantMapFromJson(state);
 }
 
 /**

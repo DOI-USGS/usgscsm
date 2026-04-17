@@ -2905,7 +2905,7 @@ void UsgsAstroLsSensorModel::createProjectiveApproximation() {
  * 
  * @return A string representation of the sensor model state.
  */
-std::string UsgsAstroLsSensorModel::constructStateFromIsd(
+VariantMap UsgsAstroLsSensorModel::constructStateFromIsd(
     const std::string imageSupportData, csm::WarningList* warnings) {
   json state = {};
   MESSAGE_LOG(
@@ -3263,7 +3263,7 @@ std::string UsgsAstroLsSensorModel::constructStateFromIsd(
 
   // The state data will still be updated when a sensor model is created since
   // some state data is not in the ISD and requires a SM to compute them.
-  return state.dump();
+  return variantMapFromJson(state);
 }
 
 /**

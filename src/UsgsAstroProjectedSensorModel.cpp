@@ -842,8 +842,8 @@ void UsgsAstroProjectedSensorModel::setEllipsoid(const csm::Ellipsoid& ellipsoid
 //***************************************************************************
 // UsgsAstroLineScannerSensorModel::constructStateFromIsd
 //***************************************************************************
-std::string UsgsAstroProjectedSensorModel::constructStateFromIsd(
-    const std::string imageSupportData, const std::string modelName, 
+VariantMap UsgsAstroProjectedSensorModel::constructStateFromIsd(
+    const std::string imageSupportData, const std::string modelName,
     csm::WarningList *warnings)
 {
   json state = json::parse(imageSupportData);
@@ -865,5 +865,5 @@ std::string UsgsAstroProjectedSensorModel::constructStateFromIsd(
       projState["m_modelName"].dump(), projState["m_subModelName"].dump(), projState["m_geoTransform"].dump(), projState["m_projString"].dump());
   // The state data will still be updated when a sensor model is created since
   // some state data is not in the ISD and requires a SM to compute them.
-  return projState.dump();
+  return variantMapFromJson(projState);
 }

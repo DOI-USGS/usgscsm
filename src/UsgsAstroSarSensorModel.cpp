@@ -53,7 +53,7 @@ const csm::param::Type UsgsAstroSarSensorModel::PARAM_CHAR_ALL[] = {
  *                 during the state construction.
  * @return A string representing the constructed state in JSON format.
  */
-string UsgsAstroSarSensorModel::constructStateFromIsd(
+VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
     const string imageSupportData, csm::WarningList* warnings) {
   MESSAGE_LOG("UsgsAstroSarSensorModel constructing state from ISD, with {}",
               imageSupportData);
@@ -219,7 +219,7 @@ string UsgsAstroSarSensorModel::constructStateFromIsd(
 
   // The state data will still be updated when a sensor model is created since
   // some state data is not in the ISD and requires a SM to compute them.
-  return state.dump();
+  return variantMapFromJson(state);
 }
 
 /**

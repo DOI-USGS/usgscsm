@@ -76,9 +76,9 @@ public:
     // in the input state string.
     static std::string getModelNameFromModelState(const std::string &model_state);
 
-    std::string constructStateFromIsd(const std::string imageSupportData, 
-                                      const std::string modelName,
-                                      csm::WarningList *list);
+    VariantMap constructStateFromIsd(const std::string imageSupportData,
+                                     const std::string modelName,
+                                     csm::WarningList *list);
 
     // State data elements;
     double m_majorAxis;

@@ -2119,7 +2119,7 @@ std::vector<double> UsgsAstroPushFrameSensorModel::computeDetectorView(
 //***************************************************************************
 // UsgsAstroLineScannerSensorModel::constructStateFromIsd
 //***************************************************************************
-std::string UsgsAstroPushFrameSensorModel::constructStateFromIsd(
+VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
     const std::string imageSupportData, csm::WarningList* warnings) {
   json state = {};
   MESSAGE_LOG("Constructing state from Isd");
@@ -2467,7 +2467,7 @@ std::string UsgsAstroPushFrameSensorModel::constructStateFromIsd(
 
   // The state data will still be updated when a sensor model is created since
   // some state data is not in the ISD and requires a SM to compute them.
-  return state.dump();
+  return variantMapFromJson(state);
 }
 
 //***************************************************************************

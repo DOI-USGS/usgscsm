@@ -74,8 +74,8 @@ class UsgsAstroPushFrameSensorModel : public csm::RasterGM,
   // in the input state string.
   static std::string getModelNameFromModelState(const std::string& model_state);
 
-  std::string constructStateFromIsd(const std::string imageSupportData,
-                                    csm::WarningList* list);
+  VariantMap constructStateFromIsd(const std::string imageSupportData,
+                                   csm::WarningList* list);
 
   // State data elements;
   std::string m_imageIdentifier;

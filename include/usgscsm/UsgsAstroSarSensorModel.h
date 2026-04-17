@@ -30,8 +30,8 @@ class UsgsAstroSarSensorModel : public csm::RasterGM,
 
   virtual std::string getModelState() const;
 
-  std::string constructStateFromIsd(const std::string imageSupportData,
-                                    csm::WarningList* list);
+  VariantMap constructStateFromIsd(const std::string imageSupportData,
+                                   csm::WarningList* list);
 
   static std::string getModelNameFromModelState(const std::string& model_state);
 

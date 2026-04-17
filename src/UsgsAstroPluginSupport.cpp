@@ -19,8 +19,8 @@ csm::RasterGM *getUsgsCsmModelFromIsd(
   if (modelName == UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME) {
     UsgsAstroFrameSensorModel *model = new UsgsAstroFrameSensorModel();
     try {
-      model->replaceModelState(
-          model->constructStateFromIsd(stringIsd, warnings));
+      VariantMap vm = model->constructStateFromIsd(stringIsd, warnings);
+      model->populateModel(vm);
     } catch (std::exception &e) {
       delete model;
       csm::Error::ErrorType aErrorType =
@@ -37,8 +37,8 @@ csm::RasterGM *getUsgsCsmModelFromIsd(
   } else if (modelName == UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME) {
     UsgsAstroLsSensorModel *model = new UsgsAstroLsSensorModel();
     try {
-      model->replaceModelState(
-          model->constructStateFromIsd(stringIsd, warnings));
+      VariantMap vm = model->constructStateFromIsd(stringIsd, warnings);
+      model->populateModel(vm);
     } catch (std::exception &e) {
       delete model;
       csm::Error::ErrorType aErrorType =
@@ -55,8 +55,8 @@ csm::RasterGM *getUsgsCsmModelFromIsd(
   } else if (modelName == UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME) {
     UsgsAstroSarSensorModel *model = new UsgsAstroSarSensorModel();
     try {
-      model->replaceModelState(
-          model->constructStateFromIsd(stringIsd, warnings));
+      VariantMap vm = model->constructStateFromIsd(stringIsd, warnings);
+      model->populateModel(vm);
     } catch (std::exception &e) {
       delete model;
       csm::Error::ErrorType aErrorType =
@@ -73,8 +73,8 @@ csm::RasterGM *getUsgsCsmModelFromIsd(
   } else if (modelName == UsgsAstroPushFrameSensorModel::_SENSOR_MODEL_NAME) {
     UsgsAstroPushFrameSensorModel *model = new UsgsAstroPushFrameSensorModel();
     try {
-      model->replaceModelState(
-          model->constructStateFromIsd(stringIsd, warnings));
+      VariantMap vm = model->constructStateFromIsd(stringIsd, warnings);
+      model->populateModel(vm);
     } catch (std::exception &e) {
       delete model;
       csm::Error::ErrorType aErrorType =
