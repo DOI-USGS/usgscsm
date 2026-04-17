@@ -162,7 +162,7 @@ bool loadCsmCameraModel(std::string const& model_file,
                               std::istreambuf_iterator<char>());
     nlohmann::json j = nlohmann::json::from_msgpack(data);
     std::string model_name = j.at("m_modelName").get<std::string>();
-    model = std::shared_ptr<csm::RasterGM>(getUsgsCsmModelFromJsonState(j, model_name, NULL));
+    model = std::shared_ptr<csm::RasterGM>(getUsgsCsmModelFromJsonState(j.dump(), model_name, NULL));
     std::cout << "Loaded model of type " << model_name
               << " from binary state.\n";
     return true;

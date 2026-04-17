@@ -99,7 +99,10 @@ csm::RasterGM *getUsgsCsmModelFromIsd(
 
 csm::RasterGM *getUsgsCsmModelFromJsonState(const std::string &jstr, const std::string &modelName, csm::WarningList *warnings) {
   VariantMap vm = variantMapFromJson(stateAsJson(jstr));
+  return getUsgsCsmModelFromVariantMap(vm, modelName, warnings);
+}
 
+csm::RasterGM *getUsgsCsmModelFromVariantMap(const VariantMap &vm, const std::string &modelName, csm::WarningList *warnings) {
   if (modelName == UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME) {
     UsgsAstroFrameSensorModel *model = new UsgsAstroFrameSensorModel();
     model->populateModel(vm);
@@ -123,7 +126,7 @@ csm::RasterGM *getUsgsCsmModelFromJsonState(const std::string &jstr, const std::
   } else {
     csm::Error::ErrorType aErrorType = csm::Error::ISD_NOT_SUPPORTED;
     std::string aMessage = "Model " + modelName + " not supported";
-    std::string aFunction = "UsgsAstroPluginSupport::getUsgsCsmModelFromJsonState()";
+    std::string aFunction = "UsgsAstroPluginSupport::getUsgsCsmModelFromVariantMap()";
     throw csm::Error(aErrorType, aMessage, aFunction);
   }
 }

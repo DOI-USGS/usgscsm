@@ -23,63 +23,6 @@ public:
   template<typename T>
   T get(const std::string& key, const T& defaultValue) const;
 
-  // Explicit specialization declarations for set()
-  template<>
-  void set<std::string>(const std::string& key, const std::string& value);
-
-  template<>
-  void set<int>(const std::string& key, const int& value);
-
-  template<>
-  void set<double>(const std::string& key, const double& value);
-
-  template<>
-  void set<bool>(const std::string& key, const bool& value);
-
-  template<>
-  void set<std::vector<double>>(const std::string& key, const std::vector<double>& value);
-
-  template<>
-  void set<std::vector<int>>(const std::string& key, const std::vector<int>& value);
-
-  // Explicit specialization declarations for get() without default
-  template<>
-  std::string get<std::string>(const std::string& key) const;
-
-  template<>
-  int get<int>(const std::string& key) const;
-
-  template<>
-  double get<double>(const std::string& key) const;
-
-  template<>
-  bool get<bool>(const std::string& key) const;
-
-  template<>
-  std::vector<double> get<std::vector<double>>(const std::string& key) const;
-
-  template<>
-  std::vector<int> get<std::vector<int>>(const std::string& key) const;
-
-  // Explicit specialization declarations for get() with default
-  template<>
-  std::string get<std::string>(const std::string& key, const std::string& defaultValue) const;
-
-  template<>
-  int get<int>(const std::string& key, const int& defaultValue) const;
-
-  template<>
-  double get<double>(const std::string& key, const double& defaultValue) const;
-
-  template<>
-  bool get<bool>(const std::string& key, const bool& defaultValue) const;
-
-  template<>
-  std::vector<double> get<std::vector<double>>(const std::string& key, const std::vector<double>& defaultValue) const;
-
-  template<>
-  std::vector<int> get<std::vector<int>>(const std::string& key, const std::vector<int>& defaultValue) const;
-
   // Type introspection
   enum class ValueType {
     String,
@@ -108,5 +51,28 @@ private:
 
   friend class VariantMapImpl;
 };
+
+// Explicit specialization declarations at namespace scope
+// These prevent implicit instantiation and must appear before first use
+template<> void VariantMap::set<std::string>(const std::string& key, const std::string& value);
+template<> void VariantMap::set<int>(const std::string& key, const int& value);
+template<> void VariantMap::set<double>(const std::string& key, const double& value);
+template<> void VariantMap::set<bool>(const std::string& key, const bool& value);
+template<> void VariantMap::set<std::vector<double>>(const std::string& key, const std::vector<double>& value);
+template<> void VariantMap::set<std::vector<int>>(const std::string& key, const std::vector<int>& value);
+
+template<> std::string VariantMap::get<std::string>(const std::string& key) const;
+template<> int VariantMap::get<int>(const std::string& key) const;
+template<> double VariantMap::get<double>(const std::string& key) const;
+template<> bool VariantMap::get<bool>(const std::string& key) const;
+template<> std::vector<double> VariantMap::get<std::vector<double>>(const std::string& key) const;
+template<> std::vector<int> VariantMap::get<std::vector<int>>(const std::string& key) const;
+
+template<> std::string VariantMap::get<std::string>(const std::string& key, const std::string& defaultValue) const;
+template<> int VariantMap::get<int>(const std::string& key, const int& defaultValue) const;
+template<> double VariantMap::get<double>(const std::string& key, const double& defaultValue) const;
+template<> bool VariantMap::get<bool>(const std::string& key, const bool& defaultValue) const;
+template<> std::vector<double> VariantMap::get<std::vector<double>>(const std::string& key, const std::vector<double>& defaultValue) const;
+template<> std::vector<int> VariantMap::get<std::vector<int>>(const std::string& key, const std::vector<int>& defaultValue) const;
 
 #endif

@@ -119,7 +119,7 @@ void UsgsAstroProjectedSensorModel::populateModel(const VariantMap& state) {
       "will return incorrect ground intersections.");
 
   m_subModelName = state.get<std::string>("m_subModelName");
-  m_camera = getUsgsCsmModelFromJsonState(jsonFromVariantMap(state).dump(), m_subModelName, NULL);
+  m_camera = getUsgsCsmModelFromVariantMap(state, m_subModelName, NULL);
   m_majorAxis = state.get<double>("m_majorAxis");
   m_minorAxis = state.get<double>("m_minorAxis");
   m_geoTransform = state.get<std::vector<double>>("m_geoTransform");
@@ -849,21 +849,24 @@ VariantMap UsgsAstroProjectedSensorModel::constructStateFromIsd(
   json state = json::parse(imageSupportData);
 
   m_camera = getUsgsCsmModelFromIsd(imageSupportData, modelName, warnings);
-  json projState = stateAsJson(m_camera->getModelState());
+  VariantMap projState = getUsgsCsmModelMap(m_camera);
 
   // Force update the modelName
-  projState["m_modelName"] = m_camera->getModelName();
-  projState["m_subModelName"] = projState["m_modelName"];
-  projState["m_geoTransform"] = ale::getGeoTransform(state);
-  projState["m_projString"] = ale::getProjection(state);
+  projState.set<std::string>("m_modelName", m_camera->getModelName());
+  projState.set<std::string>("m_subModelName", m_camera->getModelName());
+  projState.set<std::vector<double>>("m_geoTransform", ale::getGeoTransform(state));
+  projState.set<std::string>("m_projString", ale::getProjection(state));
   MESSAGE_LOG(
       spdlog::level::trace,
       "m_modelName: {} "
       "m_subModelName: {} "
-      "m_geoTransform: {} "
+      "m_geoTransform size: {} "
       "m_projString: {} ",
-      projState["m_modelName"].dump(), projState["m_subModelName"].dump(), projState["m_geoTransform"].dump(), projState["m_projString"].dump());
+      projState.get<std::string>("m_modelName"),
+      projState.get<std::string>("m_subModelName"),
+      projState.get<std::vector<double>>("m_geoTransform").size(),
+      projState.get<std::string>("m_projString"));
   // The state data will still be updated when a sensor model is created since
   // some state data is not in the ISD and requires a SM to compute them.
-  return variantMapFromJson(projState);
+  return projState;
 }

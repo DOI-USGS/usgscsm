@@ -7,6 +7,7 @@
 
 csm::RasterGM *getUsgsCsmModelFromIsd(const std::string &stringIsd, const std::string &modelName, csm::WarningList *warnings);
 csm::RasterGM *getUsgsCsmModelFromJsonState(const std::string &jstring, const std::string &modelName, csm::WarningList *warnings);
+csm::RasterGM *getUsgsCsmModelFromVariantMap(const VariantMap &vm, const std::string &modelName, csm::WarningList *warnings);
 std::string getUsgsCsmModelJson(csm::RasterGM *model);
 VariantMap getUsgsCsmModelMap(csm::RasterGM *model);
 
