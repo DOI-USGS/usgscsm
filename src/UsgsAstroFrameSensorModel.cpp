@@ -1650,8 +1650,8 @@ void UsgsAstroFrameSensorModel::populateModel(const VariantMap& state) {
       m_lineTimes = state.get<std::vector<double>>("m_lineTimes");
     }
 
-  } 
-  catch (std::bad_variant_access &e) {
+  }
+  catch (VariantMapTypeError &e) {
     MESSAGE_LOG(
         spdlog::level::err,
         "State keywords have wrong type: " + std::string(e.what()) +
@@ -1661,7 +1661,7 @@ void UsgsAstroFrameSensorModel::populateModel(const VariantMap& state) {
         "State keywords have wrong type: " + std::string(e.what()),
         "UsgsAstroFrameSensorModel::populateModel");
   }
-  catch (std::exception &e) {
+  catch (VariantMapKeyError &e) {
     MESSAGE_LOG(
         spdlog::level::err,
         "State keywords required to generate sensor model missing: " +
@@ -1671,6 +1671,17 @@ void UsgsAstroFrameSensorModel::populateModel(const VariantMap& state) {
         csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
         "State keywords required to generate sensor model missing: " +
             std::string(e.what()),
+        "UsgsAstroFrameSensorModel::populateModel");
+  }
+  catch (std::exception &e) {
+    MESSAGE_LOG(
+        spdlog::level::err,
+        "Unexpected error in populateModel: " +
+        std::string(e.what()) +
+        "UsgsAstroFrameSensorModel::populateModel");
+    throw csm::Error(
+        csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE,
+        "Unexpected error: " + std::string(e.what()),
         "UsgsAstroFrameSensorModel::populateModel");
   }
   MESSAGE_LOG(spdlog::level::debug, "Model state populated successfully");

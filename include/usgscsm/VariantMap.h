@@ -4,6 +4,18 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <stdexcept>
+
+// Custom exceptions for VariantMap to distinguish error types
+class VariantMapKeyError : public std::runtime_error {
+public:
+  explicit VariantMapKeyError(const std::string& msg) : std::runtime_error(msg) {}
+};
+
+class VariantMapTypeError : public std::runtime_error {
+public:
+  explicit VariantMapTypeError(const std::string& msg) : std::runtime_error(msg) {}
+};
 
 class VariantMapImpl;
 

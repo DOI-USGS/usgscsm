@@ -30,9 +30,9 @@ TYPE VariantMap::get<TYPE>(const std::string& key) const { \
   try { \
     return std::get<TYPE>(impl_->data.at(key)); \
   } catch (const std::out_of_range&) { \
-    throw std::runtime_error("Key '" + key + "' not found in VariantMap"); \
+    throw VariantMapKeyError("Key '" + key + "' not found in VariantMap"); \
   } catch (const std::exception& e) { \
-    throw std::runtime_error("Bad variant access for key '" + key + "': expected " TYPE_NAME " but got different type"); \
+    throw VariantMapTypeError("Bad variant access for key '" + key + "': expected " TYPE_NAME " but got different type"); \
   } \
 }
 
@@ -45,7 +45,7 @@ TYPE VariantMap::get<TYPE>(const std::string& key, const TYPE& defaultValue) con
   try { \
     return std::get<TYPE>(it->second); \
   } catch (const std::exception& e) { \
-    throw std::runtime_error("Bad variant access for key '" + key + "': expected " TYPE_NAME " but got different type"); \
+    throw VariantMapTypeError("Bad variant access for key '" + key + "': expected " TYPE_NAME " but got different type"); \
   } \
 }
 
@@ -103,7 +103,7 @@ template<>
 int VariantMap::get<int>(const std::string& key) const {
   auto it = impl_->data.find(key);
   if (it == impl_->data.end()) {
-    throw std::runtime_error("Key '" + key + "' not found in VariantMap");
+    throw VariantMapKeyError("Key '" + key + "' not found in VariantMap");
   }
   try {
     return std::get<int>(it->second);
@@ -112,7 +112,7 @@ int VariantMap::get<int>(const std::string& key) const {
     try {
       return static_cast<int>(std::get<double>(it->second));
     } catch (const std::exception&) {
-      throw std::runtime_error("Bad variant access for key '" + key + "': expected numeric type (int or double) but got different type");
+      throw VariantMapTypeError("Bad variant access for key '" + key + "': expected numeric type (int or double) but got different type");
     }
   }
 }
@@ -122,7 +122,7 @@ template<>
 double VariantMap::get<double>(const std::string& key) const {
   auto it = impl_->data.find(key);
   if (it == impl_->data.end()) {
-    throw std::runtime_error("Key '" + key + "' not found in VariantMap");
+    throw VariantMapKeyError("Key '" + key + "' not found in VariantMap");
   }
   try {
     return std::get<double>(it->second);
@@ -131,7 +131,7 @@ double VariantMap::get<double>(const std::string& key) const {
     try {
       return static_cast<double>(std::get<int>(it->second));
     } catch (const std::exception&) {
-      throw std::runtime_error("Bad variant access for key '" + key + "': expected numeric type (int or double) but got different type");
+      throw VariantMapTypeError("Bad variant access for key '" + key + "': expected numeric type (int or double) but got different type");
     }
   }
 }
@@ -141,7 +141,7 @@ template<>
 std::vector<int> VariantMap::get<std::vector<int>>(const std::string& key) const {
   auto it = impl_->data.find(key);
   if (it == impl_->data.end()) {
-    throw std::runtime_error("Key '" + key + "' not found in VariantMap");
+    throw VariantMapKeyError("Key '" + key + "' not found in VariantMap");
   }
   try {
     return std::get<std::vector<int>>(it->second);
@@ -156,7 +156,7 @@ std::vector<int> VariantMap::get<std::vector<int>>(const std::string& key) const
       }
       return ints;
     } catch (const std::exception&) {
-      throw std::runtime_error("Bad variant access for key '" + key + "': expected numeric vector type (vector<int> or vector<double>) but got different type");
+      throw VariantMapTypeError("Bad variant access for key '" + key + "': expected numeric vector type (vector<int> or vector<double>) but got different type");
     }
   }
 }
@@ -166,7 +166,7 @@ template<>
 std::vector<double> VariantMap::get<std::vector<double>>(const std::string& key) const {
   auto it = impl_->data.find(key);
   if (it == impl_->data.end()) {
-    throw std::runtime_error("Key '" + key + "' not found in VariantMap");
+    throw VariantMapKeyError("Key '" + key + "' not found in VariantMap");
   }
   try {
     return std::get<std::vector<double>>(it->second);
@@ -181,7 +181,7 @@ std::vector<double> VariantMap::get<std::vector<double>>(const std::string& key)
       }
       return doubles;
     } catch (const std::exception&) {
-      throw std::runtime_error("Bad variant access for key '" + key + "': expected numeric vector type (vector<int> or vector<double>) but got different type");
+      throw VariantMapTypeError("Bad variant access for key '" + key + "': expected numeric vector type (vector<int> or vector<double>) but got different type");
     }
   }
 }
@@ -204,7 +204,7 @@ int VariantMap::get<int>(const std::string& key, const int& defaultValue) const 
     try {
       return static_cast<int>(std::get<double>(it->second));
     } catch (const std::exception&) {
-      throw std::runtime_error("Bad variant access for key '" + key + "': expected numeric type (int or double) but got different type");
+      throw VariantMapTypeError("Bad variant access for key '" + key + "': expected numeric type (int or double) but got different type");
     }
   }
 }
@@ -221,7 +221,7 @@ double VariantMap::get<double>(const std::string& key, const double& defaultValu
     try {
       return static_cast<double>(std::get<int>(it->second));
     } catch (const std::exception&) {
-      throw std::runtime_error("Bad variant access for key '" + key + "': expected numeric type (int or double) but got different type");
+      throw VariantMapTypeError("Bad variant access for key '" + key + "': expected numeric type (int or double) but got different type");
     }
   }
 }
