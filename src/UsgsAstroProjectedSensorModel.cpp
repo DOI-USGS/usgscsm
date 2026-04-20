@@ -848,6 +848,11 @@ VariantMap UsgsAstroProjectedSensorModel::constructStateFromIsd(
 {
   json state = json::parse(imageSupportData);
 
+  // Clean up existing camera if present to prevent memory leak
+  if (m_camera) {
+    delete m_camera;
+    m_camera = nullptr;
+  }
   m_camera = getUsgsCsmModelFromIsd(imageSupportData, modelName, warnings);
   VariantMap projState = getUsgsCsmModelMap(m_camera);
 

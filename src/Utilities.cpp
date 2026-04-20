@@ -183,8 +183,8 @@ void computeDistortedFocalPlaneCoordinates(
  */
 void removeJitter(
     const double &line, const double &sample,
-    const std::vector<double> lineJitterCoeffs, const std::vector<double> sampleJitterCoeffs,
-    const std::vector<double> lineTimes,
+    const std::vector<double>& lineJitterCoeffs, const std::vector<double>& sampleJitterCoeffs,
+    const std::vector<double>& lineTimes,
     double &dejitteredLine, double &dejitteredSample) {
   // Check input
   if (lineJitterCoeffs.size() != sampleJitterCoeffs.size() ||
@@ -252,8 +252,8 @@ void removeJitter(
 void addJitter(
     const double &line, const double &sample,
     const double &tolerance, const int &maxIts,
-    const std::vector<double> lineJitterCoeffs, const std::vector<double> sampleJitterCoeffs,
-    const std::vector<double> lineTimes,
+    const std::vector<double>& lineJitterCoeffs, const std::vector<double>& sampleJitterCoeffs,
+    const std::vector<double>& lineTimes,
     double &jitteredLine, double &jitteredSample) {
   int iteration = 0;
   double dejitteredLine = line - 1;

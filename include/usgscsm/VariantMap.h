@@ -12,7 +12,8 @@ public:
   VariantMap();
   ~VariantMap();
   VariantMap(const VariantMap& other);
-  VariantMap& operator=(const VariantMap& other);
+  VariantMap(VariantMap&& other) noexcept;
+  VariantMap& operator=(VariantMap other);  // Uses copy-and-swap idiom
 
   template<typename T>
   void set(const std::string& key, const T& value);

@@ -2,6 +2,7 @@
 #include <variant>
 #include <map>
 #include <stdexcept>
+#include <typeinfo>
 #include <sstream>
 
 using VariantValue = std::variant<
@@ -30,7 +31,7 @@ TYPE VariantMap::get<TYPE>(const std::string& key) const { \
     return std::get<TYPE>(impl_->data.at(key)); \
   } catch (const std::out_of_range&) { \
     throw std::runtime_error("Key '" + key + "' not found in VariantMap"); \
-  } catch (const std::bad_variant_access& e) { \
+  } catch (const std::exception& e) { \
     throw std::runtime_error("Bad variant access for key '" + key + "': expected " TYPE_NAME " but got different type"); \
   } \
 }
@@ -43,7 +44,7 @@ TYPE VariantMap::get<TYPE>(const std::string& key, const TYPE& defaultValue) con
   if (it == impl_->data.end()) return defaultValue; \
   try { \
     return std::get<TYPE>(it->second); \
-  } catch (const std::bad_variant_access& e) { \
+  } catch (const std::exception& e) { \
     throw std::runtime_error("Bad variant access for key '" + key + "': expected " TYPE_NAME " but got different type"); \
   } \
 }
@@ -52,10 +53,12 @@ VariantMap::VariantMap() : impl_(new VariantMapImpl()) {}
 VariantMap::~VariantMap() = default;
 VariantMap::VariantMap(const VariantMap& other)
   : impl_(new VariantMapImpl(*other.impl_)) {}
-VariantMap& VariantMap::operator=(const VariantMap& other) {
-  if (this != &other) {
-    impl_.reset(new VariantMapImpl(*other.impl_));
-  }
+
+VariantMap::VariantMap(VariantMap&& other) noexcept
+  : impl_(std::move(other.impl_)) {}
+
+VariantMap& VariantMap::operator=(VariantMap other) {
+  std::swap(impl_, other.impl_);
   return *this;
 }
 
@@ -104,11 +107,11 @@ int VariantMap::get<int>(const std::string& key) const {
   }
   try {
     return std::get<int>(it->second);
-  } catch (const std::bad_variant_access&) {
+  } catch (const std::exception&) {
     // Try to get as double and cast to int
     try {
       return static_cast<int>(std::get<double>(it->second));
-    } catch (const std::bad_variant_access&) {
+    } catch (const std::exception&) {
       throw std::runtime_error("Bad variant access for key '" + key + "': expected numeric type (int or double) but got different type");
     }
   }
@@ -123,11 +126,11 @@ double VariantMap::get<double>(const std::string& key) const {
   }
   try {
     return std::get<double>(it->second);
-  } catch (const std::bad_variant_access&) {
+  } catch (const std::exception&) {
     // Try to get as int and cast to double
     try {
       return static_cast<double>(std::get<int>(it->second));
-    } catch (const std::bad_variant_access&) {
+    } catch (const std::exception&) {
       throw std::runtime_error("Bad variant access for key '" + key + "': expected numeric type (int or double) but got different type");
     }
   }
@@ -142,17 +145,17 @@ std::vector<int> VariantMap::get<std::vector<int>>(const std::string& key) const
   }
   try {
     return std::get<std::vector<int>>(it->second);
-  } catch (const std::bad_variant_access&) {
+  } catch (const std::exception&) {
     // Try to get as vector<double> and cast each element to int
     try {
-      std::vector<double> doubles = std::get<std::vector<double>>(it->second);
+      const std::vector<double>& doubles = std::get<std::vector<double>>(it->second);
       std::vector<int> ints;
       ints.reserve(doubles.size());
       for (double d : doubles) {
         ints.push_back(static_cast<int>(d));
       }
       return ints;
-    } catch (const std::bad_variant_access&) {
+    } catch (const std::exception&) {
       throw std::runtime_error("Bad variant access for key '" + key + "': expected numeric vector type (vector<int> or vector<double>) but got different type");
     }
   }
@@ -167,17 +170,17 @@ std::vector<double> VariantMap::get<std::vector<double>>(const std::string& key)
   }
   try {
     return std::get<std::vector<double>>(it->second);
-  } catch (const std::bad_variant_access&) {
+  } catch (const std::exception&) {
     // Try to get as vector<int> and cast each element to double
     try {
-      std::vector<int> ints = std::get<std::vector<int>>(it->second);
+      const std::vector<int>& ints = std::get<std::vector<int>>(it->second);
       std::vector<double> doubles;
       doubles.reserve(ints.size());
       for (int i : ints) {
         doubles.push_back(static_cast<double>(i));
       }
       return doubles;
-    } catch (const std::bad_variant_access&) {
+    } catch (const std::exception&) {
       throw std::runtime_error("Bad variant access for key '" + key + "': expected numeric vector type (vector<int> or vector<double>) but got different type");
     }
   }
@@ -196,11 +199,11 @@ int VariantMap::get<int>(const std::string& key, const int& defaultValue) const 
   if (it == impl_->data.end()) return defaultValue;
   try {
     return std::get<int>(it->second);
-  } catch (const std::bad_variant_access&) {
+  } catch (const std::exception&) {
     // Try to get as double and cast to int
     try {
       return static_cast<int>(std::get<double>(it->second));
-    } catch (const std::bad_variant_access&) {
+    } catch (const std::exception&) {
       throw std::runtime_error("Bad variant access for key '" + key + "': expected numeric type (int or double) but got different type");
     }
   }
@@ -213,11 +216,11 @@ double VariantMap::get<double>(const std::string& key, const double& defaultValu
   if (it == impl_->data.end()) return defaultValue;
   try {
     return std::get<double>(it->second);
-  } catch (const std::bad_variant_access&) {
+  } catch (const std::exception&) {
     // Try to get as int and cast to double
     try {
       return static_cast<double>(std::get<int>(it->second));
-    } catch (const std::bad_variant_access&) {
+    } catch (const std::exception&) {
       throw std::runtime_error("Bad variant access for key '" + key + "': expected numeric type (int or double) but got different type");
     }
   }
@@ -307,3 +310,7 @@ std::string VariantMap::dumps() const {
 
   return oss.str();
 }
+
+// Clean up internal macros
+#undef VARIANT_MAP_GET
+#undef VARIANT_MAP_GET_DEFAULT
