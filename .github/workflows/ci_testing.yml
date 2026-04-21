@@ -47,7 +47,7 @@ jobs:
       - name: Test Package
         run: |
           cd build
-          ctest --output-on-failure -j $(nproc)
+          ctest --output-on-failure 
   
   Build-and-Test-Win:
     runs-on: windows-2019
