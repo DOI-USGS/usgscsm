@@ -25,7 +25,6 @@ class UsgsAstroSarSensorModel : public csm::RasterGM,
   void populateModel(const VariantMap& vm);
   VariantMap getModelMap() const;
 
-  void populateModel(const std::string& j);
   std::string getModelJson() const;
 
   virtual std::string getModelState() const;

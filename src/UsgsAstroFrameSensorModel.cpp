@@ -1522,7 +1522,7 @@ void UsgsAstroFrameSensorModel::replaceModelState(
     const std::string &stringState) {
 
   MESSAGE_LOG(spdlog::level::debug, "Replacing model state");
-  populateModel(stringState);
+  populateModel(variantMapFromJson(stateAsJson(stringState)));
 }
 
 void UsgsAstroFrameSensorModel::populateModel(const VariantMap& state) {
@@ -1685,10 +1685,6 @@ void UsgsAstroFrameSensorModel::populateModel(const VariantMap& state) {
         "UsgsAstroFrameSensorModel::populateModel");
   }
   MESSAGE_LOG(spdlog::level::debug, "Model state populated successfully");
-}
-
-void UsgsAstroFrameSensorModel::populateModel(const std::string& stateStr) {
-  populateModel(variantMapFromJson(stateAsJson(stateStr)));
 }
 
 /**

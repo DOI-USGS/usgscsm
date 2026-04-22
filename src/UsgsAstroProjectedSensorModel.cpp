@@ -106,7 +106,7 @@ const std::string UsgsAstroProjectedSensorModel::_STATE_KEYWORD[] = {
 // UsgsAstroLineScannerSensorModel::replaceModelState
 //***************************************************************************
 void UsgsAstroProjectedSensorModel::replaceModelState(const std::string& stateString) {
-  populateModel(stateString);
+  populateModel(variantMapFromJson(stateAsJson(stateString)));
 }
 
 void UsgsAstroProjectedSensorModel::populateModel(const VariantMap& state) {
@@ -161,10 +161,6 @@ void UsgsAstroProjectedSensorModel::populateModel(const VariantMap& state) {
       m_geoTransform[0], m_geoTransform[1], m_geoTransform[2],
       m_geoTransform[3], m_geoTransform[4], m_geoTransform[5],
       m_projString);
-}
-
-void UsgsAstroProjectedSensorModel::populateModel(const std::string& stateString) {
-  populateModel(variantMapFromJson(stateAsJson(stateString)));
 }
 
 //***************************************************************************

@@ -137,7 +137,7 @@ const csm::param::Type UsgsAstroPushFrameSensorModel::PARAM_CHAR_ALL[] = {
 void UsgsAstroPushFrameSensorModel::replaceModelState(const std::string& stateString) {
   MESSAGE_LOG("Replacing model state");
 
-  populateModel(stateString);
+  populateModel(variantMapFromJson(stateAsJson(stateString)));
 }
 
 //***************************************************************************
@@ -299,10 +299,6 @@ void UsgsAstroPushFrameSensorModel::populateModel(const VariantMap& state) {
 
   if (m_gsd == 1.0 && m_flyingHeight == 1000.0)
     updateState();
-}
-
-void UsgsAstroPushFrameSensorModel::populateModel(const std::string& stateString) {
-  populateModel(variantMapFromJson(stateAsJson(stateString)));
 }
 
 //***************************************************************************

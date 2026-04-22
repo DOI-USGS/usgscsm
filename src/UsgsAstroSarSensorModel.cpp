@@ -330,7 +330,7 @@ void UsgsAstroSarSensorModel::reset() {
  */
 void UsgsAstroSarSensorModel::replaceModelState(const string& argState) {
   MESSAGE_LOG("Replacing model state with: {}", argState);
-  populateModel(argState);
+  populateModel(variantMapFromJson(stateAsJson(argState)));
 }
 
 void UsgsAstroSarSensorModel::populateModel(const VariantMap& state) {
@@ -395,10 +395,6 @@ void UsgsAstroSarSensorModel::populateModel(const VariantMap& state) {
                 m_referencePointXyz.x, m_referencePointXyz.y,
                 m_referencePointXyz.z)
   }
-}
-
-void UsgsAstroSarSensorModel::populateModel(const std::string& stateStr) {
-  populateModel(variantMapFromJson(stateAsJson(stateStr)));
 }
 
 VariantMap UsgsAstroSarSensorModel::getModelMap() const {
