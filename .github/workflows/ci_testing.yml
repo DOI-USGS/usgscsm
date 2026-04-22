@@ -17,8 +17,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-       os: [ubuntu-latest, macos-latest]
-       python-version: ["3.9", "3.10", "3.11", "3.12"]
+       os: [ubuntu-latest, macos-15-intel]
+       python-version: ["3.10", "3.11", "3.12", "3.13"]
     defaults:
       run:
         shell: bash -l {0}
@@ -50,10 +50,10 @@ jobs:
           ctest --output-on-failure 
   
   Build-and-Test-Win:
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
         with:
@@ -74,7 +74,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake -G "Visual Studio 16 2019" -DUSGSCSM_BUILD_DOCS=OFF -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DUSGSCSM_BUILD_DOCS=OFF -DUSGSCSM_BUILD_TESTS=OFF .. 
+          cmake -G "Visual Studio 17 2022" -DUSGSCSM_BUILD_DOCS=OFF -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DUSGSCSM_BUILD_DOCS=OFF -DUSGSCSM_BUILD_TESTS=OFF .. 
           cmake --build . --target ALL_BUILD --config Release
       - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392
         with:
