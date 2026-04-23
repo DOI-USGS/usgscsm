@@ -13,6 +13,12 @@
 
 using json = nlohmann::json;
 
+#define MESSAGE_LOG(...)         \
+  if (m_logger) {                \
+    m_logger->log(__VA_ARGS__); \
+  }
+
+
 /**
  * @description Calculates a rotation matrix from Euler angles. This function takes
  * in Euler angles (yaw, pitch, and roll) and calculates the corresponding rotation 
@@ -177,8 +183,8 @@ void computeDistortedFocalPlaneCoordinates(
  */
 void removeJitter(
     const double &line, const double &sample,
-    const std::vector<double> lineJitterCoeffs, const std::vector<double> sampleJitterCoeffs,
-    const std::vector<double> lineTimes,
+    const std::vector<double>& lineJitterCoeffs, const std::vector<double>& sampleJitterCoeffs,
+    const std::vector<double>& lineTimes,
     double &dejitteredLine, double &dejitteredSample) {
   // Check input
   if (lineJitterCoeffs.size() != sampleJitterCoeffs.size() ||
@@ -246,8 +252,8 @@ void removeJitter(
 void addJitter(
     const double &line, const double &sample,
     const double &tolerance, const int &maxIts,
-    const std::vector<double> lineJitterCoeffs, const std::vector<double> sampleJitterCoeffs,
-    const std::vector<double> lineTimes,
+    const std::vector<double>& lineJitterCoeffs, const std::vector<double>& sampleJitterCoeffs,
+    const std::vector<double>& lineTimes,
     double &jitteredLine, double &jitteredSample) {
   int iteration = 0;
   double dejitteredLine = line - 1;
@@ -2659,4 +2665,63 @@ std::vector<double> meterToPixel(double meter_x, double meter_y, std::vector<dou
   double line = (meter_y - geoTransform[3]) / geoTransform[5];
 
   return {line, sample};
+}
+
+VariantMap variantMapFromJson(const nlohmann::json& j) {
+  VariantMap result;
+
+  for (auto it = j.begin(); it != j.end(); ++it) {
+    const std::string& key = it.key();
+    if (it->is_string()) {
+      result.set<std::string>(key, it->get<std::string>());
+    } else if (it->is_boolean()) {
+      result.set<bool>(key, it->get<bool>());
+    } else if (it->is_number_integer()) {
+      result.set<int>(key, it->get<int>());
+    } else if (it->is_number_float()) {
+      result.set<double>(key, it->get<double>());
+    } else if (it->is_array()) {
+      if (it->empty()) {
+        // Empty arrays default to vector<double> for backward compatibility
+        result.set<std::vector<double>>(key, std::vector<double>{});
+      } else if ((*it)[0].is_number_integer()) {
+        result.set<std::vector<int>>(key, it->get<std::vector<int>>());
+      } else if ((*it)[0].is_number()) {
+        result.set<std::vector<double>>(key, it->get<std::vector<double>>());
+      }
+    }
+  }
+
+  return result;
+}
+
+nlohmann::json jsonFromVariantMap(const VariantMap& vm) {
+  nlohmann::json result;
+
+  for (const std::string& key : vm.keys()) {
+    switch (vm.getValueType(key)) {
+      case VariantMap::ValueType::String:
+        result[key] = vm.get<std::string>(key);
+        break;
+      case VariantMap::ValueType::Int:
+        result[key] = vm.get<int>(key);
+        break;
+      case VariantMap::ValueType::Double:
+        result[key] = vm.get<double>(key);
+        break;
+      case VariantMap::ValueType::Bool:
+        result[key] = vm.get<bool>(key);
+        break;
+      case VariantMap::ValueType::VectorDouble:
+        result[key] = vm.get<std::vector<double>>(key);
+        break;
+      case VariantMap::ValueType::VectorInt:
+        result[key] = vm.get<std::vector<int>>(key);
+        break;
+      default:
+        throw std::runtime_error("Unknown type for key: " + key);
+    }
+  }
+
+  return result;
 }

@@ -3,11 +3,12 @@
 
 #include <RasterGM.h>
 #include <csm/Plugin.h>
-#include <nlohmann/json_fwd.hpp> // forward declaration
+#include "VariantMap.h"
 
 csm::RasterGM *getUsgsCsmModelFromIsd(const std::string &stringIsd, const std::string &modelName, csm::WarningList *warnings);
-csm::RasterGM *getUsgsCsmModelFromState(const std::string &stringState, const std::string &modelName, csm::WarningList *warnings);
-csm::RasterGM *getUsgsCsmModelFromJson(const nlohmann::json &j, const std::string &modelName, csm::WarningList *warnings);
-nlohmann::json getUsgsCsmModelJson(csm::RasterGM *model);
+csm::RasterGM *getUsgsCsmModelFromJsonState(const std::string &jstring, const std::string &modelName, csm::WarningList *warnings);
+csm::RasterGM *getUsgsCsmModelFromVariantMap(const VariantMap &vm, const std::string &modelName, csm::WarningList *warnings);
+std::string getUsgsCsmModelJson(csm::RasterGM *model);
+VariantMap getUsgsCsmModelMap(csm::RasterGM *model);
 
 #endif // INCLUDE_USGSCSM_USGSASTROPLUGINSUPPORT_H_

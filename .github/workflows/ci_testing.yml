@@ -43,11 +43,11 @@ jobs:
           cd build
           export PROJ_DATA=$PWD/PROJ/data
           cmake -DCMAKE_BUILD_TYPE=RELEASE -DUSGSCSM_EXTERNAL_DEPS=OFF -DUSGSCSM_BUILD_DOCS=OFF ..
-          cmake --build .
+          cmake --build . -j $(nproc)
       - name: Test Package
         run: |
           cd build
-          ctest -VV
+          ctest --output-on-failure 
   
   Build-and-Test-Win:
     runs-on: windows-2022
