@@ -1928,7 +1928,6 @@ VariantMap UsgsAstroFrameSensorModel::constructStateFromIsd(
     state["m_currentParameterCovariance"][i] = 1;
   }
   state["m_collectionIdentifier"] = "";
-  std::cout << "set the covariance to identity" << std::endl;
 
   if (!parsingWarnings->empty()) {
     if (warnings) {
