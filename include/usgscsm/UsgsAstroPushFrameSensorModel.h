@@ -66,8 +66,6 @@ class UsgsAstroPushFrameSensorModel : public csm::RasterGM,
 
   void populateModel(const VariantMap& vm);
   VariantMap getModelMap() const;
-
-  void populateModel(const std::string& j);
   std::string getModelJson() const;
 
   // This method checks to see if the model name is recognized

@@ -126,6 +126,17 @@ const csm::param::Type UsgsAstroLsSensorModel::PARAM_CHAR_ALL[] = {
     csm::param::NONE, csm::param::FICTITIOUS, csm::param::REAL,
     csm::param::FIXED};
 
+/**
+ * @brief Replaces the sensor model's state with a new state.
+ * @description This function updates the internal state of the sensor model based on a 
+ * given state string. The state string is parsed, and its contents are used to update
+ * model parameters. This function is primarily used for sensor model instantiation or 
+ * updating the model state in iterative optimization processes.
+ * 
+ * @param stateString A JSON string representing the new state of the sensor model. This 
+ * string should contain all necessary model parameters and metadata to fully define the 
+ * sensor model state.
+ */
 void UsgsAstroLsSensorModel::replaceModelState(const std::string& stateString) {
   MESSAGE_LOG(spdlog::level::debug, "Replacing model state");
   populateModel(variantMapFromJson(stateAsJson(stateString)));
@@ -272,11 +283,13 @@ void UsgsAstroLsSensorModel::populateModel(const VariantMap& state) {
     }
   }
 
+  // If computed state values are still default, then compute them
   if (m_gsd == 1.0 && m_flyingHeight == 1000.0) {
     updateState();
   }
 
   try {
+    // Approximate the ground-to-image function with a projective transform
     createProjectiveApproximation();
   } catch (...) {
     m_useApproxInitTrans = false;
