@@ -39,6 +39,7 @@ release.
 - Fix a bug in the Frame Sensor Model, the ephemeris time was rounded to it. [#497](https://github.com/DOI-USGS/usgscsm/pull/497)
 - Removed boundary checks for Frame Sensor Model getSensorPosition [#492](https://github.com/DOI-USGS/usgscsm/pull/492)
 - Fixed CAHVOR model optical shifts by removing tolerance check [#488](https://github.com/DOI-USGS/usgscsm/issues/488)
+- Fixed bug in ephemTimeToCalendarTime where J2000 was calculated as Jan 1, 2000 00:00:00 instead of Jan 1, 2000 12:00:00 [#498](https://github.com/DOI-USGS/usgscsm/pull/498)
 
 ## [2.0.1] - 2024-01-23
 
