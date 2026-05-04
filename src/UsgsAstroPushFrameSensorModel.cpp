@@ -42,6 +42,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
     m_logger->info(__VA_ARGS__); \
   }
 
+#include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
 const std::string UsgsAstroPushFrameSensorModel::_SENSOR_MODEL_NAME =
@@ -136,44 +137,43 @@ const csm::param::Type UsgsAstroPushFrameSensorModel::PARAM_CHAR_ALL[] = {
 void UsgsAstroPushFrameSensorModel::replaceModelState(const std::string& stateString) {
   MESSAGE_LOG("Replacing model state");
 
-  populateModel(stateAsJson(stateString));
+  populateModel(variantMapFromJson(stateAsJson(stateString)));
 }
 
 //***************************************************************************
 // UsgsAstroPushFrameSensorModel::populateModel
 //***************************************************************************
-void UsgsAstroPushFrameSensorModel::populateModel(const nlohmann::json& j) {
+void UsgsAstroPushFrameSensorModel::populateModel(const VariantMap& state) {
   reset();
   int num_params = NUM_PARAMETERS;
 
-  m_imageIdentifier = j["m_imageIdentifier"].get<std::string>();
-  m_sensorName = j["m_sensorName"];
-  m_nLines = j["m_nLines"];
-  m_nSamples = j["m_nSamples"];
-  m_platformFlag = j["m_platformFlag"];
+  m_imageIdentifier = state.get<std::string>("m_imageIdentifier");
+  m_sensorName = state.get<std::string>("m_sensorName");
+  m_nLines = state.get<int>("m_nLines");
+  m_nSamples = state.get<int>("m_nSamples");
+  m_platformFlag = state.get<int>("m_platformFlag");
   MESSAGE_LOG(
       "m_imageIdentifier: {} "
       "m_sensorName: {} "
       "m_nLines: {} "
       "m_nSamples: {} "
       "m_platformFlag: {} ",
-      j["m_imageIdentifier"].dump(), j["m_sensorName"].dump(),
-      j["m_nLines"].dump(), j["m_nSamples"].dump(), j["m_platformFlag"].dump());
+      m_imageIdentifier, m_sensorName, m_nLines, m_nSamples, m_platformFlag);
 
-  m_exposureDuration = j["m_exposureDuration"].get<double>();
-  m_interframeDelay = j["m_interframeDelay"].get<double>();
+  m_exposureDuration = state.get<double>("m_exposureDuration");
+  m_interframeDelay = state.get<double>("m_interframeDelay");
 
-  m_frameletHeight = j["m_frameletHeight"].get<int>();
-  m_frameletsFlipped = j["m_frameletsFlipped"].get<bool>();
-  m_frameletsOrderReversed = j["m_frameletsOrderReversed"].get<bool>();
+  m_frameletHeight = state.get<int>("m_frameletHeight");
+  m_frameletsFlipped = state.get<bool>("m_frameletsFlipped");
+  m_frameletsOrderReversed = state.get<bool>("m_frameletsOrderReversed");
 
-  m_startingEphemerisTime = j["m_startingEphemerisTime"];
-  m_centerEphemerisTime = j["m_centerEphemerisTime"];
-  m_detectorSampleSumming = j["m_detectorSampleSumming"];
-  m_detectorLineSumming = j["m_detectorLineSumming"];
-  m_startingDetectorSample = j["m_startingDetectorSample"];
-  m_startingDetectorLine = j["m_startingDetectorLine"];
-  m_ikCode = j["m_ikCode"];
+  m_startingEphemerisTime = state.get<double>("m_startingEphemerisTime");
+  m_centerEphemerisTime = state.get<double>("m_centerEphemerisTime");
+  m_detectorSampleSumming = state.get<double>("m_detectorSampleSumming");
+  m_detectorLineSumming = state.get<double>("m_detectorLineSumming");
+  m_startingDetectorSample = state.get<double>("m_startingDetectorSample");
+  m_startingDetectorLine = state.get<double>("m_startingDetectorLine");
+  m_ikCode = state.get<int>("m_ikCode");
   MESSAGE_LOG(
       "m_startingEphemerisTime: {} "
       "m_centerEphemerisTime: {} "
@@ -181,122 +181,113 @@ void UsgsAstroPushFrameSensorModel::populateModel(const nlohmann::json& j) {
       "m_detectorLineSumming: {} "
       "m_startingDetectorSample: {} "
       "m_ikCode: {} ",
-      j["m_startingEphemerisTime"].dump(), j["m_centerEphemerisTime"].dump(),
-      j["m_detectorSampleSumming"].dump(), j["m_detectorLineSumming"].dump(),
-      j["m_startingDetectorSample"].dump(), j["m_ikCode"].dump())
+      m_startingEphemerisTime, m_centerEphemerisTime,
+      m_detectorSampleSumming, m_detectorLineSumming,
+      m_startingDetectorSample, m_ikCode)
 
-  m_focalLength = j["m_focalLength"];
-  m_zDirection = j["m_zDirection"];
-  m_distortionType = (DistortionType)j["m_distortionType"].get<int>();
-  m_opticalDistCoeffs = j["m_opticalDistCoeffs"].get<std::vector<double>>();
+  m_focalLength = state.get<double>("m_focalLength");
+  m_zDirection = state.get<double>("m_zDirection");
+  m_distortionType = (DistortionType)state.get<int>("m_distortionType");
+  m_opticalDistCoeffs = state.get<std::vector<double>>("m_opticalDistCoeffs");
   MESSAGE_LOG(
       "m_focalLength: {} "
       "m_zDirection: {} "
       "m_distortionType: {} ",
-      j["m_focalLength"].dump(), j["m_zDirection"].dump(),
-      j["m_distortionType"].dump())
+      m_focalLength, m_zDirection, m_distortionType)
 
+  std::vector<double> iTransS = state.get<std::vector<double>>("m_iTransS");
+  std::vector<double> iTransL = state.get<std::vector<double>>("m_iTransL");
   for (int i = 0; i < 3; i++) {
-    m_iTransS[i] = j["m_iTransS"][i];
-    m_iTransL[i] = j["m_iTransL"][i];
+    m_iTransS[i] = iTransS[i];
+    m_iTransL[i] = iTransL[i];
   }
 
-  m_detectorSampleOrigin = j["m_detectorSampleOrigin"];
-  m_detectorLineOrigin = j["m_detectorLineOrigin"];
-  m_majorAxis = j["m_majorAxis"];
-  m_minorAxis = j["m_minorAxis"];
+  m_detectorSampleOrigin = state.get<double>("m_detectorSampleOrigin");
+  m_detectorLineOrigin = state.get<double>("m_detectorLineOrigin");
+  m_majorAxis = state.get<double>("m_majorAxis");
+  m_minorAxis = state.get<double>("m_minorAxis");
   MESSAGE_LOG(
       "m_detectorSampleOrigin: {} "
       "m_detectorLineOrigin: {} "
       "m_majorAxis: {} "
       "m_minorAxis: {} ",
-      j["m_detectorSampleOrigin"].dump(), j["m_detectorLineOrigin"].dump(),
-      j["m_majorAxis"].dump(), j["m_minorAxis"].dump())
+      m_detectorSampleOrigin, m_detectorLineOrigin, m_majorAxis, m_minorAxis)
 
-  m_platformIdentifier = j["m_platformIdentifier"];
-  m_sensorIdentifier = j["m_sensorIdentifier"];
+  m_platformIdentifier = state.get<std::string>("m_platformIdentifier");
+  m_sensorIdentifier = state.get<std::string>("m_sensorIdentifier");
   MESSAGE_LOG(
       "m_platformIdentifier: {} "
       "m_sensorIdentifier: {} ",
-      j["m_platformIdentifier"].dump(), j["m_sensorIdentifier"].dump())
+      m_platformIdentifier, m_sensorIdentifier)
 
-  m_minElevation = j["m_minElevation"];
-  m_maxElevation = j["m_maxElevation"];
+  m_minElevation = state.get<double>("m_minElevation");
+  m_maxElevation = state.get<double>("m_maxElevation");
   MESSAGE_LOG(
       "m_minElevation: {} "
       "m_maxElevation: {} ",
-      j["m_minElevation"].dump(), j["m_maxElevation"].dump())
+      m_minElevation, m_maxElevation)
 
-  m_dtEphem = j["m_dtEphem"];
-  m_t0Ephem = j["m_t0Ephem"];
-  m_dtQuat = j["m_dtQuat"];
-  m_t0Quat = j["m_t0Quat"];
-  m_numPositions = j["m_numPositions"];
+  m_dtEphem = state.get<double>("m_dtEphem");
+  m_t0Ephem = state.get<double>("m_t0Ephem");
+  m_dtQuat = state.get<double>("m_dtQuat");
+  m_t0Quat = state.get<double>("m_t0Quat");
+  m_numPositions = state.get<int>("m_numPositions");
   MESSAGE_LOG(
       "m_dtEphem: {} "
       "m_t0Ephem: {} "
       "m_dtQuat: {} "
       "m_t0Quat: {} ",
-      j["m_dtEphem"].dump(), j["m_t0Ephem"].dump(), j["m_dtQuat"].dump(),
-      j["m_t0Quat"].dump())
+      m_dtEphem, m_t0Ephem, m_dtQuat, m_t0Quat)
 
-  m_numQuaternions = j["m_numQuaternions"];
-  m_referencePointXyz.x = j["m_referencePointXyz"][0];
-  m_referencePointXyz.y = j["m_referencePointXyz"][1];
-  m_referencePointXyz.z = j["m_referencePointXyz"][2];
+  m_numQuaternions = state.get<int>("m_numQuaternions");
+  std::vector<double> referencePointXyz = state.get<std::vector<double>>("m_referencePointXyz");
+  m_referencePointXyz.x = referencePointXyz[0];
+  m_referencePointXyz.y = referencePointXyz[1];
+  m_referencePointXyz.z = referencePointXyz[2];
   MESSAGE_LOG(
       "m_numQuaternions: {} "
       "m_referencePointX: {} "
       "m_referencePointY: {} "
       "m_referencePointZ: {} ",
-      j["m_numQuaternions"].dump(), j["m_referencePointXyz"][0].dump(),
-      j["m_referencePointXyz"][1].dump(), j["m_referencePointXyz"][2].dump())
+      m_numQuaternions, m_referencePointXyz.x,
+      m_referencePointXyz.y, m_referencePointXyz.z)
 
-  m_gsd = j["m_gsd"];
-  m_flyingHeight = j["m_flyingHeight"];
-  m_halfSwath = j["m_halfSwath"];
-  m_halfTime = j["m_halfTime"];
+  m_gsd = state.get<double>("m_gsd");
+  m_flyingHeight = state.get<double>("m_flyingHeight");
+  m_halfSwath = state.get<double>("m_halfSwath");
+  m_halfTime = state.get<double>("m_halfTime");
   MESSAGE_LOG(
       "m_gsd: {} "
       "m_flyingHeight: {} "
       "m_halfSwath: {} "
       "m_halfTime: {} ",
-      j["m_gsd"].dump(), j["m_flyingHeight"].dump(), j["m_halfSwath"].dump(),
-      j["m_halfTime"].dump());
-  // Vector = is overloaded so explicit get with type required.
+      m_gsd, m_flyingHeight, m_halfSwath, m_halfTime);
 
-  m_positions = j["m_positions"].get<std::vector<double>>();
-  m_velocities = j["m_velocities"].get<std::vector<double>>();
-  m_quaternions = j["m_quaternions"].get<std::vector<double>>();
-  m_currentParameterValue =
-      j["m_currentParameterValue"].get<std::vector<double>>();
-  m_covariance = j["m_covariance"].get<std::vector<double>>();
-  m_sunPosition = j["m_sunPosition"].get<std::vector<double>>();
-  m_sunVelocity = j["m_sunVelocity"].get<std::vector<double>>();
+  m_positions = state.get<std::vector<double>>("m_positions");
+  m_velocities = state.get<std::vector<double>>("m_velocities");
+  m_quaternions = state.get<std::vector<double>>("m_quaternions");
+  m_currentParameterValue = state.get<std::vector<double>>("m_currentParameterValue");
+  m_covariance = state.get<std::vector<double>>("m_covariance");
+  m_sunPosition = state.get<std::vector<double>>("m_sunPosition");
+  m_sunVelocity = state.get<std::vector<double>>("m_sunVelocity");
 
-  // Optional field: absent in older JSON and in ISDs from constructStateFromIsd
-  if (j.contains("m_parameterType")) {
-    for (int i = 0; i < num_params; i++) {
-      for (int k = 0; k < NUM_PARAM_TYPES; k++) {
-        if (j["m_parameterType"][i] == PARAM_STRING_ALL[k]) {
-          m_parameterType[i] = PARAM_CHAR_ALL[k];
-          break;
-        }
-      }
+  if (state.contains("m_parameterType")) {
+    auto paramTypeInts = state.get<std::vector<int>>("m_parameterType");
+    m_parameterType.resize(paramTypeInts.size());
+    for (size_t i = 0; i < paramTypeInts.size(); ++i) {
+      m_parameterType[i] = static_cast<csm::param::Type>(paramTypeInts[i]);
     }
   }
 
-  // Parameters needed to deal with the fact that neighboring framelets have some overlap
-  m_numLinesOverlap       = j["m_numLinesOverlap"];
-  m_reducedFrameletHeight = j["m_reducedframeletHeight"];
-  m_nReducedLines         = j["m_nReducedLines"];
+  m_numLinesOverlap = state.get<int>("m_numLinesOverlap");
+  m_reducedFrameletHeight = state.get<int>("m_reducedframeletHeight");
+  m_nReducedLines = state.get<int>("m_nReducedLines");
 
   MESSAGE_LOG(
       "m_numLinesOverlap: {} "
       "m_reducedFrameletHeight: {} "
       "m_nReducedLines: {} ",
-      j["m_numLinesOverlap"].dump(), j["m_reducedFrameletHeight"].dump(),
-      j["m_nReducedLines"].dump());
+      m_numLinesOverlap, m_reducedFrameletHeight, m_nReducedLines);
 
   if (m_numLinesOverlap %2 != 0) {
     std::string msg = "The number of overlapping lines among framelets must be even. "
@@ -306,8 +297,6 @@ void UsgsAstroPushFrameSensorModel::populateModel(const nlohmann::json& j) {
                      "UsgsAstroPushFrameSensorModel::populateModel");
   }
 
-  // If computed state values are still default, then compute them. This must
-  // be at the very end, once all values are read from the JSON file.
   if (m_gsd == 1.0 && m_flyingHeight == 1000.0)
     updateState();
 }
@@ -344,16 +333,16 @@ std::string UsgsAstroPushFrameSensorModel::getModelNameFromModelState(
 //***************************************************************************
 // UsgsAstroLineScannerSensorModel::getModelState
 //***************************************************************************
-nlohmann::json UsgsAstroPushFrameSensorModel::getModelJson() const {
-  json state;
-  state["m_modelName"] = _SENSOR_MODEL_NAME;
-  state["m_startingDetectorSample"] = m_startingDetectorSample;
-  state["m_startingDetectorLine"] = m_startingDetectorLine;
-  state["m_imageIdentifier"] = m_imageIdentifier;
-  state["m_sensorName"] = m_sensorName;
-  state["m_nLines"] = m_nLines;
-  state["m_nSamples"] = m_nSamples;
-  state["m_platformFlag"] = m_platformFlag;
+VariantMap UsgsAstroPushFrameSensorModel::getModelMap() const {
+  VariantMap state;
+  state.set<std::string>("m_modelName", _SENSOR_MODEL_NAME);
+  state.set<double>("m_startingDetectorSample", m_startingDetectorSample);
+  state.set<double>("m_startingDetectorLine", m_startingDetectorLine);
+  state.set<std::string>("m_imageIdentifier", m_imageIdentifier);
+  state.set<std::string>("m_sensorName", m_sensorName);
+  state.set<int>("m_nLines", m_nLines);
+  state.set<int>("m_nSamples", m_nSamples);
+  state.set<int>("m_platformFlag", m_platformFlag);
   MESSAGE_LOG(
       "m_imageIdentifier: {} "
       "m_sensorName: {} "
@@ -361,35 +350,30 @@ nlohmann::json UsgsAstroPushFrameSensorModel::getModelJson() const {
       "m_nSamples: {} "
       "m_platformFlag: {} ",
       m_imageIdentifier, m_sensorName, m_nLines, m_nSamples, m_platformFlag)
-
-  state["m_startingEphemerisTime"] = m_startingEphemerisTime;
-  state["m_centerEphemerisTime"] = m_centerEphemerisTime;
+  state.set<double>("m_startingEphemerisTime", m_startingEphemerisTime);
+  state.set<double>("m_centerEphemerisTime", m_centerEphemerisTime);
   MESSAGE_LOG(
       "m_startingEphemerisTime: {} "
       "m_centerEphemerisTime: {} ",
       m_startingEphemerisTime, m_centerEphemerisTime)
-
-  state["m_exposureDuration"] = m_exposureDuration;
-  state["m_interframeDelay"] = m_interframeDelay;
+  state.set<double>("m_exposureDuration", m_exposureDuration);
+  state.set<double>("m_interframeDelay", m_interframeDelay);
   MESSAGE_LOG(
       "m_exposureDuration: {} "
       "m_interframeDelay: {} ",
       m_exposureDuration, m_interframeDelay)
-
-
-  state["m_frameletHeight"] = m_frameletHeight;
-  state["m_frameletsFlipped"] = m_frameletsFlipped;
-  state["m_frameletsOrderReversed"] = m_frameletsOrderReversed;
+  state.set<int>("m_frameletHeight", m_frameletHeight);
+  state.set<bool>("m_frameletsFlipped", m_frameletsFlipped);
+  state.set<bool>("m_frameletsOrderReversed", m_frameletsOrderReversed);
   MESSAGE_LOG(
       "m_frameletHeight: {} "
       "m_frameletsFlipped: {} "
       "m_frameletsOrderReversed: {}",
       m_frameletHeight, m_frameletsFlipped, m_frameletsOrderReversed);
-
-  state["m_detectorSampleSumming"] = m_detectorSampleSumming;
-  state["m_detectorLineSumming"] = m_detectorLineSumming;
-  state["m_startingDetectorSample"] = m_startingDetectorSample;
-  state["m_ikCode"] = m_ikCode;
+  state.set<double>("m_detectorSampleSumming", m_detectorSampleSumming);
+  state.set<double>("m_detectorLineSumming", m_detectorLineSumming);
+  state.set<double>("m_startingDetectorSample", m_startingDetectorSample);
+  state.set<int>("m_ikCode", m_ikCode);
   MESSAGE_LOG(
       "m_detectorSampleSumming: {} "
       "m_detectorLineSumming: {} "
@@ -397,112 +381,101 @@ nlohmann::json UsgsAstroPushFrameSensorModel::getModelJson() const {
       "m_ikCode: {} ",
       m_detectorSampleSumming, m_detectorLineSumming, m_startingDetectorSample,
       m_ikCode)
-
-  state["m_focalLength"] = m_focalLength;
-  state["m_zDirection"] = m_zDirection;
-  state["m_distortionType"] = m_distortionType;
-  state["m_opticalDistCoeffs"] = m_opticalDistCoeffs;
+  state.set<double>("m_focalLength", m_focalLength);
+  state.set<double>("m_zDirection", m_zDirection);
+  state.set<int>("m_distortionType", m_distortionType);
+  state.set<std::vector<double>>("m_opticalDistCoeffs", m_opticalDistCoeffs);
   MESSAGE_LOG(
       "m_focalLength: {} "
       "m_zDirection: {} "
       "m_distortionType (0-Radial, 1-Transverse): {} ",
       m_focalLength, m_zDirection, m_distortionType)
-
-  state["m_iTransS"] = std::vector<double>(m_iTransS, m_iTransS + 3);
-  state["m_iTransL"] = std::vector<double>(m_iTransL, m_iTransL + 3);
-
-  state["m_detectorSampleOrigin"] = m_detectorSampleOrigin;
-  state["m_detectorLineOrigin"] = m_detectorLineOrigin;
-  state["m_majorAxis"] = m_majorAxis;
-  state["m_minorAxis"] = m_minorAxis;
+  state.set<std::vector<double>>("m_iTransS", {m_iTransS[0], m_iTransS[1], m_iTransS[2]});
+  state.set<std::vector<double>>("m_iTransL", {m_iTransL[0], m_iTransL[1], m_iTransL[2]});
+  state.set<double>("m_detectorSampleOrigin", m_detectorSampleOrigin);
+  state.set<double>("m_detectorLineOrigin", m_detectorLineOrigin);
+  state.set<double>("m_majorAxis", m_majorAxis);
+  state.set<double>("m_minorAxis", m_minorAxis);
   MESSAGE_LOG(
       "m_detectorSampleOrigin: {} "
       "m_detectorLineOrigin: {} "
       "m_majorAxis: {} "
       "m_minorAxis: {} ",
       m_detectorSampleOrigin, m_detectorLineOrigin, m_majorAxis, m_minorAxis)
-
-  state["m_platformIdentifier"] = m_platformIdentifier;
-  state["m_sensorIdentifier"] = m_sensorIdentifier;
-  state["m_minElevation"] = m_minElevation;
-  state["m_maxElevation"] = m_maxElevation;
+  state.set<std::string>("m_platformIdentifier", m_platformIdentifier);
+  state.set<std::string>("m_sensorIdentifier", m_sensorIdentifier);
+  state.set<double>("m_minElevation", m_minElevation);
+  state.set<double>("m_maxElevation", m_maxElevation);
   MESSAGE_LOG(
       "m_platformIdentifier: {} "
       "m_sensorIdentifier: {} "
       "m_minElevation: {} "
       "m_maxElevation: {} ",
       m_platformIdentifier, m_sensorIdentifier, m_minElevation, m_maxElevation)
-
-  state["m_dtEphem"] = m_dtEphem;
-  state["m_t0Ephem"] = m_t0Ephem;
-  state["m_dtQuat"] = m_dtQuat;
-  state["m_t0Quat"] = m_t0Quat;
+  state.set<double>("m_dtEphem", m_dtEphem);
+  state.set<double>("m_t0Ephem", m_t0Ephem);
+  state.set<double>("m_dtQuat", m_dtQuat);
+  state.set<double>("m_t0Quat", m_t0Quat);
   MESSAGE_LOG(
       "m_dtEphem: {} "
       "m_t0Ephem: {} "
       "m_dtQuat: {} "
       "m_t0Quat: {} ",
       m_dtEphem, m_t0Ephem, m_dtQuat, m_t0Quat)
-
-  state["m_numPositions"] = m_numPositions;
-  state["m_numQuaternions"] = m_numQuaternions;
-  state["m_positions"] = m_positions;
-  state["m_velocities"] = m_velocities;
-  state["m_quaternions"] = m_quaternions;
+  state.set<int>("m_numPositions", m_numPositions);
+  state.set<int>("m_numQuaternions", m_numQuaternions);
+  state.set<std::vector<double>>("m_positions", m_positions);
+  state.set<std::vector<double>>("m_velocities", m_velocities);
+  state.set<std::vector<double>>("m_quaternions", m_quaternions);
   MESSAGE_LOG(
       "m_numPositions: {} "
       "m_numQuaternions: {} ",
       m_numPositions, m_numQuaternions)
-
-  state["m_currentParameterValue"] = m_currentParameterValue;
-  state["m_parameterType"] = m_parameterType;
-
-  state["m_gsd"] = m_gsd;
-  state["m_flyingHeight"] = m_flyingHeight;
-  state["m_halfSwath"] = m_halfSwath;
-  state["m_halfTime"] = m_halfTime;
-  state["m_covariance"] = m_covariance;
+  state.set<std::vector<double>>("m_currentParameterValue", m_currentParameterValue);
+  std::vector<int> paramTypeInts(m_parameterType.size());
+  for (size_t i = 0; i < m_parameterType.size(); ++i) {
+    paramTypeInts[i] = static_cast<int>(m_parameterType[i]);
+  }
+  state.set<std::vector<int>>("m_parameterType", paramTypeInts);
+  state.set<double>("m_gsd", m_gsd);
+  state.set<double>("m_flyingHeight", m_flyingHeight);
+  state.set<double>("m_halfSwath", m_halfSwath);
+  state.set<double>("m_halfTime", m_halfTime);
+  state.set<std::vector<double>>("m_covariance", m_covariance);
   MESSAGE_LOG(
       "m_gsd: {} "
       "m_flyingHeight: {} "
       "m_halfSwath: {} "
       "m_halfTime: {} ",
       m_gsd, m_flyingHeight, m_halfSwath, m_halfTime)
-
-  state["m_referencePointXyz"] = json();
-  state["m_referencePointXyz"][0] = m_referencePointXyz.x;
-  state["m_referencePointXyz"][1] = m_referencePointXyz.y;
-  state["m_referencePointXyz"][2] = m_referencePointXyz.z;
+  state.set<std::vector<double>>("m_referencePointXyz", {m_referencePointXyz.x, m_referencePointXyz.y, m_referencePointXyz.z});
   MESSAGE_LOG(
       "m_referencePointXyz: {} "
       "m_referencePointXyz: {} "
       "m_referencePointXyz: {} ",
       m_referencePointXyz.x, m_referencePointXyz.y, m_referencePointXyz.z)
-
-  state["m_sunPosition"] = m_sunPosition;
+  state.set<std::vector<double>>("m_sunPosition", m_sunPosition);
   MESSAGE_LOG("num sun positions: {} ", m_sunPosition.size())
-
-  state["m_sunVelocity"] = m_sunVelocity;
+  state.set<std::vector<double>>("m_sunVelocity", m_sunVelocity);
   MESSAGE_LOG("num sun velocities: {} ", m_sunVelocity.size());
-
-  // Parameters needed to deal with the fact that neighboring framelets have some overlap
-  state["m_numLinesOverlap"]       = m_numLinesOverlap;
-  state["m_reducedframeletHeight"] = m_reducedFrameletHeight;
-  state["m_nReducedLines"]         = m_nReducedLines;
-
+  state.set<int>("m_numLinesOverlap", m_numLinesOverlap);
+  state.set<int>("m_reducedframeletHeight", m_reducedFrameletHeight);
+  state.set<int>("m_nReducedLines", m_nReducedLines);
   MESSAGE_LOG(
       "m_numLinesOverlap: {} "
       "m_reducedFrameletHeight: {} "
       "m_nReducedLines: {} ",
-      state["m_numLinesOverlap"].dump(), state["m_reducedFrameletHeight"].dump(),
-      state["m_nReducedLines"].dump());
-
+      m_numLinesOverlap, m_reducedFrameletHeight, m_nReducedLines);
   return state;
+}
+
+std::string UsgsAstroPushFrameSensorModel::getModelJson() const {
+  return jsonFromVariantMap(getModelMap()).dump(2);
 }
 
 std::string UsgsAstroPushFrameSensorModel::getModelState() const {
   MESSAGE_LOG("Running getModelState");
-  return getModelName() + "\n" + getModelJson().dump(2);
+  return getModelName() + "\n" + getModelJson();
 }
 
 //***************************************************************************
@@ -2142,12 +2115,12 @@ std::vector<double> UsgsAstroPushFrameSensorModel::computeDetectorView(
 //***************************************************************************
 // UsgsAstroLineScannerSensorModel::constructStateFromIsd
 //***************************************************************************
-std::string UsgsAstroPushFrameSensorModel::constructStateFromIsd(
+VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
     const std::string imageSupportData, csm::WarningList* warnings) {
   json state = {};
   MESSAGE_LOG("Constructing state from Isd");
   // Instantiate UsgsAstroLineScanner sensor model
-  json jsonIsd = json::parse(imageSupportData);
+  json jsonIsd = stateAsJson(imageSupportData);
   std::shared_ptr<csm::WarningList> parsingWarnings(new csm::WarningList);
 
   state["m_modelName"] = ale::getSensorModelName(jsonIsd);
@@ -2490,7 +2463,7 @@ std::string UsgsAstroPushFrameSensorModel::constructStateFromIsd(
 
   // The state data will still be updated when a sensor model is created since
   // some state data is not in the ISD and requires a SM to compute them.
-  return state.dump();
+  return variantMapFromJson(state);
 }
 
 //***************************************************************************

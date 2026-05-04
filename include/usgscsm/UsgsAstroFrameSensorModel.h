@@ -13,8 +13,7 @@
 #include "Distortion.h"
 #include "RasterGM.h"
 #include "Utilities.h"
-
-#include <nlohmann/json_fwd.hpp> // forward declaration
+#include "VariantMap.h"
 
 #include "spdlog/spdlog.h"
 
@@ -38,8 +37,8 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM,
 
   static std::string getModelNameFromModelState(const std::string& model_state);
 
-  std::string constructStateFromIsd(const std::string &jsonIsd,
-                                    csm::WarningList *warnings);
+  VariantMap constructStateFromIsd(const std::string &jsonIsd,
+                                   csm::WarningList *warnings);
 
   // Apply a rotation and translation to a state string. The effect is
   // to transform the position and orientation of the camera in ECEF
@@ -299,12 +298,10 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM,
   //  If the argument state string is empty, the model remains unchanged.
   //<
 
-  // Populate model fields directly from a json object, bypassing string
-  // serialization. Used by replaceModelState() and binary state loading.
-  void populateModel(const nlohmann::json& j);
+  void populateModel(const VariantMap& vm);
+  VariantMap getModelMap() const;
 
-  // Return model state as a json object, bypassing string serialization.
-  nlohmann::json getModelJson() const;
+  std::string getModelJson() const;
 
   // Implement methods from the SettableEllipsoid class
 

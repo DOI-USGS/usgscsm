@@ -509,14 +509,14 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(
     csm::WarningList *warnings) const {
   MESSAGE_LOG(spdlog::level::info, "Running constructModelFromISD");
   std::string stringIsd = loadImageSupportData(imageSupportDataOriginal);
-
+  MESSAGE_LOG(spdlog::level::trace, "ISD string: {}", stringIsd);
   // Try to get the projected model, if not return the the unprojected model
   UsgsAstroProjectedSensorModel *projModel = new UsgsAstroProjectedSensorModel();
 
   try {
     MESSAGE_LOG(spdlog::level::debug, "Trying to construct a UsgsAstroProjectedSensorModel");
-    projModel->replaceModelState(
-        projModel->constructStateFromIsd(stringIsd, modelName, warnings));
+    VariantMap vm = projModel->constructStateFromIsd(stringIsd, modelName, warnings);
+    projModel->populateModel(vm);
     MESSAGE_LOG(spdlog::level::debug, "Constructed model: {}", modelName);
     return projModel;
   } catch (std::exception &e) {
@@ -557,7 +557,7 @@ csm::Model *UsgsAstroPlugin::constructModelFromState(
   MESSAGE_LOG(spdlog::level::debug, "Using model name: {}", modelName);
 
   try {
-    return getUsgsCsmModelFromState(modelState, modelName, warnings);
+    return getUsgsCsmModelFromJsonState(modelState, modelName, warnings);
   }
   catch (std::exception &e) {
     csm::Error::ErrorType aErrorType = csm::Error::ISD_NOT_SUPPORTED;

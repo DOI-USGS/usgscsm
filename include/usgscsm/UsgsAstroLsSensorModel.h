@@ -29,6 +29,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include <RasterGM.h>
 #include <SettableEllipsoid.h>
 #include "Distortion.h"
+#include "VariantMap.h"
 
 #include<utility>
 #include<memory>
@@ -39,7 +40,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include "ale/Orientations.h"
 #include "ale/States.h"
 
-#include <nlohmann/json_fwd.hpp> // forward declaration
 #include "spdlog/spdlog.h"
 
 class UsgsAstroLsSensorModel : public csm::RasterGM,
@@ -63,20 +63,17 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
   //  If the argument state string is empty, the model remains unchanged.
   //<
 
-  // Populate model fields directly from a json object, bypassing string
-  // serialization. Used by replaceModelState() and binary state loading.
-  void populateModel(const nlohmann::json& j);
+  void populateModel(const VariantMap& vm);
+  VariantMap getModelMap() const;
 
-  // Return model state as a json object, bypassing string serialization.
-  // Used by getModelState() and binary state saving.
-  nlohmann::json getModelJson() const;
+  std::string getModelJson() const;
 
   // This method checks to see if the model name is recognized
   // in the input state string.
   static std::string getModelNameFromModelState(const std::string& model_state);
 
-  std::string constructStateFromIsd(const std::string imageSupportData,
-                                    csm::WarningList* list);
+  VariantMap constructStateFromIsd(const std::string imageSupportData,
+                                   csm::WarningList* list);
 
   // State data elements;
   std::string m_imageIdentifier;

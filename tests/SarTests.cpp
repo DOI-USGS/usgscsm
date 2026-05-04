@@ -53,9 +53,9 @@ TEST_F(SarSensorModel, stateFromIsd) {
   UsgsAstroPlugin plugin;
   std::string isdString = plugin.loadImageSupportData(isd);
   csm::WarningList warnings;
-  std::string stateString;
+  VariantMap stateMap;
   try {
-    stateString = sensorModel->constructStateFromIsd(isdString, &warnings);
+    stateMap = sensorModel->constructStateFromIsd(isdString, &warnings);
   } catch (...) {
     for (auto &warn : warnings) {
       std::cerr << "Warning in " << warn.getFunction() << std::endl;

@@ -650,3 +650,349 @@ TEST(UtilitiesTests, meterToPixelTest) {
   EXPECT_NEAR(ret[0], 13.6191, 1e-4);
   EXPECT_NEAR(ret[1], 4981.5800000000099, 1e-4);
 }
+
+// VariantMap Tests
+TEST(VariantMapTests, SetAndGetString) {
+  VariantMap vm;
+  vm.set<std::string>("key", "value");
+  EXPECT_EQ(vm.get<std::string>("key"), "value");
+}
+
+TEST(VariantMapTests, SetAndGetInt) {
+  VariantMap vm;
+  vm.set<int>("key", 42);
+  EXPECT_EQ(vm.get<int>("key"), 42);
+}
+
+TEST(VariantMapTests, SetAndGetDouble) {
+  VariantMap vm;
+  vm.set<double>("key", 3.14159);
+  EXPECT_DOUBLE_EQ(vm.get<double>("key"), 3.14159);
+}
+
+TEST(VariantMapTests, SetAndGetBool) {
+  VariantMap vm;
+  vm.set<bool>("key", true);
+  EXPECT_TRUE(vm.get<bool>("key"));
+  vm.set<bool>("key", false);
+  EXPECT_FALSE(vm.get<bool>("key"));
+}
+
+TEST(VariantMapTests, SetAndGetVectorDouble) {
+  VariantMap vm;
+  std::vector<double> vec = {1.1, 2.2, 3.3};
+  vm.set<std::vector<double>>("key", vec);
+  std::vector<double> result = vm.get<std::vector<double>>("key");
+  ASSERT_EQ(result.size(), 3);
+  EXPECT_DOUBLE_EQ(result[0], 1.1);
+  EXPECT_DOUBLE_EQ(result[1], 2.2);
+  EXPECT_DOUBLE_EQ(result[2], 3.3);
+}
+
+TEST(VariantMapTests, SetAndGetVectorInt) {
+  VariantMap vm;
+  std::vector<int> vec = {1, 2, 3};
+  vm.set<std::vector<int>>("key", vec);
+  std::vector<int> result = vm.get<std::vector<int>>("key");
+  ASSERT_EQ(result.size(), 3);
+  EXPECT_EQ(result[0], 1);
+  EXPECT_EQ(result[1], 2);
+  EXPECT_EQ(result[2], 3);
+}
+
+TEST(VariantMapTests, GetWithDefaultString) {
+  VariantMap vm;
+  EXPECT_EQ(vm.get<std::string>("nonexistent", "default"), "default");
+  vm.set<std::string>("key", "value");
+  EXPECT_EQ(vm.get<std::string>("key", "default"), "value");
+}
+
+TEST(VariantMapTests, GetWithDefaultInt) {
+  VariantMap vm;
+  EXPECT_EQ(vm.get<int>("nonexistent", 99), 99);
+  vm.set<int>("key", 42);
+  EXPECT_EQ(vm.get<int>("key", 99), 42);
+}
+
+TEST(VariantMapTests, GetWithDefaultDouble) {
+  VariantMap vm;
+  EXPECT_DOUBLE_EQ(vm.get<double>("nonexistent", 9.9), 9.9);
+  vm.set<double>("key", 3.14);
+  EXPECT_DOUBLE_EQ(vm.get<double>("key", 9.9), 3.14);
+}
+
+TEST(VariantMapTests, GetWithDefaultBool) {
+  VariantMap vm;
+  EXPECT_TRUE(vm.get<bool>("nonexistent", true));
+  vm.set<bool>("key", false);
+  EXPECT_FALSE(vm.get<bool>("key", true));
+}
+
+TEST(VariantMapTests, GetWithDefaultVectorDouble) {
+  VariantMap vm;
+  std::vector<double> defaultVec = {9.9};
+  EXPECT_EQ(vm.get<std::vector<double>>("nonexistent", defaultVec), defaultVec);
+  std::vector<double> vec = {1.1, 2.2};
+  vm.set<std::vector<double>>("key", vec);
+  EXPECT_EQ(vm.get<std::vector<double>>("key", defaultVec), vec);
+}
+
+TEST(VariantMapTests, GetWithDefaultVectorInt) {
+  VariantMap vm;
+  std::vector<int> defaultVec = {99};
+  EXPECT_EQ(vm.get<std::vector<int>>("nonexistent", defaultVec), defaultVec);
+  std::vector<int> vec = {1, 2};
+  vm.set<std::vector<int>>("key", vec);
+  EXPECT_EQ(vm.get<std::vector<int>>("key", defaultVec), vec);
+}
+
+TEST(VariantMapTests, Contains) {
+  VariantMap vm;
+  EXPECT_FALSE(vm.contains("key"));
+  vm.set<int>("key", 42);
+  EXPECT_TRUE(vm.contains("key"));
+}
+
+TEST(VariantMapTests, Erase) {
+  VariantMap vm;
+  vm.set<int>("key", 42);
+  EXPECT_TRUE(vm.contains("key"));
+  vm.erase("key");
+  EXPECT_FALSE(vm.contains("key"));
+}
+
+TEST(VariantMapTests, Clear) {
+  VariantMap vm;
+  vm.set<int>("key1", 1);
+  vm.set<int>("key2", 2);
+  EXPECT_EQ(vm.size(), 2);
+  vm.clear();
+  EXPECT_EQ(vm.size(), 0);
+  EXPECT_TRUE(vm.empty());
+}
+
+TEST(VariantMapTests, SizeAndEmpty) {
+  VariantMap vm;
+  EXPECT_TRUE(vm.empty());
+  EXPECT_EQ(vm.size(), 0);
+  vm.set<int>("key1", 1);
+  EXPECT_FALSE(vm.empty());
+  EXPECT_EQ(vm.size(), 1);
+  vm.set<int>("key2", 2);
+  EXPECT_EQ(vm.size(), 2);
+}
+
+TEST(VariantMapTests, Keys) {
+  VariantMap vm;
+  vm.set<int>("key1", 1);
+  vm.set<int>("key2", 2);
+  vm.set<int>("key3", 3);
+  std::vector<std::string> keys = vm.keys();
+  ASSERT_EQ(keys.size(), 3);
+  // Keys should be in sorted order (std::map property)
+  EXPECT_EQ(keys[0], "key1");
+  EXPECT_EQ(keys[1], "key2");
+  EXPECT_EQ(keys[2], "key3");
+}
+
+TEST(VariantMapTests, CopyConstructor) {
+  VariantMap vm1;
+  vm1.set<int>("key", 42);
+  vm1.set<std::string>("name", "test");
+
+  VariantMap vm2(vm1);
+  EXPECT_EQ(vm2.get<int>("key"), 42);
+  EXPECT_EQ(vm2.get<std::string>("name"), "test");
+
+  // Ensure deep copy - modifying vm2 doesn't affect vm1
+  vm2.set<int>("key", 99);
+  EXPECT_EQ(vm1.get<int>("key"), 42);
+  EXPECT_EQ(vm2.get<int>("key"), 99);
+}
+
+TEST(VariantMapTests, AssignmentOperator) {
+  VariantMap vm1;
+  vm1.set<int>("key", 42);
+  vm1.set<std::string>("name", "test");
+
+  VariantMap vm2;
+  vm2 = vm1;
+  EXPECT_EQ(vm2.get<int>("key"), 42);
+  EXPECT_EQ(vm2.get<std::string>("name"), "test");
+
+  // Ensure deep copy - modifying vm2 doesn't affect vm1
+  vm2.set<int>("key", 99);
+  EXPECT_EQ(vm1.get<int>("key"), 42);
+  EXPECT_EQ(vm2.get<int>("key"), 99);
+}
+
+TEST(VariantMapTests, VariantMapFromJson) {
+  json j = {
+    {"string_key", "value"},
+    {"int_key", 42},
+    {"double_key", 3.14},
+    {"bool_key", true},
+    {"vector_key", {1.1, 2.2, 3.3}}
+  };
+
+  VariantMap vm = variantMapFromJson(j);
+
+  EXPECT_EQ(vm.get<std::string>("string_key"), "value");
+  EXPECT_EQ(vm.get<int>("int_key"), 42);
+  EXPECT_DOUBLE_EQ(vm.get<double>("double_key"), 3.14);
+  EXPECT_TRUE(vm.get<bool>("bool_key"));
+  std::vector<double> vec = vm.get<std::vector<double>>("vector_key");
+  ASSERT_EQ(vec.size(), 3);
+  EXPECT_DOUBLE_EQ(vec[0], 1.1);
+  EXPECT_DOUBLE_EQ(vec[1], 2.2);
+  EXPECT_DOUBLE_EQ(vec[2], 3.3);
+}
+
+TEST(VariantMapTests, JsonFromVariantMap) {
+  VariantMap vm;
+  vm.set<std::string>("string_key", "value");
+  vm.set<int>("int_key", 42);
+  vm.set<double>("double_key", 3.14);
+  vm.set<bool>("bool_key", true);
+  vm.set<std::vector<double>>("vector_key", {1.1, 2.2, 3.3});
+  vm.set<std::vector<int>>("int_vector_key", {1, 2, 3});
+
+  json j = jsonFromVariantMap(vm);
+
+  EXPECT_EQ(j["string_key"].get<std::string>(), "value");
+  EXPECT_EQ(j["int_key"].get<int>(), 42);
+  EXPECT_DOUBLE_EQ(j["double_key"].get<double>(), 3.14);
+  EXPECT_TRUE(j["bool_key"].get<bool>());
+  EXPECT_EQ(j["vector_key"].get<std::vector<double>>(), std::vector<double>({1.1, 2.2, 3.3}));
+  EXPECT_EQ(j["int_vector_key"].get<std::vector<int>>(), std::vector<int>({1, 2, 3}));
+}
+
+TEST(VariantMapTests, RoundTripJsonConversion) {
+  json original = {
+    {"string_key", "value"},
+    {"int_key", 42},
+    {"double_key", 3.14},
+    {"bool_key", true},
+    {"vector_key", {1.1, 2.2, 3.3}}
+  };
+
+  VariantMap vm = variantMapFromJson(original);
+  json roundtrip = jsonFromVariantMap(vm);
+
+  EXPECT_EQ(original, roundtrip);
+}
+
+TEST(VariantMapTests, MultipleTypes) {
+  VariantMap vm;
+  vm.set<std::string>("name", "test");
+  vm.set<int>("count", 42);
+  vm.set<double>("value", 3.14);
+  vm.set<bool>("flag", true);
+  vm.set<std::vector<double>>("data", {1.0, 2.0, 3.0});
+
+  EXPECT_EQ(vm.size(), 5);
+  EXPECT_EQ(vm.get<std::string>("name"), "test");
+  EXPECT_EQ(vm.get<int>("count"), 42);
+  EXPECT_DOUBLE_EQ(vm.get<double>("value"), 3.14);
+  EXPECT_TRUE(vm.get<bool>("flag"));
+  EXPECT_EQ(vm.get<std::vector<double>>("data").size(), 3);
+}
+
+TEST(VariantMapTests, DumpsFunction) {
+  VariantMap vm;
+  vm.set<std::string>("name", "test");
+  vm.set<int>("count", 42);
+  vm.set<double>("pi", 3.14159);
+  vm.set<bool>("enabled", true);
+  vm.set<std::vector<double>>("coords", {1.1, 2.2, 3.3});
+  vm.set<std::vector<int>>("indices", {1, 2, 3});
+
+  // Test that dumps returns a string
+  std::string output = vm.dumps();
+  EXPECT_FALSE(output.empty());
+  EXPECT_NE(output.find("name"), std::string::npos);
+  EXPECT_NE(output.find("test"), std::string::npos);
+  EXPECT_NE(output.find("count"), std::string::npos);
+  EXPECT_NE(output.find("42"), std::string::npos);
+
+  // Test the std::cout usage pattern
+  std::cout << "\n=== Testing VariantMap::dumps() ===" << std::endl;
+  std::cout << vm.dumps() << std::endl;
+  std::cout << "=== End of dumps test ===" << std::endl;
+
+  // Verify content is still accessible after dumps
+  EXPECT_EQ(vm.get<std::string>("name"), "test");
+  EXPECT_EQ(vm.get<int>("count"), 42);
+}
+
+TEST(VariantMapTests, EmptyArrayHandling) {
+  // Test that empty arrays are preserved during JSON conversion
+  nlohmann::json j = {
+    {"m_sunPosition", std::vector<double>{100.0, 100.0, 100.0}},
+    {"m_sunVelocity", std::vector<double>{}}
+  };
+
+  VariantMap vm = variantMapFromJson(j);
+
+  // Empty array should be present in the map
+  EXPECT_TRUE(vm.contains("m_sunPosition"));
+  EXPECT_TRUE(vm.contains("m_sunVelocity"));
+
+  // Should be able to retrieve empty array
+  std::vector<double> sunPos = vm.get<std::vector<double>>("m_sunPosition");
+  std::vector<double> sunVel = vm.get<std::vector<double>>("m_sunVelocity");
+
+  EXPECT_EQ(sunPos.size(), 3);
+  EXPECT_EQ(sunVel.size(), 0);
+
+  // Round-trip conversion should preserve empty arrays
+  nlohmann::json j2 = jsonFromVariantMap(vm);
+  EXPECT_TRUE(j2.contains("m_sunVelocity"));
+  EXPECT_TRUE(j2["m_sunVelocity"].is_array());
+  EXPECT_EQ(j2["m_sunVelocity"].size(), 0);
+}
+
+TEST(VariantMapTests, GetValueType) {
+  VariantMap vm;
+  vm.set<int>("int_key", 5);
+  vm.set<double>("double_key", 3.14);
+  vm.set<std::string>("string_key", "hello");
+  vm.set<bool>("bool_key", true);
+  vm.set<std::vector<double>>("vec_double", {1.1, 2.2});
+  vm.set<std::vector<int>>("vec_int", {1, 2, 3});
+
+  EXPECT_EQ(vm.getValueType("int_key"), VariantMap::ValueType::Int);
+  EXPECT_EQ(vm.getValueType("double_key"), VariantMap::ValueType::Double);
+  EXPECT_EQ(vm.getValueType("string_key"), VariantMap::ValueType::String);
+  EXPECT_EQ(vm.getValueType("bool_key"), VariantMap::ValueType::Bool);
+  EXPECT_EQ(vm.getValueType("vec_double"), VariantMap::ValueType::VectorDouble);
+  EXPECT_EQ(vm.getValueType("vec_int"), VariantMap::ValueType::VectorInt);
+  EXPECT_EQ(vm.getValueType("missing_key"), VariantMap::ValueType::Unknown);
+}
+
+TEST(VariantMapTests, TypePreservation) {
+  VariantMap vm;
+  vm.set<int>("int_val", 42);
+  vm.set<double>("double_val", 42.0);
+  vm.set<std::vector<int>>("vec_int", {1, 2, 3});
+  vm.set<std::vector<double>>("vec_double", {1.0, 2.0, 3.0});
+
+  nlohmann::json j = jsonFromVariantMap(vm);
+
+  // Verify types are preserved correctly
+  EXPECT_TRUE(j["int_val"].is_number_integer());
+  EXPECT_TRUE(j["double_val"].is_number_float());
+  EXPECT_TRUE(j["vec_int"].is_array());
+  EXPECT_TRUE(j["vec_double"].is_array());
+
+  // Verify values
+  EXPECT_EQ(j["int_val"].get<int>(), 42);
+  EXPECT_DOUBLE_EQ(j["double_val"].get<double>(), 42.0);
+
+  // Round-trip should preserve types
+  VariantMap vm2 = variantMapFromJson(j);
+  EXPECT_EQ(vm2.getValueType("int_val"), VariantMap::ValueType::Int);
+  EXPECT_EQ(vm2.getValueType("double_val"), VariantMap::ValueType::Double);
+  EXPECT_EQ(vm2.getValueType("vec_int"), VariantMap::ValueType::VectorInt);
+  EXPECT_EQ(vm2.getValueType("vec_double"), VariantMap::ValueType::VectorDouble);
+}
