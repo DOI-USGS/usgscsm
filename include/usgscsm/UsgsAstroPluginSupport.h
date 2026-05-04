@@ -10,5 +10,8 @@ csm::RasterGM *getUsgsCsmModelFromJsonState(const std::string &jstring, const st
 csm::RasterGM *getUsgsCsmModelFromVariantMap(const VariantMap &vm, const std::string &modelName, csm::WarningList *warnings);
 std::string getUsgsCsmModelJson(csm::RasterGM *model);
 VariantMap getUsgsCsmModelMap(csm::RasterGM *model);
+bool isUsgsCsmIsd(const std::string &str, std::string &modelName);
+bool isUsgsCsmState(const std::string &str, std::string &modelName);
+
 
 #endif // INCLUDE_USGSCSM_USGSASTROPLUGINSUPPORT_H_
