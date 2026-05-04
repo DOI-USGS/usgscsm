@@ -9,5 +9,7 @@ csm::RasterGM *getUsgsCsmModelFromIsd(const std::string &stringIsd, const std::s
 csm::RasterGM *getUsgsCsmModelFromState(const std::string &stringState, const std::string &modelName, csm::WarningList *warnings);
 csm::RasterGM *getUsgsCsmModelFromJson(const nlohmann::json &j, const std::string &modelName, csm::WarningList *warnings);
 nlohmann::json getUsgsCsmModelJson(csm::RasterGM *model);
+bool isUsgsCsmIsd(const std::string &str, std::string &modelName);
+bool isUsgsCsmState(const std::string &str, std::string &modelName);
 
 #endif // INCLUDE_USGSCSM_USGSASTROPLUGINSUPPORT_H_

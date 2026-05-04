@@ -35,6 +35,9 @@ release.
 
 ## [Unreleased]
 
+### Added
+- `isUsgsCsmIsd()` and `isUsgsCsmState()` quick string-scan helpers in `UsgsAstroPluginSupport` to identify ISD vs model state without full JSON parsing or model construction. [#502](https://github.com/DOI-USGS/usgscsm/pull/502)
+
 ### Fixed
 - Fix a bug in the Frame Sensor Model, the ephemeris time was rounded to it. [#497](https://github.com/DOI-USGS/usgscsm/pull/497)
 - Removed boundary checks for Frame Sensor Model getSensorPosition [#492](https://github.com/DOI-USGS/usgscsm/pull/492)

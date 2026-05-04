@@ -1,6 +1,7 @@
 #include "UsgsAstroFrameSensorModel.h"
 #include "UsgsAstroLsSensorModel.h"
 #include "UsgsAstroPlugin.h"
+#include "UsgsAstroPluginSupport.h"
 
 #include <fstream>
 #include <sstream>
@@ -230,6 +231,25 @@ TEST_F(SarIsdTest, ConstructInvalidCamera) {
   } catch (...) {
     FAIL() << "Expected csm SENSOR_MODEL_NOT_CONSTRUCTIBLE error";
   }
+}
+
+TEST(IsUsgsCsmIsd, RecognizesIsd) {
+  // Minimal ISD signature: leading '{', the ISD-only keys body_rotation
+  // and instrument_position, and a USGS_ASTRO_* model name.
+  std::string s = R"({"body_rotation":[],"instrument_position":[],
+                      "name_model":"USGS_ASTRO_FRAME_SENSOR_MODEL"})";
+  std::string name;
+  EXPECT_TRUE(isUsgsCsmIsd(s, name));
+  EXPECT_EQ(name, "USGS_ASTRO_FRAME_SENSOR_MODEL");
+}
+
+TEST(IsUsgsCsmState, RecognizesState) {
+  // .sup-style: arbitrary preamble before '{', then JSON state with m_modelName.
+  std::string s = "GXP-state-preamble\n"
+                  "{\"m_modelName\":\"USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL\"}";
+  std::string name;
+  EXPECT_TRUE(isUsgsCsmState(s, name));
+  EXPECT_EQ(name, "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL");
 }
 
 int main(int argc, char **argv) {
