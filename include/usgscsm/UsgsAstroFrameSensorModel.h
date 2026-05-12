@@ -15,8 +15,6 @@
 #include "Utilities.h"
 #include "VariantMap.h"
 
-#include "spdlog/spdlog.h"
-
 class UsgsAstroFrameSensorModel : public csm::RasterGM,
                                   virtual public csm::SettableEllipsoid {
   // UsgsAstroFramePlugin needs to access private members
@@ -339,8 +337,6 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM,
       const GeometricModel &comparisonModel,
       csm::param::Set pSet = csm::param::VALID,
       const GeometricModelList &otherModels = GeometricModelList()) const;
-  virtual std::shared_ptr<spdlog::logger> getLogger();
-  virtual void setLogger(std::string logName);
   double getValue(int index, const std::vector<double> &adjustments) const;
   void calcRotationMatrix(double m[3][3]) const;
   void calcRotationMatrix(double m[3][3],
@@ -404,8 +400,6 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM,
   csm::EcefCoord m_referencePointXyz;
 
  private:
-
-  std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
 
   nlohmann::json _state;
   static const int _NUM_STATE_KEYWORDS;

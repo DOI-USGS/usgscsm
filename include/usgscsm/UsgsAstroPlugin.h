@@ -33,7 +33,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include <csm/Version.h>
 
 #include <nlohmann/json.hpp>
-#include "spdlog/spdlog.h"
 
 class UsgsAstroPlugin : public csm::Plugin {
  public:
@@ -81,7 +80,6 @@ class UsgsAstroPlugin : public csm::Plugin {
 
   typedef csm::Model *(*sensorConstructor)(void);
   static std::map<std::string, sensorConstructor> MODELS;
-  std::shared_ptr<spdlog::logger> m_logger;
 };
 
 #endif   // INCLUDE_USGSCSM_USGSASTROPLUGIN_H_

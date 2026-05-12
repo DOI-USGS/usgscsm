@@ -9,15 +9,13 @@
 #include <iostream>
 #include <fstream>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include "ale/Distortion.h"
 
 using json = nlohmann::json;
-
-#define MESSAGE_LOG(...)         \
-  if (m_logger) {                \
-    m_logger->log(__VA_ARGS__); \
-  }
-
 
 /**
  * @description Calculates a rotation matrix from Euler angles. This function takes
@@ -2491,7 +2489,6 @@ json stateAsJson(std::string modelState) {
 bool isMsgpack(std::string const& filename) {
 #ifdef __EMSCRIPTEN__
   // In WebAssembly, check if file exists in virtual filesystem first
-  #include <emscripten.h>
   bool exists = EM_ASM_INT({
     return FS.analyzePath(UTF8ToString($0)).exists;
   }, filename.c_str());
