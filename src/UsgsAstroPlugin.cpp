@@ -73,6 +73,14 @@ const UsgsAstroPlugin UsgsAstroPlugin::m_registeredPlugin;
 
 UsgsAstroPlugin::UsgsAstroPlugin() {
   // Build and register the USGSCSM logger on plugin creation
+#ifdef __EMSCRIPTEN__
+  // In WebAssembly, always log to console (stdout)
+  m_logger = spdlog::get("usgscsm_logger");
+  if (!m_logger) {
+    m_logger = spdlog::stdout_color_mt("usgscsm_logger");
+    m_logger->set_level(spdlog::level::info);
+  }
+#else
   char *logFilePtr = getenv("USGSCSM_LOG_FILE");
 
   if (logFilePtr != NULL) {
@@ -103,6 +111,7 @@ UsgsAstroPlugin::UsgsAstroPlugin() {
       }
     }
   }
+#endif
 }
 
 UsgsAstroPlugin::~UsgsAstroPlugin() {}

@@ -2483,7 +2483,21 @@ json stateAsJson(std::string modelState) {
  * @return True if the file starts with a msgpack map byte, false otherwise.
  */
 bool isMsgpack(std::string const& filename) {
+#ifdef __EMSCRIPTEN__
+  // In WebAssembly, check if file exists in virtual filesystem first
+  #include <emscripten.h>
+  bool exists = EM_ASM_INT({
+    return FS.analyzePath(UTF8ToString($0)).exists;
+  }, filename.c_str());
+  if (!exists) {
+    return false;
+  }
+#endif
+
   std::ifstream ifs(filename, std::ios::binary);
+  if (!ifs.is_open()) {
+    return false;
+  }
   uint8_t b = 0;
   ifs.read(reinterpret_cast<char*>(&b), 1);
   return (b >= 0x80 && b <= 0x8F) || b == 0xDE || b == 0xDF;

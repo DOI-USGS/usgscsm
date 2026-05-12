@@ -7,10 +7,26 @@ message(STATUS "CMake Module Path: " ${CMAKE_MODULE_PATH})
 
 include(GNUInstallDirs)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 # For dependencies minimum version
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
+# Detect Emscripten and configure for WebAssembly
+if(EMSCRIPTEN)
+  message(STATUS "Building for WebAssembly with Emscripten")
+  set(USGSCSM_WASM_BUILD ON)
+  # Disable unnecessary components for WASM
+  set(USGSCSM_BUILD_TESTS OFF CACHE BOOL "Disable tests for WASM" FORCE)
+  set(USGSCSM_BUILD_DOCS OFF CACHE BOOL "Disable docs for WASM" FORCE)
+  set(BUILD_APPS OFF CACHE BOOL "Disable PROJ apps" FORCE)
+  set(ENABLE_CURL OFF CACHE BOOL "No curl in WASM" FORCE)
+  set(ENABLE_TIFF OFF CACHE BOOL "No TIFF in WASM" FORCE)
+  set(BUILD_SHARED_LIBS OFF CACHE BOOL "Static libs for WASM" FORCE)
+  set(CMAKE_USE_PTHREADS_INIT OFF)  # Disable threading for WASM
+  # Use embedded dependencies for WASM
+  set(USGSCSM_EXTERNAL_DEPS OFF CACHE BOOL "Use embedded deps for WASM" FORCE)
+endif()
 
 # Set a default build type if none was specified
 set(default_build_type "Release")
@@ -95,10 +111,7 @@ else()
     message(SEND_ERROR "sqlite3 binary not found!")
   endif()
 
-  find_package(Sqlite3 REQUIRED)
-  if(NOT SQLITE3_FOUND)
-    message(SEND_ERROR "sqlite3 dependency not found!")
-  endif()
+  find_package(sqlite3 REQUIRED)
 
   include(ProjUtilities)
   include(Ccache)
@@ -750,5 +763,82 @@ if(USGSCSM_BUILD_DOCS)
   add_subdirectory ("docs")
 else()
   message(STATUS "Skipping Docs")
+endif()
+
+# WebAssembly target
+if(EMSCRIPTEN)
+  message(STATUS "Configuring WebAssembly build")
+
+  # Source files for WASM (exclude UsgsAstroProjectedSensorModel to avoid PROJ dependency)
+  set(USGSCSM_WASM_SRC_FILES
+      src/UsgsAstroPlugin.cpp
+      src/UsgsAstroPluginSupport.cpp
+      src/UsgsAstroFrameSensorModel.cpp
+      src/UsgsAstroPushFrameSensorModel.cpp
+      src/UsgsAstroLsSensorModel.cpp
+      src/UsgsAstroSarSensorModel.cpp
+      src/Distortion.cpp
+      src/Utilities.cpp
+      src/VariantMap.cpp
+      src/EigenUtilities.cpp
+      src/wasm/usgscsm_bindings.cpp
+  )
+
+  # Create WASM executable
+  add_executable(usgscsm_wasm ${USGSCSM_WASM_SRC_FILES}
+                              $<TARGET_OBJECTS:ale>)
+
+  # Include directories
+  target_include_directories(usgscsm_wasm PRIVATE
+                             ${USGSCSM_INCLUDE_DIRS}
+                             ${CSM_INCLUDE_DIR}
+                             ${NLOHMANN_JSON_INCLUDE_DIR}
+                             ${EIGEN3_INCLUDE_DIR}
+  )
+
+  # Link libraries
+  target_link_libraries(usgscsm_wasm
+                        PRIVATE
+                        nlohmann_json::nlohmann_json
+                        ${CSM_LIBRARY}
+                        ${ALE_TARGET}
+  )
+
+  # Emscripten-specific link flags optimized for browser
+  set_target_properties(usgscsm_wasm PROPERTIES
+    LINK_FLAGS "\
+      -s WASM=1 \
+      -s MODULARIZE=1 \
+      -s EXPORT_NAME='USGSCSM' \
+      -s EXPORT_ES6=1 \
+      -s USE_ES6_IMPORT_META=0 \
+      -s ALLOW_MEMORY_GROWTH=1 \
+      -s INITIAL_MEMORY=16MB \
+      -s MAXIMUM_MEMORY=128MB \
+      -s FILESYSTEM=1 \
+      -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','FS'] \
+      --bind \
+      -O3 \
+      -flto \
+      --closure 1"
+  )
+
+  # Copy output files to dist/ directory for NPM packaging
+  add_custom_command(TARGET usgscsm_wasm POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/dist
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_BINARY_DIR}/usgscsm_wasm.js
+            ${CMAKE_SOURCE_DIR}/dist/usgscsm_wasm.js
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_BINARY_DIR}/usgscsm_wasm.wasm
+            ${CMAKE_SOURCE_DIR}/dist/usgscsm_wasm.wasm
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_SOURCE_DIR}/src/wasm/usgscsm.d.ts
+            ${CMAKE_SOURCE_DIR}/dist/usgscsm.d.ts
+    COMMENT "Copying WASM output and TypeScript definitions to dist/ directory"
+  )
+
+  message(STATUS "WebAssembly target configured: usgscsm_wasm")
+  message(STATUS "Output will be copied to: ${CMAKE_SOURCE_DIR}/dist/")
 endif()
 

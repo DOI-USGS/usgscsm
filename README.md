@@ -165,3 +165,81 @@ For more information see: [ClangFormat](https://clang.llvm.org/docs/ClangFormat.
 
 To check for compliance, run: `cpplint file.cpp` and ignore errors in the list of exclusions above.
 For more information, see: [cpplint](https://github.com/cpplint/cpplint).
+
+## WebAssembly Support
+
+USGSCSM can be compiled to WebAssembly for use in web browsers, enabling planetary photogrammetry directly in the browser without server-side computation.
+
+### Quick Start
+
+```bash
+# Install Emscripten
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk && ./emsdk install latest && ./emsdk activate latest
+source ./emsdk_env.sh
+
+# Build WASM module
+cd /path/to/usgscsm
+./build_wasm.sh all
+```
+
+The build produces:
+- `dist/usgscsm_wasm.js` - JavaScript glue code
+- `dist/usgscsm_wasm.wasm` - WebAssembly binary (~1.2 MB gzipped)
+- `dist/usgscsm.d.ts` - TypeScript definitions
+
+### Browser Usage
+
+```javascript
+import USGSCSM from './dist/usgscsm_wasm.js';
+
+async function main() {
+  const Module = await USGSCSM();
+  const model = new Module.USGSCSMModel();
+  
+  // Load camera model from ISD JSON
+  const isdJson = await fetch('model.json').then(r => r.text());
+  model.loadFromISD(isdJson, 'USGS_ASTRO_FRAME_SENSOR_MODEL');
+  
+  // Perform coordinate transformations
+  const ground = model.imageToGround(100, 200, 0);
+  console.log(`ECEF: (${ground.x}, ${ground.y}, ${ground.z})`);
+}
+
+main();
+```
+
+### NPM Installation
+
+```bash
+npm install usgscsm-wasm
+```
+
+```javascript
+import USGSCSM from 'usgscsm-wasm';
+// ... use as above
+```
+
+### Supported Models
+
+The WebAssembly build includes:
+- ✅ Frame cameras (`USGS_ASTRO_FRAME_SENSOR_MODEL`)
+- ✅ Line scanners (`USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL`)
+- ✅ Push frame cameras (`USGS_ASTRO_PUSH_FRAME_SENSOR_MODEL`)
+- ✅ SAR sensors (`USGS_ASTRO_SAR_SENSOR_MODEL`)
+
+**Note:** The projected sensor model is not included to reduce bundle size.
+
+### Documentation
+
+- [Building for WebAssembly](docs/building_wasm.md) - Detailed build instructions
+- [Usage Guide](docs/wasm_usage.md) - Complete API documentation and examples
+- [TypeScript Definitions](src/wasm/usgscsm.d.ts) - Type-safe API reference
+
+### Browser Compatibility
+
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+- Mobile browsers (iOS 14+, Android Chrome 90+)
