@@ -1,6 +1,7 @@
 #include "UsgsAstroFrameSensorModel.h"
 #include "UsgsAstroLsSensorModel.h"
 #include "UsgsAstroPlugin.h"
+#include "UsgsAstroPluginSupport.h"
 
 #include <fstream>
 #include <sstream>
@@ -80,6 +81,7 @@ TEST_F(FrameIsdTest, Constructible) {
 TEST_F(FrameIsdTest, ConstructibleFromState) {
   UsgsAstroPlugin testPlugin;
   std::string modelState = testPlugin.getStateFromISD(isd);
+  std::cout << "==================================================" << std::endl;
   EXPECT_TRUE(testPlugin.canModelBeConstructedFromState(
       "USGS_ASTRO_FRAME_SENSOR_MODEL", modelState));
 }
@@ -124,8 +126,13 @@ TEST_F(ConstVelLineScanIsdTest, Constructible) {
 TEST_F(ConstVelLineScanIsdTest, ConstructibleFromState) {
   UsgsAstroPlugin testPlugin;
   std::string modelState = testPlugin.getStateFromISD(isd);
+  std::cout << "Model state from ISD: " << modelState << std::endl;
+  csm::WarningList *warnings = new csm::WarningList;
   EXPECT_TRUE(testPlugin.canModelBeConstructedFromState(
-      "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", modelState));
+      "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", modelState, warnings));
+  for (auto warning : *warnings)
+            std::cout << warning.getMessage() << std::endl;
+   
 }
 
 TEST_F(ConstVelLineScanIsdTest, NotConstructible) {
@@ -166,6 +173,7 @@ TEST_F(ConstVelocityLineScanSensorModel, ConstructibleFromSupState) {
   std::string modelState;
   EXPECT_TRUE(readFileInString(supFile, modelState));
   sanitize(modelState);
+  std::cout << "Model state from .sup file: " << modelState << std::endl;
   EXPECT_TRUE(testPlugin.canModelBeConstructedFromState(
       "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL", modelState));
 }
@@ -230,6 +238,25 @@ TEST_F(SarIsdTest, ConstructInvalidCamera) {
   } catch (...) {
     FAIL() << "Expected csm SENSOR_MODEL_NOT_CONSTRUCTIBLE error";
   }
+}
+
+TEST(IsUsgsCsmIsd, RecognizesIsd) {
+  // Minimal ISD signature: leading '{', the ISD-only keys body_rotation
+  // and instrument_position, and a USGS_ASTRO_* model name.
+  std::string s = R"({"body_rotation":[],"instrument_position":[],
+                      "name_model":"USGS_ASTRO_FRAME_SENSOR_MODEL"})";
+  std::string name;
+  EXPECT_TRUE(isUsgsCsmIsd(s, name));
+  EXPECT_EQ(name, "USGS_ASTRO_FRAME_SENSOR_MODEL");
+}
+
+TEST(IsUsgsCsmState, RecognizesState) {
+  // .sup-style: arbitrary preamble before '{', then JSON state with m_modelName.
+  std::string s = "GXP-state-preamble\n"
+                  "{\"m_modelName\":\"USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL\"}";
+  std::string name;
+  EXPECT_TRUE(isUsgsCsmState(s, name));
+  EXPECT_EQ(name, "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL");
 }
 
 int main(int argc, char **argv) {

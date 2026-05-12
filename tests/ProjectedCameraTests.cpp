@@ -15,7 +15,7 @@ using json = nlohmann::json;
 
 TEST_F(ConstVelocityProjectedSensorModel, ConstructFromState) {
   std::string modelState = sensorModel->getModelState();
-  csm::RasterGM * model = getUsgsCsmModelFromState(modelState, UsgsAstroProjectedSensorModel::_SENSOR_MODEL_NAME, NULL);
+  csm::RasterGM * model = getUsgsCsmModelFromJsonState(modelState, UsgsAstroProjectedSensorModel::_SENSOR_MODEL_NAME, NULL);
 
   EXPECT_EQ(sensorModel->getModelState(), model->getModelState());
 }

@@ -36,13 +36,13 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include "ale/Orientations.h"
 #include "ale/States.h"
 
-#include <nlohmann/json_fwd.hpp> // forward declaration
 
 #include "spdlog/spdlog.h"
 
 #include <proj.h>
 
 #include "UsgsAstroLsSensorModel.h"
+#include "VariantMap.h"
 
 class UsgsAstroProjectedSensorModel : public csm::RasterGM,
                                       virtual public csm::SettableEllipsoid {
@@ -66,20 +66,18 @@ public:
     //  If the argument state string is empty, the model remains unchanged.
     //<
 
-    // Populate model fields directly from a json object, bypassing string
-    // serialization. Used by replaceModelState() and binary state loading.
-    void populateModel(const nlohmann::json& j);
+    void populateModel(const VariantMap& vm);
+    VariantMap getModelMap() const;
 
-    // Return model state as a json object, bypassing string serialization.
-    nlohmann::json getModelJson() const;
+    std::string getModelJson() const;
 
     // This method checks to see if the model name is recognized
     // in the input state string.
     static std::string getModelNameFromModelState(const std::string &model_state);
 
-    std::string constructStateFromIsd(const std::string imageSupportData, 
-                                      const std::string modelName,
-                                      csm::WarningList *list);
+    VariantMap constructStateFromIsd(const std::string imageSupportData,
+                                     const std::string modelName,
+                                     csm::WarningList *list);
 
     // State data elements;
     double m_majorAxis;

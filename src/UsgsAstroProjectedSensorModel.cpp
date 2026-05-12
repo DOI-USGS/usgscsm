@@ -25,6 +25,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include "UsgsAstroProjectedSensorModel.h"
 #include "UsgsAstroPluginSupport.h"
 #include "Utilities.h"
+#include "VariantMap.h"
 
 #include <proj.h>
 
@@ -39,6 +40,9 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
   }
 
 using json = nlohmann::json;
+
+VariantMap variantMapFromJson(const nlohmann::json& j);
+nlohmann::json jsonFromVariantMap(const VariantMap& vm);
 
 const std::string UsgsAstroProjectedSensorModel::_SENSOR_MODEL_NAME =
     "USGS_ASTRO_PROJECTED_SENSOR_MODEL";
@@ -102,10 +106,10 @@ const std::string UsgsAstroProjectedSensorModel::_STATE_KEYWORD[] = {
 // UsgsAstroLineScannerSensorModel::replaceModelState
 //***************************************************************************
 void UsgsAstroProjectedSensorModel::replaceModelState(const std::string& stateString) {
-  populateModel(stateAsJson(stateString));
+  populateModel(variantMapFromJson(stateAsJson(stateString)));
 }
 
-void UsgsAstroProjectedSensorModel::populateModel(const nlohmann::json& j) {
+void UsgsAstroProjectedSensorModel::populateModel(const VariantMap& state) {
   reset();
   MESSAGE_LOG(
       spdlog::level::warn,
@@ -114,16 +118,15 @@ void UsgsAstroProjectedSensorModel::populateModel(const nlohmann::json& j) {
       "you have projected using a more detailed shape model this sensor "
       "will return incorrect ground intersections.");
 
-  m_subModelName = j["m_subModelName"];
-  m_camera = getUsgsCsmModelFromJson(j, m_subModelName, NULL);
-  m_majorAxis = j["m_majorAxis"];
-  m_minorAxis = j["m_minorAxis"];
-  m_geoTransform = j["m_geoTransform"].get<std::vector<double>>();
-  m_projString = j["m_projString"];
-  
+  m_subModelName = state.get<std::string>("m_subModelName");
+  m_camera = getUsgsCsmModelFromVariantMap(state, m_subModelName, NULL);
+  m_majorAxis = state.get<double>("m_majorAxis");
+  m_minorAxis = state.get<double>("m_minorAxis");
+  m_geoTransform = state.get<std::vector<double>>("m_geoTransform");
+  m_projString = state.get<std::string>("m_projString");
+
   PJ_CONTEXT *C = proj_context_create();
 
-  /* Create a projection. */
   m_isdProj = proj_create(C, (m_projString + " +type=crs").c_str());
   if (0 == m_isdProj) {
     MESSAGE_LOG(
@@ -132,7 +135,6 @@ void UsgsAstroProjectedSensorModel::populateModel(const nlohmann::json& j) {
     return;
   }
 
-  /* Create the geocentric projection for our target */
   std::string radius_a = "+a=" + std::to_string(m_majorAxis);
   std::string radius_b = "+b=" + std::to_string(m_minorAxis);
   std::string projString = "+proj=geocent " + radius_a + " " + radius_b + " +type=crs";
@@ -144,7 +146,6 @@ void UsgsAstroProjectedSensorModel::populateModel(const nlohmann::json& j) {
     return;
   }
 
-  // Compute the transformation from our ISIS projection to ecef
   m_isdProj2ecefProj = proj_create_crs_to_crs_from_pj(C, m_isdProj, m_ecefProj, 0, 0);
 
   proj_context_destroy(C);
@@ -154,9 +155,12 @@ void UsgsAstroProjectedSensorModel::populateModel(const nlohmann::json& j) {
       "m_subModelName: {} "
       "m_majorAxis: {} "
       "m_minorAxis: {} "
-      "m_geoTransform: {} "
+      "m_geoTransform: {} {} {} {} {} {} "
       "m_projString: {} ",
-      j["m_subModelName"].dump(), j["m_majorAxis"].dump(), j["m_minorAxis"].dump(), j["m_geoTransform"].dump(), j["m_projString"].dump());
+      m_subModelName, m_majorAxis, m_minorAxis,
+      m_geoTransform[0], m_geoTransform[1], m_geoTransform[2],
+      m_geoTransform[3], m_geoTransform[4], m_geoTransform[5],
+      m_projString);
 }
 
 //***************************************************************************
@@ -188,19 +192,20 @@ std::string UsgsAstroProjectedSensorModel::getModelNameFromModelState(
   return model_name;
 }
 
-//***************************************************************************
-// UsgsAstroLineScannerSensorModel::getModelState
-//***************************************************************************
-nlohmann::json UsgsAstroProjectedSensorModel::getModelJson() const {
-  // Read json state from the underlying camera model (linescan, frame, etc.)
-  auto state = getUsgsCsmModelJson(m_camera);
-  state["m_subModelName"] = state["m_modelName"];
-  state["m_modelName"] = _SENSOR_MODEL_NAME;
-  state["m_majorAxis"] = m_majorAxis;
-  state["m_minorAxis"] = m_minorAxis;
-  state["m_geoTransform"] = m_geoTransform;
-  state["m_projString"] = m_projString;
+VariantMap UsgsAstroProjectedSensorModel::getModelMap() const {
+  auto state = getUsgsCsmModelMap(m_camera);
+  std::string subModelName = state.get<std::string>("m_modelName");
+  state.set<std::string>("m_subModelName", subModelName);
+  state.set<std::string>("m_modelName", _SENSOR_MODEL_NAME);
+  state.set<double>("m_majorAxis", m_majorAxis);
+  state.set<double>("m_minorAxis", m_minorAxis);
+  state.set<std::vector<double>>("m_geoTransform", m_geoTransform);
+  state.set<std::string>("m_projString", m_projString);
   return state;
+}
+
+std::string UsgsAstroProjectedSensorModel::getModelJson() const {
+  return jsonFromVariantMap(getModelMap()).dump(2);
 }
 
 std::string UsgsAstroProjectedSensorModel::getModelState() const {
@@ -221,8 +226,7 @@ std::string UsgsAstroProjectedSensorModel::getModelState() const {
       m_geoTransform[4],
       m_geoTransform[5],
       m_projString);
-  // Use dump(2) to avoid creating the model string as a single long line
-  return getModelName() + "\n" + getModelJson().dump(2);
+  return getModelName() + "\n" + getModelJson();
 }
 
 //***************************************************************************
@@ -834,28 +838,36 @@ void UsgsAstroProjectedSensorModel::setEllipsoid(const csm::Ellipsoid& ellipsoid
 //***************************************************************************
 // UsgsAstroLineScannerSensorModel::constructStateFromIsd
 //***************************************************************************
-std::string UsgsAstroProjectedSensorModel::constructStateFromIsd(
-    const std::string imageSupportData, const std::string modelName, 
+VariantMap UsgsAstroProjectedSensorModel::constructStateFromIsd(
+    const std::string imageSupportData, const std::string modelName,
     csm::WarningList *warnings)
 {
   json state = json::parse(imageSupportData);
 
+  // Clean up existing camera if present to prevent memory leak
+  if (m_camera) {
+    delete m_camera;
+    m_camera = nullptr;
+  }
   m_camera = getUsgsCsmModelFromIsd(imageSupportData, modelName, warnings);
-  json projState = stateAsJson(m_camera->getModelState());
+  VariantMap projState = getUsgsCsmModelMap(m_camera);
 
   // Force update the modelName
-  projState["m_modelName"] = m_camera->getModelName();
-  projState["m_subModelName"] = projState["m_modelName"];
-  projState["m_geoTransform"] = ale::getGeoTransform(state);
-  projState["m_projString"] = ale::getProjection(state);
+  projState.set<std::string>("m_modelName", m_camera->getModelName());
+  projState.set<std::string>("m_subModelName", m_camera->getModelName());
+  projState.set<std::vector<double>>("m_geoTransform", ale::getGeoTransform(state));
+  projState.set<std::string>("m_projString", ale::getProjection(state));
   MESSAGE_LOG(
       spdlog::level::trace,
       "m_modelName: {} "
       "m_subModelName: {} "
-      "m_geoTransform: {} "
+      "m_geoTransform size: {} "
       "m_projString: {} ",
-      projState["m_modelName"].dump(), projState["m_subModelName"].dump(), projState["m_geoTransform"].dump(), projState["m_projString"].dump());
+      projState.get<std::string>("m_modelName"),
+      projState.get<std::string>("m_subModelName"),
+      projState.get<std::vector<double>>("m_geoTransform").size(),
+      projState.get<std::string>("m_projString"));
   // The state data will still be updated when a sensor model is created since
   // some state data is not in the ISD and requires a SM to compute them.
-  return projState.dump();
+  return projState;
 }

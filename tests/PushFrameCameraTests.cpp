@@ -10,6 +10,7 @@
 #include <math.h>
 #include <iostream>
 
+#include <nlohmann/json_fwd.hpp> // forward declaration
 using json = nlohmann::json;
 
 TEST_F(OrbitalPushFrameSensorModel, State) {

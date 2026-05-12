@@ -2,6 +2,7 @@
 #define INCLUDE_USGSCSM_UTILITIES_H_
 
 #include "Distortion.h"
+#include "VariantMap.h"
 
 #include <math.h>
 #include <string>
@@ -26,15 +27,15 @@ void computeDistortedFocalPlaneCoordinates(
 
 void removeJitter(
     const double &line, const double &sample,
-    const std::vector<double> lineJitterCoeffs, const std::vector<double> sampleJitterCoeffs,
-    const std::vector<double> lineTimes,
+    const std::vector<double>& lineJitterCoeffs, const std::vector<double>& sampleJitterCoeffs,
+    const std::vector<double>& lineTimes,
     double &dejitteredLine, double &dejitteredSample);
 
 void addJitter(
     const double &line, const double &sample,
     const double &tolerance, const int &maxIts,
-    const std::vector<double> lineJitterCoeffs, const std::vector<double> sampleJitterCoeffs,
-    const std::vector<double> lineTimes,
+    const std::vector<double>& lineJitterCoeffs, const std::vector<double>& sampleJitterCoeffs,
+    const std::vector<double>& lineTimes,
     double &jitteredLine, double &jitteredSample);
 
 void computePixel(const double &distortedX, const double &distortedY,
@@ -192,6 +193,9 @@ std::vector<double> getSensorOrientations(nlohmann::json isd,
                                           csm::WarningList *list = nullptr);
 double getWavelength(nlohmann::json isd, csm::WarningList *list = nullptr);
 nlohmann::json stateAsJson(std::string modelState);
+
+VariantMap variantMapFromJson(const nlohmann::json& j);
+nlohmann::json jsonFromVariantMap(const VariantMap& vm);
 
 // Check if a file is in msgpack binary format by peeking at the first byte.
 // Per the msgpack spec (github.com/msgpack/msgpack/blob/master/spec.md),
