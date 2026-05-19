@@ -394,13 +394,32 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
     case RADTAN:
     {
       dx /= focalLength; dy /= focalLength; // Find normalized coordinates
-      newtonRaphson(dx, dy, ux, uy, opticalDistCoeffs, distortionType, tolerance, 
+      newtonRaphson(dx, dy, ux, uy, opticalDistCoeffs, distortionType, tolerance,
                     computeRadTanDistortion, radTanDistortionJacobian);
       ux *= focalLength; uy *= focalLength; // Convert back to pixel coordinates
-      
+
     }
     break;
-    
+
+    // KPLO ShadowCam: single-coefficient Y-only cubic distortion.
+    // Ported from isis/src/kplo/objs/ShadowCamCamera/ShadowCamDistortionMap.cpp.
+    // Closed-form distorted -> undistorted: uy = dy * (1 + dk1 * dy^2);  ux = dx.
+    case KPLOSHADOWCAM: {
+      if (opticalDistCoeffs.size() != 1) {
+        csm::Error::ErrorType errorType = csm::Error::INDEX_OUT_OF_RANGE;
+        std::string message =
+            "Distortion coefficients for KPLO ShadowCam must be of size 1, "
+            "current size: " +
+            std::to_string(opticalDistCoeffs.size());
+        std::string function = "removeDistortion";
+        throw csm::Error(errorType, message, function);
+      }
+      double dk1 = opticalDistCoeffs[0];
+      ux = dx;
+      uy = dy * (1.0 + dk1 * dy * dy);
+      return;
+    } break;
+
   }
 }
 
@@ -636,6 +655,53 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
         dy = ydistorted;
       }
 
+      return;
+    } break;
+
+    // KPLO ShadowCam: inverse (undistorted -> distorted) of
+    //   uy = dy * (1 + dk1 * dy^2);  ux = dx
+    // Solved via fixed-point iteration:
+    //   yt_{n+1} = uy / (1 + dk1 * yt_n^2)
+    // Ported from isis/src/kplo/objs/ShadowCamCamera/ShadowCamDistortionMap.cpp.
+    case KPLOSHADOWCAM: {
+      if (opticalDistCoeffs.size() != 1) {
+        csm::Error::ErrorType errorType = csm::Error::INDEX_OUT_OF_RANGE;
+        std::string message =
+            "Distortion coefficients for KPLO ShadowCam must be of size 1, "
+            "current size: " +
+            std::to_string(opticalDistCoeffs.size());
+        std::string function = "applyDistortion";
+        throw csm::Error(errorType, message, function);
+      }
+      double dk1 = opticalDistCoeffs[0];
+      double localTolerance = 1.0e-10;
+
+      if (fabs(uy) > 40) {
+        dx = ux;
+        dy = uy;
+        return;
+      }
+
+      double yt = uy;
+      double rr, dr;
+      double yprev = 1.0e6;
+      bool converged = false;
+      double ydistorted = uy;
+
+      for (int i = 0; i < 50; i++) {
+        rr = yt * yt;
+        dr = 1.0 + dk1 * rr;
+        yt = uy / dr;
+        ydistorted = yt;
+        if (fabs(yt - yprev) <= localTolerance) {
+          converged = true;
+          break;
+        }
+        yprev = yt;
+      }
+
+      dx = ux;
+      dy = converged ? ydistorted : uy;
       return;
     } break;
 

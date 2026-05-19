@@ -37,11 +37,13 @@ release.
 
 ### Added
 - `isUsgsCsmIsd()` and `isUsgsCsmState()` quick string-scan helpers in `UsgsAstroPluginSupport` to identify ISD vs model state without full JSON parsing or model construction. [#502](https://github.com/DOI-USGS/usgscsm/pull/502)
+- Added `KPLOSHADOWCAM` distortion type for the KPLO ShadowCam imager. Single-coefficient Y-only cubic distortion (closed-form distorted-to-undistorted: `uy = dy * (1 + dk1 * dy^2)`; iterative inverse via fixed-point on `yt = uy / (1 + dk1 * yt^2)`). Includes string parser, JSON coefficient parser, and updated int-mapper for `ale::DistortionType::KPLOSHADOWCAM` in `Utilities.cpp`. Matches the `kplo_shadowcam` distortion emitted by the corresponding ALE driver. Ported from `isis/src/kplo/objs/ShadowCamCamera/ShadowCamDistortionMap.cpp`.
 
 ### Fixed
 - Fix a bug in the Frame Sensor Model, the ephemeris time was rounded to it. [#497](https://github.com/DOI-USGS/usgscsm/pull/497)
 - Removed boundary checks for Frame Sensor Model getSensorPosition [#492](https://github.com/DOI-USGS/usgscsm/pull/492)
 - Fixed CAHVOR model optical shifts by removing tolerance check [#488](https://github.com/DOI-USGS/usgscsm/issues/488)
+- Fixed `getDistortionModel(int, ...)` falling through to the default `TRANSVERSE` case for any `ale::DistortionType` enum value beyond `RADTAN`. Previously, every distortion type added to ALE after RADTAN had no matching case in the int-to-enum mapper used by `UsgsAstroLsSensorModel::constructStateFromIsd`, so the corresponding `m_distortionType` was silently overwritten with `TRANSVERSE` (default fallback). KPLOSHADOWCAM is the first type to expose this; the mapper now explicitly handles it and matches the existing string-key mapper.
 
 ## [2.0.1] - 2024-01-23
 
