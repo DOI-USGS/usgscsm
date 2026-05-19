@@ -37,7 +37,7 @@ release.
 
 ### Added
 - `isUsgsCsmIsd()` and `isUsgsCsmState()` quick string-scan helpers in `UsgsAstroPluginSupport` to identify ISD vs model state without full JSON parsing or model construction. [#502](https://github.com/DOI-USGS/usgscsm/pull/502)
-- Added the `KPLOSHADOWCAM` distortion type for the KPLO ShadowCam imager.
+- Added the `KPLOSHADOWCAM` distortion type for the KPLO ShadowCam imager. [#505](https://github.com/DOI-USGS/usgscsm/pull/505)
 
 ### Fixed
 - Fix a bug in the Frame Sensor Model, the ephemeris time was rounded to it. [#497](https://github.com/DOI-USGS/usgscsm/pull/497)
