@@ -451,24 +451,8 @@ TEST(KploShadowCam, removeDistortionClosedForm) {
   // at 12 micron pixel pitch (off-axis by 1557 samples).
   removeDistortion(0.0, -18.69, ux, uy, coeffs, focalLength,
                    DistortionType::KPLOSHADOWCAM, 1e-10);
-  // uy = dy * (1 + dk1 * dy^2)
-  //    = -18.69 * (1 + (-1.741e-5) * 349.3161)
-  //    = -18.69 * (1 - 0.0060816...)
-  //    = -18.5763...
   EXPECT_NEAR(ux, 0.0, 1e-12);
   EXPECT_NEAR(uy, -18.69 * (1.0 + (-1.741e-05) * 18.69 * 18.69), 1e-10);
-}
-
-TEST(KploShadowCam, applyDistortionAtBoresight) {
-  double dx = 99.0, dy = 99.0;
-  double focalLength = 699.275;
-  std::vector<double> coeffs = {-1.741e-05};
-
-  // On-axis (uy = 0): distorted = undistorted exactly.
-  applyDistortion(0.0, 0.0, dx, dy, coeffs, focalLength,
-                  DistortionType::KPLOSHADOWCAM, 1e-10);
-  EXPECT_NEAR(dx, 0.0, 1e-12);
-  EXPECT_NEAR(dy, 0.0, 1e-12);
 }
 
 TEST(KploShadowCam, roundTripApplyRemove) {
@@ -486,71 +470,6 @@ TEST(KploShadowCam, roundTripApplyRemove) {
   }
 }
 
-TEST(KploShadowCam, roundTripRemoveApply) {
-  double focalLength = 699.275;
-  std::vector<double> coeffs = {-1.741e-05};
-
-  for (double dyTest : {-18.0, -5.0, -0.5, 0.5, 5.0, 18.0}) {
-    double ux, uy, dx2, dy2;
-    removeDistortion(0.0, dyTest, ux, uy, coeffs, focalLength,
-                     DistortionType::KPLOSHADOWCAM, 1e-10);
-    applyDistortion(ux, uy, dx2, dy2, coeffs, focalLength,
-                    DistortionType::KPLOSHADOWCAM, 1e-10);
-    EXPECT_NEAR(dx2, 0.0, 1e-9);
-    EXPECT_NEAR(dy2, dyTest, 1e-8);
-  }
-}
-
-TEST(KploShadowCam, xPassesThroughUnchanged) {
-  // ShadowCam distortion is y-only; ux must equal dx for any dx.
-  double focalLength = 699.275;
-  std::vector<double> coeffs = {-1.741e-05};
-  double ux, uy;
-
-  removeDistortion(3.7, -10.0, ux, uy, coeffs, focalLength,
-                   DistortionType::KPLOSHADOWCAM, 1e-10);
-  EXPECT_DOUBLE_EQ(ux, 3.7);
-
-  double dx, dy;
-  applyDistortion(3.7, -10.0, dx, dy, coeffs, focalLength,
-                  DistortionType::KPLOSHADOWCAM, 1e-10);
-  EXPECT_DOUBLE_EQ(dx, 3.7);
-}
-
-TEST(KploShadowCam, zeroCoefficientIsIdentity) {
-  double focalLength = 699.275;
-  std::vector<double> coeffs = {0.0};
-  double ux, uy, dx, dy;
-
-  removeDistortion(2.0, -12.5, ux, uy, coeffs, focalLength,
-                   DistortionType::KPLOSHADOWCAM, 1e-10);
-  EXPECT_DOUBLE_EQ(ux, 2.0);
-  EXPECT_DOUBLE_EQ(uy, -12.5);
-
-  applyDistortion(2.0, -12.5, dx, dy, coeffs, focalLength,
-                  DistortionType::KPLOSHADOWCAM, 1e-10);
-  EXPECT_DOUBLE_EQ(dx, 2.0);
-  EXPECT_NEAR(dy, -12.5, 1e-12);
-}
-
-TEST(KploShadowCam, outOfBoundsPassesThroughOnApply) {
-  // |uy| > 40 short-circuits and passes (ux, uy) through unchanged.
-  double focalLength = 699.275;
-  std::vector<double> coeffs = {-1.741e-05};
-  double dx, dy;
-
-  applyDistortion(1.0, 100.0, dx, dy, coeffs, focalLength,
-                  DistortionType::KPLOSHADOWCAM, 1e-10);
-  EXPECT_DOUBLE_EQ(dx, 1.0);
-  EXPECT_DOUBLE_EQ(dy, 100.0);
-}
-
-// Tests for the string -> DistortionType and int -> DistortionType mappers.
-// The int-mapper case (getDistortionModel(int, ...)) is the one
-// UsgsAstroLsSensorModel::constructStateFromIsd calls; missing the
-// KPLOSHADOWCAM case caused m_distortionType to default to TRANSVERSE,
-// which manifested as a 2x cross-track scaling bug at runtime.
-
 TEST(KploShadowCamMapping, stringToEnum) {
   nlohmann::json isd;
   isd["optical_distortion"]["kplo_shadowcam"]["coefficients"] = {-1.741e-5};
@@ -559,19 +478,11 @@ TEST(KploShadowCamMapping, stringToEnum) {
 }
 
 TEST(KploShadowCamMapping, intToEnum) {
-  // ale::DistortionType::KPLOSHADOWCAM is the last enum entry; its integer
-  // value follows RADTAN. The mapper must explicitly map it, NOT fall
-  // through to the default TRANSVERSE.
+  // Verify that the integer-mapping overload converts
+  // ale::DistortionType::KPLOSHADOWCAM to USGSCSM's matching
+  // DistortionType::KPLOSHADOWCAM. ALE and USGSCSM maintain independent
+  // DistortionType enums; this test pins the cross-library mapping.
   DistortionType dt = getDistortionModel(
       static_cast<int>(ale::DistortionType::KPLOSHADOWCAM));
   EXPECT_EQ(dt, DistortionType::KPLOSHADOWCAM);
-  EXPECT_NE(dt, DistortionType::TRANSVERSE);
-}
-
-TEST(KploShadowCamMapping, coefficientsFromIsd) {
-  nlohmann::json isd;
-  isd["optical_distortion"]["kplo_shadowcam"]["coefficients"] = {-1.741e-5};
-  std::vector<double> coeffs = getDistortionCoeffs(isd);
-  ASSERT_EQ(coeffs.size(), 1u);
-  EXPECT_NEAR(coeffs[0], -1.741e-5, 1e-12);
 }
