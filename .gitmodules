@@ -6,8 +6,7 @@
 	url = https://github.com/USGS-Astrogeology/csm
 [submodule "ale"]
 	path = ale
-	url = https://github.com/oleg-alexandrov/ale.git
-	branch = kplo-shadowcam-driver
+	url = git@github.com:DOI-USGS/ale.git
 [submodule "json"]
 	path = json
 	url = https://github.com/nlohmann/json.git
