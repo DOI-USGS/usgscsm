@@ -168,78 +168,123 @@ For more information, see: [cpplint](https://github.com/cpplint/cpplint).
 
 ## WebAssembly Support
 
-USGSCSM can be compiled to WebAssembly for use in web browsers, enabling planetary photogrammetry directly in the browser without server-side computation.
+USGSCSM can be compiled to WebAssembly for use in web browsers and Node.js.
 
-### Quick Start
+### Building for WebAssembly
 
+**Requirements:**
+- Emscripten 3.1.58 (compatible with Binaryen 117)
+- cmake 3.15+
+
+**Setup with Conda:**
 ```bash
-# Install Emscripten
-git clone https://github.com/emscripten-core/emsdk.git
-cd emsdk && ./emsdk install latest && ./emsdk activate latest
-source ./emsdk_env.sh
-
-# Build WASM module
-cd /path/to/usgscsm
-./build_wasm.sh all
+conda create -n usgscsm python=3.11
+conda activate usgscsm
+conda install -c conda-forge emscripten=3.1.58
 ```
 
-The build produces:
-- `dist/usgscsm_wasm.js` - JavaScript glue code
-- `dist/usgscsm_wasm.wasm` - WebAssembly binary (~1.2 MB gzipped)
+**Build:**
+```bash
+# Clone with submodules
+git clone --recursive https://github.com/USGS-Astrogeology/usgscsm.git
+cd usgscsm
+
+# Configure
+mkdir wasm && cd wasm
+emcmake cmake .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DUSGSCSM_WASM_OPTIMIZE=ON \
+  -DUSGSCSM_BUILD_TESTS=OFF \
+  -DUSGSCSM_BUILD_DOCS=OFF \
+  -DCMAKE_EXE_LINKER_FLAGS="" \
+  -DCMAKE_SHARED_LINKER_FLAGS=""
+
+# Build
+emmake make -j2
+
+# Output in dist/
+ls -lh ../dist/
+```
+
+**Output files:**
+- `dist/usgscsm.js` - JavaScript glue code (~123 KB, 30 KB gzipped)
+- `dist/usgscsm.wasm` - WebAssembly binary (~911 KB, 254 KB gzipped)
 - `dist/usgscsm.d.ts` - TypeScript definitions
+
+**Testing:**
+```bash
+npm test
+```
 
 ### Browser Usage
 
 ```javascript
-import USGSCSM from './dist/usgscsm_wasm.js';
+import USGSCSM from './dist/usgscsm.js';
 
-async function main() {
-  const Module = await USGSCSM();
-  const model = new Module.USGSCSMModel();
-  
-  // Load camera model from ISD JSON
-  const isdJson = await fetch('model.json').then(r => r.text());
-  model.loadFromISD(isdJson, 'USGS_ASTRO_FRAME_SENSOR_MODEL');
-  
-  // Perform coordinate transformations
-  const ground = model.imageToGround(100, 200, 0);
-  console.log(`ECEF: (${ground.x}, ${ground.y}, ${ground.z})`);
-}
+const Module = await USGSCSM();
+const model = new Module.USGSCSMModel();
 
-main();
+// Load from ISD
+const isdJson = await fetch('model.json').then(r => r.text());
+model.loadFromISD(isdJson, 'USGS_ASTRO_FRAME_SENSOR_MODEL');
+
+// Transform coordinates
+const ground = model.imageToGround(100, 200, 0);
+const pixel = model.groundToImage(ground.x, ground.y, ground.z);
 ```
 
-### NPM Installation
+### Saving and Loading Model State
 
-```bash
-npm install usgscsm-wasm
-```
+Camera models can be serialized to JSON state strings and restored later, enabling:
+- Caching computed models for faster subsequent loads
+- Sharing camera models between applications
+- Storing refined camera parameters after bundle adjustment
 
 ```javascript
-import USGSCSM from 'usgscsm-wasm';
-// ... use as above
+import USGSCSM from './dist/usgscsm.js';
+
+const Module = await USGSCSM();
+
+// Load from ISD (slow - computes ephemeris)
+const model1 = new Module.USGSCSMModel();
+model1.loadFromISD(isdJson, 'USGS_ASTRO_FRAME_SENSOR_MODEL');
+
+// Save model state for reuse
+const state = model1.getModelState();
+localStorage.setItem('cameraModel', state); // or send to server
+
+// Later: Load from state (fast - precomputed)
+const savedState = localStorage.getItem('cameraModel');
+const model2 = new Module.USGSCSMModel();
+model2.loadFromState(savedState);
+
+// model2 produces identical results to model1
+const ground = model2.imageToGround(100, 200, 0);
 ```
+
+**State Format:**
+- JSON object containing all model parameters with `m_modelName` key
+- Size: Typically 2-50 KB depending on model type and ephemeris data
+
+**Benefits:**
+- Loading from state is ~10-100x faster than loading from ISD
+- State contains precomputed sensor positions, quaternions, velocities
+- Ideal for web applications that need quick model instantiation
+
+**Binary State Format:**
+
+For even faster loading and smaller size, the C++ API (`usgscsm_cam_test`) supports binary msgpack format:
+
+```bash
+# C++ tool can save/load binary state
+usgscsm_cam_test --model input.json --output-binary-model-state output.isd
+```
+
+Binary format reduces size by ~60% and load time by ~80% but is not yet supported in the JavaScript API.
 
 ### Supported Models
 
-The WebAssembly build includes:
-- ✅ Frame cameras (`USGS_ASTRO_FRAME_SENSOR_MODEL`)
-- ✅ Line scanners (`USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL`)
-- ✅ Push frame cameras (`USGS_ASTRO_PUSH_FRAME_SENSOR_MODEL`)
-- ✅ SAR sensors (`USGS_ASTRO_SAR_SENSOR_MODEL`)
-
-**Note:** The projected sensor model is not included to reduce bundle size.
-
-### Documentation
-
-- [Building for WebAssembly](docs/building_wasm.md) - Detailed build instructions
-- [Usage Guide](docs/wasm_usage.md) - Complete API documentation and examples
-- [TypeScript Definitions](src/wasm/usgscsm.d.ts) - Type-safe API reference
-
-### Browser Compatibility
-
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
-- Mobile browsers (iOS 14+, Android Chrome 90+)
+- Frame cameras (`USGS_ASTRO_FRAME_SENSOR_MODEL`)
+- Line scanners (`USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL`)
+- Push frame cameras (`USGS_ASTRO_PUSH_FRAME_SENSOR_MODEL`)
+- SAR sensors (`USGS_ASTRO_SAR_SENSOR_MODEL`)
