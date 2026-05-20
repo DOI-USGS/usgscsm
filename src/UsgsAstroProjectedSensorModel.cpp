@@ -26,7 +26,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 // ProjectedSensorModel requires PROJ library which is not available in WASM builds
 
 #include "UsgsAstroProjectedSensorModel.h"
-#include "UsgsAstroPluginSupport.h"
 #include "Utilities.h"
 #include "VariantMap.h"
 #include "Logging.h"

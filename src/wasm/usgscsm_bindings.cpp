@@ -8,25 +8,19 @@
 #include <emscripten/val.h>
 #include <emscripten/emscripten.h>
 
-#include "UsgsAstroPlugin.h"
-#include "UsgsAstroPluginSupport.h"
-#include "UsgsAstroFrameSensorModel.h"
-#include "UsgsAstroLsSensorModel.h"
-#include "UsgsAstroPushFrameSensorModel.h"
-#include "UsgsAstroSarSensorModel.h"
-#include "RasterGM.h"
 #include "Utilities.h"
+#include "RasterGM.h"
 
 #include <Error.h>
 #include <nlohmann/json.hpp>
 
 #include <iostream>
-#include <fstream>
 #include <memory>
 #include <string>
 #include <stdexcept>
 
 using namespace emscripten;
+using json = nlohmann::json;
 
 /**
  * Wrapper class that provides a simplified JavaScript API for USGSCSM sensor models.
@@ -34,7 +28,6 @@ using namespace emscripten;
 class USGSCSMWrapper {
 private:
   std::shared_ptr<csm::RasterGM> model;
-  UsgsAstroPlugin plugin;
 
 public:
   USGSCSMWrapper() {}
@@ -47,46 +40,18 @@ public:
    * @return true if model loaded successfully
    */
   bool loadModelFromISD(const std::string& isd_json, const std::string& model_name) {
-    std::cerr << "=== loadModelFromISD called ===" << std::endl;
     try {
-      // Write ISD to virtual filesystem
-      std::string temp_file = "/tmp/model.json";
-      std::ofstream ofs(temp_file);
-      if (!ofs.is_open()) {
-        std::cerr << "Failed to create temporary ISD file" << std::endl;
-        return false;
-      }
-      ofs << isd_json;
-      ofs.close();
-
-      // Load via CSM plugin interface
-      csm::Isd isd(temp_file);
       csm::WarningList warnings;
 
-      // Construct the model (may throw csm::Error)
-      std::cerr << "About to call constructModelFromISD..." << std::endl;
-      csm::Model* csm_model = plugin.constructModelFromISD(isd, model_name, &warnings);
-      std::cerr << "constructModelFromISD returned: " << (void*)csm_model << std::endl;
-
-      if (!csm_model) {
-        std::cerr << "Failed to construct model from ISD (returned null)" << std::endl;
-        return false;
-      }
-
-      std::cerr << "About to dynamic_cast..." << std::endl;
-      csm::RasterGM* raster = dynamic_cast<csm::RasterGM*>(csm_model);
-      std::cerr << "dynamic_cast returned: " << (void*)raster << std::endl;
+      // Directly construct model from ISD JSON string (no temp file needed)
+      csm::RasterGM* raster = getUsgsCsmModelFromIsd(isd_json, model_name, &warnings);
 
       if (!raster) {
-        std::cerr << "Failed to cast model to RasterGM" << std::endl;
+        std::cerr << "Failed to construct model from ISD" << std::endl;
         return false;
       }
 
-      std::cerr << "About to create shared_ptr..." << std::endl;
       model = std::shared_ptr<csm::RasterGM>(raster);
-      std::cerr << "shared_ptr created successfully" << std::endl;
-
-      std::cerr << "=== Model loaded successfully, returning true ===" << std::endl;
       return true;
 
     } catch (const csm::Error& e) {
@@ -131,15 +96,21 @@ public:
   bool loadModelFromState(const std::string& state_json) {
     try {
       csm::WarningList warnings;
-      csm::Model* csm_model = plugin.constructModelFromState(state_json, &warnings);
 
-      if (!csm_model) {
+      // Extract model name from state JSON
+      json state = stateAsJson(state_json);
+      std::string modelName = state["m_modelName"];
+
+      // Directly construct model from state JSON string (utility function, not plugin)
+      csm::RasterGM* raster = getUsgsCsmModelFromJsonState(state_json, modelName, &warnings);
+
+      if (!raster) {
         std::cerr << "Failed to construct model from state" << std::endl;
         return false;
       }
 
-      model = std::shared_ptr<csm::RasterGM>(dynamic_cast<csm::RasterGM*>(csm_model));
-      return model != nullptr;
+      model = std::shared_ptr<csm::RasterGM>(raster);
+      return true;
 
     } catch (const csm::Error& e) {
       // Convert CSM error to JavaScript Error object
@@ -233,7 +204,7 @@ public:
 
       val result = val::object();
       result.set("line", imagePt.line);
-      result.set("sample", imagePt.samp);
+      result.set("samp", imagePt.samp);
       return result;
 
     } catch (const std::exception& e) {
@@ -352,8 +323,8 @@ public:
     try {
       csm::ImageVector size = model->getImageSize();
       val result = val::object();
-      result.set("lines", size.line);
-      result.set("samples", size.samp);
+      result.set("line", size.line);
+      result.set("samp", size.samp);
       return result;
 
     } catch (const std::exception& e) {
@@ -496,68 +467,52 @@ public:
     }
   }
 
-  /**
-   * Test if plugin is loaded correctly.
-   *
-   * @return plugin name
-   */
-  std::string testPlugin() {
-    try {
-      fprintf(stderr, "[TEST] Getting plugin name\n");
-      fflush(stderr);
-      std::string name = plugin.getPluginName();
-      fprintf(stderr, "[TEST] Plugin name: %s\n", name.c_str());
-      fflush(stderr);
-      return name;
-    } catch (std::exception& e) {
-      fprintf(stderr, "[TEST] Exception in testPlugin: %s\n", e.what());
-      fflush(stderr);
-      return "ERROR: " + std::string(e.what());
-    } catch (...) {
-      fprintf(stderr, "[TEST] Unknown exception in testPlugin\n");
-      fflush(stderr);
-      return "ERROR: Unknown exception";
-    }
-  }
-
-  /**
-   * Test calling populateModel directly.
-   *
-   * @return true if test passes
-   */
-  bool testPopulateModel() {
-    try {
-      fprintf(stderr, "[TEST] Creating LsSensorModel\n");
-      fflush(stderr);
-      UsgsAstroLsSensorModel *lsModel = new UsgsAstroLsSensorModel();
-      fprintf(stderr, "[TEST] LsSensorModel created at %p\n", (void*)lsModel);
-      fflush(stderr);
-
-      fprintf(stderr, "[TEST] Calling reset() directly\n");
-      fflush(stderr);
-      lsModel->reset();
-      fprintf(stderr, "[TEST] reset() completed!\n");
-      fflush(stderr);
-
-      delete lsModel;
-      fprintf(stderr, "[TEST] Model deleted successfully\n");
-      fflush(stderr);
-      return true;
-
-    } catch (std::exception& e) {
-      fprintf(stderr, "[TEST] Exception in testPopulateModel: %s\n", e.what());
-      fflush(stderr);
-      return false;
-    } catch (...) {
-      fprintf(stderr, "[TEST] Unknown exception in testPopulateModel\n");
-      fflush(stderr);
-      return false;
-    }
-  }
 };
+
+// Standalone utility functions for 1-to-1 C++ API mapping
+
+/**
+ * Check if a string is a USGS CSM ISD and extract the model name.
+ * @param str The string to check
+ * @return Object with {isIsd: bool, modelName: string}
+ */
+val checkIsUsgsCsmIsd(const std::string& str) {
+  std::string modelName;
+  bool isIsd = isUsgsCsmIsd(str, modelName);
+
+  val result = val::object();
+  result.set("isIsd", isIsd);
+  result.set("modelName", modelName);
+  return result;
+}
+
+/**
+ * Check if a string is a USGS CSM model state and extract the model name.
+ * @param str The string to check
+ * @return Object with {isState: bool, modelName: string}
+ */
+val checkIsUsgsCsmState(const std::string& str) {
+  std::string modelName;
+  bool isState = isUsgsCsmState(str, modelName);
+
+  val result = val::object();
+  result.set("isState", isState);
+  result.set("modelName", modelName);
+  return result;
+}
+
+/**
+ * Get model state JSON from a model (utility function).
+ * Note: This requires a src/Utilities.cppUSGSCSMModel instance. Use model.getModelState() instead.
+ * Kept for API completeness.
+ */
+std::string utilGetModelJson(USGSCSMWrapper& wrapper) {
+  return wrapper.getModelState();
+}
 
 // Embind declarations to expose C++ class to JavaScript
 EMSCRIPTEN_BINDINGS(usgscsm) {
+  // Main model wrapper class
   class_<USGSCSMWrapper>("USGSCSMModel")
     .constructor<>()
     .function("loadFromISD", &USGSCSMWrapper::loadModelFromISD)
@@ -575,7 +530,9 @@ EMSCRIPTEN_BINDINGS(usgscsm) {
     .function("getSensorIdentifier", &USGSCSMWrapper::getSensorIdentifier)
     .function("getPlatformIdentifier", &USGSCSMWrapper::getPlatformIdentifier)
     .function("isLoaded", &USGSCSMWrapper::isLoaded)
-    .function("testVariantMap", &USGSCSMWrapper::testVariantMap)
-    .function("testPlugin", &USGSCSMWrapper::testPlugin)
-    .function("testPopulateModel", &USGSCSMWrapper::testPopulateModel);
+    .function("testVariantMap", &USGSCSMWrapper::testVariantMap);
+
+  // Utility functions (1-to-1 C++ API mapping)
+  function("isUsgsCsmIsd", &checkIsUsgsCsmIsd);
+  function("isUsgsCsmState", &checkIsUsgsCsmState);
 }

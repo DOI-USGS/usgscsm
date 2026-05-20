@@ -14,6 +14,7 @@ add_executable(runCSMCameraModelTests
                ISDParsingTests.cpp
                UtilitiesTests.cpp
                EigenUtilitiesTests.cpp
+               LoggingTests.cpp
                ../ale/src/Rotation.cpp
                ../ale/src/InterpUtils.cpp)
 if(WIN32)

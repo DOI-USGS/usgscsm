@@ -25,36 +25,74 @@ namespace logger {
     };
 
     /**
-     * @brief Base implementation for logging a single value
-     * @param os Output stream to write to
-     * @param first Value to log
+     * @brief Helper to convert value to string for formatting
      */
     template<typename T>
-    void log_impl(std::ostream& os, const T& first) {
-        os << first;
+    std::string to_string_helper(const T& value) {
+        std::ostringstream oss;
+        oss << value;
+        return oss.str();
+    }
+
+    // Specialization for string types to avoid extra quotes
+    inline std::string to_string_helper(const std::string& value) {
+        return value;
+    }
+
+    inline std::string to_string_helper(const char* value) {
+        return std::string(value);
     }
 
     /**
-     * @brief Recursive implementation for logging multiple values
+     * @brief Base case: no more arguments to substitute
+     */
+    inline void format_impl(std::ostream& os, const char* fmt) {
+        // Output any remaining format string
+        while (*fmt) {
+            if (*fmt == '{' && *(fmt + 1) == '}') {
+                // Found placeholder but no more args - just output it literally
+                os << "{}";
+                fmt += 2;
+            } else {
+                os << *fmt++;
+            }
+        }
+    }
+
+    /**
+     * @brief Recursive implementation for format string with {} placeholders
      * @param os Output stream to write to
-     * @param first First value to log
-     * @param args Remaining values to log
+     * @param fmt Format string with {} placeholders
+     * @param first First value to substitute
+     * @param args Remaining values to substitute
      */
     template<typename T, typename... Args>
-    void log_impl(std::ostream& os, const T& first, const Args&... args) {
-        os << first;
-        log_impl(os, args...);
+    void format_impl(std::ostream& os, const char* fmt, const T& first, const Args&... args) {
+        while (*fmt) {
+            if (*fmt == '{' && *(fmt + 1) == '}') {
+                // Found placeholder - substitute the value
+                os << to_string_helper(first);
+                // Continue with remaining args
+                format_impl(os, fmt + 2, args...);
+                return;
+            } else {
+                os << *fmt++;
+            }
+        }
+        // If we get here, format string ended but we still have args - just ignore them
     }
 
     /**
      * @brief Internal logging function that formats and outputs log messages
+     * Supports both legacy concatenation and {} placeholder formatting
      * @param level Log level of the message
      * @param line Source code line number
      * @param func Function name
-     * @param args Values to log
+     * @param fmt Format string (can contain {} placeholders)
+     * @param args Values to substitute or concatenate
      */
     template<typename... Args>
-    void log_internal(LogLevel level, int line, const char* func, const Args&... args) {
+    void log_internal(LogLevel level, int line, const char* func, const char* fmt, const Args&... args) {
         if (level >= current_log_level) {
             auto now = std::chrono::system_clock::now();
             auto time = std::chrono::system_clock::to_time_t(now);
@@ -63,11 +101,37 @@ namespace logger {
             ss << "[" << PROJECT_NAME << "][" << LOG_LEVEL_STRINGS[level] << "]"
                << "[" << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S") << "]"
                << "[" << func << ":" << line << "] ";
-            log_impl(ss, args...);
+
+            format_impl(ss, fmt, args...);
             ss << std::endl;
 
             std::cerr << ss.str();
         }
+    }
+
+    /**
+     * @brief Overload for single string (no formatting)
+     */
+    inline void log_internal(LogLevel level, int line, const char* func, const char* msg) {
+        if (level >= current_log_level) {
+            auto now = std::chrono::system_clock::now();
+            auto time = std::chrono::system_clock::to_time_t(now);
+
+            std::stringstream ss;
+            ss << "[" << PROJECT_NAME << "][" << LOG_LEVEL_STRINGS[level] << "]"
+               << "[" << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S") << "]"
+               << "[" << func << ":" << line << "] ";
+            ss << msg << std::endl;
+
+            std::cerr << ss.str();
+        }
+    }
+
+    /**
+     * @brief Overload for std::string (no formatting)
+     */
+    inline void log_internal(LogLevel level, int line, const char* func, const std::string& msg) {
+        log_internal(level, line, func, msg.c_str());
     }
 
     /**

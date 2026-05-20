@@ -139,23 +139,13 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string& stateString) {
 }
 
 void UsgsAstroLsSensorModel::populateModel(const VariantMap& state) {
-  fprintf(stderr, "[DEBUG] LsSensorModel::populateModel START\n");
-  fflush(stderr);
   reset();
-  fprintf(stderr, "[DEBUG] reset() completed\n");
-  fflush(stderr);
-  std::cerr << "[DEBUG] reset() completed" << std::endl;
   LOG_TRACE( "Populating model with state values\n{}", state.dumps());
 
-  std::cerr << "[DEBUG] Getting m_imageIdentifier" << std::endl;
   m_imageIdentifier = state.get<std::string>("m_imageIdentifier");
-  std::cerr << "[DEBUG] Getting m_sensorName" << std::endl;
   m_sensorName = state.get<std::string>("m_sensorName");
-  std::cerr << "[DEBUG] Getting m_nLines" << std::endl;
   m_nLines = state.get<int>("m_nLines");
-  std::cerr << "[DEBUG] Getting m_nSamples" << std::endl;
   m_nSamples = state.get<int>("m_nSamples");
-  std::cerr << "[DEBUG] Getting m_platformFlag" << std::endl;
   m_platformFlag = state.get<int>("m_platformFlag");
   LOG_TRACE(
       "m_imageIdentifier: {} "
@@ -165,55 +155,18 @@ void UsgsAstroLsSensorModel::populateModel(const VariantMap& state) {
       "m_platformFlag: {} ",
       m_imageIdentifier, m_sensorName, m_nLines, m_nSamples, m_platformFlag);
 
-  std::cerr << "[DEBUG] Getting m_intTimeLines vector" << std::endl;
   m_intTimeLines = state.get<std::vector<double>>("m_intTimeLines");
-  std::cerr << "[DEBUG] Getting m_intTimeStartTimes vector" << std::endl;
   m_intTimeStartTimes = state.get<std::vector<double>>("m_intTimeStartTimes");
-  std::cerr << "[DEBUG] Getting m_intTimes vector" << std::endl;
   m_intTimes = state.get<std::vector<double>>("m_intTimes");
 
-  std::cerr << "[DEBUG] Getting m_startingEphemerisTime" << std::endl;
-  try {
-    m_startingEphemerisTime = state.get<double>("m_startingEphemerisTime");
-    std::cerr << "[DEBUG] Got m_startingEphemerisTime = " << m_startingEphemerisTime << std::endl;
-  } catch (std::exception& e) {
-    std::cerr << "[DEBUG] Exception getting m_startingEphemerisTime: " << e.what() << std::endl;
-    throw;
-  }
-  std::cerr << "[DEBUG] Getting m_centerEphemerisTime" << std::endl;
+  m_startingEphemerisTime = state.get<double>("m_startingEphemerisTime");
   m_centerEphemerisTime = state.get<double>("m_centerEphemerisTime");
-  std::cerr << "[DEBUG] Got m_centerEphemerisTime = " << m_centerEphemerisTime << std::endl;
 
-  try {
-    std::cerr << "[DEBUG] Getting m_detectorSampleSumming" << std::endl;
-    fprintf(stderr, "[DEBUG] About to call get<int>\n");
-    fflush(stderr);
-    m_detectorSampleSumming = state.get<int>("m_detectorSampleSumming");
-    fprintf(stderr, "[DEBUG] Got value: %f\n", m_detectorSampleSumming);
-    fflush(stderr);
-  } catch (std::runtime_error& e) {
-    fprintf(stderr, "[DEBUG] runtime_error: %s\n", e.what());
-    fflush(stderr);
-    throw;
-  } catch (std::exception& e) {
-    fprintf(stderr, "[DEBUG] std::exception: %s\n", e.what());
-    fflush(stderr);
-    throw;
-  } catch (...) {
-    fprintf(stderr, "[DEBUG] Unknown exception type\n");
-    fflush(stderr);
-    throw;
-  }
-
-  std::cerr << "[DEBUG] Getting m_detectorLineSumming" << std::endl;
+  m_detectorSampleSumming = state.get<int>("m_detectorSampleSumming");
   m_detectorLineSumming = state.get<int>("m_detectorLineSumming");
-  std::cerr << "[DEBUG] Getting m_startingDetectorSample" << std::endl;
   m_startingDetectorSample = state.get<double>("m_startingDetectorSample");
-  std::cerr << "[DEBUG] Getting m_startingDetectorLine" << std::endl;
   m_startingDetectorLine = state.get<double>("m_startingDetectorLine");
-  std::cerr << "[DEBUG] Getting m_ikCode" << std::endl;
   m_ikCode = state.get<int>("m_ikCode");
-  std::cerr << "[DEBUG] Got all detector params" << std::endl;
   LOG_TRACE(
       "m_startingEphemerisTime: {} "
       "m_centerEphemerisTime: {} "
@@ -225,47 +178,35 @@ void UsgsAstroLsSensorModel::populateModel(const VariantMap& state) {
       m_detectorSampleSumming, m_detectorLineSumming,
       m_startingDetectorSample, m_ikCode);
 
-  fprintf(stderr, "[DEBUG] Getting m_focalLength\n");
-  fflush(stderr);
   m_focalLength = state.get<double>("m_focalLength");
-  fprintf(stderr, "[DEBUG] Getting m_zDirection\n");
-  fflush(stderr);
-  m_zDirection = state.get<double>("m_zDirection");
-  fprintf(stderr, "[DEBUG] Getting m_distortionType\n");
-  fflush(stderr);
+
+  // WASM-specific workaround: m_zDirection may be stored as int, explicitly cast
+  try {
+    int zDir = state.get<int>("m_zDirection");
+    m_zDirection = static_cast<double>(zDir);
+  } catch (const std::exception&) {
+    m_zDirection = state.get<double>("m_zDirection");
+  }
+
   m_distortionType = (DistortionType)state.get<int>("m_distortionType");
-  fprintf(stderr, "[DEBUG] Getting m_opticalDistCoeffs\n");
-  fflush(stderr);
   m_opticalDistCoeffs = state.get<std::vector<double>>("m_opticalDistCoeffs");
-  fprintf(stderr, "[DEBUG] Got optical params\n");
-  fflush(stderr);
   LOG_TRACE(
       "m_focalLength: {} "
       "m_zDirection: {} "
       "m_distortionType: {} ",
       m_focalLength, m_zDirection, m_distortionType);
 
-  fprintf(stderr, "[DEBUG] Getting m_iTransS\n");
-  fflush(stderr);
   std::vector<double> iTransS = state.get<std::vector<double>>("m_iTransS");
-  fprintf(stderr, "[DEBUG] Getting m_iTransL\n");
-  fflush(stderr);
   std::vector<double> iTransL = state.get<std::vector<double>>("m_iTransL");
-  fprintf(stderr, "[DEBUG] Got iTrans vectors\n");
-  fflush(stderr);
   for (int i = 0; i < 3; i++) {
     m_iTransS[i] = iTransS[i];
     m_iTransL[i] = iTransL[i];
   }
 
-  fprintf(stderr, "[DEBUG] Getting detector origin/axes\n");
-  fflush(stderr);
   m_detectorSampleOrigin = state.get<double>("m_detectorSampleOrigin");
   m_detectorLineOrigin = state.get<double>("m_detectorLineOrigin");
   m_majorAxis = state.get<double>("m_majorAxis");
   m_minorAxis = state.get<double>("m_minorAxis");
-  fprintf(stderr, "[DEBUG] Got detector origin/axes\n");
-  fflush(stderr);
   LOG_TRACE(
       "m_detectorSampleOrigin: {} "
       "m_detectorLineOrigin: {} "
@@ -273,37 +214,25 @@ void UsgsAstroLsSensorModel::populateModel(const VariantMap& state) {
       "m_minorAxis: {} ",
       m_detectorSampleOrigin, m_detectorLineOrigin, m_majorAxis, m_minorAxis);
 
-  fprintf(stderr, "[DEBUG] Getting platform/sensor identifiers\n");
-  fflush(stderr);
   m_platformIdentifier = state.get<std::string>("m_platformIdentifier");
   m_sensorIdentifier = state.get<std::string>("m_sensorIdentifier");
-  fprintf(stderr, "[DEBUG] Got identifiers\n");
-  fflush(stderr);
   LOG_TRACE(
       "m_platformIdentifier: {} "
       "m_sensorIdentifier: {} ",
       m_platformIdentifier, m_sensorIdentifier);
 
-  fprintf(stderr, "[DEBUG] Getting elevation range\n");
-  fflush(stderr);
   m_minElevation = state.get<double>("m_minElevation");
   m_maxElevation = state.get<double>("m_maxElevation");
-  fprintf(stderr, "[DEBUG] Got elevation range\n");
-  fflush(stderr);
   LOG_TRACE(
       "m_minElevation: {} "
       "m_maxElevation: {} ",
       m_minElevation, m_maxElevation);
 
-  fprintf(stderr, "[DEBUG] Getting ephem/quat params\n");
-  fflush(stderr);
   m_dtEphem = state.get<double>("m_dtEphem");
   m_t0Ephem = state.get<double>("m_t0Ephem");
   m_dtQuat = state.get<double>("m_dtQuat");
   m_t0Quat = state.get<double>("m_t0Quat");
   m_numPositions = state.get<int>("m_numPositions");
-  fprintf(stderr, "[DEBUG] Got ephem/quat params\n");
-  fflush(stderr);
   LOG_TRACE(
       "m_dtEphem: {} "
       "m_t0Ephem: {} "
@@ -311,17 +240,11 @@ void UsgsAstroLsSensorModel::populateModel(const VariantMap& state) {
       "m_t0Quat: {} ",
       m_dtEphem, m_t0Ephem, m_dtQuat, m_t0Quat);
 
-  fprintf(stderr, "[DEBUG] Getting m_numQuaternions\n");
-  fflush(stderr);
   m_numQuaternions = state.get<int>("m_numQuaternions");
-  fprintf(stderr, "[DEBUG] Getting m_referencePointXyz\n");
-  fflush(stderr);
   std::vector<double> refPt = state.get<std::vector<double>>("m_referencePointXyz");
   m_referencePointXyz.x = refPt[0];
   m_referencePointXyz.y = refPt[1];
   m_referencePointXyz.z = refPt[2];
-  fprintf(stderr, "[DEBUG] Got reference point\n");
-  fflush(stderr);
   LOG_TRACE(
       "m_numQuaternions: {} "
       "m_referencePointX: {} "
@@ -329,14 +252,10 @@ void UsgsAstroLsSensorModel::populateModel(const VariantMap& state) {
       "m_referencePointZ: {} ",
       m_numQuaternions, refPt[0], refPt[1], refPt[2]);
 
-  fprintf(stderr, "[DEBUG] Getting GSD/flying params\n");
-  fflush(stderr);
   m_gsd = state.get<double>("m_gsd");
   m_flyingHeight = state.get<double>("m_flyingHeight");
   m_halfSwath = state.get<double>("m_halfSwath");
   m_halfTime = state.get<double>("m_halfTime");
-  fprintf(stderr, "[DEBUG] Got GSD/flying params\n");
-  fflush(stderr);
   LOG_TRACE(
       "m_gsd: {} "
       "m_flyingHeight: {} "
@@ -344,29 +263,13 @@ void UsgsAstroLsSensorModel::populateModel(const VariantMap& state) {
       "m_halfTime: {} ",
       m_gsd, m_flyingHeight, m_halfSwath, m_halfTime);
 
-  fprintf(stderr, "[DEBUG] Getting m_positions vector\n");
-  fflush(stderr);
   m_positions = state.get<std::vector<double>>("m_positions");
-  fprintf(stderr, "[DEBUG] Got m_positions, getting m_velocities\n");
-  fflush(stderr);
   m_velocities = state.get<std::vector<double>>("m_velocities");
-  fprintf(stderr, "[DEBUG] Got m_velocities, getting m_quaternions\n");
-  fflush(stderr);
   m_quaternions = state.get<std::vector<double>>("m_quaternions");
-  fprintf(stderr, "[DEBUG] Got m_quaternions, getting m_currentParameterValue\n");
-  fflush(stderr);
   m_currentParameterValue = state.get<std::vector<double>>("m_currentParameterValue");
-  fprintf(stderr, "[DEBUG] Got m_currentParameterValue, getting m_covariance\n");
-  fflush(stderr);
   m_covariance = state.get<std::vector<double>>("m_covariance");
-  fprintf(stderr, "[DEBUG] Got m_covariance, getting m_sunPosition\n");
-  fflush(stderr);
   m_sunPosition = state.get<std::vector<double>>("m_sunPosition");
-  fprintf(stderr, "[DEBUG] Got m_sunPosition, getting m_sunVelocity\n");
-  fflush(stderr);
   m_sunVelocity = state.get<std::vector<double>>("m_sunVelocity");
-  fprintf(stderr, "[DEBUG] Got all large vectors\n");
-  fflush(stderr);
 
   if (state.contains("m_parameterType")) {
     auto paramTypeInts = state.get<std::vector<int>>("m_parameterType");
