@@ -39,6 +39,7 @@ release.
 - `isUsgsCsmIsd()` and `isUsgsCsmState()` quick string-scan helpers in `UsgsAstroPluginSupport` to identify ISD vs model state without full JSON parsing or model construction. [#502](https://github.com/DOI-USGS/usgscsm/pull/502)
 
 ### Fixed
+- Fixed `ephemTimeToCalendarTime` to use the correct J2000 epoch (noon TT, not midnight UTC) and account for leap seconds via a hardcoded table. Previously off by 12 hours; now matches NAIF `et2utc` to the nearest second.
 - Fix a bug in the Frame Sensor Model, the ephemeris time was rounded to it. [#497](https://github.com/DOI-USGS/usgscsm/pull/497)
 - Removed boundary checks for Frame Sensor Model getSensorPosition [#492](https://github.com/DOI-USGS/usgscsm/pull/492)
 - Fixed CAHVOR model optical shifts by removing tolerance check [#488](https://github.com/DOI-USGS/usgscsm/issues/488)
