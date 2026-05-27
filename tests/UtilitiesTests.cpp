@@ -622,7 +622,7 @@ TEST(UtilitiesTests, ephemTimeToCalendarTime) {
   double ephemTime = 0.0;
   std::string timeStr = ephemTimeToCalendarTime(ephemTime);
 
-  EXPECT_STREQ(timeStr.c_str(), "2000-01-01T11:58:56Z");
+  EXPECT_STREQ(timeStr.c_str(), "2000-01-01T11:58:55.816Z");
 }
 
 TEST(UtilitiesTests, fileReaderTest) {

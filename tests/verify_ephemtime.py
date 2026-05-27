@@ -63,7 +63,7 @@ print(f"{'ET':>15s}  {'NAIF (spiceypy)':22s}  {'Description'}")
 print("-" * 70)
 
 for et, desc in test_ets:
-    naif_utc = spice.et2utc(et, 'ISOC', 0) + 'Z'
+    naif_utc = spice.et2utc(et, 'ISOC', 3) + 'Z'
     print(f"{et:>15.1f}  {naif_utc:22s}  {desc}")
 
 print()

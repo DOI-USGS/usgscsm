@@ -2605,7 +2605,7 @@ void applyRotationTranslationToXyzVec(ale::Rotation const& r, ale::Vec3d const& 
 /**
  * @description Converts SPICE ephemeris time (ET), given in seconds past
  * J2000 (January 1, 2000 12:00:00 TT), to a calendar time string formatted
- * as "YYYY-MM-DDTHH:MM:SSZ" in UTC.
+ * as "YYYY-MM-DDTHH:MM:SS.mmmZ" in UTC (millisecond precision).
  *
  * The conversion accounts for the 32.184 s offset between TT and TAI, and
  * for all leap seconds inserted between 1972 and 2017 (the most recent).
@@ -2658,13 +2658,17 @@ std::string ephemTimeToCalendarTime(double ephemTime) {
         (m == ls[i].m && d >= ls[i].d))))
       leap = ls[i].tai_utc;
 
-  // TAI -> UTC with correct leap count, round to nearest second
+  // TAI -> UTC with correct leap count
   double utc_exact = tai + j2000_tai_unix - leap;
-  std::time_t utc_unix = (std::time_t)(utc_exact + 0.5);
+  std::time_t utc_unix = (std::time_t)utc_exact;
+  double frac = utc_exact - utc_unix;
+  if (frac < 0) { utc_unix--; frac += 1.0; }
+  int msec = (int)(frac * 1000.0 + 0.5);
+  if (msec >= 1000) { utc_unix++; msec -= 1000; }
 
-  char buffer[22];
-  strftime(buffer, 22, "%Y-%m-%dT%H:%M:%SZ", std::gmtime(&utc_unix));
-  buffer[21] = '\0';
+  char buffer[32];
+  strftime(buffer, 22, "%Y-%m-%dT%H:%M:%S", std::gmtime(&utc_unix));
+  snprintf(buffer + 19, 6, ".%03dZ", msec);
   return buffer;
 }
 
