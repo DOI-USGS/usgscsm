@@ -435,3 +435,54 @@ TEST_P(RadTanTest, RadTanInversionTest)
   EXPECT_NEAR(ux2, ux, 1e-8);
   EXPECT_NEAR(uy2, uy, 1e-8);
 }
+
+// Tests for KPLO ShadowCam single-coefficient y-only cubic distortion.
+// Closed-form distorted -> undistorted:  uy = dy * (1 + dk1 * dy^2);  ux = dx
+// Inverse via fixed-point iteration on:  yt_{n+1} = uy / (1 + dk1 * yt_n^2)
+// Coefficient sign and magnitude from real IK kplo_shadowcam_v00.ti
+// (INS-155151_OD_K = -1.741e-05).
+
+TEST(KploShadowCam, removeDistortionClosedForm) {
+  double ux = 0.0, uy = 0.0;
+  double focalLength = 699.275;  // mm, from IK
+  std::vector<double> coeffs = {-1.741e-05};
+
+  // dy = -18.69 mm corresponds to the left edge of the 3144-sample detector
+  // at 12 micron pixel pitch (off-axis by 1557 samples).
+  removeDistortion(0.0, -18.69, ux, uy, coeffs, focalLength,
+                   DistortionType::KPLOSHADOWCAM, 1e-10);
+  EXPECT_NEAR(ux, 0.0, 1e-12);
+  EXPECT_NEAR(uy, -18.69 * (1.0 + (-1.741e-05) * 18.69 * 18.69), 1e-10);
+}
+
+TEST(KploShadowCam, roundTripApplyRemove) {
+  double focalLength = 699.275;
+  std::vector<double> coeffs = {-1.741e-05};
+
+  for (double uyTest : {-18.0, -5.0, -0.5, 0.5, 5.0, 18.0}) {
+    double dx, dy, ux2, uy2;
+    applyDistortion(0.0, uyTest, dx, dy, coeffs, focalLength,
+                    DistortionType::KPLOSHADOWCAM, 1e-10);
+    removeDistortion(dx, dy, ux2, uy2, coeffs, focalLength,
+                     DistortionType::KPLOSHADOWCAM, 1e-10);
+    EXPECT_NEAR(ux2, 0.0, 1e-9);
+    EXPECT_NEAR(uy2, uyTest, 1e-8);
+  }
+}
+
+TEST(KploShadowCamMapping, stringToEnum) {
+  nlohmann::json isd;
+  isd["optical_distortion"]["kplo_shadowcam"]["coefficients"] = {-1.741e-5};
+  DistortionType dt = getDistortionModel(isd);
+  EXPECT_EQ(dt, DistortionType::KPLOSHADOWCAM);
+}
+
+TEST(KploShadowCamMapping, intToEnum) {
+  // Verify that the integer-mapping overload converts
+  // ale::DistortionType::KPLOSHADOWCAM to USGSCSM's matching
+  // DistortionType::KPLOSHADOWCAM. ALE and USGSCSM maintain independent
+  // DistortionType enums; this test pins the cross-library mapping.
+  DistortionType dt = getDistortionModel(
+      static_cast<int>(ale::DistortionType::KPLOSHADOWCAM));
+  EXPECT_EQ(dt, DistortionType::KPLOSHADOWCAM);
+}
