@@ -309,27 +309,7 @@ model2.loadFromState(savedState);
 const ground = model2.imageToGround(100, 200, 0);
 ```
 
-**State Format:**
-- JSON object containing all model parameters with `m_modelName` key
-- Size: Typically 2-50 KB depending on model type and ephemeris data
-
-**Benefits:**
-- Loading from state is ~10-100x faster than loading from ISD
-- State contains precomputed sensor positions, quaternions, velocities
-- Ideal for web applications that need quick model instantiation
-
-**Binary State Format:**
-
-For even faster loading and smaller size, the C++ API (`usgscsm_cam_test`) supports binary msgpack format:
-
-```bash
-# C++ tool can save/load binary state
-usgscsm_cam_test --model input.json --output-binary-model-state output.isd
-```
-
-Binary format reduces size by ~60% and load time by ~80% but is not yet supported in the JavaScript API.
-
-### Supported Models
+### WASM Supported Models
 
 - Frame cameras (`USGS_ASTRO_FRAME_SENSOR_MODEL`)
 - Line scanners (`USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL`)
