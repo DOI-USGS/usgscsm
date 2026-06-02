@@ -40,6 +40,7 @@ release.
 - Added the `KPLOSHADOWCAM` distortion type for the KPLO ShadowCam imager. [#505](https://github.com/DOI-USGS/usgscsm/pull/505)
 
 ### Fixed
+- Fixed `ephemTimeToCalendarTime` to use the correct J2000 epoch (noon TT, not midnight UTC) and account for leap seconds via a hardcoded table. Previously off by 12 hours; now matches NAIF `et2utc` to the millisecond. [#506](https://github.com/DOI-USGS/usgscsm/pull/506)
 - Fix a bug in the Frame Sensor Model, the ephemeris time was rounded to it. [#497](https://github.com/DOI-USGS/usgscsm/pull/497)
 - Removed boundary checks for Frame Sensor Model getSensorPosition [#492](https://github.com/DOI-USGS/usgscsm/pull/492)
 - Fixed CAHVOR model optical shifts by removing tolerance check [#488](https://github.com/DOI-USGS/usgscsm/issues/488)

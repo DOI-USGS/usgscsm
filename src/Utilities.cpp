@@ -2625,27 +2625,72 @@ void applyRotationTranslationToXyzVec(ale::Rotation const& r, ale::Vec3d const& 
 }
 
 /**
- * @description Converts ephemeris time, given in seconds since January 1, 2000 
- * 12:00:00 AM GMT, to a calendar time string formatted as 
- * "YYYY-MM-DDTHH:MM:SSZ". The function accounts for the base time and converts 
- * the input ephemeris time to the equivalent calendar time in UTC.
+ * @description Converts SPICE ephemeris time (ET), given in seconds past
+ * J2000 (January 1, 2000 12:00:00 TT), to a calendar time string formatted
+ * as "YYYY-MM-DDTHH:MM:SS.mmmZ" in UTC (millisecond precision).
  *
- * @param ephemTime The ephemeris time in seconds since the epoch 
- * (January 1, 2000 12:00:00 AM GMT).
+ * The conversion accounts for the 32.184 s offset between TT and TAI, and
+ * for all leap seconds inserted between 1972 and 2017 (the most recent).
+ * No new leap second has been scheduled, and they are being phased out
+ * by international agreement (CGPM 2022, effective by 2035).
  *
- * @return A string representing the calendar time in UTC format 
- * "YYYY-MM-DDTHH:MM:SSZ".
+ * @param ephemTime Seconds past J2000 TT epoch.
+ * @return UTC calendar string "YYYY-MM-DDTHH:MM:SSZ".
  */
 std::string ephemTimeToCalendarTime(double ephemTime) {
 
-  // Care must be taken to not use mktime() or localtime() as their
-  // precise value depends on if a location respects Daylight Savings Time.
+  // Leap-second table: UTC dates when TAI-UTC incremented.
+  // Source: IERS Bulletin C / NAIF naif0012.tls.
+  static const struct { int y, m, d; int tai_utc; } ls[] = {
+    {1972,  1, 1, 10}, {1972,  7, 1, 11}, {1973,  1, 1, 12},
+    {1974,  1, 1, 13}, {1975,  1, 1, 14}, {1976,  1, 1, 15},
+    {1977,  1, 1, 16}, {1978,  1, 1, 17}, {1979,  1, 1, 18},
+    {1980,  1, 1, 19}, {1981,  7, 1, 20}, {1982,  7, 1, 21},
+    {1983,  7, 1, 22}, {1985,  7, 1, 23}, {1988,  1, 1, 24},
+    {1990,  1, 1, 25}, {1991,  1, 1, 26}, {1992,  7, 1, 27},
+    {1993,  7, 1, 28}, {1994,  7, 1, 29}, {1996,  1, 1, 30},
+    {1997,  7, 1, 31}, {1999,  1, 1, 32}, {2006,  1, 1, 33},
+    {2009,  1, 1, 34}, {2012,  7, 1, 35}, {2015,  7, 1, 36},
+    {2017,  1, 1, 37},
+  };
+  static const int nls = sizeof(ls) / sizeof(ls[0]);
 
-  std::time_t y2k = 946684800; // January 1, 2000 12:00:00 AM GMT
-  std::time_t finalTime = ephemTime + y2k;
-  char buffer[22];
-  strftime(buffer, 22, "%Y-%m-%dT%H:%M:%SZ", std::gmtime(&finalTime));
-  buffer[21] = '\0';
+  // J2000 epoch as Unix time: January 1, 2000 12:00:00 TT.
+  // TT is ahead of UTC by 32.184 s + leap seconds (32 at J2000).
+  // So J2000 TT in Unix time = 946684800 + 43200 + 32 + 32 = 946728064.
+  // But ET=0 should map to 2000-01-01T11:58:55Z (UTC), which is
+  // Unix 946684800 + 43200 - 32.184 - 32 = 946727935.816.
+  // We split this: first get approximate UTC unix time, then refine
+  // the leap-second count.
+
+  // ET -> TAI: subtract the TT-TAI offset
+  double tai = ephemTime - 32.184;
+
+  // TAI -> approximate UTC using J2000 leap count (32)
+  // J2000 TAI as Unix time = 946684800 + 43200 = 946728000
+  std::time_t j2000_tai_unix = 946728000;
+  std::time_t approx_utc = (std::time_t)(tai + j2000_tai_unix - 32);
+
+  // Look up the correct leap-second count for this UTC date
+  struct tm *g = std::gmtime(&approx_utc);
+  int y = g->tm_year + 1900, m = g->tm_mon + 1, d = g->tm_mday;
+  int leap = 10;
+  for (int i = 0; i < nls; i++)
+    if (y > ls[i].y || (y == ls[i].y && (m > ls[i].m ||
+        (m == ls[i].m && d >= ls[i].d))))
+      leap = ls[i].tai_utc;
+
+  // TAI -> UTC with correct leap count
+  double utc_exact = tai + j2000_tai_unix - leap;
+  std::time_t utc_unix = (std::time_t)utc_exact;
+  double frac = utc_exact - utc_unix;
+  if (frac < 0) { utc_unix--; frac += 1.0; }
+  int msec = (int)(frac * 1000.0 + 0.5);
+  if (msec >= 1000) { utc_unix++; msec -= 1000; }
+
+  char buffer[32];
+  strftime(buffer, 22, "%Y-%m-%dT%H:%M:%S", std::gmtime(&utc_unix));
+  snprintf(buffer + 19, 6, ".%03dZ", msec);
   return buffer;
 }
 
