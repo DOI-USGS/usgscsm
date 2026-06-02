@@ -4,6 +4,16 @@
 
 # USGSCSM
 
+[![npm version](https://img.shields.io/npm/v/usgscsm-wasm.svg)](https://www.npmjs.com/package/usgscsm-wasm)
+[![npm downloads](https://img.shields.io/npm/dm/usgscsm-wasm.svg)](https://www.npmjs.com/package/usgscsm-wasm)
+[![GitHub release](https://img.shields.io/github/v/release/USGS-Astrogeology/usgscsm)](https://github.com/USGS-Astrogeology/usgscsm/releases)
+
+**NPM Package:** [`usgscsm-wasm`](https://www.npmjs.com/package/usgscsm-wasm)
+
+**CDN Links:**
+- jsDelivr: `https://cdn.jsdelivr.net/npm/usgscsm-wasm/dist/usgscsm.js`
+- unpkg: `https://unpkg.com/usgscsm-wasm/dist/usgscsm.js`
+
 This library provides *Community Sensor Model (CSM)*-compliant sensor models
 created by the USGS Astrogeology Science Center.
 
@@ -170,6 +180,35 @@ For more information, see: [cpplint](https://github.com/cpplint/cpplint).
 
 USGSCSM can be compiled to WebAssembly for use in web browsers and Node.js.
 
+### Installation
+
+**GitHub Releases (Direct Import):**
+
+```html
+<script type="module">
+  // Import directly from GitHub Release (replace v2.0.2 with latest version)
+  import USGSCSM from 'https://github.com/USGS-Astrogeology/usgscsm/releases/download/v2.0.2/usgscsm.js';
+  
+  const Module = await USGSCSM();
+  const model = new Module.USGSCSMModel();
+  
+  // Load camera model from ISD
+  const isdJson = await fetch('camera_model.json').then(r => r.text());
+  model.loadFromISD(isdJson, 'USGS_ASTRO_FRAME_SENSOR_MODEL');
+  
+  // Transform coordinates
+  const ground = model.imageToGround(512, 1024, 0);
+  console.log(`Ground: (${ground.x}, ${ground.y}, ${ground.z})`);
+</script>
+```
+
+Or download files from [GitHub Releases](https://github.com/USGS-Astrogeology/usgscsm/releases):
+- `usgscsm.js` - JavaScript module
+- `usgscsm.wasm` - WebAssembly binary
+- `usgscsm.d.ts` - TypeScript definitions
+
+**Note:** The WASM file (`usgscsm.wasm`) must be in the same directory as the JS file.
+
 ### Building for WebAssembly
 
 **Requirements:**
@@ -189,27 +228,31 @@ conda install -c conda-forge emscripten=3.1.58
 git clone --recursive https://github.com/USGS-Astrogeology/usgscsm.git
 cd usgscsm
 
-# Configure
-mkdir wasm && cd wasm
-emcmake cmake .. \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DUSGSCSM_WASM_OPTIMIZE=ON \
-  -DUSGSCSM_BUILD_TESTS=OFF \
-  -DUSGSCSM_BUILD_DOCS=OFF \
-  -DCMAKE_EXE_LINKER_FLAGS="" \
-  -DCMAKE_SHARED_LINKER_FLAGS=""
+# Configure and build
+mkdir wasmbuild && cd wasmbuild
+emcmake cmake ..
+emmake make
 
-# Build
-emmake make -j2
-
-# Output in dist/
-ls -lh ../dist/
+# Output files are in wasmbuild/dist/
+ls -lh dist/
 ```
 
-**Output files:**
-- `dist/usgscsm.js` - JavaScript glue code (~123 KB, 30 KB gzipped)
-- `dist/usgscsm.wasm` - WebAssembly binary (~911 KB, 254 KB gzipped)
-- `dist/usgscsm.d.ts` - TypeScript definitions
+**Output files** (in `wasmbuild/dist/`):
+- `usgscsm.js` - JavaScript glue code (~123 KB, 30 KB gzipped)
+- `usgscsm.wasm` - WebAssembly binary (~911 KB, 254 KB gzipped)
+- `usgscsm.d.ts` - TypeScript definitions
+
+**Advanced Build Options:**
+```bash
+# Debug build with source maps
+emcmake cmake .. -DUSGSCSM_WASM_DEBUG=ON
+
+# Disable optimization (faster build, larger binary)
+emcmake cmake .. -DUSGSCSM_WASM_OPTIMIZE=OFF
+
+# Build with tests (requires googletest)
+emcmake cmake .. -DUSGSCSM_BUILD_TESTS=ON
+```
 
 **Testing:**
 ```bash
@@ -219,7 +262,11 @@ npm test
 ### Browser Usage
 
 ```javascript
-import USGSCSM from './dist/usgscsm.js';
+// Using npm package
+import USGSCSM from 'usgscsm-wasm';
+
+// OR using CDN
+// import USGSCSM from 'https://cdn.jsdelivr.net/npm/usgscsm-wasm/dist/usgscsm.js';
 
 const Module = await USGSCSM();
 const model = new Module.USGSCSMModel();

@@ -792,6 +792,19 @@ endif()
 if(EMSCRIPTEN)
   message(STATUS "Configuring WebAssembly build")
 
+  # Clear any inherited linker flags that may be incompatible with wasm-ld
+  # (e.g., macOS-specific flags from conda environments)
+  set(CMAKE_EXE_LINKER_FLAGS "")
+  set(CMAKE_SHARED_LINKER_FLAGS "")
+  set(CMAKE_MODULE_LINKER_FLAGS "")
+  message(STATUS "Cleared incompatible linker flags for WebAssembly")
+
+  # Set sensible defaults for WASM builds
+  if(NOT DEFINED CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
+    message(STATUS "CMAKE_BUILD_TYPE not set, defaulting to Release for WASM")
+  endif()
+
   # Source files for WASM (exclude UsgsAstroProjectedSensorModel to avoid PROJ dependency)
   set(USGSCSM_WASM_SRC_FILES
       src/UsgsAstroPlugin.cpp
@@ -875,22 +888,22 @@ if(EMSCRIPTEN)
     LINK_FLAGS "${WASM_LINK_FLAGS_STR}"
   )
 
-  # Copy output files to dist/ directory for NPM packaging
+  # Copy output files to dist/ directory in build folder for NPM packaging
   add_custom_command(TARGET usgscsm_wasm POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/dist
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/dist
     COMMAND ${CMAKE_COMMAND} -E copy
             ${CMAKE_BINARY_DIR}/usgscsm.js
-            ${CMAKE_SOURCE_DIR}/dist/usgscsm.js
+            ${CMAKE_BINARY_DIR}/dist/usgscsm.js
     COMMAND ${CMAKE_COMMAND} -E copy
             ${CMAKE_BINARY_DIR}/usgscsm.wasm
-            ${CMAKE_SOURCE_DIR}/dist/usgscsm.wasm
+            ${CMAKE_BINARY_DIR}/dist/usgscsm.wasm
     COMMAND ${CMAKE_COMMAND} -E copy
             ${CMAKE_SOURCE_DIR}/src/wasm/usgscsm.d.ts
-            ${CMAKE_SOURCE_DIR}/dist/usgscsm.d.ts
+            ${CMAKE_BINARY_DIR}/dist/usgscsm.d.ts
     COMMENT "Copying WASM output and TypeScript definitions to dist/ directory"
   )
 
   message(STATUS "WebAssembly target configured: usgscsm_wasm")
-  message(STATUS "Output will be copied to: ${CMAKE_SOURCE_DIR}/dist/")
+  message(STATUS "Output will be in: ${CMAKE_BINARY_DIR}/dist/")
 endif()
 
