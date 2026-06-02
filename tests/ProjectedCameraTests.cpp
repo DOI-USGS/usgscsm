@@ -3,7 +3,6 @@
 #include "Fixtures.h"
 #include "UsgsAstroProjectedSensorModel.h"
 #include "UsgsAstroPlugin.h"
-#include "UsgsAstroPluginSupport.h"
 
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
