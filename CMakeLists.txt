@@ -117,7 +117,7 @@ else()
       message(SEND_ERROR "sqlite3 binary not found!")
     endif()
 
-    find_package(sqlite3 REQUIRED)
+    find_package(Sqlite3 REQUIRED)
 
   include(ProjUtilities)
   include(Ccache)

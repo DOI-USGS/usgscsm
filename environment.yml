@@ -10,4 +10,3 @@ dependencies:
   - nlohmann_json
   - proj
   - sqlite>=3.11
-  - libsqlite
