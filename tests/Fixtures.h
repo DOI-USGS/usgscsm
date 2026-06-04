@@ -17,7 +17,7 @@
 
 #include <gtest/gtest.h>
 
-#include <spdlog/sinks/ostream_sink.h>
+#include "usgscsm/usgscsm_logger.h"
 
 // Should this be positioned somewhere in the public API?
 inline void jsonToIsd(nlohmann::json &object, csm::Isd &isd,
@@ -86,10 +86,8 @@ class FrameSensorModelLogging : public ::testing::Test {
     // We need a unique ID for the sensor model so that we don't have
     // logger name collisions. Use the sensor model's memory addresss.
     std::uintptr_t sensorId = reinterpret_cast<std::uintptr_t>(sensorModel);
-    auto logger = std::make_shared<spdlog::logger>(std::to_string(sensorId),
-                                                   ostream_sink);
+    auto logger = spdlog::sinks::create_ostream_logger(std::to_string(sensorId), ostream_sink);
     logger->set_level(spdlog::level::trace);
-    spdlog::register_logger(logger);
 
     sensorModel->setLogger(std::to_string(sensorId));
   }

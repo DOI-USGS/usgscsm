@@ -8,7 +8,7 @@
 #include "ale/Rotation.h"
 #include "VariantMap.h"
 
-#include "spdlog/spdlog.h"
+#include "usgscsm/usgscsm_logger.h"
 
 class UsgsAstroSarSensorModel : public csm::RasterGM,
                                 virtual public csm::SettableEllipsoid {

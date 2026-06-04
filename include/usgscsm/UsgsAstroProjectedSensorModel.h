@@ -37,7 +37,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include "ale/States.h"
 
 
-#include "spdlog/spdlog.h"
+#include "usgscsm/usgscsm_logger.h"
 
 #include <proj.h>
 

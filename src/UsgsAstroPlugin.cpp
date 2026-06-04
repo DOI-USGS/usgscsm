@@ -45,8 +45,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 
 #include <math.h>
 
-#include "spdlog/sinks/basic_file_sink.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
+#include "usgscsm/usgscsm_logger.h"
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
@@ -73,33 +72,30 @@ const UsgsAstroPlugin UsgsAstroPlugin::m_registeredPlugin;
 
 UsgsAstroPlugin::UsgsAstroPlugin() {
   // Build and register the USGSCSM logger on plugin creation
+  // Default to stdout if USGSCSM_LOG_FILE is not set
   char *logFilePtr = getenv("USGSCSM_LOG_FILE");
+  std::string logFile = logFilePtr ? std::string(logFilePtr) : "stdout";
 
-  if (logFilePtr != NULL) {
-    std::string logFile(logFilePtr);
+  if (logFile != "") {
+    m_logger = spdlog::get("usgscsm_logger");
 
-    if (logFile != "") {
-      m_logger = spdlog::get("usgscsm_logger");
+    if (!m_logger) {
+      if (logFile == "stdout") {
+        m_logger = spdlog::stdout_color_mt("usgscsm_logger");
+      }
+      else if (logFile == "stderr") {
+        m_logger = spdlog::stderr_color_mt("usgscsm_logger");
+      }
+      else {
+        m_logger = spdlog::basic_logger_mt("usgscsm_logger", logFile);
+      }
 
-      if (!m_logger) {
-        if (logFile == "stdout") {
-          m_logger = spdlog::stdout_color_mt("usgscsm_logger");
-        }
-        else if (logFile == "stderr") {
-          m_logger = spdlog::stderr_color_mt("usgscsm_logger");
-        }
-        else {
-          m_logger = spdlog::basic_logger_mt("usgscsm_logger", logFile);
-        }
-
-        char *logLevlPtr = getenv("USGSCSM_LOG_LEVEL");
-        if (logLevlPtr != NULL) {
-          std::string logLevelStr(logLevlPtr);
-          std::transform(logLevelStr.begin(), logLevelStr.end(), logLevelStr.begin(),
-              [](unsigned char c){ return std::tolower(c); });
-          m_logger->set_level(spdlog::level::from_str(logLevelStr));
-        }
-
+      char *logLevlPtr = getenv("USGSCSM_LOG_LEVEL");
+      if (logLevlPtr != NULL) {
+        std::string logLevelStr(logLevlPtr);
+        std::transform(logLevelStr.begin(), logLevelStr.end(), logLevelStr.begin(),
+            [](unsigned char c){ return std::tolower(c); });
+        m_logger->set_level(spdlog::from_str(logLevelStr));
       }
     }
   }

@@ -15,7 +15,7 @@
 #include "Utilities.h"
 #include "VariantMap.h"
 
-#include "spdlog/spdlog.h"
+#include "usgscsm/usgscsm_logger.h"
 
 class UsgsAstroFrameSensorModel : public csm::RasterGM,
                                   virtual public csm::SettableEllipsoid {

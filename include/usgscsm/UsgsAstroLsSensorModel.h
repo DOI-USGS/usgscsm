@@ -40,7 +40,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include "ale/Orientations.h"
 #include "ale/States.h"
 
-#include "spdlog/spdlog.h"
+#include "usgscsm/usgscsm_logger.h"
 
 class UsgsAstroLsSensorModel : public csm::RasterGM,
                                virtual public csm::SettableEllipsoid {

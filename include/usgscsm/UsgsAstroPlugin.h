@@ -33,7 +33,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include <csm/Version.h>
 
 #include <nlohmann/json.hpp>
-#include "spdlog/spdlog.h"
+#include "usgscsm/usgscsm_logger.h"
 
 class UsgsAstroPlugin : public csm::Plugin {
  public:
