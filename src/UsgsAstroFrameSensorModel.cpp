@@ -626,7 +626,7 @@ UsgsAstroFrameSensorModel::getValidImageRange() const {
   csm::ImageCoord min_pt(m_startingDetectorLine, m_startingDetectorSample);
   csm::ImageCoord max_pt(m_nLines, m_nSamples);
   MESSAGE_LOG(spdlog::level::debug, "Valid image range: min {}, {} max: {}, {}", min_pt.samp,
-              min_pt.line, max_pt.samp, max_pt.line)
+              min_pt.line, max_pt.samp, max_pt.line);
   return std::pair<csm::ImageCoord, csm::ImageCoord>(min_pt, max_pt);
 }
 

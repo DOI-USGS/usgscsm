@@ -131,7 +131,8 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
               state["m_startingEphemerisTime"].dump(),
               state["m_centerEphemerisTime"].dump(),
               state["m_endingEphemerisTime"].dump()
-              )
+              );
+
 
   state["m_exposureDuration"] = getExposureDuration(isd, parsingWarnings.get());
 
@@ -377,19 +378,21 @@ void UsgsAstroSarSensorModel::populateModel(const VariantMap& state) {
 
   if (m_referencePointXyz.x == 0 && m_referencePointXyz.y == 0 &&
       m_referencePointXyz.z == 0) {
-    MESSAGE_LOG("Updating State";
+    MESSAGE_LOG("Updating State");
 
     double lineCtr = m_nLines / 2.0;
     double sampCtr = m_nSamples / 2.0;
     csm::ImageCoord ip(lineCtr, sampCtr);
     MESSAGE_LOG("updateState: center image coordinate set to {} {}", lineCtr,
-                sampCtr)
+                sampCtr);
+
 
     double refHeight = 0;
     m_referencePointXyz = imageToGround(ip, refHeight);
     MESSAGE_LOG("updateState: reference point (x, y, z) {} {} {}",
                 m_referencePointXyz.x, m_referencePointXyz.y,
-                m_referencePointXyz.z)
+                m_referencePointXyz.z);
+
   }
 }
 
@@ -1126,7 +1129,7 @@ double UsgsAstroSarSensorModel::getImageTime(
  */
 csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftPosition(
     double time) const {
-  MESSAGE_LOG("getSpacecraftPosition at {} without adjustments", time;
+  MESSAGE_LOG("getSpacecraftPosition at {} without adjustments", time);
   csm::EcefCoord spacecraftPosition = getSensorPosition(time);
   return csm::EcefVector(spacecraftPosition.x, spacecraftPosition.y,
                          spacecraftPosition.z);
@@ -1144,7 +1147,7 @@ csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftPosition(
  */
 csm::EcefVector UsgsAstroSarSensorModel::getAdjustedSpacecraftPosition(
     double time, std::vector<double> adj) const {
-  MESSAGE_LOG("getSpacecraftPosition at {} with adjustments", time;
+  MESSAGE_LOG("getSpacecraftPosition at {} with adjustments", time);
   csm::EcefCoord spacecraftPosition = getAdjustedSensorPosition(time, adj);
   return csm::EcefVector(spacecraftPosition.x, spacecraftPosition.y,
                          spacecraftPosition.z);
@@ -1160,7 +1163,7 @@ csm::EcefVector UsgsAstroSarSensorModel::getAdjustedSpacecraftPosition(
  * @return The ECEF coordinates of the sensor position at the given time.
  */
 csm::EcefCoord UsgsAstroSarSensorModel::getSensorPosition(double time) const {
-  MESSAGE_LOG("getSensorPosition at {}.", time;
+  MESSAGE_LOG("getSensorPosition at {}.", time);
   csm::EcefCoord sensorPosition =
       getAdjustedSensorPosition(time, m_noAdjustments);
   return sensorPosition;
@@ -1311,7 +1314,8 @@ csm::RasterGM::SensorPartials UsgsAstroSarSensorModel::computeSensorPartials(
   MESSAGE_LOG(
       "Calculating computeSensorPartials for ground point {}, {}, {} with "
       "desired precision {}",
-      groundPt.x, groundPt.y, groundPt.z, desiredPrecision)
+      groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
+
 
   // Compute image coordinate first
   csm::ImageCoord imgPt =
@@ -1353,7 +1357,8 @@ csm::RasterGM::SensorPartials UsgsAstroSarSensorModel::computeSensorPartials(
       "point {}, {}, "
       "{} with desired precision {}",
       imagePt.line, imagePt.samp, groundPt.x, groundPt.y, groundPt.z,
-      desiredPrecision)
+      desiredPrecision);
+
 
   // Compute numerical partials wrt specific parameter
 

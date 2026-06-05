@@ -419,7 +419,7 @@ csm::RasterGM::SensorPartials UsgsAstroProjectedSensorModel::computeSensorPartia
       spdlog::level::debug,
       "Calculating computeSensorPartials for ground point {}, {}, {} with "
       "desired precision {}",
-      groundPt.x, groundPt.y, groundPt.z, desiredPrecision)
+      groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
 
   csm::ImageCoord imagePt = m_camera->groundToImage(groundPt, desiredPrecision, achievedPrecision);
 
@@ -451,7 +451,7 @@ UsgsAstroProjectedSensorModel::computeAllSensorPartials(
       spdlog::level::info,
       "Computing computeAllSensorPartials for ground point {}, {}, {} with "
       "desired precision {}",
-      ground_pt.x, ground_pt.y, ground_pt.z, desired_precision)
+      ground_pt.x, ground_pt.y, ground_pt.z, desired_precision);
   csm::ImageCoord image_pt =
       m_camera->groundToImage(ground_pt, desired_precision, achieved_precision, warnings);
 
