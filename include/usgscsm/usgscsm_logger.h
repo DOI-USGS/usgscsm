@@ -171,6 +171,20 @@ inline void log_message(level lvl, const std::string& msg) {
     log_message(lvl, msg.c_str());
 }
 
+// Overloads that default to info level when no level provided
+template<typename... Args>
+inline void log_message(const char* fmt, Args&&... args) {
+    log_message(level::info, fmt, std::forward<Args>(args)...);
+}
+
+inline void log_message(const char* msg) {
+    log_message(level::info, msg);
+}
+
+inline void log_message(const std::string& msg) {
+    log_message(level::info, msg);
+}
+
 // Set level dynamically
 inline void set_level(level lvl) {
     get_log_level() = lvl;
@@ -182,11 +196,9 @@ inline level get_level() {
 
 } // namespace spdlog
 
-#define NOOP
-// MESSAGE_LOG macro for compatibility with existing code
+// MESSAGE_LOG macro for compatibility with existing code - now just calls log_message directly
 #define MESSAGE_LOG(...) \
-	NOOP;	
-//if (m_logger) { m_logger->log(__VA_ARGS__); } 
+    spdlog::log_message(__VA_ARGS__);
 
 // Dummy logger class for API compatibility
 namespace spdlog {

@@ -87,7 +87,7 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
     parsingWarnings->push_back(csm::Warning(
         csm::Warning::DATA_NOT_AVAILABLE, "Instrument position has less than 2 states.",
         "UsgsAstroSarSensorModel::constructStateFromIsd()"));
-    MESSAGE_LOG("m_dtEphem not in ISD")
+    MESSAGE_LOG("m_dtEphem not in ISD");
   }
   else {
     // Re-compute times so that they are linearly spaced
@@ -377,7 +377,7 @@ void UsgsAstroSarSensorModel::populateModel(const VariantMap& state) {
 
   if (m_referencePointXyz.x == 0 && m_referencePointXyz.y == 0 &&
       m_referencePointXyz.z == 0) {
-    MESSAGE_LOG("Updating State")
+    MESSAGE_LOG("Updating State";
 
     double lineCtr = m_nLines / 2.0;
     double sampCtr = m_nSamples / 2.0;
@@ -1126,7 +1126,7 @@ double UsgsAstroSarSensorModel::getImageTime(
  */
 csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftPosition(
     double time) const {
-  MESSAGE_LOG("getSpacecraftPosition at {} without adjustments", time)
+  MESSAGE_LOG("getSpacecraftPosition at {} without adjustments", time;
   csm::EcefCoord spacecraftPosition = getSensorPosition(time);
   return csm::EcefVector(spacecraftPosition.x, spacecraftPosition.y,
                          spacecraftPosition.z);
@@ -1144,7 +1144,7 @@ csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftPosition(
  */
 csm::EcefVector UsgsAstroSarSensorModel::getAdjustedSpacecraftPosition(
     double time, std::vector<double> adj) const {
-  MESSAGE_LOG("getSpacecraftPosition at {} with adjustments", time)
+  MESSAGE_LOG("getSpacecraftPosition at {} with adjustments", time;
   csm::EcefCoord spacecraftPosition = getAdjustedSensorPosition(time, adj);
   return csm::EcefVector(spacecraftPosition.x, spacecraftPosition.y,
                          spacecraftPosition.z);
@@ -1160,7 +1160,7 @@ csm::EcefVector UsgsAstroSarSensorModel::getAdjustedSpacecraftPosition(
  * @return The ECEF coordinates of the sensor position at the given time.
  */
 csm::EcefCoord UsgsAstroSarSensorModel::getSensorPosition(double time) const {
-  MESSAGE_LOG("getSensorPosition at {}.", time)
+  MESSAGE_LOG("getSensorPosition at {}.", time;
   csm::EcefCoord sensorPosition =
       getAdjustedSensorPosition(time, m_noAdjustments);
   return sensorPosition;

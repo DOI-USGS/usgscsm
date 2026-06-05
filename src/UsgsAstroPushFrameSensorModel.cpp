@@ -450,7 +450,7 @@ VariantMap UsgsAstroPushFrameSensorModel::getModelMap() const {
       "m_referencePointXyz: {} ",
       m_referencePointXyz.x, m_referencePointXyz.y, m_referencePointXyz.z)
   state.set<std::vector<double>>("m_sunPosition", m_sunPosition);
-  MESSAGE_LOG("num sun positions: {} ", m_sunPosition.size())
+  MESSAGE_LOG("num sun positions: {} ", m_sunPosition.size());
   state.set<std::vector<double>>("m_sunVelocity", m_sunVelocity);
   MESSAGE_LOG("num sun velocities: {} ", m_sunVelocity.size());
   state.set<int>("m_numLinesOverlap", m_numLinesOverlap);
@@ -604,7 +604,7 @@ UsgsAstroPushFrameSensorModel::~UsgsAstroPushFrameSensorModel() {}
 void UsgsAstroPushFrameSensorModel::updateState() {
   // If sensor model is being created for the first time
   // This routine will set some parameters not found in the ISD.
-  MESSAGE_LOG("Updating state")
+  MESSAGE_LOG("Updating state");
   // Reference point (image center)
   double lineCtr = m_nReducedLines / 2.0;
   double sampCtr = m_nSamples / 2.0;
@@ -653,7 +653,7 @@ void UsgsAstroPushFrameSensorModel::updateState() {
                        + (numFramelets - 1) * m_interframeDelay
                        + m_exposureDuration;
   m_halfTime = fullImageTime / 2.0;
-  MESSAGE_LOG("updateState: half time duration set to {}", m_halfTime)
+  MESSAGE_LOG("updateState: half time duration set to {}", m_halfTime;
 
   // Parameter covariance, hardcoded accuracy values
   // hardcoded ~1 pixel accuracy values
@@ -1279,7 +1279,7 @@ double UsgsAstroPushFrameSensorModel::getImageTime(
 //***************************************************************************
 csm::EcefCoord UsgsAstroPushFrameSensorModel::getSensorPosition(
     const csm::ImageCoord& imagePt) const {
-  MESSAGE_LOG("getSensorPosition at line {}", imagePt.line)
+  MESSAGE_LOG("getSensorPosition at line {}", imagePt.line;
 
   return getSensorPosition(getImageTime(imagePt));
 }
@@ -1291,7 +1291,7 @@ csm::EcefCoord UsgsAstroPushFrameSensorModel::getSensorPosition(double time) con
   double x, y, z, vx, vy, vz;
   getAdjSensorPosVel(time, _no_adjustment, x, y, z, vx, vy, vz);
 
-  MESSAGE_LOG("getSensorPosition at {}", time)
+  MESSAGE_LOG("getSensorPosition at {}", time;
 
   return csm::EcefCoord(x, y, z);
 }
@@ -1301,7 +1301,7 @@ csm::EcefCoord UsgsAstroPushFrameSensorModel::getSensorPosition(double time) con
 //***************************************************************************
 csm::EcefVector UsgsAstroPushFrameSensorModel::getSensorVelocity(
     const csm::ImageCoord& imagePt) const {
-  MESSAGE_LOG("getSensorVelocity at {}", imagePt.line)
+  MESSAGE_LOG("getSensorVelocity at {}", imagePt.line;
   return getSensorVelocity(getImageTime(imagePt));
 }
 
@@ -1312,7 +1312,7 @@ csm::EcefVector UsgsAstroPushFrameSensorModel::getSensorVelocity(double time) co
   double x, y, z, vx, vy, vz;
   getAdjSensorPosVel(time, _no_adjustment, x, y, z, vx, vy, vz);
 
-  MESSAGE_LOG("getSensorVelocity at {}", time)
+  MESSAGE_LOG("getSensorVelocity at {}", time;
 
   return csm::EcefVector(vx, vy, vz);
 }
@@ -1921,7 +1921,7 @@ void UsgsAstroPushFrameSensorModel::losEllipsoidIntersect(
       warnings->push_back(csm::Warning(csm::Warning::NO_INTERSECTION, message,
                                        "UsgsAstroPushFrameSensorModel::losElliposidIntersect"));
     }
-    MESSAGE_LOG(message)
+    MESSAGE_LOG(message;
   }
   double scale, scale1, h;
   double sprev, hprev;
@@ -1956,7 +1956,7 @@ void UsgsAstroPushFrameSensorModel::getAdjSensorPosVel(const double& time,
                                                 double& xc, double& yc,
                                                 double& zc, double& vx,
                                                 double& vy, double& vz) const {
-  MESSAGE_LOG("Calculating getAdjSensorPosVel at time {}", time)
+  MESSAGE_LOG("Calculating getAdjSensorPosVel at time {}", time;
 
   // Sensor position and velocity (4th or 8th order Lagrange).
   int nOrder = 8;
@@ -1968,7 +1968,7 @@ void UsgsAstroPushFrameSensorModel::getAdjSensorPosVel(const double& time,
   lagrangeInterp(m_numPositions / 3, &m_velocities[0], m_t0Ephem, m_dtEphem,
                  time, 3, nOrder, sensVelNom);
 
-  MESSAGE_LOG("getAdjSensorPosVel: using {} order Lagrange", nOrder)
+  MESSAGE_LOG("getAdjSensorPosVel: using {} order Lagrange", nOrder;
 
   // Compute rotation matrix from ICR to ECF
   double radialUnitVec[3];
@@ -2131,7 +2131,7 @@ VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
       state["m_sensorName"].dump(), state["m_platformName"].dump())
 
   state["m_focalLength"] = ale::getFocalLength(jsonIsd);
-  MESSAGE_LOG("m_focalLength: {} ", state["m_focalLength"].dump())
+  MESSAGE_LOG("m_focalLength: {} ", state["m_focalLength"].dump();
 
   state["m_nLines"] = ale::getTotalLines(jsonIsd);
   state["m_nSamples"] = ale::getTotalSamples(jsonIsd);
@@ -2167,7 +2167,7 @@ VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
 
   // Zero computed state values
   state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
-  MESSAGE_LOG("m_referencePointXyz: {} ", state["m_referencePointXyz"].dump())
+  MESSAGE_LOG("m_referencePointXyz: {} ", state["m_referencePointXyz"].dump();
 
   // Sun position and sensor position use the same times so compute that now
   ale::States inst_state = ale::getInstrumentPosition(jsonIsd);
@@ -2186,22 +2186,22 @@ VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
 
   try {
     state["m_dtEphem"] = timeStep;
-    MESSAGE_LOG("m_dtEphem: {} ", state["m_dtEphem"].dump())
+    MESSAGE_LOG("m_dtEphem: {} ", state["m_dtEphem"].dump();
   } catch (...) {
     parsingWarnings->push_back(csm::Warning(
         csm::Warning::DATA_NOT_AVAILABLE, "dt_ephemeris not in ISD",
         "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
-    MESSAGE_LOG("m_dtEphem not in ISD")
+    MESSAGE_LOG("m_dtEphem not in ISD";
   }
 
   try {
     state["m_t0Ephem"] = startTime - ale::getCenterTime(jsonIsd);
-    MESSAGE_LOG("t0_ephemeris: {}", state["m_t0Ephem"].dump())
+    MESSAGE_LOG("t0_ephemeris: {}", state["m_t0Ephem"].dump();
   } catch (...) {
     parsingWarnings->push_back(csm::Warning(
         csm::Warning::DATA_NOT_AVAILABLE, "t0_ephemeris not in ISD",
         "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
-    MESSAGE_LOG("t0_ephemeris not in ISD")
+    MESSAGE_LOG("t0_ephemeris not in ISD";
   }
 
   ale::States sunState = ale::getSunPosition(jsonIsd);
@@ -2323,7 +2323,7 @@ VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
       state["m_positions"].dump(), state["m_numPositions"].dump())
 
   state["m_velocities"] = velocities;
-  MESSAGE_LOG("m_velocities: {}", state["m_velocities"].dump())
+  MESSAGE_LOG("m_velocities: {}", state["m_velocities"].dump();
 
   // Work-around for issues in ALE <=0.8.5 where Orientations without angular
   // velocities seg fault when you multiply them. This will make the angular
@@ -2355,22 +2355,22 @@ VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
       (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
   try {
     state["m_dtQuat"] = quatStep;
-    MESSAGE_LOG("dt_quaternion: {}", state["m_dtQuat"].dump())
+    MESSAGE_LOG("dt_quaternion: {}", state["m_dtQuat"].dump();
   } catch (...) {
     parsingWarnings->push_back(csm::Warning(
         csm::Warning::DATA_NOT_AVAILABLE, "dt_quaternion not in ISD",
         "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
-    MESSAGE_LOG("dt_quaternion not in ISD")
+    MESSAGE_LOG("dt_quaternion not in ISD";
   }
 
   try {
     state["m_t0Quat"] = ephemTime[0] - ale::getCenterTime(jsonIsd);
-    MESSAGE_LOG("m_t0Quat: {}", state["m_t0Quat"].dump())
+    MESSAGE_LOG("m_t0Quat: {}", state["m_t0Quat"].dump();
   } catch (...) {
     parsingWarnings->push_back(csm::Warning(
         csm::Warning::DATA_NOT_AVAILABLE, "t0_quaternion not in ISD",
         "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
-    MESSAGE_LOG("t0_quaternion not in ISD")
+    MESSAGE_LOG("t0_quaternion not in ISD";
   }
   std::vector<double> quaternion;
   std::vector<double> quaternions;
@@ -2462,17 +2462,7 @@ VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
 }
 
 //***************************************************************************
-// UsgsAstroLineScannerSensorModel::getLogger
-//***************************************************************************
-std::shared_ptr<spdlog::logger> UsgsAstroPushFrameSensorModel::getLogger() {
-  // MESSAGE_LOG("Getting log pointer, logger is {}",
-  //                             m_logger)
-  return m_logger;
-}
 
-void UsgsAstroPushFrameSensorModel::setLogger(std::string logName) {
-  m_logger = spdlog::get(logName);
-}
 
 csm::EcefVector UsgsAstroPushFrameSensorModel::getSunPosition(
     const double imageTime) const {
@@ -2509,7 +2499,7 @@ double UsgsAstroPushFrameSensorModel::calcFrameDistance(int frameletNumber,
                                                         const std::vector<double>& adj) const {
 
   MESSAGE_LOG("Calculating frame distance for frame {} and ground point {}, {}, {}",
-              frameletNumber, groundPt.x, groundPt.y, groundPt.z)
+              frameletNumber, groundPt.x, groundPt.y, groundPt.z);
 
   int summedFrameletHeight = m_reducedFrameletHeight / m_detectorLineSumming;
   csm::ImageCoord centerFramePt((frameletNumber + 0.5) * summedFrameletHeight, m_nSamples/2.0);

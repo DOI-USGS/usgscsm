@@ -140,7 +140,6 @@ class UsgsAstroPushFrameSensorModel : public csm::RasterGM,
   int m_nReducedLines;   // Number of images lines after eliminating overlaps
 
   // Define logging pointer and file content
-  std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
 
   // Hardcoded
   static const std::string _SENSOR_MODEL_NAME;  // state date element 0
@@ -699,8 +698,6 @@ class UsgsAstroPushFrameSensorModel : public csm::RasterGM,
   //  reference by the given index.
   //<
 
-  virtual std::shared_ptr<spdlog::logger> getLogger();
-  virtual void setLogger(std::string logName);
 
   //---
   // Uncertainty Propagation

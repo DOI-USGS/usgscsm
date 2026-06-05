@@ -81,7 +81,6 @@ class UsgsAstroPlugin : public csm::Plugin {
 
   typedef csm::Model *(*sensorConstructor)(void);
   static std::map<std::string, sensorConstructor> MODELS;
-  std::shared_ptr<spdlog::logger> m_logger;
 };
 
 #endif   // INCLUDE_USGSCSM_USGSASTROPLUGIN_H_

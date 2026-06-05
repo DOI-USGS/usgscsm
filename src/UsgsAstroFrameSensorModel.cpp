@@ -783,7 +783,7 @@ csm::EcefVector UsgsAstroFrameSensorModel::getSensorVelocity(
   // Make sure the passed coordinate is with the image dimensions.
   if (imagePt.samp < 0.0 || imagePt.samp > m_nSamples || imagePt.line < 0.0 ||
       imagePt.line > m_nLines) {
-    MESSAGE_LOG(spdlog::level::err, "ERROR: Image coordinate out of bounds.")
+    MESSAGE_LOG(spdlog::level::err, "ERROR: Image coordinate out of bounds.");
     throw csm::Error(csm::Error::BOUNDS, "Image coordinate out of bounds.",
                      "UsgsAstroFrameSensorModel::getSensorVelocity");
   }
@@ -2453,9 +2453,6 @@ double UsgsAstroFrameSensorModel::getValue(
  * 
  * @return A shared pointer to the sensor model's spdlog logger.
  */
-std::shared_ptr<spdlog::logger> UsgsAstroFrameSensorModel::getLogger() {
-  return m_logger;
-}
 
 /**
  * @brief Sets the logger for the sensor model.
@@ -2463,6 +2460,3 @@ std::shared_ptr<spdlog::logger> UsgsAstroFrameSensorModel::getLogger() {
  * 
  * @param logName The name of the logger to be used by the sensor model.
  */
-void UsgsAstroFrameSensorModel::setLogger(std::string logName) {
-  m_logger = spdlog::get(logName);
-}

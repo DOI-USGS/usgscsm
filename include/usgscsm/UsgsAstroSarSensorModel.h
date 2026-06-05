@@ -275,7 +275,6 @@ class UsgsAstroSarSensorModel : public csm::RasterGM,
   LookDirection m_lookDirection;
   std::vector<double> m_noAdjustments;
 
-  std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
 };
 
 #endif

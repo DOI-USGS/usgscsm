@@ -139,7 +139,7 @@ void UsgsAstroLsSensorModel::replaceModelState(const std::string& stateString) {
 
 void UsgsAstroLsSensorModel::populateModel(const VariantMap& state) {
   reset();
-  MESSAGE_LOG(spdlog::level::trace, "Populating model with state values\n{}", state.dumps())
+  MESSAGE_LOG(spdlog::level::trace, "Populating model with state values\n{}", state.dumps());
 
   m_imageIdentifier = state.get<std::string>("m_imageIdentifier");
   m_sensorName = state.get<std::string>("m_sensorName");
@@ -474,7 +474,7 @@ VariantMap UsgsAstroLsSensorModel::getModelMap() const {
       m_referencePointXyz.x, m_referencePointXyz.y, m_referencePointXyz.z)
 
   state.set<std::vector<double>>("m_sunPosition", m_sunPosition);
-  MESSAGE_LOG(spdlog::level::trace, "num sun positions: {} ", m_sunPosition.size())
+  MESSAGE_LOG(spdlog::level::trace, "num sun positions: {} ", m_sunPosition.size());
 
   state.set<std::vector<double>>("m_sunVelocity", m_sunVelocity);
   MESSAGE_LOG(spdlog::level::trace, "num sun velocities: {} ", m_sunVelocity.size());
@@ -487,7 +487,7 @@ std::string UsgsAstroLsSensorModel::getModelJson() const {
 }
 
 std::string UsgsAstroLsSensorModel::getModelState() const {
-  MESSAGE_LOG(spdlog::level::info, "Running getModelState")
+  MESSAGE_LOG(spdlog::level::info, "Running getModelState";
   return getModelName() + "\n" + getModelJson();
 }
 
@@ -552,7 +552,7 @@ void UsgsAstroLsSensorModel::applyTransformToState(ale::Rotation const& r, ale::
  * the major and minor axes of the ellipsoid model used for the planet.
  */
 void UsgsAstroLsSensorModel::reset() {
-  MESSAGE_LOG(spdlog::level::debug, "Running reset()")
+  MESSAGE_LOG(spdlog::level::debug, "Running reset()";
   m_useApproxInitTrans = false;  // default until an initial approximation is found
 
   _no_adjustment.assign(UsgsAstroLsSensorModel::NUM_PARAMETERS, 0.0);
@@ -661,7 +661,7 @@ UsgsAstroLsSensorModel::~UsgsAstroLsSensorModel() {
 void UsgsAstroLsSensorModel::updateState() {
   // If sensor model is being created for the first time
   // This routine will set some parameters not found in the ISD.
-  MESSAGE_LOG(spdlog::level::debug, "Updating State")
+  MESSAGE_LOG(spdlog::level::debug, "Updating State";
   // Reference point (image center)
   double lineCtr = m_nLines / 2.0;
   double sampCtr = m_nSamples / 2.0;
@@ -708,14 +708,14 @@ void UsgsAstroLsSensorModel::updateState() {
 
   // Compute half swath
   m_halfSwath = m_gsd * m_nSamples / 2.0;
-  MESSAGE_LOG(spdlog::level::trace, "updateState: half swath set to {}", m_halfSwath)
+  MESSAGE_LOG(spdlog::level::trace, "updateState: half swath set to {}", m_halfSwath;
 
   // Compute half time duration
   double fullImageTime = m_intTimeStartTimes.back() -
                          m_intTimeStartTimes.front() +
                          m_intTimes.back() * (m_nLines - m_intTimeLines.back());
   m_halfTime = fullImageTime / 2.0;
-  MESSAGE_LOG(spdlog::level::trace, "updateState: half time duration set to {}", m_halfTime)
+  MESSAGE_LOG(spdlog::level::trace, "updateState: half time duration set to {}", m_halfTime;
 
   // Parameter covariance, hardcoded accuracy values
   // hardcoded ~1 pixel accuracy values
@@ -2504,7 +2504,7 @@ void UsgsAstroLsSensorModel::losEllipsoidIntersect(
       warnings->push_back(csm::Warning(
           csm::Warning::NO_INTERSECTION, message, "UsgsAstroLsSensorModel::losElliposidIntersect"));
     }
-    MESSAGE_LOG(spdlog::level::warn, message)
+    MESSAGE_LOG(spdlog::level::warn, message;
   }
   double scale, scale1, h;
   double sprev, hprev;
@@ -2996,7 +2996,7 @@ VariantMap UsgsAstroLsSensorModel::constructStateFromIsd(
     parsingWarnings->push_back(csm::Warning(
         csm::Warning::DATA_NOT_AVAILABLE, "dt_ephemeris not in ISD",
         "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
-    MESSAGE_LOG(spdlog::level::warn, "m_dtEphem not in ISD")
+    MESSAGE_LOG(spdlog::level::warn, "m_dtEphem not in ISD";
   }
 
   try {
@@ -3009,7 +3009,7 @@ VariantMap UsgsAstroLsSensorModel::constructStateFromIsd(
     parsingWarnings->push_back(csm::Warning(
         csm::Warning::DATA_NOT_AVAILABLE, "t0_ephemeris not in ISD",
         "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
-    MESSAGE_LOG(spdlog::level::warn, "t0_ephemeris not in ISD")
+    MESSAGE_LOG(spdlog::level::warn, "t0_ephemeris not in ISD";
   }
 
   ale::States sunState = ale::getSunPosition(jsonIsd);
@@ -3268,9 +3268,6 @@ VariantMap UsgsAstroLsSensorModel::constructStateFromIsd(
  *
  * @return Shared pointer to the logger.
  */
-std::shared_ptr<spdlog::logger> UsgsAstroLsSensorModel::getLogger() {
-  return m_logger;
-}
 
 /**
  * @brief Sets the logger for the sensor model.
@@ -3280,9 +3277,6 @@ std::shared_ptr<spdlog::logger> UsgsAstroLsSensorModel::getLogger() {
  *
  * @param logName The name of the logger.
  */
-void UsgsAstroLsSensorModel::setLogger(std::string logName) {
-  m_logger = spdlog::get(logName);
-}
 
 /**
  * @brief Computes the position of the Sun at a given image time.

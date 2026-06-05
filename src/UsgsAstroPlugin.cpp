@@ -66,8 +66,6 @@ const int UsgsAstroPlugin::_N_SENSOR_MODELS = 5;
 const UsgsAstroPlugin UsgsAstroPlugin::m_registeredPlugin;
 
 UsgsAstroPlugin::UsgsAstroPlugin() {
-  // Logger initializes automatically from environment variables
-  m_logger = spdlog::get("usgscsm_logger");
 }
 
 UsgsAstroPlugin::~UsgsAstroPlugin() {}

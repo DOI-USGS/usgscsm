@@ -90,7 +90,6 @@ public:
     std::string m_subModelName;
 
     // Define logging pointer and file content
-    std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
 
     // Hardcoded
     static const std::string _SENSOR_MODEL_NAME; // state date element 0
