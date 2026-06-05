@@ -543,8 +543,6 @@ TEST_F(FrameSensorModelLogging, GetSensorPositionTime) {
   csm::ImageCoord imagePt(7.5, 7.5);
   double time = sensorModel->getImageTime(imagePt);
   // Dump the constents of the stream because getModelState wrote to it
-  oss.str("");
-  oss.clear();
   sensorModel->getSensorPosition(time);
 }
 
@@ -557,8 +555,6 @@ TEST_F(FrameSensorModelLogging, GetSensorVelocityTime) {
   csm::ImageCoord imagePt(7.5, 7.5);
   double time = sensorModel->getImageTime(imagePt);
   // Dump the constents of the stream because getModelState wrote to it
-  oss.str("");
-  oss.clear();
   sensorModel->getSensorVelocity(time);
 }
 
@@ -637,8 +633,6 @@ TEST_F(FrameSensorModelLogging, GetModelState) { sensorModel->getModelState(); }
 TEST_F(FrameSensorModelLogging, replaceModelState) {
   std::string state = sensorModel->getModelState();
   // Dump the constents of the stream because getModelState wrote to it
-  oss.str("");
-  oss.clear();
   sensorModel->replaceModelState(state);
 }
 

@@ -11,11 +11,6 @@
 
 #include "ale/Util.h"
 
-#define MESSAGE_LOG(...)         \
-  if (m_logger) {                \
-    m_logger->log(__VA_ARGS__); \
-  }
-
 using json = nlohmann::json;
 
 // Declaration of static variables

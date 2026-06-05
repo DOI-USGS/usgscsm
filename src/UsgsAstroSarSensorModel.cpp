@@ -13,10 +13,6 @@
 using json = nlohmann::json;
 using namespace std;
 
-#define MESSAGE_LOG(...)         \
-  if (m_logger) {                \
-    m_logger->info(__VA_ARGS__); \
-  }
 
 const string UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME =
     "USGS_ASTRO_SAR_SENSOR_MODEL";

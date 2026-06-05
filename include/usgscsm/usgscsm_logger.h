@@ -1,8 +1,8 @@
 /**
  * USGSCSM Simple Logger - Single-header SPDLOG replacement
  *
- * Minimal logging implementation compatible with SPDLOG API.
- * Supports format strings with {} placeholders.
+ * Pure macro-based logging with no initialization required.
+ * Reads USGSCSM_LOG_FILE and USGSCSM_LOG_LEVEL from environment on first use.
  */
 
 #ifndef USGSCSM_LOGGER_H
@@ -12,10 +12,10 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <memory>
-#include <map>
-#include <mutex>
 #include <ctime>
+#include <cstdlib>
+#include <algorithm>
+#include <mutex>
 
 namespace spdlog {
 
@@ -46,303 +46,213 @@ inline level from_str(const std::string& str) {
     return level::info; // default
 }
 
-// Logger class
+// Global logging configuration - lazy-initialized
+inline std::ostream& get_log_stream() {
+    static std::ostream* stream = nullptr;
+    static std::ofstream file_stream;
+    static std::mutex init_mutex;
+
+    if (stream == nullptr) {
+        std::lock_guard<std::mutex> lock(init_mutex);
+        if (stream == nullptr) {
+            const char* log_file = std::getenv("USGSCSM_LOG_FILE");
+            std::string file = log_file ? log_file : "stdout";
+
+            if (file == "stdout") {
+                stream = &std::cout;
+            } else if (file == "stderr") {
+                stream = &std::cerr;
+            } else if (!file.empty()) {
+                file_stream.open(file, std::ios::app);
+                stream = file_stream.is_open() ? &file_stream : &std::cout;
+            } else {
+                stream = &std::cout;
+            }
+        }
+    }
+    return *stream;
+}
+
+inline level& get_log_level() {
+    static level current_level = level::off;
+    static bool initialized = false;
+    static std::mutex init_mutex;
+
+    if (!initialized) {
+        std::lock_guard<std::mutex> lock(init_mutex);
+        if (!initialized) {
+            const char* log_level_env = std::getenv("USGSCSM_LOG_LEVEL");
+            current_level = log_level_env ? from_str(log_level_env) : level::info;
+            initialized = true;
+        }
+    }
+    return current_level;
+}
+
+inline std::mutex& get_log_mutex() {
+    static std::mutex log_mutex;
+    return log_mutex;
+}
+
+inline const char* level_string(level lvl) {
+    switch (lvl) {
+        case level::trace: return "TRACE";
+        case level::debug: return "DEBUG";
+        case level::info: return "INFO";
+        case level::warn: return "WARN";
+        case level::err: return "ERROR";
+        case level::critical: return "CRITICAL";
+        default: return "UNKNOWN";
+    }
+}
+
+inline std::string timestamp() {
+    std::time_t now = std::time(nullptr);
+    char buf[32];
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", std::localtime(&now));
+    return std::string(buf);
+}
+
+// Format string helpers
+namespace detail {
+    inline std::string format_one(const std::string& fmt, const std::string& value) {
+        size_t pos = fmt.find("{}");
+        if (pos == std::string::npos) return fmt;
+        return fmt.substr(0, pos) + value + fmt.substr(pos + 2);
+    }
+
+    template<typename T>
+    inline std::string to_string(const T& value) {
+        std::ostringstream oss;
+        oss << value;
+        return oss.str();
+    }
+
+    inline std::string format_message(const std::string& fmt) {
+        return fmt;
+    }
+
+    template<typename T, typename... Args>
+    inline std::string format_message(const std::string& fmt, const T& value, Args&&... args) {
+        return format_message(format_one(fmt, to_string(value)), std::forward<Args>(args)...);
+    }
+}
+
+// Core logging function
+template<typename... Args>
+inline void log_message(level lvl, const char* fmt, Args&&... args) {
+    if (lvl < get_log_level()) return;
+
+    std::string message = detail::format_message(std::string(fmt), std::forward<Args>(args)...);
+
+    std::lock_guard<std::mutex> lock(get_log_mutex());
+    get_log_stream() << "[" << timestamp() << "] [" << level_string(lvl) << "] "
+                     << message << std::endl;
+}
+
+inline void log_message(level lvl, const char* msg) {
+    if (lvl < get_log_level()) return;
+
+    std::lock_guard<std::mutex> lock(get_log_mutex());
+    get_log_stream() << "[" << timestamp() << "] [" << level_string(lvl) << "] "
+                     << msg << std::endl;
+}
+
+inline void log_message(level lvl, const std::string& msg) {
+    log_message(lvl, msg.c_str());
+}
+
+// Set level dynamically
+inline void set_level(level lvl) {
+    get_log_level() = lvl;
+}
+
+inline level get_level() {
+    return get_log_level();
+}
+
+} // namespace spdlog
+
+// MESSAGE_LOG macro for compatibility with existing code
+#define MESSAGE_LOG(...) \
+    if (m_logger) { m_logger->log(__VA_ARGS__); } 
+
+// Dummy logger class for API compatibility
+namespace spdlog {
 class logger {
 public:
-    logger(const std::string& name)
-        : name_(name), level_(level::info), output_type_(OutputType::NONE), ostream_ptr_(nullptr) {}
+    logger(const std::string&) {}
 
-    ~logger() {
-        if (file_stream_.is_open()) {
-            file_stream_.close();
-        }
-    }
-
-    void set_level(level lvl) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        level_ = lvl;
-    }
-
-    level get_level() const {
-        return level_;
-    }
-
-    std::string name() const {
-        return name_;
-    }
-
-    // Main logging method - no arguments
-    void log(level lvl, const char* msg) {
-        if (lvl < level_ || output_type_ == OutputType::NONE) return;
-
-        std::lock_guard<std::mutex> lock(mutex_);
-        write_log(lvl, msg);
-    }
-
-    // Overload for std::string
-    void log(level lvl, const std::string& msg) {
-        log(lvl, msg.c_str());
-    }
-
-    // Format string helper - recursion base case
-    template<typename T>
-    std::string format_impl(const std::string& fmt, size_t pos, const T& value) {
-        size_t placeholder = fmt.find("{}", pos);
-        if (placeholder == std::string::npos) {
-            return fmt;
-        }
-
-        std::ostringstream oss;
-        oss << value;
-
-        std::string result = fmt.substr(0, placeholder) + oss.str();
-        result += fmt.substr(placeholder + 2);
-        return result;
-    }
-
-    // Format string helper - recursive case
-    template<typename T, typename... Args>
-    std::string format_impl(const std::string& fmt, size_t pos, const T& value, Args&&... args) {
-        size_t placeholder = fmt.find("{}", pos);
-        if (placeholder == std::string::npos) {
-            return fmt;
-        }
-
-        std::ostringstream oss;
-        oss << value;
-
-        std::string result = fmt.substr(0, placeholder) + oss.str() + fmt.substr(placeholder + 2);
-        return format_impl(result, placeholder + oss.str().length(), std::forward<Args>(args)...);
-    }
-
-    // Logging method with format arguments
     template<typename... Args>
     void log(level lvl, const char* fmt, Args&&... args) {
-        if (lvl < level_ || output_type_ == OutputType::NONE) return;
-
-        std::string formatted = format_impl(std::string(fmt), 0, std::forward<Args>(args)...);
-
-        std::lock_guard<std::mutex> lock(mutex_);
-        write_log(lvl, formatted.c_str());
+        log_message(lvl, fmt, std::forward<Args>(args)...);
     }
 
-    void set_output_stdout() {
-        std::lock_guard<std::mutex> lock(mutex_);
-        output_type_ = OutputType::STDOUT;
-    }
+    void log(level lvl, const char* msg) { log_message(lvl, msg); }
+    void log(level lvl, const std::string& msg) { log_message(lvl, msg); }
 
-    void set_output_stderr() {
-        std::lock_guard<std::mutex> lock(mutex_);
-        output_type_ = OutputType::STDERR;
-    }
-
-    void set_output_file(const std::string& path) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (file_stream_.is_open()) {
-            file_stream_.close();
-        }
-        file_stream_.open(path, std::ios::app);
-        if (file_stream_.is_open()) {
-            output_type_ = OutputType::FILE;
-        }
-    }
-
-    void set_output_ostream(std::ostream* stream) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        ostream_ptr_ = stream;
-        output_type_ = OutputType::OSTREAM;
-    }
-
-    // Convenience methods for each log level
+    // Overloads that default to info level when no level provided
     template<typename... Args>
-    void trace(const char* fmt, Args&&... args) {
-        log(level::trace, fmt, std::forward<Args>(args)...);
+    void log(const char* fmt, Args&&... args) {
+        log_message(level::info, fmt, std::forward<Args>(args)...);
     }
 
-    void trace(const std::string& msg) {
-        log(level::trace, msg.c_str());
-    }
+    void log(const char* msg) { log_message(level::info, msg); }
+    void log(const std::string& msg) { log_message(level::info, msg); }
 
     template<typename... Args>
-    void debug(const char* fmt, Args&&... args) {
-        log(level::debug, fmt, std::forward<Args>(args)...);
-    }
-
-    void debug(const std::string& msg) {
-        log(level::debug, msg.c_str());
-    }
+    void trace(const char* fmt, Args&&... args) { log_message(level::trace, fmt, std::forward<Args>(args)...); }
+    void trace(const std::string& msg) { log_message(level::trace, msg); }
 
     template<typename... Args>
-    void info(const char* fmt, Args&&... args) {
-        log(level::info, fmt, std::forward<Args>(args)...);
-    }
-
-    void info(const std::string& msg) {
-        log(level::info, msg.c_str());
-    }
+    void debug(const char* fmt, Args&&... args) { log_message(level::debug, fmt, std::forward<Args>(args)...); }
+    void debug(const std::string& msg) { log_message(level::debug, msg); }
 
     template<typename... Args>
-    void warn(const char* fmt, Args&&... args) {
-        log(level::warn, fmt, std::forward<Args>(args)...);
-    }
-
-    void warn(const std::string& msg) {
-        log(level::warn, msg.c_str());
-    }
+    void info(const char* fmt, Args&&... args) { log_message(level::info, fmt, std::forward<Args>(args)...); }
+    void info(const std::string& msg) { log_message(level::info, msg); }
 
     template<typename... Args>
-    void error(const char* fmt, Args&&... args) {
-        log(level::err, fmt, std::forward<Args>(args)...);
-    }
-
-    void error(const std::string& msg) {
-        log(level::err, msg.c_str());
-    }
+    void warn(const char* fmt, Args&&... args) { log_message(level::warn, fmt, std::forward<Args>(args)...); }
+    void warn(const std::string& msg) { log_message(level::warn, msg); }
 
     template<typename... Args>
-    void critical(const char* fmt, Args&&... args) {
-        log(level::critical, fmt, std::forward<Args>(args)...);
-    }
+    void error(const char* fmt, Args&&... args) { log_message(level::err, fmt, std::forward<Args>(args)...); }
+    void error(const std::string& msg) { log_message(level::err, msg); }
 
-    void critical(const std::string& msg) {
-        log(level::critical, msg.c_str());
-    }
+    template<typename... Args>
+    void critical(const char* fmt, Args&&... args) { log_message(level::critical, fmt, std::forward<Args>(args)...); }
+    void critical(const std::string& msg) { log_message(level::critical, msg); }
 
-    // Flush method (for compatibility)
-    void flush() {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (output_type_ == OutputType::FILE && file_stream_.is_open()) {
-            file_stream_.flush();
-        }
-        // stdout/stderr/ostream flush automatically after each log
-    }
-
-private:
-    enum class OutputType { NONE, STDOUT, STDERR, FILE, OSTREAM };
-
-    std::string name_;
-    level level_;
-    OutputType output_type_;
-    std::ofstream file_stream_;
-    std::ostream* ostream_ptr_;
-    std::mutex mutex_;
-
-    std::string level_string(level lvl) const {
-        switch (lvl) {
-            case level::trace: return "TRACE";
-            case level::debug: return "DEBUG";
-            case level::info: return "INFO";
-            case level::warn: return "WARN";
-            case level::err: return "ERROR";
-            case level::critical: return "CRITICAL";
-            default: return "UNKNOWN";
-        }
-    }
-
-    std::string timestamp() const {
-        std::time_t now = std::time(nullptr);
-        char buf[32];
-        std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", std::localtime(&now));
-        return std::string(buf);
-    }
-
-    void write_log(level lvl, const char* msg) {
-        std::ostringstream line;
-        line << "[" << timestamp() << "] [" << level_string(lvl) << "] " << msg << "\n";
-
-        std::string output = line.str();
-
-        switch (output_type_) {
-            case OutputType::STDOUT:
-                std::cout << output << std::flush;
-                break;
-            case OutputType::STDERR:
-                std::cerr << output << std::flush;
-                break;
-            case OutputType::FILE:
-                if (file_stream_.is_open()) {
-                    file_stream_ << output << std::flush;
-                }
-                break;
-            case OutputType::OSTREAM:
-                if (ostream_ptr_) {
-                    *ostream_ptr_ << output << std::flush;
-                }
-                break;
-            case OutputType::NONE:
-                break;
-        }
-    }
+    void set_level(level lvl) { spdlog::set_level(lvl); }
+    level get_level() const { return spdlog::get_level(); }
+    std::string name() const { return "usgscsm_logger"; }
+    void flush() {}
 };
 
-// Global logger registry
-class logger_registry {
-public:
-    static logger_registry& instance() {
-        static logger_registry registry;
-        return registry;
-    }
-
-    std::shared_ptr<logger> get(const std::string& name) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        auto it = loggers_.find(name);
-        if (it != loggers_.end()) {
-            return it->second;
-        }
-        return nullptr;
-    }
-
-    void register_logger(const std::string& name, std::shared_ptr<logger> logger_ptr) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        loggers_[name] = logger_ptr;
-    }
-
-    void drop(const std::string& name) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        loggers_.erase(name);
-    }
-
-private:
-    std::map<std::string, std::shared_ptr<logger>> loggers_;
-    std::mutex mutex_;
-};
-
-// Public API functions
-inline std::shared_ptr<logger> get(const std::string& name) {
-    return logger_registry::instance().get(name);
+// Stub functions - always return the same shared dummy logger
+inline std::shared_ptr<logger> get(const std::string&) {
+    static auto dummy = std::make_shared<logger>("dummy");
+    return dummy;
 }
 
-inline std::shared_ptr<logger> stdout_color_mt(const std::string& name) {
-    auto logger_ptr = std::make_shared<logger>(name);
-    logger_ptr->set_output_stdout();
-    logger_registry::instance().register_logger(name, logger_ptr);
-    return logger_ptr;
+inline std::shared_ptr<logger> stdout_color_mt(const std::string&) {
+    return get("");
 }
 
-inline std::shared_ptr<logger> stderr_color_mt(const std::string& name) {
-    auto logger_ptr = std::make_shared<logger>(name);
-    logger_ptr->set_output_stderr();
-    logger_registry::instance().register_logger(name, logger_ptr);
-    return logger_ptr;
+inline std::shared_ptr<logger> stderr_color_mt(const std::string&) {
+    return get("");
 }
 
-inline std::shared_ptr<logger> basic_logger_mt(const std::string& name, const std::string& path) {
-    auto logger_ptr = std::make_shared<logger>(name);
-    logger_ptr->set_output_file(path);
-    logger_registry::instance().register_logger(name, logger_ptr);
-    return logger_ptr;
+inline std::shared_ptr<logger> basic_logger_mt(const std::string&, const std::string&) {
+    return get("");
 }
 
-inline void register_logger(std::shared_ptr<logger> logger_ptr) {
-}
+inline void register_logger(std::shared_ptr<logger>) {}
+inline void drop(const std::string&) {}
 
-inline void drop(const std::string& name) {
-    logger_registry::instance().drop(name);
-}
-
-// Compatibility namespace for test sinks
+// Ostream sink compatibility - for tests only
 namespace sinks {
-    // Ostream sink for test compatibility
     class ostream_sink_mt {
     public:
         ostream_sink_mt(std::ostream& stream) : stream_(stream) {}
@@ -351,13 +261,39 @@ namespace sinks {
         std::ostream& stream_;
     };
 
-    // Factory function to create logger with ostream sink
-    inline std::shared_ptr<logger> create_ostream_logger(const std::string& name,
-                                                          std::shared_ptr<ostream_sink_mt> sink) {
-        auto logger_ptr = std::make_shared<logger>(name);
-        logger_ptr->set_output_ostream(&sink->stream());
-        logger_registry::instance().register_logger(name, logger_ptr);
-        return logger_ptr;
+    // Test logger that writes to a specific ostream
+    class ostream_logger : public logger {
+    public:
+        ostream_logger(const std::string& name, std::ostream* stream)
+            : logger(name), stream_(stream), min_level_(level::trace) {}
+
+        void set_level(level lvl) { min_level_ = lvl; }
+
+        template<typename... Args>
+        void log(level lvl, const char* fmt, Args&&... args) {
+            if (lvl < min_level_ || !stream_) return;
+            std::string message = detail::format_message(std::string(fmt), std::forward<Args>(args)...);
+            std::lock_guard<std::mutex> lock(mutex_);
+            *stream_ << "[" << timestamp() << "] [" << level_string(lvl) << "] " << message << std::endl;
+        }
+
+        void log(level lvl, const char* msg) {
+            if (lvl < min_level_ || !stream_) return;
+            std::lock_guard<std::mutex> lock(mutex_);
+            *stream_ << "[" << timestamp() << "] [" << level_string(lvl) << "] " << msg << std::endl;
+        }
+
+        void log(level lvl, const std::string& msg) { log(lvl, msg.c_str()); }
+
+    private:
+        std::ostream* stream_;
+        level min_level_;
+        std::mutex mutex_;
+    };
+
+    inline std::shared_ptr<ostream_logger> create_ostream_logger(const std::string& name,
+                                                                  std::shared_ptr<ostream_sink_mt> sink) {
+        return std::make_shared<ostream_logger>(name, &sink->stream());
     }
 }
 

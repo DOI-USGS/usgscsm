@@ -34,11 +34,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 
 #include "ale/Util.h"
 
-#define MESSAGE_LOG(...)        \
-  if (m_logger) {               \
-    m_logger->log(__VA_ARGS__); \
-  }
-
 using json = nlohmann::json;
 
 VariantMap variantMapFromJson(const nlohmann::json& j);

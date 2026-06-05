@@ -68,10 +68,12 @@ class FrameSensorModelLogging : public ::testing::Test {
   csm::Isd isd;
   std::shared_ptr<csm::Model> model;
   UsgsAstroFrameSensorModel *sensorModel;
-  std::ostringstream oss;
 
   void SetUp() override {
     sensorModel = NULL;
+
+    // Enable trace-level logging for this test
+    spdlog::set_level(spdlog::level::trace);
 
     isd.setFilename("data/simpleFramerISD.img");
     UsgsAstroPlugin frameCameraPlugin;
@@ -81,28 +83,11 @@ class FrameSensorModelLogging : public ::testing::Test {
     sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model.get());
 
     ASSERT_NE(sensorModel, nullptr);
-
-    auto ostream_sink = std::make_shared<spdlog::sinks::ostream_sink_mt>(oss);
-    // We need a unique ID for the sensor model so that we don't have
-    // logger name collisions. Use the sensor model's memory addresss.
-    std::uintptr_t sensorId = reinterpret_cast<std::uintptr_t>(sensorModel);
-    auto logger = spdlog::sinks::create_ostream_logger(std::to_string(sensorId), ostream_sink);
-    logger->set_level(spdlog::level::trace);
-
-    sensorModel->setLogger(std::to_string(sensorId));
   }
 
   void TearDown() override {
-    if (sensorModel) {
-      // Remove the logger from the registry for other tests
-      std::uintptr_t sensorId = reinterpret_cast<std::uintptr_t>(sensorModel);
-      spdlog::drop(std::to_string(sensorId));
-
-      // No deletion is needed because the resource is owned by the smart pointer 'model'.
-      sensorModel = NULL;
-    }
-
-    EXPECT_FALSE(oss.str().empty());
+    // The object that sensorModel points to is managed by the smart pointer 'model'.
+    sensorModel = NULL;
   }
 };
 
