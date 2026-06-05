@@ -56,11 +56,6 @@ using json = nlohmann::json;
 #define DIR_DELIMITER_STR "/"
 #endif
 
-#define MESSAGE_LOG(...)         \
-  if (m_logger) {                \
-    m_logger->log(__VA_ARGS__); \
-  }
-
 // Declaration of static variables
 const std::string UsgsAstroPlugin::_PLUGIN_NAME = "UsgsAstroPluginCSM";
 const std::string UsgsAstroPlugin::_MANUFACTURER_NAME = "UsgsAstrogeology";

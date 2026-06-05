@@ -13,12 +13,6 @@
 
 using json = nlohmann::json;
 
-#define MESSAGE_LOG(...)         \
-  if (m_logger) {                \
-    m_logger->log(__VA_ARGS__); \
-  }
-
-
 /**
  * @description Calculates a rotation matrix from Euler angles. This function takes
  * in Euler angles (yaw, pitch, and roll) and calculates the corresponding rotation 

@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <mutex>
 
+
 namespace spdlog {
 
 // Log levels
@@ -181,9 +182,11 @@ inline level get_level() {
 
 } // namespace spdlog
 
+#define NOOP
 // MESSAGE_LOG macro for compatibility with existing code
 #define MESSAGE_LOG(...) \
-    if (m_logger) { m_logger->log(__VA_ARGS__); } 
+	NOOP;	
+//if (m_logger) { m_logger->log(__VA_ARGS__); } 
 
 // Dummy logger class for API compatibility
 namespace spdlog {
