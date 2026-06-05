@@ -328,10 +328,10 @@ csm::ImageCoordCovar UsgsAstroProjectedSensorModel::groundToImage(
 csm::EcefCoord UsgsAstroProjectedSensorModel::imageToGround(
     const csm::ImageCoord& image_pt, double height, double desired_precision,
     double* achieved_precision, csm::WarningList* warnings) const {
-  MESSAGE_LOG(
-      spdlog::level::info,
-      "Computing imageToGround for {}, {}, {}, with desired precision {}",
-      image_pt.line, image_pt.samp, height, desired_precision);
+  // MESSAGE_LOG(
+  //     spdlog::level::info,
+  //     "Computing imageToGround for {}, {}, {}, with desired precision {}",
+  //     image_pt.line, image_pt.samp, height, desired_precision);
 
   double x = 0, y = 0, z = 0;
   double meterLine, meterSamp;
