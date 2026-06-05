@@ -108,8 +108,16 @@ inline const char* level_string(level lvl) {
 
 inline std::string timestamp() {
     std::time_t now = std::time(nullptr);
+    std::tm tm_buf;
+
+#ifdef _WIN32
+    localtime_s(&tm_buf, &now);
+#else
+    localtime_r(&now, &tm_buf);
+#endif
+
     char buf[32];
-    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", std::localtime(&now));
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm_buf);
     return std::string(buf);
 }
 
