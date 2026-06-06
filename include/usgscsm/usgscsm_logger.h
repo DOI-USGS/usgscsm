@@ -47,47 +47,46 @@ inline level from_str(const std::string& str) {
     return level::info; // default
 }
 
-// Global logging configuration - lazy-initialized
+// Global logging configuration - lazy-initialized with std::call_once
 inline std::ostream& get_log_stream() {
+    static std::once_flag init_flag;
     static std::ostream* stream = nullptr;
-    static std::ofstream file_stream;
-    static std::mutex init_mutex;
+    static std::ofstream* file_stream = nullptr;  // Heap-allocated to avoid destruction order issues
 
-    if (stream == nullptr) {
-        std::lock_guard<std::mutex> lock(init_mutex);
-        if (stream == nullptr) {
-            const char* log_file = std::getenv("USGSCSM_LOG_FILE");
-            std::string file = log_file ? log_file : "stdout";
+    std::call_once(init_flag, []() {
+        const char* log_file_env = std::getenv("USGSCSM_LOG_FILE");
+        std::string file = log_file_env ? std::string(log_file_env) : "stdout";
 
-            if (file == "stdout") {
-                stream = &std::cout;
-            } else if (file == "stderr") {
-                stream = &std::cerr;
-            } else if (!file.empty()) {
-                file_stream.open(file, std::ios::app);
-                stream = file_stream.is_open() ? &file_stream : &std::cout;
-            } else {
-                stream = &std::cout;
-            }
+        if (file == "stdout") {
+            stream = &std::cout;
+        } else if (file == "stderr") {
+            stream = &std::cerr;
+        } else if (!file.empty()) {
+            file_stream = new std::ofstream(file, std::ios::app);  // Intentional leak - safer than static destruction
+            stream = file_stream->is_open() ? file_stream : &std::cout;
+        } else {
+            stream = &std::cout;
         }
-    }
+    });
+
     return *stream;
 }
 
-inline level& get_log_level() {
-    static level current_level = level::off;
-    static bool initialized = false;
-    static std::mutex init_mutex;
+inline std::atomic<level>& get_log_level_atomic() {
+    static std::once_flag init_flag;
+    static std::atomic<level> current_level{level::off};
 
-    if (!initialized) {
-        std::lock_guard<std::mutex> lock(init_mutex);
-        if (!initialized) {
-            const char* log_level_env = std::getenv("USGSCSM_LOG_LEVEL");
-            current_level = log_level_env ? from_str(log_level_env) : level::info;
-            initialized = true;
-        }
-    }
+    std::call_once(init_flag, []() {
+        const char* log_level_env = std::getenv("USGSCSM_LOG_LEVEL");
+        std::string level_str = log_level_env ? std::string(log_level_env) : "";
+        current_level.store(level_str.empty() ? level::info : from_str(level_str), std::memory_order_release);
+    });
+
     return current_level;
+}
+
+inline level get_log_level() {
+    return get_log_level_atomic().load(std::memory_order_acquire);
 }
 
 inline std::mutex& get_log_mutex() {
@@ -122,14 +121,8 @@ inline std::string timestamp() {
     return std::string(buf);
 }
 
-// Format string helpers
+// Format string helpers - iterative version to avoid recursion
 namespace detail {
-    inline std::string format_one(const std::string& fmt, const std::string& value) {
-        size_t pos = fmt.find("{}");
-        if (pos == std::string::npos) return fmt;
-        return fmt.substr(0, pos) + value + fmt.substr(pos + 2);
-    }
-
     template<typename T>
     inline std::string to_string(const T& value) {
         std::ostringstream oss;
@@ -137,13 +130,26 @@ namespace detail {
         return oss.str();
     }
 
+    // Base case - no arguments
     inline std::string format_message(const std::string& fmt) {
         return fmt;
     }
 
-    template<typename T, typename... Args>
-    inline std::string format_message(const std::string& fmt, const T& value, Args&&... args) {
-        return format_message(format_one(fmt, to_string(value)), std::forward<Args>(args)...);
+    // Variadic case - iteratively replace all {} with arguments
+    template<typename... Args>
+    inline std::string format_message(const std::string& fmt, Args&&... args) {
+        std::string result = fmt;
+        std::string values[] = {to_string(std::forward<Args>(args))...};
+        size_t arg_index = 0;
+        size_t pos = 0;
+
+        while (arg_index < sizeof...(Args) && (pos = result.find("{}", pos)) != std::string::npos) {
+            result.replace(pos, 2, values[arg_index]);
+            pos += values[arg_index].length();
+            arg_index++;
+        }
+
+        return result;
     }
 }
 
@@ -187,7 +193,7 @@ inline void log_message(const std::string& msg) {
 
 // Set level dynamically
 inline void set_level(level lvl) {
-    get_log_level() = lvl;
+    get_log_level_atomic().store(lvl, std::memory_order_release);
 }
 
 inline level get_level() {
