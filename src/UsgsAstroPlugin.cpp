@@ -323,7 +323,6 @@ bool UsgsAstroPlugin::canModelBeConstructedFromISD(
  */
 std::string UsgsAstroPlugin::loadImageSupportData(
     const csm::Isd &imageSupportDataOriginal) const {
-  std::cout << "Loading image support data from ISD: " << imageSupportDataOriginal.filename() << std::endl;
 
       // Get image location from the input csm::Isd:
   std::string imageFilename = imageSupportDataOriginal.filename();
@@ -335,9 +334,7 @@ std::string UsgsAstroPlugin::loadImageSupportData(
   LOG_INFO( "Load Image Support Data using: " +
              imageFilename + ", " + std::to_string(lastIndex) + ", " + baseName + ", " + filename + ", " + isdFilename);
   try {
-    std::cout << "creating ifstream with filename: " << isdFilename << std::endl;
     std::ifstream isd_sidecar(isdFilename);
-    std::cout << "done" << std::endl;
     json jsonisd;
     isd_sidecar >> jsonisd;
     jsonisd["image_identifier"] = filename;

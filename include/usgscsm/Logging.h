@@ -18,7 +18,7 @@
 namespace usgscsm {
 namespace logger {
     enum LogLevel { TRACE=0, DEBUG, INFO, WARN, ERROR, CRITICAL, OFF };
-    static inline LogLevel current_log_level = INFO;
+    static inline LogLevel current_log_level = OFF;
 
     static constexpr const char* LOG_LEVEL_STRINGS[] = {
         "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "CRITICAL", "OFF"
@@ -96,10 +96,17 @@ namespace logger {
         if (level >= current_log_level) {
             auto now = std::chrono::system_clock::now();
             auto time = std::chrono::system_clock::to_time_t(now);
+            std::tm tm_buf;
+
+#ifdef _WIN32
+            localtime_s(&tm_buf, &time);
+#else
+            localtime_r(&time, &tm_buf);
+#endif
 
             std::stringstream ss;
             ss << "[" << PROJECT_NAME << "][" << LOG_LEVEL_STRINGS[level] << "]"
-               << "[" << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S") << "]"
+               << "[" << std::put_time(&tm_buf, "%Y-%m-%d %H:%M:%S") << "]"
                << "[" << func << ":" << line << "] ";
 
             format_impl(ss, fmt, args...);
@@ -116,10 +123,17 @@ namespace logger {
         if (level >= current_log_level) {
             auto now = std::chrono::system_clock::now();
             auto time = std::chrono::system_clock::to_time_t(now);
+            std::tm tm_buf;
+
+#ifdef _WIN32
+            localtime_s(&tm_buf, &time);
+#else
+            localtime_r(&time, &tm_buf);
+#endif
 
             std::stringstream ss;
             ss << "[" << PROJECT_NAME << "][" << LOG_LEVEL_STRINGS[level] << "]"
-               << "[" << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S") << "]"
+               << "[" << std::put_time(&tm_buf, "%Y-%m-%d %H:%M:%S") << "]"
                << "[" << func << ":" << line << "] ";
             ss << msg << std::endl;
 

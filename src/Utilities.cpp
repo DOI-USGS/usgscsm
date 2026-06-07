@@ -2535,7 +2535,6 @@ bool readFileInString(std::string const& filename, std::string & str) {
 
   std::ifstream ifs(filename.c_str());
   if (!ifs.is_open()) {
-    std::cout << "Cannot open file: " << filename << std::endl;
     return false;
   }
 
