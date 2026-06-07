@@ -126,6 +126,7 @@ namespace detail {
     template<typename T>
     inline std::string to_string(const T& value) {
         std::ostringstream oss;
+        oss.imbue(std::locale::classic());  // Use C locale to avoid corrupting PROJ's locale/FP state
         oss << value;
         return oss.str();
     }
@@ -138,6 +139,8 @@ namespace detail {
     // Variadic case - iteratively replace all {} with arguments
     template<typename... Args>
     inline std::string format_message(const std::string& fmt, Args&&... args) {
+        if (sizeof...(Args) == 0) return fmt;  // Handle empty args case
+
         std::string result = fmt;
         std::string values[] = {to_string(std::forward<Args>(args))...};
         size_t arg_index = 0;
