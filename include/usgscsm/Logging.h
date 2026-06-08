@@ -7,9 +7,13 @@
 
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <chrono>
 #include <ctime>
 #include <iomanip>
+#include <atomic>
+#include <mutex>
+#include <cstdlib>
 
 #ifndef PROJECT_NAME
 #define PROJECT_NAME "USGSCSM"
@@ -18,7 +22,35 @@
 namespace usgscsm {
 namespace logger {
     enum LogLevel { TRACE=0, DEBUG, INFO, WARN, ERROR, CRITICAL, OFF };
-    static inline LogLevel current_log_level = OFF;
+
+    // Thread-safe atomic log level
+    inline std::atomic<LogLevel>& get_log_level_atomic() {
+        static std::atomic<LogLevel> level{OFF};
+        return level;
+    }
+
+    // Get log output stream with lazy initialization from USGSCSM_LOG_FILE
+    inline std::ostream& get_log_stream() {
+        static std::once_flag init_flag;
+        static std::ostream* stream = nullptr;
+        static std::ofstream* file_stream = nullptr;  // Heap allocated to avoid destruction order issues
+
+        std::call_once(init_flag, []() {
+            const char* log_file_env = std::getenv("USGSCSM_LOG_FILE");
+            std::string file = log_file_env ? std::string(log_file_env) : "";
+
+            if (file == "stdout") {
+                stream = &std::cout;
+            } else if (file == "stderr" || file.empty()) {
+                stream = &std::cerr;  // Default to stderr
+            } else {
+                file_stream = new std::ofstream(file, std::ios::app);  // Intentional leak - safer than static destruction
+                stream = (file_stream && file_stream->is_open()) ? file_stream : &std::cerr;
+            }
+        });
+
+        return *stream;
+    }
 
     static constexpr const char* LOG_LEVEL_STRINGS[] = {
         "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "CRITICAL", "OFF"
@@ -93,7 +125,7 @@ namespace logger {
      */
     template<typename... Args>
     void log_internal(LogLevel level, int line, const char* func, const char* fmt, const Args&... args) {
-        if (level >= current_log_level) {
+        if (level >= get_log_level_atomic().load(std::memory_order_acquire)) {
             auto now = std::chrono::system_clock::now();
             auto time = std::chrono::system_clock::to_time_t(now);
             std::tm tm_buf;
@@ -112,7 +144,7 @@ namespace logger {
             format_impl(ss, fmt, args...);
             ss << std::endl;
 
-            std::cerr << ss.str();
+            get_log_stream() << ss.str();
         }
     }
 
@@ -120,7 +152,7 @@ namespace logger {
      * @brief Overload for single string (no formatting)
      */
     inline void log_internal(LogLevel level, int line, const char* func, const char* msg) {
-        if (level >= current_log_level) {
+        if (level >= get_log_level_atomic().load(std::memory_order_acquire)) {
             auto now = std::chrono::system_clock::now();
             auto time = std::chrono::system_clock::to_time_t(now);
             std::tm tm_buf;
@@ -137,7 +169,7 @@ namespace logger {
                << "[" << func << ":" << line << "] ";
             ss << msg << std::endl;
 
-            std::cerr << ss.str();
+            get_log_stream() << ss.str();
         }
     }
 
@@ -153,7 +185,7 @@ namespace logger {
      * @param level New log level to use
      */
     inline void set_log_level(LogLevel level) {
-        current_log_level = level;
+        get_log_level_atomic().store(level, std::memory_order_release);
     }
 
     /**
@@ -161,7 +193,7 @@ namespace logger {
      * @return Current log level
      */
     inline LogLevel get_log_level() {
-        return current_log_level;
+        return get_log_level_atomic().load(std::memory_order_acquire);
     }
 
     /**
@@ -189,7 +221,7 @@ namespace logger {
 // Logging macros for different severity levels
 #define MESSAGE_LOG(level, ...) \
     do { \
-        if (level >= usgscsm::logger::current_log_level) { \
+        if (level >= usgscsm::logger::get_log_level_atomic().load(std::memory_order_acquire)) { \
             usgscsm::logger::log_internal(level, __LINE__, __func__, __VA_ARGS__); \
         } \
     } while(0)
