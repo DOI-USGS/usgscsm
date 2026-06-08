@@ -40,8 +40,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include "ale/Orientations.h"
 #include "ale/States.h"
 
-#include "spdlog/spdlog.h"
-
 class UsgsAstroLsSensorModel : public csm::RasterGM,
                                virtual public csm::SettableEllipsoid {
  public:
@@ -131,9 +129,6 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
 
   std::vector<double> m_sunPosition;
   std::vector<double> m_sunVelocity;
-
-  // Define logging pointer and file content
-  std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
 
   // Hardcoded
   static const std::string _SENSOR_MODEL_NAME;  // state date element 0
@@ -691,9 +686,6 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
   //> This method sets the type of the adjustable parameter
   //  reference by the given index.
   //<
-
-  virtual std::shared_ptr<spdlog::logger> getLogger();
-  virtual void setLogger(std::string logName);
 
   //---
   // Uncertainty Propagation

@@ -1,5 +1,6 @@
 #include "UsgsAstroSarSensorModel.h"
 #include "Utilities.h"
+#include "Logging.h"
 
 #include <string.h>
 #include <cmath>
@@ -12,11 +13,6 @@
 
 using json = nlohmann::json;
 using namespace std;
-
-#define MESSAGE_LOG(...)         \
-  if (m_logger) {                \
-    m_logger->info(__VA_ARGS__); \
-  }
 
 const string UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME =
     "USGS_ASTRO_SAR_SENSOR_MODEL";
@@ -55,7 +51,7 @@ const csm::param::Type UsgsAstroSarSensorModel::PARAM_CHAR_ALL[] = {
  */
 VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
     const string imageSupportData, csm::WarningList* warnings) {
-  MESSAGE_LOG("UsgsAstroSarSensorModel constructing state from ISD, with {}",
+  LOG_INFO("UsgsAstroSarSensorModel constructing state from ISD, with {}",
               imageSupportData);
   json isd = stateAsJson(imageSupportData);
   json state = {};
@@ -70,7 +66,7 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
   state["m_sensorName"] = ale::getSensorName(isd);
   state["m_platformName"] = ale::getPlatformName(isd);
 
-  MESSAGE_LOG(
+  LOG_INFO(
       "m_modelName: {} "
       "m_imageIdentifier: {} "
       "m_sensorName: {} "
@@ -80,7 +76,7 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
   
   state["m_nLines"] = ale::getTotalLines(isd);
   state["m_nSamples"] = ale::getTotalSamples(isd);
-  MESSAGE_LOG(
+  LOG_INFO(
       "m_nLines: {} "
       "m_nSamples: {} ",
       state["m_nLines"].dump(), state["m_nSamples"].dump());
@@ -91,7 +87,7 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
     parsingWarnings->push_back(csm::Warning(
         csm::Warning::DATA_NOT_AVAILABLE, "Instrument position has less than 2 states.",
         "UsgsAstroSarSensorModel::constructStateFromIsd()"));
-    MESSAGE_LOG("m_dtEphem not in ISD")
+    LOG_INFO("m_dtEphem not in ISD");
   }
   else {
     // Re-compute times so that they are linearly spaced
@@ -129,13 +125,13 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
   state["m_startingEphemerisTime"] = ale::getStartingTime(isd);
   state["m_centerEphemerisTime"] = ale::getCenterTime(isd);
   state["m_endingEphemerisTime"] = getEndingTime(isd, parsingWarnings.get());
-  MESSAGE_LOG("m_startingEphemerisTime: {} "
+  LOG_INFO("m_startingEphemerisTime: {} "
               "m_centerEphemerisTime: {} "
               "m_endingEphemerisTime: {} ",
               state["m_startingEphemerisTime"].dump(),
               state["m_centerEphemerisTime"].dump(),
               state["m_endingEphemerisTime"].dump()
-              )
+              );
 
   state["m_exposureDuration"] = getExposureDuration(isd, parsingWarnings.get());
 
@@ -176,14 +172,14 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
   // ALE operates in km and we want m
   state["m_minorAxis"] = ale::getSemiMinorRadius(isd) * 1000;
   state["m_majorAxis"] = ale::getSemiMajorRadius(isd) * 1000;
-  MESSAGE_LOG("m_minorAxis: {}"
+  LOG_INFO("m_minorAxis: {}"
               "m_majorAxis: {}",
               state["m_minorAxis"].dump(), state["m_majorAxis"].dump());
   
   // set identifiers
   state["m_platformIdentifier"] = ale::getPlatformName(isd);
   state["m_sensorIdentifier"] = ale::getSensorName(isd);
-  MESSAGE_LOG(
+  LOG_INFO(
       "m_platformIdentifier: {}"
       "m_sensorIdentifier: {}",
       state["m_platformIdentifier"].dump(), state["m_sensorIdentifier"].dump());
@@ -191,7 +187,7 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
   // Get reference_height
   state["m_minElevation"] = ale::getMinHeight(isd);
   state["m_maxElevation"] = ale::getMaxHeight(isd);
-  MESSAGE_LOG(
+  LOG_INFO(
       "m_minElevation: {}"
       "m_maxElevation: {}",
       state["m_minElevation"].dump(), state["m_maxElevation"].dump());
@@ -212,7 +208,7 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
     csm::Warning warn = parsingWarnings->front();
     message += warn.getMessage();
     message += "]";
-    MESSAGE_LOG(message);
+    LOG_INFO(message);
     throw csm::Error(csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE, message,
                      "UsgsAstroSarSensorModel::constructStateFromIsd");
   }
@@ -266,7 +262,7 @@ string UsgsAstroSarSensorModel::getModelNameFromModelState(
  * setting up the initial state and logging the creation of the model.
  */
 UsgsAstroSarSensorModel::UsgsAstroSarSensorModel() {
-  MESSAGE_LOG("Constructing UsgsAstroSarSensorModel");
+  LOG_INFO("Constructing UsgsAstroSarSensorModel");
   reset();
 }
 
@@ -279,7 +275,7 @@ UsgsAstroSarSensorModel::UsgsAstroSarSensorModel() {
  * preparing the model for a fresh state configuration.
  */
 void UsgsAstroSarSensorModel::reset() {
-  MESSAGE_LOG("Resetting UsgsAstroSarSensorModel");
+  LOG_INFO("Resetting UsgsAstroSarSensorModel");
   m_imageIdentifier = "Unknown";
   m_sensorName = "Unknown";
   m_platformIdentifier = "Unknown";
@@ -329,7 +325,7 @@ void UsgsAstroSarSensorModel::reset() {
  * @throws csm::Error If the look direction from the state is invalid.
  */
 void UsgsAstroSarSensorModel::replaceModelState(const string& argState) {
-  MESSAGE_LOG("Replacing model state with: {}", argState);
+  LOG_INFO("Replacing model state with: {}", argState);
   populateModel(variantMapFromJson(stateAsJson(argState)));
 }
 
@@ -350,7 +346,7 @@ void UsgsAstroSarSensorModel::populateModel(const VariantMap& state) {
     m_lookDirection = UsgsAstroSarSensorModel::LEFT;
   } else {
     std::string message = "Could not determine look direction from state";
-    MESSAGE_LOG(message);
+    LOG_INFO(message);
     throw csm::Error(csm::Error::INVALID_SENSOR_MODEL_STATE, message,
                      "UsgsAstroSarSensorModel::replaceModelState");
   }
@@ -381,19 +377,19 @@ void UsgsAstroSarSensorModel::populateModel(const VariantMap& state) {
 
   if (m_referencePointXyz.x == 0 && m_referencePointXyz.y == 0 &&
       m_referencePointXyz.z == 0) {
-    MESSAGE_LOG("Updating State")
+    LOG_INFO("Updating State");
 
     double lineCtr = m_nLines / 2.0;
     double sampCtr = m_nSamples / 2.0;
     csm::ImageCoord ip(lineCtr, sampCtr);
-    MESSAGE_LOG("updateState: center image coordinate set to {} {}", lineCtr,
-                sampCtr)
+    LOG_INFO("updateState: center image coordinate set to {} {}", lineCtr,
+                sampCtr);
 
     double refHeight = 0;
     m_referencePointXyz = imageToGround(ip, refHeight);
-    MESSAGE_LOG("updateState: reference point (x, y, z) {} {} {}",
+    LOG_INFO("updateState: reference point (x, y, z) {} {} {}",
                 m_referencePointXyz.x, m_referencePointXyz.y,
-                m_referencePointXyz.z)
+                m_referencePointXyz.z);
   }
 }
 
@@ -430,7 +426,7 @@ VariantMap UsgsAstroSarSensorModel::getModelMap() const {
     state.set<std::string>("m_lookDirection", "right");
   } else {
     std::string message = "Could not parse look direction from json state.";
-    MESSAGE_LOG(message);
+    LOG_INFO(message);
     throw csm::Error(csm::Error::INVALID_SENSOR_MODEL_STATE, message,
                      "UsgsAstroSarSensorModel::getModelState");
   }
@@ -511,7 +507,7 @@ void UsgsAstroSarSensorModel::applyTransformToState(ale::Rotation const& r, ale:
 csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
     const csm::EcefCoord& groundPt, double desiredPrecision,
     double* achievedPrecision, csm::WarningList* warnings) const {
-  MESSAGE_LOG(
+  LOG_INFO(
       "Computing groundToImage(ImageCoord) for {}, {}, {}, with desired "
       "precision {}"
       "No adjustments.",
@@ -546,7 +542,7 @@ csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
     const csm::EcefCoord& groundPt, const std::vector<double> adj,
     double desiredPrecision, double* achievedPrecision,
     csm::WarningList* warnings) const {
-  MESSAGE_LOG(
+  LOG_INFO(
       "Computing groundToImage(ImageCoord) for {}, {}, {}, with desired "
       "precision {}, and "
       "adjustments.",
@@ -574,7 +570,7 @@ csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
     std::string message = "Could not calculate groundToImage, with error [";
     message += error.what();
     message += "]";
-    MESSAGE_LOG(message);
+    LOG_INFO(message);
     throw csm::Error(csm::Error::UNKNOWN_ERROR, message, "groundToImage");
   }
 }
@@ -599,7 +595,7 @@ csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
 double UsgsAstroSarSensorModel::dopplerShift(
     csm::EcefCoord groundPt, double tolerance,
     const std::vector<double> adj) const {
-  MESSAGE_LOG("Calculating doppler shift with: {}, {}, {}, and tolerance {}.",
+  LOG_INFO("Calculating doppler shift with: {}, {}, {}, and tolerance {}.",
               groundPt.x, groundPt.y, groundPt.z, tolerance);
   csm::EcefVector groundVec(groundPt.x, groundPt.y, groundPt.z);
   std::function<double(double)> dopplerShiftFunction = [this, groundVec,
@@ -637,7 +633,7 @@ double UsgsAstroSarSensorModel::dopplerShift(
  */
 double UsgsAstroSarSensorModel::slantRange(csm::EcefCoord surfPt, double time,
                                            std::vector<double> adj) const {
-  MESSAGE_LOG("Calculating slant range with: {}, {}, {}, and time {}.",
+  LOG_INFO("Calculating slant range with: {}, {}, {}, and time {}.",
               surfPt.x, surfPt.y, surfPt.z, time);
   csm::EcefVector surfVec(surfPt.x, surfPt.y, surfPt.z);
   csm::EcefVector spacecraftPosition = getAdjustedSpacecraftPosition(time, adj);
@@ -662,7 +658,7 @@ double UsgsAstroSarSensorModel::slantRange(csm::EcefCoord surfPt, double time,
 double UsgsAstroSarSensorModel::slantRangeToGroundRange(
     const csm::EcefCoord& groundPt, double time, double slantRange,
     double tolerance) const {
-  MESSAGE_LOG(
+  LOG_INFO(
       "Calculating slant range to ground range with: {}, {}, {}, {}, {}, {}",
       groundPt.x, groundPt.y, groundPt.z, time, slantRange, tolerance);
 
@@ -712,7 +708,7 @@ double UsgsAstroSarSensorModel::groundRangeToSlantRange(
 csm::ImageCoordCovar UsgsAstroSarSensorModel::groundToImage(
     const csm::EcefCoordCovar& groundPt, double desiredPrecision,
     double* achievedPrecision, csm::WarningList* warnings) const {
-  MESSAGE_LOG("Calculating groundToImage with: {}, {}, {}, {}", groundPt.x,
+  LOG_INFO("Calculating groundToImage with: {}, {}, {}, {}", groundPt.x,
               groundPt.y, groundPt.z, desiredPrecision);
   // Ground to image with error propagation
   // Compute corresponding image point
@@ -779,16 +775,16 @@ csm::ImageCoordCovar UsgsAstroSarSensorModel::groundToImage(
 csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
     const csm::ImageCoord& imagePt, double height, double desiredPrecision,
     double* achievedPrecision, csm::WarningList* warnings) const {
-  MESSAGE_LOG("Calculating imageToGround with: {}, {}, {}, {}", imagePt.samp,
+  LOG_INFO("Calculating imageToGround with: {}, {}, {}, {}", imagePt.samp,
               imagePt.line, height, desiredPrecision);
   double time =
     m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
   double groundRange = (imagePt.samp - 0.5) * m_scaledPixelWidth;
-  MESSAGE_LOG("Ground range: {}", groundRange);
+  LOG_INFO("Ground range: {}", groundRange);
 
   std::vector<double> coeffs = getRangeCoefficients(time);
   double slantRange = groundRangeToSlantRange(groundRange, coeffs);
-  MESSAGE_LOG("Slant range: {}", slantRange);
+  LOG_INFO("Slant range: {}", slantRange);
 
   // Compute the in-track, cross-track, nadir, coordinate system to solve in
   csm::EcefVector spacecraftPosition = getSpacecraftPosition(time);
@@ -800,14 +796,14 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   csm::EcefVector tHat = normalized(rejection(spacecraftPosition, vHat));
   // Cross-track unit vector
   csm::EcefVector uHat = cross(vHat, tHat);
-  MESSAGE_LOG("In track vector: {}, {}, {}", vHat.x, vHat.y, vHat.z);
-  MESSAGE_LOG("Nadir vector: {}, {}, {}", tHat.x, tHat.y, tHat.z);
-  MESSAGE_LOG("In track vector: {}, {}, {}", uHat.x, uHat.y, uHat.z);
+  LOG_INFO("In track vector: {}, {}, {}", vHat.x, vHat.y, vHat.z);
+  LOG_INFO("Nadir vector: {}, {}, {}", tHat.x, tHat.y, tHat.z);
+  LOG_INFO("In track vector: {}, {}, {}", uHat.x, uHat.y, uHat.z);
 
   // Compute the spacecraft position in the new coordinate system
   //   The cross-track unit vector is orthogonal to the position so we ignore it
   double nadirComp = dot(spacecraftPosition, tHat);
-  MESSAGE_LOG("Nadir position component: {}", nadirComp);
+  LOG_INFO("Nadir position component: {}", nadirComp);
   
   // Iterate to find proper radius value. Limit the number of iterations
   // because the desired precision may not drop beyond 1e-10 no matter
@@ -823,12 +819,12 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
     double alpha =
         (radiusSqr - slantRange * slantRange - positionMag * positionMag) /
         (2 * nadirComp);
-    MESSAGE_LOG("Iteration alpha: {}", alpha);
+    LOG_INFO("Iteration alpha: {}", alpha);
     double beta = sqrt(slantRange * slantRange - alpha * alpha);
     if (m_lookDirection == LEFT) {
       beta *= -1;
     }
-    MESSAGE_LOG("Iteration beta: {}", beta);
+    LOG_INFO("Iteration beta: {}", beta);
     groundVec = alpha * tHat + beta * uHat + spacecraftPosition;
     pointHeight = computeEllipsoidElevation(
         groundVec.x, groundVec.y, groundVec.z, m_majorAxis, m_minorAxis);
@@ -841,7 +837,7 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
   if (achievedPrecision)
     *achievedPrecision = fabs(pointHeight - height);
 
-  MESSAGE_LOG("Iteration ground point: {}, {}, {}", groundVec.x, groundVec.y, groundVec.z);
+  LOG_INFO("Iteration ground point: {}, {}, {}", groundVec.x, groundVec.y, groundVec.z);
 
   csm::EcefCoord groundPt(groundVec.x, groundVec.y, groundVec.z);
 
@@ -868,7 +864,7 @@ csm::EcefCoordCovar UsgsAstroSarSensorModel::imageToGround(
     const csm::ImageCoordCovar& imagePt, double height, double heightVariance,
     double desiredPrecision, double* achievedPrecision,
     csm::WarningList* warnings) const {
-  MESSAGE_LOG("Calculating imageToGroundWith: {}, {}, {}, {}, {}", imagePt.samp,
+  LOG_INFO("Calculating imageToGroundWith: {}, {}, {}, {}, {}", imagePt.samp,
               imagePt.line, height, heightVariance, desiredPrecision);
   // Image to ground with error propagation
   // Use numerical partials
@@ -1130,7 +1126,7 @@ double UsgsAstroSarSensorModel::getImageTime(
  */
 csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftPosition(
     double time) const {
-  MESSAGE_LOG("getSpacecraftPosition at {} without adjustments", time)
+  LOG_INFO("getSpacecraftPosition at {} without adjustments", time);
   csm::EcefCoord spacecraftPosition = getSensorPosition(time);
   return csm::EcefVector(spacecraftPosition.x, spacecraftPosition.y,
                          spacecraftPosition.z);
@@ -1148,7 +1144,7 @@ csm::EcefVector UsgsAstroSarSensorModel::getSpacecraftPosition(
  */
 csm::EcefVector UsgsAstroSarSensorModel::getAdjustedSpacecraftPosition(
     double time, std::vector<double> adj) const {
-  MESSAGE_LOG("getSpacecraftPosition at {} with adjustments", time)
+  LOG_INFO("getSpacecraftPosition at {} with adjustments", time);
   csm::EcefCoord spacecraftPosition = getAdjustedSensorPosition(time, adj);
   return csm::EcefVector(spacecraftPosition.x, spacecraftPosition.y,
                          spacecraftPosition.z);
@@ -1164,7 +1160,7 @@ csm::EcefVector UsgsAstroSarSensorModel::getAdjustedSpacecraftPosition(
  * @return The ECEF coordinates of the sensor position at the given time.
  */
 csm::EcefCoord UsgsAstroSarSensorModel::getSensorPosition(double time) const {
-  MESSAGE_LOG("getSensorPosition at {}.", time)
+  LOG_INFO("getSensorPosition at {}.", time);
   csm::EcefCoord sensorPosition =
       getAdjustedSensorPosition(time, m_noAdjustments);
   return sensorPosition;
@@ -1182,7 +1178,7 @@ csm::EcefCoord UsgsAstroSarSensorModel::getSensorPosition(double time) const {
  */
 csm::EcefCoord UsgsAstroSarSensorModel::getSensorPosition(
     const csm::ImageCoord& imagePt) const {
-  MESSAGE_LOG("getSensorPosition at {}, {}.", imagePt.samp, imagePt.line);
+  LOG_INFO("getSensorPosition at {}, {}.", imagePt.samp, imagePt.line);
   double time = getImageTime(imagePt);
   return getSensorPosition(time);
 }
@@ -1199,7 +1195,7 @@ csm::EcefCoord UsgsAstroSarSensorModel::getSensorPosition(
  */
 csm::EcefCoord UsgsAstroSarSensorModel::getAdjustedSensorPosition(
     double time, std::vector<double> adj) const {
-  MESSAGE_LOG("getSensorPosition at {}. With adjustments: {}.", time);
+  LOG_INFO("getSensorPosition at {}. With adjustments: {}.", time);
   int numPositions = m_positions.size();
   csm::EcefVector spacecraftPosition = csm::EcefVector();
 
@@ -1216,7 +1212,7 @@ csm::EcefCoord UsgsAstroSarSensorModel::getAdjustedSensorPosition(
     spacecraftPosition.y = m_positions[1] + getValue(1, adj);
     spacecraftPosition.z = m_positions[2] + getValue(2, adj);
   }
-  MESSAGE_LOG("Adjusted sensor positions is {}, {}, {}.",
+  LOG_INFO("Adjusted sensor positions is {}, {}, {}.",
       spacecraftPosition.x, spacecraftPosition.y, spacecraftPosition.z);
   return csm::EcefCoord(spacecraftPosition.x, spacecraftPosition.y,
                         spacecraftPosition.z);
@@ -1235,7 +1231,7 @@ csm::EcefCoord UsgsAstroSarSensorModel::getAdjustedSensorPosition(
  */
 csm::EcefVector UsgsAstroSarSensorModel::getSensorVelocity(
     const csm::ImageCoord& imagePt) const {
-  MESSAGE_LOG("getSensorVelocity at {}, {}. No adjustments.", imagePt.samp,
+  LOG_INFO("getSensorVelocity at {}, {}. No adjustments.", imagePt.samp,
               imagePt.line);
   double time = getImageTime(imagePt);
   return getSensorVelocity(time);
@@ -1251,7 +1247,7 @@ csm::EcefVector UsgsAstroSarSensorModel::getSensorVelocity(
  * @return The ECEF vector of the sensor velocity at the given time.
  */
 csm::EcefVector UsgsAstroSarSensorModel::getSensorVelocity(double time) const {
-  MESSAGE_LOG("getSensorVelocity at {}. Without adjustments.", time);
+  LOG_INFO("getSensorVelocity at {}. Without adjustments.", time);
   csm::EcefVector spacecraftVelocity =
       getAdjustedSensorVelocity(time, m_noAdjustments);
   return spacecraftVelocity;
@@ -1269,7 +1265,7 @@ csm::EcefVector UsgsAstroSarSensorModel::getSensorVelocity(double time) const {
  */
 csm::EcefVector UsgsAstroSarSensorModel::getAdjustedSensorVelocity(
     double time, std::vector<double> adj) const {
-  MESSAGE_LOG("getSensorVelocity at {}. With adjustments.", time);
+  LOG_INFO("getSensorVelocity at {}. With adjustments.", time);
   int numVelocities = m_velocities.size();
   csm::EcefVector spacecraftVelocity = csm::EcefVector();
 
@@ -1286,7 +1282,7 @@ csm::EcefVector UsgsAstroSarSensorModel::getAdjustedSensorVelocity(
     spacecraftVelocity.y = m_velocities[1] + getValue(4, adj);
     spacecraftVelocity.z = m_velocities[2] + getValue(5, adj);
   }
-  MESSAGE_LOG("Adjusted sensor velocity is {}, {}, {}",
+  LOG_INFO("Adjusted sensor velocity is {}, {}, {}",
       spacecraftVelocity.x, spacecraftVelocity.y, spacecraftVelocity.z);
   return spacecraftVelocity;
 }
@@ -1312,10 +1308,10 @@ csm::EcefVector UsgsAstroSarSensorModel::getAdjustedSensorVelocity(
 csm::RasterGM::SensorPartials UsgsAstroSarSensorModel::computeSensorPartials(
     int index, const csm::EcefCoord& groundPt, double desiredPrecision,
     double* achievedPrecision, csm::WarningList* warnings) const {
-  MESSAGE_LOG(
+  LOG_INFO(
       "Calculating computeSensorPartials for ground point {}, {}, {} with "
       "desired precision {}",
-      groundPt.x, groundPt.y, groundPt.z, desiredPrecision)
+      groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
 
   // Compute image coordinate first
   csm::ImageCoord imgPt =
@@ -1352,12 +1348,12 @@ csm::RasterGM::SensorPartials UsgsAstroSarSensorModel::computeSensorPartials(
     int index, const csm::ImageCoord& imagePt, const csm::EcefCoord& groundPt,
     double desiredPrecision, double* achievedPrecision,
     csm::WarningList* warnings) const {
-  MESSAGE_LOG(
+  LOG_INFO(
       "Calculating computeSensorPartials (with image points {}, {}) for ground "
       "point {}, {}, "
       "{} with desired precision {}",
       imagePt.line, imagePt.samp, groundPt.x, groundPt.y, groundPt.z,
-      desiredPrecision)
+      desiredPrecision);
 
   // Compute numerical partials wrt specific parameter
 

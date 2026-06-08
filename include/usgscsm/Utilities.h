@@ -14,6 +14,7 @@
 #include <ale/Rotation.h>
 #include <ale/Vectors.h>
 
+#include <RasterGM.h>
 #include <Warning.h>
 #include <csm.h>
 
@@ -221,5 +222,14 @@ std::string ephemTimeToCalendarTime(double ephemTime);
 std::vector<double> pixelToMeter(double line, double sample, std::vector<double> geoTransform);
 
 std::vector<double> meterToPixel(double meter_x, double meter_y, std::vector<double> geoTransform);
+
+// Model construction utilities
+csm::RasterGM *getUsgsCsmModelFromIsd(const std::string &stringIsd, const std::string &modelName, csm::WarningList *warnings);
+csm::RasterGM *getUsgsCsmModelFromJsonState(const std::string &jstring, const std::string &modelName, csm::WarningList *warnings);
+csm::RasterGM *getUsgsCsmModelFromVariantMap(const VariantMap &vm, const std::string &modelName, csm::WarningList *warnings);
+std::string getUsgsCsmModelJson(csm::RasterGM *model);
+VariantMap getUsgsCsmModelMap(csm::RasterGM *model);
+bool isUsgsCsmIsd(const std::string &str, std::string &modelName);
+bool isUsgsCsmState(const std::string &str, std::string &modelName);
 
 #endif  // INCLUDE_USGSCSM_UTILITIES_H_

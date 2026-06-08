@@ -9,15 +9,13 @@
 #include <iostream>
 #include <fstream>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include "ale/Distortion.h"
 
 using json = nlohmann::json;
-
-#define MESSAGE_LOG(...)         \
-  if (m_logger) {                \
-    m_logger->log(__VA_ARGS__); \
-  }
-
 
 /**
  * @description Calculates a rotation matrix from Euler angles. This function takes
@@ -2511,7 +2509,20 @@ json stateAsJson(std::string modelState) {
  * @return True if the file starts with a msgpack map byte, false otherwise.
  */
 bool isMsgpack(std::string const& filename) {
+#ifdef __EMSCRIPTEN__
+  // In WebAssembly, check if file exists in virtual filesystem first
+  bool exists = EM_ASM_INT({
+    return FS.analyzePath(UTF8ToString($0)).exists;
+  }, filename.c_str());
+  if (!exists) {
+    return false;
+  }
+#endif
+
   std::ifstream ifs(filename, std::ios::binary);
+  if (!ifs.is_open()) {
+    return false;
+  }
   uint8_t b = 0;
   ifs.read(reinterpret_cast<char*>(&b), 1);
   return (b >= 0x80 && b <= 0x8F) || b == 0xDE || b == 0xDF;
@@ -2546,7 +2557,6 @@ bool readFileInString(std::string const& filename, std::string & str) {
 
   std::ifstream ifs(filename.c_str());
   if (!ifs.is_open()) {
-    std::cout << "Cannot open file: " << filename << std::endl;
     return false;
   }
 
@@ -2791,4 +2801,234 @@ nlohmann::json jsonFromVariantMap(const VariantMap& vm) {
   }
 
   return result;
+}
+// Model construction utilities (moved from UsgsAstroPluginSupport.cpp)
+#include "UsgsAstroFrameSensorModel.h"
+#include "UsgsAstroLsSensorModel.h"
+#include "UsgsAstroPushFrameSensorModel.h"
+#ifndef __EMSCRIPTEN__
+#include "UsgsAstroProjectedSensorModel.h"
+#endif
+#include "UsgsAstroSarSensorModel.h"
+
+csm::RasterGM *getUsgsCsmModelFromIsd(
+    const std::string &stringIsd, const std::string &modelName,
+    csm::WarningList *warnings) {
+  if (modelName == UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME) {
+    UsgsAstroFrameSensorModel *model = new UsgsAstroFrameSensorModel();
+    try {
+      VariantMap vm = model->constructStateFromIsd(stringIsd, warnings);
+      model->populateModel(vm);
+    } catch (std::exception &e) {
+      delete model;
+      csm::Error::ErrorType aErrorType =
+          csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE;
+      std::string aMessage = "Could not construct model [";
+      aMessage += modelName;
+      aMessage += "] with error [";
+      aMessage += e.what();
+      aMessage += "]";
+      std::string aFunction = "getUsgsCsmModelFromIsd()";
+      throw csm::Error(aErrorType, aMessage, aFunction);
+    }
+    return model;
+  } else if (modelName == UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME) {
+    UsgsAstroLsSensorModel *model = new UsgsAstroLsSensorModel();
+    try {
+      VariantMap vm = model->constructStateFromIsd(stringIsd, warnings);
+      model->populateModel(vm);
+    } catch (std::exception &e) {
+      delete model;
+      csm::Error::ErrorType aErrorType =
+          csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE;
+      std::string aMessage = "Could not construct model [";
+      aMessage += modelName;
+      aMessage += "] with error [";
+      aMessage += e.what();
+      aMessage += "]";
+      std::string aFunction = "getUsgsCsmModelFromIsd()";
+      throw csm::Error(aErrorType, aMessage, aFunction);
+    }
+    return model;
+  } else if (modelName == UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME) {
+    UsgsAstroSarSensorModel *model = new UsgsAstroSarSensorModel();
+    try {
+      VariantMap vm = model->constructStateFromIsd(stringIsd, warnings);
+      model->populateModel(vm);
+    } catch (std::exception &e) {
+      delete model;
+      csm::Error::ErrorType aErrorType =
+          csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE;
+      std::string aMessage = "Could not construct model [";
+      aMessage += modelName;
+      aMessage += "] with error [";
+      aMessage += e.what();
+      aMessage += "]";
+      std::string aFunction = "getUsgsCsmModelFromIsd()";
+      throw csm::Error(aErrorType, aMessage, aFunction);
+    }
+    return model;
+  } else if (modelName == UsgsAstroPushFrameSensorModel::_SENSOR_MODEL_NAME) {
+    UsgsAstroPushFrameSensorModel *model = new UsgsAstroPushFrameSensorModel();
+    try {
+      VariantMap vm = model->constructStateFromIsd(stringIsd, warnings);
+      model->populateModel(vm);
+    } catch (std::exception &e) {
+      delete model;
+      csm::Error::ErrorType aErrorType =
+          csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE;
+      std::string aMessage = "Could not construct model [";
+      aMessage += modelName;
+      aMessage += "] with error [";
+      aMessage += e.what();
+      aMessage += "]";
+      std::string aFunction = "getUsgsCsmModelFromIsd()";
+      throw csm::Error(aErrorType, aMessage, aFunction);
+    }
+    return model;
+  } else {
+    csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
+    std::string aMessage = "Model [" + modelName + "] not supported.";
+    std::string aFunction = "getUsgsCsmModelFromIsd()";
+    throw csm::Error(aErrorType, aMessage, aFunction);
+  }
+  
+}
+
+csm::RasterGM *getUsgsCsmModelFromJsonState(const std::string &jstr, const std::string &modelName, csm::WarningList *warnings) {
+  VariantMap vm = variantMapFromJson(stateAsJson(jstr));
+  return getUsgsCsmModelFromVariantMap(vm, modelName, warnings);
+}
+
+csm::RasterGM *getUsgsCsmModelFromVariantMap(const VariantMap &vm, const std::string &modelName, csm::WarningList *warnings) {
+  if (modelName == UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME) {
+    UsgsAstroFrameSensorModel *model = new UsgsAstroFrameSensorModel();
+    model->populateModel(vm);
+    return model;
+  } else if (modelName == UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME) {
+    UsgsAstroLsSensorModel *model = new UsgsAstroLsSensorModel();
+    model->populateModel(vm);
+    return model;
+#ifndef __EMSCRIPTEN__
+  } else if (modelName == UsgsAstroProjectedSensorModel::_SENSOR_MODEL_NAME) {
+    UsgsAstroProjectedSensorModel *model = new UsgsAstroProjectedSensorModel();
+    model->populateModel(vm);
+    return model;
+#endif
+  } else if (modelName == UsgsAstroPushFrameSensorModel::_SENSOR_MODEL_NAME) {
+    UsgsAstroPushFrameSensorModel *model = new UsgsAstroPushFrameSensorModel();
+    model->populateModel(vm);
+    return model;
+  } else if (modelName == UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME) {
+    UsgsAstroSarSensorModel *model = new UsgsAstroSarSensorModel();
+    model->populateModel(vm);
+    return model;
+  } else {
+    csm::Error::ErrorType aErrorType = csm::Error::ISD_NOT_SUPPORTED;
+    std::string aMessage = "Model " + modelName + " not supported";
+    std::string aFunction = "getUsgsCsmModelFromVariantMap()";
+    throw csm::Error(aErrorType, aMessage, aFunction);
+  }
+}
+
+
+std::string getUsgsCsmModelJson(csm::RasterGM *model) {
+  if (auto *ls = dynamic_cast<UsgsAstroLsSensorModel*>(model))
+    return ls->getModelJson();
+  if (auto *fr = dynamic_cast<UsgsAstroFrameSensorModel*>(model))
+    return fr->getModelJson();
+  if (auto *pf = dynamic_cast<UsgsAstroPushFrameSensorModel*>(model))
+    return pf->getModelJson();
+  if (auto *sar = dynamic_cast<UsgsAstroSarSensorModel*>(model))
+    return sar->getModelJson();
+#ifndef __EMSCRIPTEN__
+  if (auto *proj = dynamic_cast<UsgsAstroProjectedSensorModel*>(model))
+    return proj->getModelJson();
+#endif
+  csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
+  std::string aMessage = "Unsupported model type in getUsgsCsmModelJson()";
+  std::string aFunction = "getUsgsCsmModelJson()";
+  throw csm::Error(aErrorType, aMessage, aFunction);
+}
+
+
+VariantMap getUsgsCsmModelMap(csm::RasterGM *model) {
+  if (auto *ls = dynamic_cast<UsgsAstroLsSensorModel*>(model))
+    return ls->getModelMap();
+  if (auto *fr = dynamic_cast<UsgsAstroFrameSensorModel*>(model))
+    return fr->getModelMap();
+  if (auto *pf = dynamic_cast<UsgsAstroPushFrameSensorModel*>(model))
+    return pf->getModelMap();
+  if (auto *sar = dynamic_cast<UsgsAstroSarSensorModel*>(model))
+    return sar->getModelMap();
+#ifndef __EMSCRIPTEN__
+  if (auto *proj = dynamic_cast<UsgsAstroProjectedSensorModel*>(model))
+    return proj->getModelMap();
+#endif
+  csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
+  std::string aMessage = "Unsupported model type in getUsgsCsmModelMap()";
+  std::string aFunction = "getUsgsCsmModelMap()";
+  throw csm::Error(aErrorType, aMessage, aFunction);
+}
+
+// Quick check if the given string is a USGS CSM JSON ISD (not a model state,
+// .sup, etc.). If yes, extract the model name. No JSON parsing is done, just
+// raw string searches.
+bool isUsgsCsmIsd(const std::string &str, std::string &modelName) {
+  modelName.clear();
+
+  // Model state strings have a text prefix before '{'. ISDs start with '{'.
+  auto pos = str.find_first_not_of(" \t\n\r");
+  if (pos == std::string::npos || str[pos] != '{')
+    return false;
+
+  // Check for ISD-only keys (never present in model state)
+  if (str.find("\"body_rotation\"") == std::string::npos)
+    return false;
+  if (str.find("\"instrument_position\"") == std::string::npos)
+    return false;
+
+  // Extract the name_model value. Search for the model name prefix
+  // which immediately follows the "name_model" key's value quote.
+  std::string prefix = "\"USGS_ASTRO_";
+  pos = str.find(prefix);
+  if (pos == std::string::npos)
+    return false;
+  auto end = str.find("\"", pos + 1);
+  if (end == std::string::npos)
+    return false;
+
+  modelName = str.substr(pos + 1, end - pos - 1);
+  return !modelName.empty();
+}
+
+// Quick check if the given string is a USGS CSM model state (JSON state or GXP
+// .sup format). If yes, extract the model name. No JSON parsing is done, just
+// raw string searches. Following the logic in stateAsJson() (Utilities.cpp),
+// skip to the first '{' to bypass any .sup preamble, then search within the
+// JSON portion only.
+bool isUsgsCsmState(const std::string &str, std::string &modelName) {
+  modelName.clear();
+
+  // Find the start of the JSON blob (skips .sup preamble if present)
+  auto brace = str.find_first_of("{");
+  if (brace == std::string::npos)
+    return false;
+
+  // Model state uses m_modelName; ISDs use name_model
+  if (str.find("\"m_modelName\"", brace) == std::string::npos)
+    return false;
+
+  // Extract the model name value
+  std::string prefix = "\"USGS_ASTRO_";
+  auto pos = str.find(prefix, brace);
+  if (pos == std::string::npos)
+    return false;
+  auto end = str.find("\"", pos + 1);
+  if (end == std::string::npos)
+    return false;
+
+  modelName = str.substr(pos + 1, end - pos - 1);
+  return !modelName.empty();
+
 }

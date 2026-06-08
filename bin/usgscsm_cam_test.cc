@@ -20,7 +20,6 @@
 //   and compare with the original pixel values.
 
 #include <UsgsAstroPlugin.h>
-#include <UsgsAstroPluginSupport.h>
 #include <RasterGM.h>
 #include <UsgsAstroLsSensorModel.h>
 #include <Utilities.h>
@@ -160,7 +159,9 @@ bool loadCsmCameraModel(std::string const& model_file,
     std::ifstream ifs(model_file, std::ios::binary);
     std::vector<uint8_t> data((std::istreambuf_iterator<char>(ifs)),
                               std::istreambuf_iterator<char>());
-    nlohmann::json j = nlohmann::json::from_msgpack(data);
+    // Cast to const char* to avoid char_traits<unsigned char> issues in WASM
+    const char* data_ptr = reinterpret_cast<const char*>(data.data());
+    nlohmann::json j = nlohmann::json::from_msgpack(data_ptr, data_ptr + data.size());
     std::string model_name = j.at("m_modelName").get<std::string>();
     model = std::shared_ptr<csm::RasterGM>(getUsgsCsmModelFromJsonState(j.dump(), model_name, NULL));
     std::cout << "Loaded model of type " << model_name

@@ -4,6 +4,16 @@
 
 # USGSCSM
 
+[![npm version](https://img.shields.io/npm/v/usgscsm-wasm.svg)](https://www.npmjs.com/package/usgscsm-wasm)
+[![npm downloads](https://img.shields.io/npm/dm/usgscsm-wasm.svg)](https://www.npmjs.com/package/usgscsm-wasm)
+[![GitHub release](https://img.shields.io/github/v/release/USGS-Astrogeology/usgscsm)](https://github.com/USGS-Astrogeology/usgscsm/releases)
+
+**NPM Package:** [`usgscsm-wasm`](https://www.npmjs.com/package/usgscsm-wasm)
+
+**CDN Links:**
+- jsDelivr: `https://cdn.jsdelivr.net/npm/usgscsm-wasm/dist/usgscsm.js`
+- unpkg: `https://unpkg.com/usgscsm-wasm/dist/usgscsm.js`
+
 This library provides *Community Sensor Model (CSM)*-compliant sensor models
 created by the USGS Astrogeology Science Center.
 
@@ -165,3 +175,143 @@ For more information see: [ClangFormat](https://clang.llvm.org/docs/ClangFormat.
 
 To check for compliance, run: `cpplint file.cpp` and ignore errors in the list of exclusions above.
 For more information, see: [cpplint](https://github.com/cpplint/cpplint).
+
+## WebAssembly Support
+
+USGSCSM can be compiled to WebAssembly for use in web browsers and Node.js.
+
+### Installation
+
+**GitHub Releases (Direct Import):**
+
+```html
+<script type="module">
+  // Import directly from GitHub Release (replace v2.0.2 with latest version)
+  import USGSCSM from 'https://github.com/USGS-Astrogeology/usgscsm/releases/download/v2.0.2/usgscsm.js';
+  
+  const Module = await USGSCSM();
+  const model = new Module.USGSCSMModel();
+  
+  // Load camera model from ISD
+  const isdJson = await fetch('camera_model.json').then(r => r.text());
+  model.loadFromISD(isdJson, 'USGS_ASTRO_FRAME_SENSOR_MODEL');
+  
+  // Transform coordinates
+  const ground = model.imageToGround(512, 1024, 0);
+  console.log(`Ground: (${ground.x}, ${ground.y}, ${ground.z})`);
+</script>
+```
+
+Or download files from [GitHub Releases](https://github.com/USGS-Astrogeology/usgscsm/releases):
+- `usgscsm.js` - JavaScript module
+- `usgscsm.wasm` - WebAssembly binary
+- `usgscsm.d.ts` - TypeScript definitions
+
+**Note:** The WASM file (`usgscsm.wasm`) must be in the same directory as the JS file.
+
+### Building for WebAssembly
+
+**Requirements:**
+- Emscripten 3.1.58 (compatible with Binaryen 117)
+- cmake 3.15+
+
+**Setup with Conda:**
+```bash
+conda create -n usgscsm python=3.11
+conda activate usgscsm
+conda install -c conda-forge emscripten=3.1.58
+```
+
+**Build:**
+```bash
+# Clone with submodules
+git clone --recursive https://github.com/USGS-Astrogeology/usgscsm.git
+cd usgscsm
+
+# Configure and build
+mkdir wasmbuild && cd wasmbuild
+emcmake cmake ..
+emmake make
+
+# Output files are in wasmbuild/dist/
+ls -lh dist/
+```
+
+**Output files** (in `wasmbuild/dist/`):
+- `usgscsm.js` - JavaScript glue code (~123 KB, 30 KB gzipped)
+- `usgscsm.wasm` - WebAssembly binary (~911 KB, 254 KB gzipped)
+- `usgscsm.d.ts` - TypeScript definitions
+
+**Advanced Build Options:**
+```bash
+# Debug build with source maps
+emcmake cmake .. -DUSGSCSM_WASM_DEBUG=ON
+
+# Disable optimization (faster build, larger binary)
+emcmake cmake .. -DUSGSCSM_WASM_OPTIMIZE=OFF
+
+# Build with tests (requires googletest)
+emcmake cmake .. -DUSGSCSM_BUILD_TESTS=ON
+```
+
+**Testing:**
+```bash
+npm test
+```
+
+### Browser Usage
+
+```javascript
+// Using npm package
+import USGSCSM from 'usgscsm-wasm';
+
+// OR using CDN
+// import USGSCSM from 'https://cdn.jsdelivr.net/npm/usgscsm-wasm/dist/usgscsm.js';
+
+const Module = await USGSCSM();
+const model = new Module.USGSCSMModel();
+
+// Load from ISD
+const isdJson = await fetch('model.json').then(r => r.text());
+model.loadFromISD(isdJson, 'USGS_ASTRO_FRAME_SENSOR_MODEL');
+
+// Transform coordinates
+const ground = model.imageToGround(100, 200, 0);
+const pixel = model.groundToImage(ground.x, ground.y, ground.z);
+```
+
+### Saving and Loading Model State
+
+Camera models can be serialized to JSON state strings and restored later, enabling:
+- Caching computed models for faster subsequent loads
+- Sharing camera models between applications
+- Storing refined camera parameters after bundle adjustment
+
+```javascript
+import USGSCSM from './dist/usgscsm.js';
+
+const Module = await USGSCSM();
+
+// Load from ISD (slow - computes ephemeris)
+const model1 = new Module.USGSCSMModel();
+model1.loadFromISD(isdJson, 'USGS_ASTRO_FRAME_SENSOR_MODEL');
+
+// Save model state for reuse
+const state = model1.getModelState();
+localStorage.setItem('cameraModel', state); // or send to server
+
+// Later: Load from state (fast - precomputed)
+const savedState = localStorage.getItem('cameraModel');
+const model2 = new Module.USGSCSMModel();
+model2.loadFromState(savedState);
+
+// model2 produces identical results to model1
+const ground = model2.imageToGround(100, 200, 0);
+```
+
+### WASM Supported Models
+
+- Frame cameras (`USGS_ASTRO_FRAME_SENSOR_MODEL`)
+- Line scanners (`USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL`)
+- Push frame cameras (`USGS_ASTRO_PUSH_FRAME_SENSOR_MODEL`)
+- SAR sensors (`USGS_ASTRO_SAR_SENSOR_MODEL`)

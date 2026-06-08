@@ -17,8 +17,6 @@
 
 #include <gtest/gtest.h>
 
-#include <spdlog/sinks/ostream_sink.h>
-
 // Should this be positioned somewhere in the public API?
 inline void jsonToIsd(nlohmann::json &object, csm::Isd &isd,
                       std::string prefix = "") {
@@ -63,50 +61,8 @@ class FrameSensorModel : public ::testing::Test {
   }
 };
 
-class FrameSensorModelLogging : public ::testing::Test {
- protected:
-  csm::Isd isd;
-  std::shared_ptr<csm::Model> model;
-  UsgsAstroFrameSensorModel *sensorModel;
-  std::ostringstream oss;
-
-  void SetUp() override {
-    sensorModel = NULL;
-
-    isd.setFilename("data/simpleFramerISD.img");
-    UsgsAstroPlugin frameCameraPlugin;
-
-    model = std::shared_ptr<csm::Model>(frameCameraPlugin.constructModelFromISD(
-       isd, UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME));
-    sensorModel = dynamic_cast<UsgsAstroFrameSensorModel *>(model.get());
-
-    ASSERT_NE(sensorModel, nullptr);
-
-    auto ostream_sink = std::make_shared<spdlog::sinks::ostream_sink_mt>(oss);
-    // We need a unique ID for the sensor model so that we don't have
-    // logger name collisions. Use the sensor model's memory addresss.
-    std::uintptr_t sensorId = reinterpret_cast<std::uintptr_t>(sensorModel);
-    auto logger = std::make_shared<spdlog::logger>(std::to_string(sensorId),
-                                                   ostream_sink);
-    logger->set_level(spdlog::level::trace);
-    spdlog::register_logger(logger);
-
-    sensorModel->setLogger(std::to_string(sensorId));
-  }
-
-  void TearDown() override {
-    if (sensorModel) {
-      // Remove the logger from the registry for other tests
-      std::uintptr_t sensorId = reinterpret_cast<std::uintptr_t>(sensorModel);
-      spdlog::drop(std::to_string(sensorId));
-
-      // No deletion is needed because the resource is owned by the smart pointer 'model'.
-      sensorModel = NULL;
-    }
-
-    EXPECT_FALSE(oss.str().empty());
-  }
-};
+// Note: FrameSensorModelLogging fixture removed as it depended on spdlog
+// Tests that used this fixture should be updated to use FrameSensorModel instead
 
 class OrbitalFrameSensorModel : public ::testing::Test {
  protected:

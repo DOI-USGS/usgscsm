@@ -8,8 +8,6 @@
 #include "ale/Rotation.h"
 #include "VariantMap.h"
 
-#include "spdlog/spdlog.h"
-
 class UsgsAstroSarSensorModel : public csm::RasterGM,
                                 virtual public csm::SettableEllipsoid {
  public:
@@ -275,7 +273,6 @@ class UsgsAstroSarSensorModel : public csm::RasterGM,
   LookDirection m_lookDirection;
   std::vector<double> m_noAdjustments;
 
-  std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
 };
 
 #endif

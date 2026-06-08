@@ -25,6 +25,9 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #ifndef INCLUDE_USGSCSM_USGSASTROPROJECTEDSENSORMODEL_H_
 #define INCLUDE_USGSCSM_USGSASTROPROJECTEDSENSORMODEL_H_
 
+#ifndef __EMSCRIPTEN__
+// ProjectedSensorModel requires PROJ library which is not available in WASM builds
+
 #include <RasterGM.h>
 #include <SettableEllipsoid.h>
 
@@ -35,9 +38,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 
 #include "ale/Orientations.h"
 #include "ale/States.h"
-
-
-#include "spdlog/spdlog.h"
 
 #include <proj.h>
 
@@ -88,9 +88,6 @@ public:
     std::vector<double> m_geoTransform;
     std::string m_projString;
     std::string m_subModelName;
-
-    // Define logging pointer and file content
-    std::shared_ptr<spdlog::logger> m_logger = spdlog::get("usgscsm_logger");
 
     // Hardcoded
     static const std::string _SENSOR_MODEL_NAME; // state date element 0
@@ -838,5 +835,7 @@ public:
  protected:
   csm::RasterGM *m_camera = NULL;
 };
+
+#endif  // __EMSCRIPTEN__
 
 #endif  // INCLUDE_USGSCSM_USGSASTROPROJECTEDSENSORMODEL_H_

@@ -12,6 +12,26 @@ set(CMAKE_CXX_STANDARD 17)
 # For dependencies minimum version
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
+# Detect Emscripten and configure for WebAssembly
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  message(STATUS "Building for WebAssembly with Emscripten")
+  set(EMSCRIPTEN ON)
+  set(USGSCSM_WASM_BUILD ON)
+  # Disable unnecessary components for WASM
+  set(USGSCSM_BUILD_TESTS OFF CACHE BOOL "Disable tests for WASM" FORCE)
+  set(USGSCSM_BUILD_DOCS OFF CACHE BOOL "Disable docs for WASM" FORCE)
+  set(BUILD_APPS OFF CACHE BOOL "Disable PROJ apps" FORCE)
+  set(ENABLE_CURL OFF CACHE BOOL "No curl in WASM" FORCE)
+  set(ENABLE_TIFF OFF CACHE BOOL "No TIFF in WASM" FORCE)
+  set(BUILD_SHARED_LIBS OFF CACHE BOOL "Static libs for WASM" FORCE)
+  set(CMAKE_USE_PTHREADS_INIT OFF)  # Disable threading for WASM
+  # Use embedded dependencies for WASM
+  set(USGSCSM_EXTERNAL_DEPS OFF CACHE BOOL "Use embedded deps for WASM" FORCE)
+  # Override optimization flags to avoid binaryen version mismatch
+  set(CMAKE_CXX_FLAGS_RELEASE "-O1 -DNDEBUG" CACHE STRING "" FORCE)
+  set(CMAKE_C_FLAGS_RELEASE "-O1 -DNDEBUG" CACHE STRING "" FORCE)
+endif()
+
 # Set a default build type if none was specified
 set(default_build_type "Release")
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -33,7 +53,6 @@ option(BUILD_APPS "Set to build the proj apps" OFF)
 set (CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/cmake;${CMAKE_PREFIX_PATH}")
 
 set(USGSCSM_SRC_FILES src/UsgsAstroPlugin.cpp
-                      src/UsgsAstroPluginSupport.cpp
                       src/UsgsAstroFrameSensorModel.cpp
                       src/UsgsAstroPushFrameSensorModel.cpp
                       src/UsgsAstroLsSensorModel.cpp
@@ -81,25 +100,24 @@ else()
   set(CSM_INCLUDE_DIR /csm)
   set(CSM_LIBRARY csmapi)
 
-  # First configure proj library
-  set(BUILD_SHARED_LIBS OFF)
-  set(PROJ_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/PROJ")
-  set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/PROJ/cmake ${CMAKE_MODULE_PATH})
-  set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/PROJ/src ${CMAKE_MODULE_PATH})
+  # Skip PROJ library for WebAssembly builds (projected sensor model is disabled)
+  if(NOT EMSCRIPTEN)
+    # First configure proj library
+    set(BUILD_SHARED_LIBS OFF)
+    set(PROJ_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/PROJ")
+    set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/PROJ/cmake ${CMAKE_MODULE_PATH})
+    set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/PROJ/src ${CMAKE_MODULE_PATH})
 
-  ################################################################################
-  # Check for sqlite3
-  ################################################################################
+    ################################################################################
+    # Check for sqlite3
+    ################################################################################
 
-  find_program(EXE_SQLITE3 sqlite3)
-  if(NOT EXE_SQLITE3)
-    message(SEND_ERROR "sqlite3 binary not found!")
-  endif()
+    find_program(EXE_SQLITE3 sqlite3)
+    if(NOT EXE_SQLITE3)
+      message(SEND_ERROR "sqlite3 binary not found!")
+    endif()
 
-  find_package(Sqlite3 REQUIRED)
-  if(NOT SQLITE3_FOUND)
-    message(SEND_ERROR "sqlite3 dependency not found!")
-  endif()
+    find_package(Sqlite3 REQUIRED)
 
   include(ProjUtilities)
   include(Ccache)
@@ -621,8 +639,9 @@ else()
   print_variable(BUILD_SHARED_LIBS)
   print_variable(PROJ_LIBRARIES)
 
-  set(PROJ_TARGET proj)
-  set(PROJ_INCLUDE_DIR /PROJ)
+    set(PROJ_TARGET proj)
+    set(PROJ_INCLUDE_DIR /PROJ)
+  endif(NOT EMSCRIPTEN)
 
   # Nlohmann JSON
   add_library (nlohmann_json INTERFACE)
@@ -669,11 +688,18 @@ else()
   )
   target_link_libraries(ale PRIVATE ${ALE_LINKS})
   set(ALE_TARGET ale)
-  set(USGSCSM_INCLUDE_DIRS "${USGSCSM_INCLUDE_DIRS}"
-                           "${NLOHMANN_JSON_INCLUDE_DIR}"
-                           "${CMAKE_CURRENT_SOURCE_DIR}/ale/include"
-                           "${CMAKE_CURRENT_SOURCE_DIR}/PROJ/include"
-  )
+
+  if(EMSCRIPTEN)
+    # WASM build without PROJ
+    set(USGSCSM_INCLUDE_DIRS "${USGSCSM_INCLUDE_DIRS}"
+                             "${NLOHMANN_JSON_INCLUDE_DIR}"
+                             "${CMAKE_CURRENT_SOURCE_DIR}/ale/include")
+  else()
+    set(USGSCSM_INCLUDE_DIRS "${USGSCSM_INCLUDE_DIRS}"
+                             "${NLOHMANN_JSON_INCLUDE_DIR}"
+                             "${CMAKE_CURRENT_SOURCE_DIR}/ale/include"
+                             "${CMAKE_CURRENT_SOURCE_DIR}/PROJ/include")
+  endif()
   
   set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fPIC" )
   set( CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -fPIC" )
@@ -701,13 +727,22 @@ target_include_directories(usgscsm
                            ${CSM_INCLUDE_DIR}
 )
 
-target_link_libraries(usgscsm
-                      PUBLIC
-                      nlohmann_json::nlohmann_json
-                      ${CSM_LIBRARY}
-                      ${ALE_TARGET}
-                      PRIVATE
-                      ${PROJ_TARGET})
+if(EMSCRIPTEN)
+  # WASM build without PROJ
+  target_link_libraries(usgscsm
+                        PUBLIC
+                        nlohmann_json::nlohmann_json
+                        ${CSM_LIBRARY}
+                        ${ALE_TARGET})
+else()
+  target_link_libraries(usgscsm
+                        PUBLIC
+                        nlohmann_json::nlohmann_json
+                        ${CSM_LIBRARY}
+                        ${ALE_TARGET}
+                        PRIVATE
+                        ${PROJ_TARGET})
+endif()
 
 add_executable(usgscsm_cam_test bin/usgscsm_cam_test.cc)
 target_link_libraries(usgscsm_cam_test
@@ -751,5 +786,124 @@ if(USGSCSM_BUILD_DOCS)
   add_subdirectory ("docs")
 else()
   message(STATUS "Skipping Docs")
+endif()
+
+# WebAssembly target
+if(EMSCRIPTEN)
+  message(STATUS "Configuring WebAssembly build")
+
+  # Clear any inherited linker flags that may be incompatible with wasm-ld
+  # (e.g., macOS-specific flags from conda environments)
+  set(CMAKE_EXE_LINKER_FLAGS "")
+  set(CMAKE_SHARED_LINKER_FLAGS "")
+  set(CMAKE_MODULE_LINKER_FLAGS "")
+  message(STATUS "Cleared incompatible linker flags for WebAssembly")
+
+  # Set sensible defaults for WASM builds
+  if(NOT DEFINED CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
+    message(STATUS "CMAKE_BUILD_TYPE not set, defaulting to Release for WASM")
+  endif()
+
+  # Source files for WASM (exclude UsgsAstroProjectedSensorModel to avoid PROJ dependency)
+  set(USGSCSM_WASM_SRC_FILES
+      src/UsgsAstroPlugin.cpp
+      src/UsgsAstroFrameSensorModel.cpp
+      src/UsgsAstroPushFrameSensorModel.cpp
+      src/UsgsAstroLsSensorModel.cpp
+      src/UsgsAstroSarSensorModel.cpp
+      src/Distortion.cpp
+      src/Utilities.cpp
+      src/VariantMap.cpp
+      src/EigenUtilities.cpp
+      src/wasm/usgscsm_bindings.cpp
+  )
+
+  # Create WASM executable
+  add_executable(usgscsm_wasm ${USGSCSM_WASM_SRC_FILES}
+                              $<TARGET_OBJECTS:ale>)
+
+  # Include directories
+  target_include_directories(usgscsm_wasm PRIVATE
+                             ${USGSCSM_INCLUDE_DIRS}
+                             ${CSM_INCLUDE_DIR}
+                             ${NLOHMANN_JSON_INCLUDE_DIR}
+                             ${EIGEN3_INCLUDE_DIR}
+  )
+
+  # Link libraries
+  target_link_libraries(usgscsm_wasm
+                        PRIVATE
+                        nlohmann_json::nlohmann_json
+                        ${CSM_LIBRARY}
+                        ${ALE_TARGET}
+  )
+
+  # Enable exception support for WASM
+  target_compile_options(usgscsm_wasm PRIVATE "-fexceptions")
+
+  # Optimization options for WASM builds
+  option(USGSCSM_WASM_OPTIMIZE "Enable WASM optimization" ON)
+  option(USGSCSM_WASM_DEBUG "Build with debug symbols" OFF)
+
+  # Base Emscripten link flags
+  set(WASM_LINK_FLAGS
+    "--bind"
+    "-lembind"
+    "-s WASM=1"
+    "-s MODULARIZE=1"
+    "-s EXPORT_NAME='USGSCSM'"
+    "-s EXPORT_ES6=1"
+    "-s ALLOW_MEMORY_GROWTH=1"
+    "-s INITIAL_MEMORY=128MB"
+    "-s MAXIMUM_MEMORY=512MB"
+    "-s STACK_SIZE=100MB"
+    "-s FILESYSTEM=1"
+    "-s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','FS']"
+    "-fexceptions"
+  )
+
+  # Add optimization flags
+  if(USGSCSM_WASM_OPTIMIZE)
+    list(APPEND WASM_LINK_FLAGS "-O2")
+    message(STATUS "WASM optimization enabled: -O2")
+  else()
+    list(APPEND WASM_LINK_FLAGS "-O1")
+    message(STATUS "WASM optimization disabled: -O1")
+  endif()
+
+  # Add debug flags
+  if(USGSCSM_WASM_DEBUG)
+    list(APPEND WASM_LINK_FLAGS "-g" "-gsource-map")
+    message(STATUS "WASM debug symbols enabled")
+  endif()
+
+  # Convert list to string
+  string(REPLACE ";" " " WASM_LINK_FLAGS_STR "${WASM_LINK_FLAGS}")
+
+  # Apply link flags
+  set_target_properties(usgscsm_wasm PROPERTIES
+    OUTPUT_NAME "usgscsm"
+    SUFFIX ".js"
+    LINK_FLAGS "${WASM_LINK_FLAGS_STR}"
+  )
+
+  # Copy output files to dist/ directory in build folder for NPM packaging
+  add_custom_command(TARGET usgscsm_wasm POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/dist
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_BINARY_DIR}/usgscsm.js
+            ${CMAKE_BINARY_DIR}/dist/usgscsm.js
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_BINARY_DIR}/usgscsm.wasm
+            ${CMAKE_BINARY_DIR}/dist/usgscsm.wasm
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_SOURCE_DIR}/src/wasm/usgscsm.d.ts
+            ${CMAKE_BINARY_DIR}/dist/usgscsm.d.ts
+    COMMENT "Copying WASM output and TypeScript definitions to dist/ directory"
+  )
+
+  message(STATUS "WebAssembly target configured: usgscsm_wasm")
+  message(STATUS "Output will be in: ${CMAKE_BINARY_DIR}/dist/")
 endif()
 

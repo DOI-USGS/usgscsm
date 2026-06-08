@@ -22,10 +22,13 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
 IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. **/
 
+#ifndef __EMSCRIPTEN__
+// ProjectedSensorModel requires PROJ library which is not available in WASM builds
+
 #include "UsgsAstroProjectedSensorModel.h"
-#include "UsgsAstroPluginSupport.h"
 #include "Utilities.h"
 #include "VariantMap.h"
+#include "Logging.h"
 
 #include <proj.h>
 
@@ -33,11 +36,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include <nlohmann/json.hpp>
 
 #include "ale/Util.h"
-
-#define MESSAGE_LOG(...)        \
-  if (m_logger) {               \
-    m_logger->log(__VA_ARGS__); \
-  }
 
 using json = nlohmann::json;
 
@@ -111,8 +109,8 @@ void UsgsAstroProjectedSensorModel::replaceModelState(const std::string& stateSt
 
 void UsgsAstroProjectedSensorModel::populateModel(const VariantMap& state) {
   reset();
-  MESSAGE_LOG(
-      spdlog::level::warn,
+  LOG_INFO(
+      
       "If you are using the projected model, please be aware that the "
       "sensor only supports projected images against ellipsoids. If "
       "you have projected using a more detailed shape model this sensor "
@@ -129,8 +127,8 @@ void UsgsAstroProjectedSensorModel::populateModel(const VariantMap& state) {
 
   m_isdProj = proj_create(C, (m_projString + " +type=crs").c_str());
   if (0 == m_isdProj) {
-    MESSAGE_LOG(
-        spdlog::level::debug,
+    LOG_INFO(
+        
         "Failed to create isd transformation object");
     return;
   }
@@ -140,8 +138,8 @@ void UsgsAstroProjectedSensorModel::populateModel(const VariantMap& state) {
   std::string projString = "+proj=geocent " + radius_a + " " + radius_b + " +type=crs";
   m_ecefProj = proj_create(C, projString.c_str());
   if (0 == m_ecefProj) {
-    MESSAGE_LOG(
-        spdlog::level::debug,
+    LOG_INFO(
+        
         "Failed to create geocent transformation object");
     return;
   }
@@ -150,8 +148,8 @@ void UsgsAstroProjectedSensorModel::populateModel(const VariantMap& state) {
 
   proj_context_destroy(C);
 
-  MESSAGE_LOG(
-      spdlog::level::trace,
+  LOG_INFO(
+      
       "m_subModelName: {} "
       "m_majorAxis: {} "
       "m_minorAxis: {} "
@@ -209,8 +207,8 @@ std::string UsgsAstroProjectedSensorModel::getModelJson() const {
 }
 
 std::string UsgsAstroProjectedSensorModel::getModelState() const {
-  MESSAGE_LOG(
-      spdlog::level::trace,
+  LOG_INFO(
+      
       "m_subModelName: {} "
       "m_majorAxis: {} "
       "m_minorAxis: {} "
@@ -233,7 +231,7 @@ std::string UsgsAstroProjectedSensorModel::getModelState() const {
 // UsgsAstroLineScannerSensorModel::reset
 //***************************************************************************
 void UsgsAstroProjectedSensorModel::reset() {
-  MESSAGE_LOG(spdlog::level::debug, "Running reset()");
+  LOG_DEBUG( "Running reset()");
 
   m_subModelName = "";
   m_majorAxis = 3400000.0;
@@ -295,19 +293,19 @@ csm::ImageCoord UsgsAstroProjectedSensorModel::groundToImage(
   c_in.xyz.x = ground_pt.x;
   c_in.xyz.y = ground_pt.y;
   c_in.xyz.z = ground_pt.z;
-  MESSAGE_LOG(
-      spdlog::level::info,
+  LOG_INFO(
+      
       "Ground point {}, {}, {}",
       c_in.xyz.x, c_in.xyz.y, c_in.xyz.z);
   PJ_COORD c_out = proj_trans(m_isdProj2ecefProj, PJ_INV, c_in);
-  MESSAGE_LOG(
-      spdlog::level::info,
+  LOG_INFO(
+      
       "Meters {}, {}",
       c_out.xyz.x, c_out.xyz.y);
   std::vector<double> lineSampleCoord = meterToPixel(c_out.xyz.x, c_out.xyz.y, m_geoTransform);
   csm::ImageCoord imagePt(lineSampleCoord[0], lineSampleCoord[1]);
-  MESSAGE_LOG(
-      spdlog::level::info,
+  LOG_INFO(
+      
       "groundToImage result of ({}, {})",
       imagePt.line, imagePt.samp);
   return imagePt;
@@ -333,8 +331,8 @@ csm::ImageCoordCovar UsgsAstroProjectedSensorModel::groundToImage(
 csm::EcefCoord UsgsAstroProjectedSensorModel::imageToGround(
     const csm::ImageCoord& image_pt, double height, double desired_precision,
     double* achieved_precision, csm::WarningList* warnings) const {
-  MESSAGE_LOG(
-      spdlog::level::info,
+  LOG_INFO(
+      
       "Computing imageToGround for {}, {}, {}, with desired precision {}",
       image_pt.line, image_pt.samp, height, desired_precision);
 
@@ -343,19 +341,19 @@ csm::EcefCoord UsgsAstroProjectedSensorModel::imageToGround(
   std::vector<double> meterCoord = pixelToMeter(image_pt.line, image_pt.samp, m_geoTransform);
   meterLine = meterCoord[0];
   meterSamp = meterCoord[1];
-  MESSAGE_LOG(
-      spdlog::level::trace,
+  LOG_INFO(
+      
       "METERS X: {0:.15f}", meterLine);
-  MESSAGE_LOG(
-      spdlog::level::trace,
+  LOG_INFO(
+      
       "METERS Y: {0:.15f}", meterSamp);
   PJ_COORD c_in;
   c_in.xy.x = meterSamp;
   c_in.xy.y = meterLine;
   PJ_COORD c_out = proj_trans(m_isdProj2ecefProj, PJ_FWD, c_in);
   x = c_out.xyz.x, y = c_out.xyz.y, z = c_out.xyz.z;
-  MESSAGE_LOG(
-      spdlog::level::info,
+  LOG_INFO(
+      
       "imageToGround result {} {} {}",
       x, y, z);
   return csm::EcefCoord(x, y, z);
@@ -420,11 +418,10 @@ std::vector<double> UsgsAstroProjectedSensorModel::computeGroundPartials(
 csm::RasterGM::SensorPartials UsgsAstroProjectedSensorModel::computeSensorPartials(
     int index, const csm::EcefCoord &groundPt, double desiredPrecision,
     double *achievedPrecision, csm::WarningList *warnings) const {
-  MESSAGE_LOG(
-      spdlog::level::debug,
+  LOG_INFO(
       "Calculating computeSensorPartials for ground point {}, {}, {} with "
       "desired precision {}",
-      groundPt.x, groundPt.y, groundPt.z, desiredPrecision)
+      groundPt.x, groundPt.y, groundPt.z, desiredPrecision);
 
   csm::ImageCoord imagePt = m_camera->groundToImage(groundPt, desiredPrecision, achievedPrecision);
 
@@ -452,11 +449,10 @@ UsgsAstroProjectedSensorModel::computeAllSensorPartials(
     double desired_precision, double* achieved_precision,
     csm::WarningList* warnings) const {
 
-  MESSAGE_LOG(
-      spdlog::level::info,
+  LOG_INFO(
       "Computing computeAllSensorPartials for ground point {}, {}, {} with "
       "desired precision {}",
-      ground_pt.x, ground_pt.y, ground_pt.z, desired_precision)
+      ground_pt.x, ground_pt.y, ground_pt.z, desired_precision);
   csm::ImageCoord image_pt =
       m_camera->groundToImage(ground_pt, desired_precision, achieved_precision, warnings);
 
@@ -857,8 +853,8 @@ VariantMap UsgsAstroProjectedSensorModel::constructStateFromIsd(
   projState.set<std::string>("m_subModelName", m_camera->getModelName());
   projState.set<std::vector<double>>("m_geoTransform", ale::getGeoTransform(state));
   projState.set<std::string>("m_projString", ale::getProjection(state));
-  MESSAGE_LOG(
-      spdlog::level::trace,
+  LOG_INFO(
+      
       "m_modelName: {} "
       "m_subModelName: {} "
       "m_geoTransform size: {} "
@@ -871,3 +867,5 @@ VariantMap UsgsAstroProjectedSensorModel::constructStateFromIsd(
   // some state data is not in the ISD and requires a SM to compute them.
   return projState;
 }
+
+#endif  // __EMSCRIPTEN__

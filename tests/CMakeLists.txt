@@ -14,6 +14,7 @@ add_executable(runCSMCameraModelTests
                ISDParsingTests.cpp
                UtilitiesTests.cpp
                EigenUtilitiesTests.cpp
+               LoggingTests.cpp
                ../ale/src/Rotation.cpp
                ../ale/src/InterpUtils.cpp)
 if(WIN32)
@@ -24,73 +25,79 @@ else()
   target_link_libraries(runCSMCameraModelTests usgscsm ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} pthread)
 endif()
 
-# Test the test_usgscsm_cam_test program. These tests will be generated
-# by cmake and then executed in the current order. The second test
-# uses as input the output of the first test.
-# 1. Save the model state for an ISD camera model.
+# Test the test_usgscsm_cam_test program. Output files are written to build directory
+# with unique names to avoid race conditions during parallel test execution.
+
+# 1-2. JSON model state round-trip
 add_test(NAME test_usgscsm_cam_test_save_state
-    COMMAND usgscsm_cam_test --model data/toughLroNacLineScan.json  --sample-rate 100 --subpixel-offset 0.3 --height-above-datum 2307.5 --desired-precision 1e-8 --output-model-state model_state.json
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
-# 2. Load back the state and save it again.
+    COMMAND usgscsm_cam_test --model ${PROJECT_SOURCE_DIR}/tests/data/toughLroNacLineScan.json --sample-rate 100 --subpixel-offset 0.3 --height-above-datum 2307.5 --desired-precision 1e-8 --output-model-state ${CMAKE_CURRENT_BINARY_DIR}/test_save_state_output.json
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 add_test(NAME test_usgscsm_cam_test_load_state
-    COMMAND usgscsm_cam_test --model model_state.json --output-model-state model_state2.json
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
+    COMMAND usgscsm_cam_test --model ${CMAKE_CURRENT_BINARY_DIR}/test_save_state_output.json --output-model-state ${CMAKE_CURRENT_BINARY_DIR}/test_load_state_output.json
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-# 3. Save model state from .sup file
+# 3-4. SUP file model state round-trip
 add_test(NAME test_usgscsm_cam_test_save_sup_state
-    COMMAND usgscsm_cam_test --model data/gxp_model_file.sup --output-model-state gxp_model_state.json
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
-# 4. Load model state
+    COMMAND usgscsm_cam_test --model ${PROJECT_SOURCE_DIR}/tests/data/gxp_model_file.sup --output-model-state ${CMAKE_CURRENT_BINARY_DIR}/test_save_sup_output.json
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 add_test(NAME test_usgscsm_cam_test_load_sup_state
-    COMMAND usgscsm_cam_test --model gxp_model_state.json --output-model-state gxp_model_state2.json
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
+    COMMAND usgscsm_cam_test --model ${CMAKE_CURRENT_BINARY_DIR}/test_save_sup_output.json --output-model-state ${CMAKE_CURRENT_BINARY_DIR}/test_load_sup_output.json
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-# 5. Save binary (msgpack) model state from ISD.
+# 5-6. Binary (msgpack) model state round-trip
 add_test(NAME test_usgscsm_cam_test_save_binary_state
-    COMMAND usgscsm_cam_test --model data/toughLroNacLineScan.json --sample-rate 100 --subpixel-offset 0.3 --height-above-datum 2307.5 --desired-precision 1e-8 --output-binary-model-state model_state_binary.isd
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
-# 6. Load back the binary state.
+    COMMAND usgscsm_cam_test --model ${PROJECT_SOURCE_DIR}/tests/data/toughLroNacLineScan.json --sample-rate 100 --subpixel-offset 0.3 --height-above-datum 2307.5 --desired-precision 1e-8 --output-binary-model-state ${CMAKE_CURRENT_BINARY_DIR}/test_save_binary_state.isd
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 add_test(NAME test_usgscsm_cam_test_load_binary_state
-    COMMAND usgscsm_cam_test --model model_state_binary.isd
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
+    COMMAND usgscsm_cam_test --model ${CMAKE_CURRENT_BINARY_DIR}/test_save_binary_state.isd
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-# 7-8. Binary round-trip for frame model.
+# 7-8. Binary round-trip for frame model
 add_test(NAME test_usgscsm_cam_test_save_binary_frame
-    COMMAND usgscsm_cam_test --model data/orbitalFramer.json --sample-rate 1 --output-binary-model-state frame_binary.isd
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
+    COMMAND usgscsm_cam_test --model ${PROJECT_SOURCE_DIR}/tests/data/orbitalFramer.json --sample-rate 1 --output-binary-model-state ${CMAKE_CURRENT_BINARY_DIR}/test_save_binary_frame.isd
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 add_test(NAME test_usgscsm_cam_test_load_binary_frame
-    COMMAND usgscsm_cam_test --model frame_binary.isd --sample-rate 1
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
+    COMMAND usgscsm_cam_test --model ${CMAKE_CURRENT_BINARY_DIR}/test_save_binary_frame.isd --sample-rate 1
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-# 9-10. Binary round-trip for pushframe model.
+# 9-10. Binary round-trip for pushframe model
 add_test(NAME test_usgscsm_cam_test_save_binary_pushframe
-    COMMAND usgscsm_cam_test --model data/orbitalPushFrame.json --sample-rate 100 --output-binary-model-state pushframe_binary.isd
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
+    COMMAND usgscsm_cam_test --model ${PROJECT_SOURCE_DIR}/tests/data/orbitalPushFrame.json --sample-rate 100 --output-binary-model-state ${CMAKE_CURRENT_BINARY_DIR}/test_save_binary_pushframe.isd
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 add_test(NAME test_usgscsm_cam_test_load_binary_pushframe
-    COMMAND usgscsm_cam_test --model pushframe_binary.isd --sample-rate 100
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
+    COMMAND usgscsm_cam_test --model ${CMAKE_CURRENT_BINARY_DIR}/test_save_binary_pushframe.isd --sample-rate 100
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-# 11-12. Binary round-trip for SAR model.
+# 11-12. Binary round-trip for SAR model
 add_test(NAME test_usgscsm_cam_test_save_binary_sar
-    COMMAND usgscsm_cam_test --model data/orbitalSar.json --sample-rate 100000 --output-binary-model-state sar_binary.isd
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
+    COMMAND usgscsm_cam_test --model ${PROJECT_SOURCE_DIR}/tests/data/orbitalSar.json --sample-rate 100000 --output-binary-model-state ${CMAKE_CURRENT_BINARY_DIR}/test_save_binary_sar.isd
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 add_test(NAME test_usgscsm_cam_test_load_binary_sar
-    COMMAND usgscsm_cam_test --model sar_binary.isd --sample-rate 100000
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
+    COMMAND usgscsm_cam_test --model ${CMAKE_CURRENT_BINARY_DIR}/test_save_binary_sar.isd --sample-rate 100000
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-# 13-14. Binary round-trip for projected model (Mars linescan).
+# 13-14. Binary round-trip for projected model (Mars linescan)
 add_test(NAME test_usgscsm_cam_test_save_binary_projected
-    COMMAND usgscsm_cam_test --model data/marsLineScanProj.json --sample-rate 1 --output-binary-model-state projected_binary.isd
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
+    COMMAND usgscsm_cam_test --model ${PROJECT_SOURCE_DIR}/tests/data/marsLineScanProj.json --sample-rate 1 --output-binary-model-state ${CMAKE_CURRENT_BINARY_DIR}/test_save_binary_projected.isd
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 add_test(NAME test_usgscsm_cam_test_load_binary_projected
-    COMMAND usgscsm_cam_test --model projected_binary.isd --sample-rate 1
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
+    COMMAND usgscsm_cam_test --model ${CMAKE_CURRENT_BINARY_DIR}/test_save_binary_projected.isd --sample-rate 1
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 # 15. Test the radtan model (this distortion model gets added to a DawnFC sensor)
 add_test(NAME test_usgscsm_cam_test_radtan
-    COMMAND usgscsm_cam_test --model data/dawnfc_radtan.json  --sample-rate 100 --output-model-state dawnfc_radtan_model_state.json
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
-    
+    COMMAND usgscsm_cam_test --model ${PROJECT_SOURCE_DIR}/tests/data/dawnfc_radtan.json --sample-rate 100 --output-model-state ${CMAKE_CURRENT_BINARY_DIR}/test_radtan_output.json
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+# Set test dependencies to ensure load tests run after save tests complete
+set_tests_properties(test_usgscsm_cam_test_load_state PROPERTIES DEPENDS test_usgscsm_cam_test_save_state)
+set_tests_properties(test_usgscsm_cam_test_load_sup_state PROPERTIES DEPENDS test_usgscsm_cam_test_save_sup_state)
+set_tests_properties(test_usgscsm_cam_test_load_binary_state PROPERTIES DEPENDS test_usgscsm_cam_test_save_binary_state)
+set_tests_properties(test_usgscsm_cam_test_load_binary_frame PROPERTIES DEPENDS test_usgscsm_cam_test_save_binary_frame)
+set_tests_properties(test_usgscsm_cam_test_load_binary_pushframe PROPERTIES DEPENDS test_usgscsm_cam_test_save_binary_pushframe)
+set_tests_properties(test_usgscsm_cam_test_load_binary_sar PROPERTIES DEPENDS test_usgscsm_cam_test_save_binary_sar)
+set_tests_properties(test_usgscsm_cam_test_load_binary_projected PROPERTIES DEPENDS test_usgscsm_cam_test_save_binary_projected)
+
 # The projected sensor test fixture (constVelocityProj.json) uses a sinusoidal
 # projection with Mars radius (+R=3396190) but body radii of 10 m (synthetic
 # test body). Newer PROJ versions reject this mismatch. The test geometry is
