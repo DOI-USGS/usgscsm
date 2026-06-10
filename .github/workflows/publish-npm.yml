@@ -39,7 +39,10 @@ jobs:
 
       - name: Set package version from git tag
         run: |
-          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          # Remove refs/tags/ prefix first
+          TAG_VERSION="${GITHUB_REF#refs/tags/}"
+          # Remove optional 'v' prefix if present
+          TAG_VERSION="${TAG_VERSION#v}"
           echo "Setting package.json version to: $TAG_VERSION"
           npm version "$TAG_VERSION" --no-git-tag-version --allow-same-version
 
