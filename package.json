@@ -1,0 +1,54 @@
+{
+  "name": "usgscsm",
+  "version": "2.1.0",
+  "type": "module",
+  "description": "USGS Community Sensor Model (CSM) library compiled to WebAssembly for planetary photogrammetry in the browser",
+  "main": "dist/usgscsm.js",
+  "module": "dist/usgscsm.js",
+  "types": "dist/usgscsm.d.ts",
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "scripts": {
+    "test": "node tests/wasm/test_wasm.js",
+    "build": "echo 'Note: WASM build requires Emscripten. See README for instructions.' && exit 1",
+    "size": "ls -lh wasmbuild/dist/ 2>/dev/null || ls -lh wasm/dist/ 2>/dev/null || ls -lh dist/ 2>/dev/null || echo 'No dist/ found'",
+    "clean": "rm -rf wasmbuild/ wasm/ build/ build-wasm/ dist/",
+    "prepublishOnly": "test -d dist || (echo 'Error: dist/ not found. Build WASM first.' && exit 1)"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/USGS-Astrogeology/usgscsm.git"
+  },
+  "keywords": [
+    "csm",
+    "community-sensor-model",
+    "photogrammetry",
+    "planetary",
+    "camera-model",
+    "webassembly",
+    "wasm",
+    "astrogeology",
+    "coordinate-transformation",
+    "remote-sensing",
+    "mars",
+    "moon",
+    "planetary-science"
+  ],
+  "author": "USGS Astrogeology Science Center",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "bugs": {
+    "url": "https://github.com/USGS-Astrogeology/usgscsm/issues"
+  },
+  "homepage": "https://github.com/USGS-Astrogeology/usgscsm#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "devDependencies": {},
+  "peerDependencies": {},
+  "publishConfig": {
+    "access": "public"
+  }
+}
