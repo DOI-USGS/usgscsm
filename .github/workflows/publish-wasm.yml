@@ -1,4 +1,4 @@
-name: Publish WASM builds
+name: Publish to NPM
 
 on:
   release:
