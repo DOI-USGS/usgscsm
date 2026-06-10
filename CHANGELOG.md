@@ -35,6 +35,8 @@ release.
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-06-09
+
 ### Added
 - `isUsgsCsmIsd()` and `isUsgsCsmState()` quick string-scan helpers in `UsgsAstroPluginSupport` to identify ISD vs model state without full JSON parsing or model construction. [#502](https://github.com/DOI-USGS/usgscsm/pull/502)
 - Added the `KPLOSHADOWCAM` distortion type for the KPLO ShadowCam imager. [#505](https://github.com/DOI-USGS/usgscsm/pull/505)
