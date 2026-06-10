@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>USGSCSM WebAssembly Test</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 3px solid #0066cc;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #0066cc;
+      margin-top: 30px;
+    }
+    #output {
+      background-color: #1e1e1e;
+      color: #d4d4d4;
+      padding: 20px;
+      border-radius: 8px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      min-height: 400px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .success {
+      color: #4ec9b0;
+    }
+    .error {
+      color: #f48771;
+    }
+    .warning {
+      color: #dcdcaa;
+    }
+    .info {
+      color: #9cdcfe;
+    }
+    .status {
+      display: inline-block;
+      padding: 5px 15px;
+      border-radius: 4px;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+    .status.loading {
+      background-color: #ffa500;
+      color: white;
+    }
+    .status.success {
+      background-color: #28a745;
+      color: white;
+    }
+    .status.failed {
+      background-color: #dc3545;
+      color: white;
+    }
+    #controls {
+      margin: 20px 0;
+    }
+    button {
+      background-color: #0066cc;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #0052a3;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <h1>USGSCSM WebAssembly Test Suite</h1>
+
+  <div id="controls">
+    <button id="runTests" onclick="runTests()">Run All Tests</button>
+    <button id="clearOutput" onclick="clearOutput()">Clear Output</button>
+  </div>
+
+  <div id="statusBadge" class="status loading">Loading WASM module...</div>
+
+  <h2>Test Output</h2>
+  <pre id="output">Initializing...</pre>
+
+  <script type="module">
+    // Import USGSCSM WASM module
+    import USGSCSM from '../../dist/usgscsm_wasm.js';
+
+    let Module = null;
+    let testsPassed = 0;
+    let testsFailed = 0;
+
+    const output = document.getElementById('output');
+    const statusBadge = document.getElementById('statusBadge');
+
+    function log(message, className = '') {
+      const line = document.createElement('span');
+      line.textContent = message + '\n';
+      if (className) {
+        line.className = className;
+      }
+      output.appendChild(line);
+    }
+
+    function updateStatus(text, statusClass) {
+      statusBadge.textContent = text;
+      statusBadge.className = `status ${statusClass}`;
+    }
+
+    window.clearOutput = function() {
+      output.innerHTML = '';
+      testsPassed = 0;
+      testsFailed = 0;
+    };
+
+    // Load WASM module on page load
+    async function init() {
+      try {
+        log('Loading USGSCSM WebAssembly module...', 'info');
+        Module = await USGSCSM();
+        log('✓ WASM module loaded successfully!', 'success');
+        log('');
+        updateStatus('Ready', 'success');
+        document.getElementById('runTests').disabled = false;
+      } catch (error) {
+        log(`✗ Failed to load WASM module: ${error.message}`, 'error');
+        updateStatus('Failed to load', 'failed');
+        console.error(error);
+      }
+    }
+
+    window.runTests = async function() {
+      clearOutput();
+      testsPassed = 0;
+      testsFailed = 0;
+      updateStatus('Running tests...', 'loading');
+      document.getElementById('runTests').disabled = true;
+
+      log('=== USGSCSM WebAssembly Test Suite ===\n', 'info');
+
+      try {
+        // Test 1: Frame Camera Model
+        await testFrameCamera();
+
+        // Test 2: Model State Serialization
+        await testModelState();
+
+        // Test 3: Sensor Position/Velocity
+        await testSensorPositionVelocity();
+
+        // Test 4: Error Handling
+        await testErrorHandling();
+
+        // Test 5: Browser-specific: Multiple Models
+        await testMultipleModels();
+
+        // Summary
+        log('\n=== Test Summary ===', 'info');
+        log(`Passed: ${testsPassed}`, 'success');
+        log(`Failed: ${testsFailed}`, 'error');
+        log(`Total:  ${testsPassed + testsFailed}`);
+
+        if (testsFailed === 0) {
+          log('\n✓ All tests PASSED!', 'success');
+          updateStatus(`All ${testsPassed} tests passed`, 'success');
+        } else {
+          log('\n✗ Some tests FAILED', 'error');
+          updateStatus(`${testsFailed} of ${testsPassed + testsFailed} tests failed`, 'failed');
+        }
+
+      } catch (error) {
+        log(`\n✗ Fatal error: ${error.message}`, 'error');
+        console.error(error);
+        updateStatus('Tests failed', 'failed');
+      }
+
+      document.getElementById('runTests').disabled = false;
+    };
+
+    async function testFrameCamera() {
+      log('Test 1: Frame Camera Model', 'info');
+      try {
+        const model = new Module.USGSCSMModel();
+
+        // Load simple frame ISD
+        const response = await fetch('../data/simpleFramerISD.json');
+        if (!response.ok) {
+          throw new Error(`Failed to load ISD: ${response.statusText}`);
+        }
+        const isdJson = await response.text();
+
+        const success = model.loadFromISD(isdJson, 'USGS_ASTRO_FRAME_SENSOR_MODEL');
+        if (!success) {
+          throw new Error('Failed to load frame camera model from ISD');
+        }
+
+        log(`  Model name: ${model.getModelName()}`);
+        log(`  Image ID: ${model.getImageIdentifier()}`);
+
+        const size = model.getImageSize();
+        log(`  Image size: ${size.lines} x ${size.samples}`);
+
+        // Test center pixel
+        const centerLine = size.lines / 2 - 0.5;
+        const centerSample = size.samples / 2 - 0.5;
+
+        log(`  Testing center pixel (${centerLine}, ${centerSample})...`);
+        const ground = model.imageToGround(centerLine, centerSample, 0);
+        log(`    Ground: (${ground.x.toFixed(6)}, ${ground.y.toFixed(6)}, ${ground.z.toFixed(6)})`);
+
+        // Round-trip test
+        const imageBack = model.groundToImage(ground.x, ground.y, ground.z);
+        const error = Math.sqrt(
+          Math.pow(imageBack.line - centerLine, 2) +
+          Math.pow(imageBack.sample - centerSample, 2)
+        );
+
+        log(`    Round-trip: (${imageBack.line.toFixed(6)}, ${imageBack.sample.toFixed(6)})`);
+        log(`    Error: ${error.toFixed(9)} pixels`);
+
+        if (error < 0.001) {
+          log('  ✓ Frame camera test PASSED', 'success');
+          testsPassed++;
+        } else {
+          log('  ✗ Frame camera test FAILED (error too large)', 'error');
+          testsFailed++;
+        }
+
+      } catch (error) {
+        log(`  ✗ Frame camera test FAILED: ${error.message}`, 'error');
+        testsFailed++;
+      }
+      log('');
+    }
+
+    async function testModelState() {
+      log('Test 2: Model State Serialization', 'info');
+      try {
+        const model1 = new Module.USGSCSMModel();
+
+        const response = await fetch('../data/simpleFramerISD.json');
+        const isdJson = await response.text();
+        model1.loadFromISD(isdJson, 'USGS_ASTRO_FRAME_SENSOR_MODEL');
+
+        // Get model state
+        const state = model1.getModelState();
+        log(`  Model state size: ${state.length} bytes`);
+
+        // Load into new model
+        const model2 = new Module.USGSCSMModel();
+        const success = model2.loadFromState(state);
+
+        if (!success) {
+          throw new Error('Failed to load model from state');
+        }
+
+        // Verify identical results
+        const ground1 = model1.imageToGround(7.5, 7.5, 0);
+        const ground2 = model2.imageToGround(7.5, 7.5, 0);
+
+        const diff = Math.sqrt(
+          Math.pow(ground1.x - ground2.x, 2) +
+          Math.pow(ground1.y - ground2.y, 2) +
+          Math.pow(ground1.z - ground2.z, 2)
+        );
+
+        log(`  Difference: ${diff.toExponential(6)} meters`);
+
+        if (diff < 1e-10) {
+          log('  ✓ Model state serialization test PASSED', 'success');
+          testsPassed++;
+        } else {
+          log('  ✗ Model state serialization test FAILED', 'error');
+          testsFailed++;
+        }
+
+      } catch (error) {
+        log(`  ✗ Model state serialization test FAILED: ${error.message}`, 'error');
+        testsFailed++;
+      }
+      log('');
+    }
+
+    async function testSensorPositionVelocity() {
+      log('Test 3: Sensor Position and Velocity', 'info');
+      try {
+        const model = new Module.USGSCSMModel();
+
+        const response = await fetch('../data/simpleFramerISD.json');
+        const isdJson = await response.text();
+        model.loadFromISD(isdJson, 'USGS_ASTRO_FRAME_SENSOR_MODEL');
+
+        const position = model.getSensorPosition(7.5, 7.5);
+        log(`  Position: (${position.x.toFixed(3)}, ${position.y.toFixed(3)}, ${position.z.toFixed(3)})`);
+
+        const velocity = model.getSensorVelocity(7.5, 7.5);
+        log(`  Velocity: (${velocity.x.toFixed(6)}, ${velocity.y.toFixed(6)}, ${velocity.z.toFixed(6)})`);
+
+        const positionMag = Math.sqrt(position.x**2 + position.y**2 + position.z**2);
+        log(`  Position magnitude: ${positionMag.toFixed(3)} m`);
+
+        if (positionMag > 10 && positionMag < 1e6) {
+          log('  ✓ Sensor position/velocity test PASSED', 'success');
+          testsPassed++;
+        } else {
+          log('  ✗ Sensor position/velocity test FAILED', 'error');
+          testsFailed++;
+        }
+
+      } catch (error) {
+        log(`  ✗ Sensor position/velocity test FAILED: ${error.message}`, 'error');
+        testsFailed++;
+      }
+      log('');
+    }
+
+    async function testErrorHandling() {
+      log('Test 4: Error Handling', 'info');
+      try {
+        const model = new Module.USGSCSMModel();
+
+        // Use model before loading
+        const result = model.imageToGround(0, 0, 0);
+        if (result === null) {
+          log('  ✓ Correctly returns null for unloaded model');
+        }
+
+        // Invalid ISD
+        const success = model.loadFromISD('{"invalid": "json"}', 'USGS_ASTRO_FRAME_SENSOR_MODEL');
+        if (!success) {
+          log('  ✓ Correctly rejects invalid ISD');
+        }
+
+        log('  ✓ Error handling test PASSED', 'success');
+        testsPassed++;
+
+      } catch (error) {
+        log(`  ✗ Error handling test FAILED: ${error.message}`, 'error');
+        testsFailed++;
+      }
+      log('');
+    }
+
+    async function testMultipleModels() {
+      log('Test 5: Multiple Model Instances (Browser-specific)', 'info');
+      try {
+        const response = await fetch('../data/simpleFramerISD.json');
+        const isdJson = await response.text();
+
+        // Create multiple model instances
+        const models = [];
+        for (let i = 0; i < 3; i++) {
+          const model = new Module.USGSCSMModel();
+          model.loadFromISD(isdJson, 'USGS_ASTRO_FRAME_SENSOR_MODEL');
+          models.push(model);
+        }
+
+        log(`  Created ${models.length} model instances`);
+
+        // Verify they all work independently
+        const results = models.map(m => m.imageToGround(7.5, 7.5, 0));
+
+        // Check all results are identical
+        const allSame = results.every(r =>
+          Math.abs(r.x - results[0].x) < 1e-10 &&
+          Math.abs(r.y - results[0].y) < 1e-10 &&
+          Math.abs(r.z - results[0].z) < 1e-10
+        );
+
+        if (allSame) {
+          log('  ✓ Multiple model instances test PASSED', 'success');
+          testsPassed++;
+        } else {
+          log('  ✗ Multiple model instances test FAILED', 'error');
+          testsFailed++;
+        }
+
+      } catch (error) {
+        log(`  ✗ Multiple model instances test FAILED: ${error.message}`, 'error');
+        testsFailed++;
+      }
+      log('');
+    }
+
+    // Initialize on page load
+    init();
+  </script>
+</body>
+</html>
