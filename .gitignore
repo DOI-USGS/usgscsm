@@ -1,7 +1,7 @@
 # Build directories
 build/
 build-wasm/
-wasm/
+/wasm/
 wasmbuild/
 lib/*
 include/csm/*
