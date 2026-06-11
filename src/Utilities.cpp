@@ -1834,6 +1834,8 @@ DistortionType getDistortionModel(json isd, csm::WarningList *list) {
       return DistortionType::RADTAN;
     } else if (distortion.compare("kplo_shadowcam") == 0) {
       return DistortionType::KPLOSHADOWCAM;
+    } else if (distortion.compare("cassis") == 0) {
+      return DistortionType::CASSIS;
     }
   } catch (...) {
     if (list) {
@@ -1886,6 +1888,8 @@ DistortionType getDistortionModel(int aleDistortionModel,
       return DistortionType::RADTAN;
     } else if (aleDistortionType == ale::DistortionType::KPLOSHADOWCAM) {
       return DistortionType::KPLOSHADOWCAM;
+    } else if (aleDistortionType == ale::DistortionType::CASSIS) {
+      return DistortionType::CASSIS;
     }
   } catch (...) {
     if (list) {
@@ -2099,8 +2103,26 @@ std::vector<double> getDistortionCoeffs(json isd, csm::WarningList *list) {
         coefficients = std::vector<double>(1, 0.0);
       }
     } break;
+    case DistortionType::CASSIS: {
+      try {
+        coefficients = isd.at("optical_distortion")
+                           .at("cassis")
+                           .at("coefficients")
+                           .get<std::vector<double>>();
+
+        return coefficients;
+      } catch (...) {
+        if (list) {
+          list->push_back(csm::Warning(
+              csm::Warning::DATA_NOT_AVAILABLE,
+              "Could not parse the cassis distortion model coefficients.",
+              "Utilities::getDistortion()"));
+        }
+        coefficients = std::vector<double>(36, 0.0);
+      }
+    } break;
   }
-  
+
   if (list) {
     list->push_back(
         csm::Warning(csm::Warning::DATA_NOT_AVAILABLE,

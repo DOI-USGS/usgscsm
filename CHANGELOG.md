@@ -35,6 +35,9 @@ release.
 
 ## [Unreleased]
 
+### Added
+- A `CASSIS` distortion type implementing the TGO CaSSIS rational ratio-of-quadratics distortion model, matching ISIS `TgoCassisDistortionMap`, with the json-name, ALE integer-enum, and coefficient-extraction dispatch wired in. Pairs with the ALE TGO CaSSIS driver. [#512](https://github.com/DOI-USGS/usgscsm/pull/512)
+
 ## [2.1.0] - 2026-06-09
 
 ### Added
