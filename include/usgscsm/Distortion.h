@@ -8,7 +8,7 @@
 
 // This should be synched with the enum in ale/Distortion.h
 enum DistortionType { RADIAL, TRANSVERSE, KAGUYALISM, DAWNFC, LROLROCNAC, CAHVOR,
-                     LUNARORBITER, RADTAN, KPLOSHADOWCAM };
+                     LUNARORBITER, RADTAN, KPLOSHADOWCAM, CASSIS };
 
 // Transverse distortion Jacobian
 void transverseDistortionJacobian(double x, double y, double *jacobian,

@@ -4,6 +4,20 @@
 #include <Error.h>
 #include <string>
 
+// TGO CaSSIS rational distortion helper. The model (Tulyakov/Ivanov, EPFL) is a
+// ratio of quadratics with basis chi = [x^2, x*y, y^2, x, y, 1]. Each direction
+// uses three 6-vectors A1, A2, A3, so x_out = (A1.chi)/(A3.chi), y_out =
+// (A2.chi)/(A3.chi). Ported from ISIS TgoCassisDistortionMap. A points at the
+// first of 6 contiguous coefficients.
+static double cassisChiDotA(double x, double y, const double *A) {
+  return A[0] * x * x + A[1] * x * y + A[2] * y * y + A[3] * x + A[4] * y + A[5];
+}
+
+// CaSSIS CCD is 2048 px at a 0.01 mm pitch. The rational model is only valid on
+// the CCD; outside the box (and where the A3 denominator has roots) ISIS returns
+// the input unchanged. Match that guard here. Bound = 0.5*pitch*width + 0.2 mm.
+static const double cassisFocalBound = 0.5 * 0.01 * 2048.0 + 0.2;
+
 /**
  * @description Calculates the Jacobian matrix of the distortion function at a specific point (x, y). 
  * The distortion model is based on the given optical distortion coefficients.
@@ -420,6 +434,35 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       return;
     } break;
 
+    // TGO CaSSIS rational model, distorted -> undistorted (CORR direction).
+    // Ported from ISIS TgoCassisDistortionMap::SetFocalPlane. Coefficients are
+    // 36 doubles: A1_corr, A2_corr, A3_corr, A1_dist, A2_dist, A3_dist (6 each).
+    // Here we use the CORR triple (indices 0..17).
+    case CASSIS: {
+      if (opticalDistCoeffs.size() != 36) {
+        csm::Error::ErrorType errorType = csm::Error::INDEX_OUT_OF_RANGE;
+        std::string message =
+            "Distortion coefficients for CaSSIS must be of size 36, "
+            "current size: " +
+            std::to_string(opticalDistCoeffs.size());
+        std::string function = "removeDistortion";
+        throw csm::Error(errorType, message, function);
+      }
+      // Outside the CCD the rational model is invalid; return input unchanged.
+      if (fabs(dx) > cassisFocalBound || fabs(dy) > cassisFocalBound) {
+        ux = dx;
+        uy = dy;
+        return;
+      }
+      const double *A1_corr = &opticalDistCoeffs[0];
+      const double *A2_corr = &opticalDistCoeffs[6];
+      const double *A3_corr = &opticalDistCoeffs[12];
+      double divider = cassisChiDotA(dx, dy, A3_corr);
+      ux = cassisChiDotA(dx, dy, A1_corr) / divider;
+      uy = cassisChiDotA(dx, dy, A2_corr) / divider;
+      return;
+    } break;
+
   }
 }
 
@@ -702,6 +745,33 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
 
       dx = ux;
       dy = converged ? ydistorted : uy;
+      return;
+    } break;
+
+    // TGO CaSSIS rational model, undistorted -> distorted (DIST direction).
+    // Ported from ISIS TgoCassisDistortionMap::SetUndistortedFocalPlane. Uses the
+    // DIST triple (indices 18..35) of the 36 coefficients. Closed form, no solver.
+    case CASSIS: {
+      if (opticalDistCoeffs.size() != 36) {
+        csm::Error::ErrorType errorType = csm::Error::INDEX_OUT_OF_RANGE;
+        std::string message =
+            "Distortion coefficients for CaSSIS must be of size 36, "
+            "current size: " +
+            std::to_string(opticalDistCoeffs.size());
+        std::string function = "applyDistortion";
+        throw csm::Error(errorType, message, function);
+      }
+      if (fabs(ux) > cassisFocalBound || fabs(uy) > cassisFocalBound) {
+        dx = ux;
+        dy = uy;
+        return;
+      }
+      const double *A1_dist = &opticalDistCoeffs[18];
+      const double *A2_dist = &opticalDistCoeffs[24];
+      const double *A3_dist = &opticalDistCoeffs[30];
+      double divider = cassisChiDotA(ux, uy, A3_dist);
+      dx = cassisChiDotA(ux, uy, A1_dist) / divider;
+      dy = cassisChiDotA(ux, uy, A2_dist) / divider;
       return;
     } break;
 
