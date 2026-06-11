@@ -486,3 +486,86 @@ TEST(KploShadowCamMapping, intToEnum) {
       static_cast<int>(ale::DistortionType::KPLOSHADOWCAM));
   EXPECT_EQ(dt, DistortionType::KPLOSHADOWCAM);
 }
+
+// TGO CaSSIS rational ratio-of-quadratics distortion (Tulyakov/Ivanov, EPFL),
+// matching ISIS TgoCassisDistortionMap. With chi = [x^2, x*y, y^2, x, y, 1],
+// each direction is x_out = (A1.chi)/(A3.chi), y_out = (A2.chi)/(A3.chi). The 36
+// coefficients are A1_corr, A2_corr, A3_corr (distorted -> undistorted, used by
+// removeDistortion) then A1_dist, A2_dist, A3_dist (undistorted -> distorted,
+// used by applyDistortion), 6 each. Values are the real coefficients from the
+// ISIS addendum tgoCassisAddendum007.ti. Expected outputs below were computed
+// independently from the rational formula.
+static const std::vector<double> cassisCoeffs = {
+    0.00376130530948266,  -0.0134154156065812,   -1.86749521007237e-05,
+    1.00021352681836,     -0.000432362371703953, -0.000948065735350123,
+    9.9842559363676e-05,   0.00373543707958162,  -0.0133299918873929,
+   -0.000215311328389359,  0.995296015537294,    -0.0183542717710778,
+   -3.13320167004204e-05, -7.35655125749807e-06, -1.57664245066771e-05,
+    0.00373549465439151,  -0.0141671946930935,    1.0,
+    0.00213658795560622,  -0.00711785765064197,   1.10355974742147e-05,
+    0.573607182625377,     0.000250884350194894,  0.000550623913037132,
+   -5.69725741015406e-05,  0.00215155905679149,  -0.00716392991767185,
+    0.000124152787728634,  0.576459544392426,     0.010576940564854,
+    1.78250771483506e-05,  4.24592743471094e-06,  9.51220699036653e-06,
+    0.00215158425420738,  -0.0066835595774833,    0.573741540971609};
+
+TEST(Cassis, removeDistortion) {
+  double ux, uy;
+  removeDistortion(2.0, -8.0, ux, uy, cassisCoeffs, 874.9, DistortionType::CASSIS);
+  EXPECT_NEAR(ux, 1.9927225905155812, 1e-9);
+  EXPECT_NEAR(uy, -7.942225998826645, 1e-9);
+}
+
+TEST(Cassis, applyDistortion) {
+  double dx, dy;
+  applyDistortion(2.0, -8.0, dx, dy, cassisCoeffs, 874.9, DistortionType::CASSIS);
+  EXPECT_NEAR(dx, 2.007349177383467, 1e-9);
+  EXPECT_NEAR(dy, -8.058521300253895, 1e-9);
+}
+
+TEST(Cassis, roundTripApplyRemove) {
+  // CORR and DIST are independent EPFL fits, not exact inverses, so the round
+  // trip recovers the input to the fit residual (~5e-6 mm), as in ISIS.
+  for (auto uv : std::vector<std::pair<double, double>>{
+           {1.5, -7.0}, {-3.0, -9.0}, {0.5, -8.5}}) {
+    double dx, dy, ux, uy;
+    applyDistortion(uv.first, uv.second, dx, dy, cassisCoeffs, 874.9,
+                    DistortionType::CASSIS);
+    removeDistortion(dx, dy, ux, uy, cassisCoeffs, 874.9, DistortionType::CASSIS);
+    EXPECT_NEAR(ux, uv.first, 1e-4);
+    EXPECT_NEAR(uy, uv.second, 1e-4);
+  }
+}
+
+TEST(Cassis, offCcdIdentity) {
+  // Outside the CCD (|x| or |y| > ~10.44 mm) the model returns the input
+  // unchanged, matching ISIS.
+  double ux, uy, dx, dy;
+  removeDistortion(15.0, 0.0, ux, uy, cassisCoeffs, 874.9, DistortionType::CASSIS);
+  EXPECT_EQ(ux, 15.0);
+  EXPECT_EQ(uy, 0.0);
+  applyDistortion(0.0, -12.0, dx, dy, cassisCoeffs, 874.9, DistortionType::CASSIS);
+  EXPECT_EQ(dx, 0.0);
+  EXPECT_EQ(dy, -12.0);
+}
+
+TEST(Cassis, wrongCoefficientCount) {
+  double ux, uy;
+  std::vector<double> badCoeffs(10, 0.0);
+  EXPECT_ANY_THROW(removeDistortion(1.0, 1.0, ux, uy, badCoeffs, 874.9,
+                                    DistortionType::CASSIS));
+}
+
+TEST(CassisMapping, stringToEnum) {
+  nlohmann::json isd;
+  isd["optical_distortion"]["cassis"]["coefficients"] = cassisCoeffs;
+  EXPECT_EQ(getDistortionModel(isd), DistortionType::CASSIS);
+}
+
+TEST(CassisMapping, intToEnum) {
+  // ALE and USGSCSM keep independent DistortionType enums; this pins the
+  // cross-library integer mapping for CASSIS.
+  DistortionType dt =
+      getDistortionModel(static_cast<int>(ale::DistortionType::CASSIS));
+  EXPECT_EQ(dt, DistortionType::CASSIS);
+}
