@@ -35,6 +35,9 @@ release.
 
 ## [Unreleased]
 
+### Fixed
+- Changed the default log level from `INFO` to `ERROR` so high-volume callers are not stalled by per-call logging in `groundToImage`/`imageToGround`. The level is still overridable with the `USGSCSM_LOG_LEVEL` environment variable. [#514](https://github.com/DOI-USGS/usgscsm/pull/514)
+
 ## [2.1.0] - 2026-06-09
 
 ### Added
