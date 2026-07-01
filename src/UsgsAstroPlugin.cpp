@@ -78,8 +78,8 @@ UsgsAstroPlugin::UsgsAstroPlugin() {
     std::string logLevelStr(logLevelPtr);
     usgscsm::logger::set_log_level(usgscsm::logger::level_from_string(logLevelStr));
   } else {
-    // Default to INFO level
-    usgscsm::logger::set_log_level(usgscsm::logger::INFO);
+    // Default to ERROR level to avoid printing very frequently.
+    usgscsm::logger::set_log_level(usgscsm::logger::ERROR);
   }
 }
 

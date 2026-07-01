@@ -718,8 +718,7 @@ set(USGSCSM_INCLUDE_DIRS "${USGSCSM_INCLUDE_DIRS}"
                          "${PROJ_INCLUDE_DIR}")
 
 # These will be copied upon installation to ${CMAKE_INSTALL_INCLUDEDIR}/include
-set(USGSCSM_INSTALL_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include/usgscsm"
-                                 "${CMAKE_CURRENT_SOURCE_DIR}/include/spdlog")
+set(USGSCSM_INSTALL_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include/usgscsm")
 
 target_include_directories(usgscsm
                            PUBLIC
