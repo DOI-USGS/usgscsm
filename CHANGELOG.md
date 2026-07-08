@@ -40,7 +40,7 @@ release.
 
 ### Fixed
 - Changed the default log level from `INFO` to `ERROR` so high-volume callers are not stalled by per-call logging in `groundToImage`/`imageToGround`. The level is still overridable with the `USGSCSM_LOG_LEVEL` environment variable. [#514](https://github.com/DOI-USGS/usgscsm/pull/514)
-- `cmake --install` now installs the `usgscsm` library on Windows, both `usgscsm.dll` and its import `.lib`. Added RUNTIME and ARCHIVE destinations to the install rule, which the previous `LIBRARY`-only tagging omitted on Windows. Unix behavior is unchanged. [#518](https://github.com/DOI-USGS/usgscsm/pull/518)
+- The Windows build now produces and installs the `usgscsm` import library alongside `usgscsm.dll`, and `usgscsm_cam_test` links against it. Enabled `WINDOWS_EXPORT_ALL_SYMBOLS` on the `usgscsm` target, and added RUNTIME and ARCHIVE destinations to its install rule, which the previous `LIBRARY`-only tagging omitted on Windows. Unix behavior is unchanged. [#518](https://github.com/DOI-USGS/usgscsm/pull/518)
 
 ## [2.1.0] - 2026-06-09
 
