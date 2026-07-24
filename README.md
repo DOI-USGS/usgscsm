@@ -177,24 +177,26 @@ For more information see: [ClangFormat](https://clang.llvm.org/docs/ClangFormat.
 To check for compliance, run: `cpplint file.cpp` and ignore errors in the list of exclusions above.
 For more information, see: [cpplint](https://github.com/cpplint/cpplint).
 
-## WebAssembly Support
+## WebAssembly Usage
+
+See [Astro Software Docs](https://astrogeology.usgs.gov/docs/getting-started/csm-stack/usgscsm-wasm-bindings/) for more details and examples.
 
 USGSCSM can be compiled to WebAssembly for use in web browsers and Node.js.
 
-### Installation
-
-**With jsDelivr:**
+### Option 1: Import from [jsDelivr](https://www.jsdelivr.com) CDN
 
 ```html
 <script type="module">
 
+  // Import from jsDelivr CDN
   import USGSCSM from 'https://cdn.jsdelivr.net/npm/@usgs-astrogeology/usgscsm/dist/usgscsm.js';
   
   const Module = await USGSCSM();
   const model = new Module.USGSCSMModel();
   
-  // Load camera model from ISD
-  const isdJson = await fetch('camera_model.json').then(r => r.text());
+  // Fetch an ISD JSON and Load camera model from it
+  // Try swapping out the URL with your own ISD JSON's URL
+  const isdJson = await fetch('https://cdn.jsdelivr.net/gh/DOI-USGS/usgscsm/tests/data/simpleFramerISD.json').then(r => r.text());
   model.loadFromISD(isdJson, 'USGS_ASTRO_FRAME_SENSOR_MODEL');
   
   // Transform coordinates
@@ -203,6 +205,23 @@ USGSCSM can be compiled to WebAssembly for use in web browsers and Node.js.
 </script>
 ```
 
+### Option 2: Installing with NPM
+
+```sh
+# In your terminal in the project folder:
+npm install @usgs-astrogeology/usgscsm
+```
+
+Then import in your javascript like this:
+
+```js
+import usgscsm from "@usgs-astrogeology/usgscsm/"
+```
+*You'll need a Module Bundler, like [Vite](https://vite.dev/guide/)*. 
+The rest is the same as above.
+
+### Option 3: Manually Download
+
 Or download files from [GitHub Releases](https://github.com/USGS-Astrogeology/usgscsm/releases):
 - `usgscsm.js` - JavaScript module
 - `usgscsm.wasm` - WebAssembly binary
@@ -210,7 +229,22 @@ Or download files from [GitHub Releases](https://github.com/USGS-Astrogeology/us
 
 **Note:** The WASM file (`usgscsm.wasm`) must be in the same directory as the JS file.
 
-### Building for WebAssembly
+### ⚠️ You need a Server
+
+Accessing a page with USGSCSM via `file://` won't work.  Webassembly execution requires running a server:
+
+```sh
+# If you used `npm create vite@latest` for your Module Bundler:
+npm run dev
+
+# OR
+
+# Python Server
+python3 -m http.server 8080
+```
+
+
+## Building for WebAssembly
 
 **Requirements:**
 - Emscripten 3.1.58 (compatible with Binaryen 117)
