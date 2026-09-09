@@ -788,10 +788,8 @@ TEST_F(OrbitalFrameSensorModel, ReferenceDateTime) {
 // 3 ms and check the string changes; on the old whole-second code it would not.
 TEST_F(OrbitalFrameSensorModel, ReferenceDateTimeKeepsSubSecond) {
   std::string dateA = sensorModel->getReferenceDateAndTime();
-  std::string state = sensorModel->getModelState();
-  size_t brace = state.find('{');
-  json j = json::parse(state.substr(brace));
+  json j = stateAsJson(sensorModel->getModelState());
   j["m_ephemerisTime"] = j["m_ephemerisTime"].get<double>() + 0.003;
-  sensorModel->replaceModelState(state.substr(0, brace) + j.dump());
+  sensorModel->replaceModelState(j.dump());
   EXPECT_NE(dateA, sensorModel->getReferenceDateAndTime());
 }

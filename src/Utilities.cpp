@@ -2658,7 +2658,7 @@ void applyRotationTranslationToXyzVec(ale::Rotation const& r, ale::Vec3d const& 
 /**
  * @description Converts SPICE ephemeris time (ET), given in seconds past
  * J2000 (January 1, 2000 12:00:00 TT), to a calendar time string formatted
- * as "YYYY-MM-DDTHH:MM:SS.mmmZ" in UTC (millisecond precision).
+ * as "YYYY-MM-DDTHH:MM:SS.ffffffZ" in UTC (microsecond precision).
  *
  * The conversion accounts for the 32.184 s offset between TT and TAI, and
  * for all leap seconds inserted between 1972 and 2017 (the most recent).
@@ -2666,7 +2666,7 @@ void applyRotationTranslationToXyzVec(ale::Rotation const& r, ale::Vec3d const& 
  * by international agreement (CGPM 2022, effective by 2035).
  *
  * @param ephemTime Seconds past J2000 TT epoch.
- * @return UTC calendar string "YYYY-MM-DDTHH:MM:SSZ".
+ * @return UTC calendar string "YYYY-MM-DDTHH:MM:SS.ffffffZ".
  */
 std::string ephemTimeToCalendarTime(double ephemTime) {
 
