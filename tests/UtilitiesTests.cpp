@@ -618,24 +618,24 @@ TEST(UtilitiesTests, stateAsJsonWithoutModel) {
 }
 
 TEST(UtilitiesTests, ephemTimeToCalendarTime) {
-  // Expected values verified against NAIF spiceypy.et2utc(et, 'ISOC', 3).
-  // Matches to the millisecond for all dates from 1972 onward.
+  // Expected values verified against NAIF spiceypy.et2utc(et, 'ISOC', 6).
+  // Matches to the microsecond for all dates from 1972 onward.
   // Pre-1972 dates may differ by ~1s because NAIF uses a continuous
   // formula while we use the discrete leap-second table.
   struct { double et; const char *expected; } cases[] = {
-    {-883656069.0, "1971-12-31T23:58:08.816Z"},
-    {-631152000.0, "1980-01-01T11:59:08.816Z"},
-    {-378691200.0, "1988-01-01T11:59:03.816Z"},
-    {-126230400.0, "1996-01-01T11:58:57.816Z"},
-    {         0.0, "2000-01-01T11:58:55.816Z"},
-    { 189388800.0, "2006-01-01T11:58:54.816Z"},
-    { 284040000.0, "2008-12-31T23:58:54.816Z"},
-    { 378691200.0, "2012-01-01T11:58:53.816Z"},
-    { 504921600.0, "2016-01-01T11:58:51.816Z"},
-    { 536457600.0, "2016-12-31T11:58:51.816Z"},
-    { 725846400.0, "2023-01-01T11:58:50.816Z"},
-    { 297088762.6, "2009-06-01T00:38:16.416Z"},
-    { 299622941.6, "2009-06-30T08:34:35.416Z"},
+    {-883656069.0, "1971-12-31T23:58:08.816000Z"},
+    {-631152000.0, "1980-01-01T11:59:08.816000Z"},
+    {-378691200.0, "1988-01-01T11:59:03.816000Z"},
+    {-126230400.0, "1996-01-01T11:58:57.816000Z"},
+    {         0.0, "2000-01-01T11:58:55.816000Z"},
+    { 189388800.0, "2006-01-01T11:58:54.816000Z"},
+    { 284040000.0, "2008-12-31T23:58:54.816000Z"},
+    { 378691200.0, "2012-01-01T11:58:53.816000Z"},
+    { 504921600.0, "2016-01-01T11:58:51.816000Z"},
+    { 536457600.0, "2016-12-31T11:58:51.816000Z"},
+    { 725846400.0, "2023-01-01T11:58:50.816000Z"},
+    { 297088762.6, "2009-06-01T00:38:16.416000Z"},
+    { 299622941.6, "2009-06-30T08:34:35.416000Z"},
   };
   for (auto &c : cases)
     EXPECT_STREQ(ephemTimeToCalendarTime(c.et).c_str(), c.expected);

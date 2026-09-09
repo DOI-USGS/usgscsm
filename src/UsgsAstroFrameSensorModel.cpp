@@ -1186,7 +1186,8 @@ std::string UsgsAstroFrameSensorModel::getSensorMode() const {
  */
 std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
   LOG_DEBUG( "Accessing reference data and time");
-  time_t ephemTime = m_ephemerisTime;
+  // Keep a double; a time_t cast would truncate the sub-second part.
+  double ephemTime = m_ephemerisTime;
 
   return ephemTimeToCalendarTime(ephemTime);
 }

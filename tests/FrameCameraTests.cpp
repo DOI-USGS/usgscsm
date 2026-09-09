@@ -780,5 +780,16 @@ TEST_F(FrameSensorModel, losEllipsoidIntersect) {
 
 TEST_F(OrbitalFrameSensorModel, ReferenceDateTime) {
   std::string date = sensorModel->getReferenceDateAndTime();
-  EXPECT_EQ(date, "2000-01-01T12:15:35.816Z");
+  EXPECT_EQ(date, "2000-01-01T12:15:35.816000Z");
+}
+
+// JunoCam framelets are a few milliseconds apart, so their reference times (which
+// ISIS turns into serial numbers) must stay distinct. Bump the ephemeris time by
+// 3 ms and check the string changes; on the old whole-second code it would not.
+TEST_F(OrbitalFrameSensorModel, ReferenceDateTimeKeepsSubSecond) {
+  std::string dateA = sensorModel->getReferenceDateAndTime();
+  json j = stateAsJson(sensorModel->getModelState());
+  j["m_ephemerisTime"] = j["m_ephemerisTime"].get<double>() + 0.003;
+  sensorModel->replaceModelState(j.dump());
+  EXPECT_NE(dateA, sensorModel->getReferenceDateAndTime());
 }
