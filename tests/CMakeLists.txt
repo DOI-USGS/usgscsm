@@ -66,18 +66,11 @@ if(WIN32)
 else()
   target_link_libraries(runCSMCameraModelTests usgscsm ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} pthread)
 endif()
-usgscsm_link_csm(runCSMCameraModelTests)
-
-# Skipped on Windows, where a DLL cannot leave csm symbols undefined, so the plugin
-# necessarily carries its own registry and this can never pass.
-if(NOT WIN32)
-  add_executable(pluginRegistryHost PluginRegistryHost.cpp)
-  target_include_directories(pluginRegistryHost PRIVATE ${CSM_INCLUDE_DIR})
-  target_link_libraries(pluginRegistryHost ${CMAKE_DL_LIBS})
-  usgscsm_link_csm(pluginRegistryHost)
-  add_test(NAME test_plugin_registers_with_host
-      COMMAND pluginRegistryHost $<TARGET_FILE:usgscsm>)
-endif()
+add_executable(pluginRegistryHost PluginRegistryHost.cpp)
+target_include_directories(pluginRegistryHost PRIVATE ${CSM_INCLUDE_DIR})
+target_link_libraries(pluginRegistryHost ${CSM_LIBRARY} ${CMAKE_DL_LIBS})
+add_test(NAME test_plugin_registers_with_host
+    COMMAND pluginRegistryHost $<TARGET_FILE:usgscsm>)
 
 # Test the test_usgscsm_cam_test program. Output files are written to build directory
 # with unique names to avoid race conditions during parallel test execution.

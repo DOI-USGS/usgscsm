@@ -72,20 +72,32 @@ set(USGSCSM_SRC_FILES src/UsgsAstroPlugin.cpp
 set(USGSCSM_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include/usgscsm"
                          "${CMAKE_CURRENT_SOURCE_DIR}/include"
                          "${CMAKE_CURRENT_SOURCE_DIR}"
-                         # Resolves submodule-relative includes, e.g. "csm/Plugin.h"
-                         "${CMAKE_CURRENT_SOURCE_DIR}/external"
 )
+
+################################################################################
+# CSM API
+################################################################################
+if(EMSCRIPTEN)
+  add_subdirectory(cmake/csm "${CMAKE_CURRENT_BINARY_DIR}/csm")
+  set(CSM_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external")
+  set(CSM_LIBRARY csmapi)
+else()
+  set(USGSCSM_CONDA_ROOTS "$ENV{CONDA_PREFIX}" "$ENV{CONDA_PREFIX}/Library"
+                          "$ENV{PREFIX}" "$ENV{LIBRARY_PREFIX}")
+  find_path(CSM_INCLUDE_DIR NAMES "csm/csm.h"
+                            HINTS ${USGSCSM_CONDA_ROOTS}
+                            PATH_SUFFIXES include
+                            REQUIRED)
+  find_library(CSM_LIBRARY NAMES csmapi
+                           HINTS ${USGSCSM_CONDA_ROOTS}
+                           PATH_SUFFIXES lib
+                           REQUIRED)
+  message(STATUS "Found CSM Library: ${CSM_LIBRARY}")
+  message(STATUS "Found CSM Include Directory: ${CSM_INCLUDE_DIR}")
+endif()
 
 if(USGSCSM_EXTERNAL_DEPS)
   message(STATUS "Using external dependencies")
-
-  # CSM API library
-  find_path(CSM_INCLUDE_DIR NAMES "csm/csm.h"
-                            PATHS $ENV{CONDA_PREFIX}/include/
-                            REQUIRED)
-  find_library(CSM_LIBRARY csmapi PATHS $ENV{CONDA_PREFIX}/lib REQUIRED)
-  message("-- Found CSM Library: ${CSM_LIBRARY}")
-  message("-- Found CSM Include Directory: ${CSM_INCLUDE_DIR}")
 
   # Nlohmann JSON
   find_package(nlohmann_json REQUIRED)
@@ -104,11 +116,6 @@ if(USGSCSM_EXTERNAL_DEPS)
 else()
   set(BUILD_SHARED_LIBS OFF)
   message(STATUS "Using embedded dependencies")
-  # CSM API library, built static (see cmake/csm).
-  add_subdirectory(cmake/csm "${CMAKE_CURRENT_BINARY_DIR}/csm")
-  # Same meaning as the find_path above: the dir that makes <csm/csm.h> resolve.
-  set(CSM_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external")
-  set(CSM_LIBRARY csmapi)
 
   # PROJ, for the projected sensor model, built for native and WASM alike.
   set(PROJ_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/PROJ")
@@ -767,42 +774,6 @@ set_target_properties(usgscsm PROPERTIES
     WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
 
-# csm::Plugin::theList is a static member, and discovery works by the plugin ctor
-# pushing itself into the *host's* copy. Linking csmapi into a dlopen'd plugin gives
-# it a private registry, so the host finds nothing. Leave the csm symbols undefined
-# and let the loader bind them to the host's copy -- which also keeps libcsmapi out
-# of the plugin's link list entirely. Windows DLLs cannot carry unresolved imports
-# and WASM has no host, so both link csmapi directly.
-if(EMSCRIPTEN OR WIN32)
-  set(USGSCSM_PLUGIN_LINKS_CSM ON)
-else()
-  set(USGSCSM_PLUGIN_LINKS_CSM OFF)
-endif()
-
-# Force-loads all of csmapi into an executable and exports it, so the plugin's
-# undefined csm symbols bind there and the process has exactly one registry. A no-op
-# where the plugin links csmapi itself: linking it here too would define every csm
-# symbol twice, once from the archive and once from libusgscsm (LNK2005 on MSVC).
-function(usgscsm_link_csm target)
-  if(USGSCSM_PLUGIN_LINKS_CSM)
-    return()
-  endif()
-  target_link_libraries(${target} ${CSM_LIBRARY})
-  if(NOT TARGET csmapi)
-    return()
-  endif()
-  set_target_properties(${target} PROPERTIES ENABLE_EXPORTS ON)
-  if(APPLE)
-    target_link_options(${target} PRIVATE
-                        "LINKER:-force_load,$<TARGET_FILE:csmapi>"
-                        "LINKER:-export_dynamic")
-  else()
-    target_link_options(${target} PRIVATE
-                        "LINKER:--whole-archive" "$<TARGET_FILE:csmapi>"
-                        "LINKER:--no-whole-archive")
-  endif()
-endfunction()
-
 set(USGSCSM_INCLUDE_DIRS "${USGSCSM_INCLUDE_DIRS}"
                          "${EIGEN3_INCLUDE_DIR}"
                          "${PROJ_INCLUDE_DIR}")
@@ -881,28 +852,33 @@ target_link_libraries(usgscsm
                       PRIVATE
                       ${PROJ_TARGET})
 
-# Matches how the host's csmapi was compiled; normally arrives via the csmapi target.
+# Matches how csmapi itself was compiled, so csm.h agrees on its dllimport/visibility
+# decorations either side of the boundary.
 target_compile_definitions(usgscsm PUBLIC $<$<PLATFORM_ID:Linux>:LINUX_BUILD>)
-if(USGSCSM_PLUGIN_LINKS_CSM)
-  # PRIVATE, so a DLL absorbs csmapi and consumers resolve csm through usgscsm.lib
-  # alone. A static libusgscsm still propagates it for linking via $<LINK_ONLY>.
-  target_link_libraries(usgscsm PRIVATE ${CSM_LIBRARY})
-elseif(APPLE)
-  target_link_options(usgscsm PRIVATE "LINKER:-undefined,dynamic_lookup")
+
+# PUBLIC: the tools and tests name csm types directly, and every consumer must bind
+# to the same csmapi this plugin does.
+target_link_libraries(usgscsm PUBLIC ${CSM_LIBRARY})
+
+if(APPLE)
+  set(USGSCSM_TOOL_ORIGIN "@loader_path")
+else()
+  set(USGSCSM_TOOL_ORIGIN "$ORIGIN")
+endif()
+
+if(NOT WIN32)
+  set_target_properties(usgscsm PROPERTIES
+                        INSTALL_RPATH "${USGSCSM_TOOL_ORIGIN}/..")
 endif()
 
 # Points an installed executable at libusgscsm in csmplugins/, which is not a
-# directory the loader searches by default.
-if(APPLE)
-  set(USGSCSM_TOOL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR}/csmplugins")
-else()
-  set(USGSCSM_TOOL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}/csmplugins")
-endif()
+# directory the loader searches by default, and at libcsmapi one level up in libdir.
+set(USGSCSM_TOOL_RPATH "${USGSCSM_TOOL_ORIGIN}/../${CMAKE_INSTALL_LIBDIR}/csmplugins"
+                       "${USGSCSM_TOOL_ORIGIN}/../${CMAKE_INSTALL_LIBDIR}")
 
 function(usgscsm_add_tool target source)
   add_executable(${target} ${source})
   target_link_libraries(${target} usgscsm)
-  usgscsm_link_csm(${target})
   set_target_properties(${target} PROPERTIES INSTALL_RPATH "${USGSCSM_TOOL_RPATH}")
   install(TARGETS ${target} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endfunction()

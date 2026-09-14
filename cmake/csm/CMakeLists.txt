@@ -1,6 +1,7 @@
 # Static CSM API from the pristine submodule at external/csm, whose own CMakeLists
-# hardcodes SHARED. Consumed by the executables and the WASM module, NOT by the
-# dlopen'd plugin -- see the csm::Plugin::theList note in the root CMakeLists.
+# hardcodes SHARED. WASM only: a browser has no loader to share a csmapi through, so
+# the module must carry its own. Native builds take the shared csmapi from conda
+# instead -- see the csm::Plugin::theList note in the root CMakeLists.
 
 cmake_minimum_required(VERSION 3.10)
 
