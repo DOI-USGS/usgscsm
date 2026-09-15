@@ -1,5 +1,7 @@
 #include "Utilities.h"
 
+#include "Logging.h"
+
 #include <csm/Error.h>
 #include <cmath>
 #include <stack>
@@ -2848,10 +2850,17 @@ VariantMap variantMapFromJson(const nlohmann::json& j) {
         result.set<std::vector<double>>(key, it->get<std::vector<double>>());
       } else if ((*it)[0].is_string()) {
         result.set<std::vector<std::string>>(key, it->get<std::vector<std::string>>());
+      } else {
+        // Arrays of objects or of arrays are dropped: a VariantMap cannot hold
+        // them, and stuffing in their serialized text would come back out of
+        // jsonFromVariantMap() as strings rather than the structure it was.
+        LOG_DEBUG("variantMapFromJson dropping key '{}': array of {}", key,
+                  (*it)[0].type_name());
       }
-      // Arrays of objects or of arrays are dropped: a VariantMap cannot hold
-      // them, and stuffing in their serialized text would come back out of
-      // jsonFromVariantMap() as strings rather than the structure it was.
+    } else {
+      // Objects and nulls have no VariantMap equivalent either.
+      LOG_DEBUG("variantMapFromJson dropping key '{}': unsupported type {}", key,
+                it->type_name());
     }
   }
 
