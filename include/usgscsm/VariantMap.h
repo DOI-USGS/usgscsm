@@ -44,6 +44,7 @@ public:
     Bool,
     VectorDouble,
     VectorInt,
+    VectorString,
     Unknown
   };
 
@@ -73,6 +74,7 @@ template<> void VariantMap::set<double>(const std::string& key, const double& va
 template<> void VariantMap::set<bool>(const std::string& key, const bool& value);
 template<> void VariantMap::set<std::vector<double>>(const std::string& key, const std::vector<double>& value);
 template<> void VariantMap::set<std::vector<int>>(const std::string& key, const std::vector<int>& value);
+template<> void VariantMap::set<std::vector<std::string>>(const std::string& key, const std::vector<std::string>& value);
 
 template<> std::string VariantMap::get<std::string>(const std::string& key) const;
 template<> int VariantMap::get<int>(const std::string& key) const;
@@ -80,6 +82,7 @@ template<> double VariantMap::get<double>(const std::string& key) const;
 template<> bool VariantMap::get<bool>(const std::string& key) const;
 template<> std::vector<double> VariantMap::get<std::vector<double>>(const std::string& key) const;
 template<> std::vector<int> VariantMap::get<std::vector<int>>(const std::string& key) const;
+template<> std::vector<std::string> VariantMap::get<std::vector<std::string>>(const std::string& key) const;
 
 template<> std::string VariantMap::get<std::string>(const std::string& key, const std::string& defaultValue) const;
 template<> int VariantMap::get<int>(const std::string& key, const int& defaultValue) const;
@@ -87,5 +90,6 @@ template<> double VariantMap::get<double>(const std::string& key, const double& 
 template<> bool VariantMap::get<bool>(const std::string& key, const bool& defaultValue) const;
 template<> std::vector<double> VariantMap::get<std::vector<double>>(const std::string& key, const std::vector<double>& defaultValue) const;
 template<> std::vector<int> VariantMap::get<std::vector<int>>(const std::string& key, const std::vector<int>& defaultValue) const;
+template<> std::vector<std::string> VariantMap::get<std::vector<std::string>>(const std::string& key, const std::vector<std::string>& defaultValue) const;
 
 #endif

@@ -1,5 +1,7 @@
 #include "Utilities.h"
 
+#include "Logging.h"
+
 #include <csm/Error.h>
 #include <cmath>
 #include <stack>
@@ -11,6 +13,45 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#endif
+
+#ifdef USGSCSM_ENABLE_STARDS
+// stards.h re-#includes these inside `namespace star`, which makes libstdc++
+// parse e.g. std::optional as star::std::optional. Including them here first
+// makes those re-includes no-ops. TODO: hoist them upstream and drop this shim.
+#include <chrono>
+#include <ctime>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <memory>
+#include <optional>
+#include <sstream>
+#include <streambuf>
+#include <string>
+#include <tuple>
+#include <vector>
+#ifndef _WIN32
+#include <dirent.h>
+#endif
+#ifdef ENABLE_CURL
+// curl.h reaches <windows.h>, whose min/max macros break std::min/std::max in
+// stards.h. Also set on the usgscsm_stards target; kept here for standalone use.
+#ifdef _WIN32
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  ifndef NOMINMAX
+#    define NOMINMAX
+#  endif
+#endif
+#include <curl/curl.h>
+#endif
+#ifdef ENABLE_S3
+#include <openssl/hmac.h>
+#include <openssl/sha.h>
+#endif
+#include "stards.h"
 #endif
 
 #include "ale/Distortion.h"
@@ -1571,7 +1612,7 @@ std::vector<double> getFocal2PixelSamples(json isd, csm::WarningList *list) {
  * cannot be found or parsed from the ISD.
  */
 double getDetectorCenterLine(json isd, csm::WarningList *list) {
-  double line;
+  double line = 0.0;
   try {
     line = isd.at("detector_center").at("line");
   } catch (...) {
@@ -1596,7 +1637,7 @@ double getDetectorCenterLine(json isd, csm::WarningList *list) {
  * sample cannot be found or parsed from the ISD.
  */
 double getDetectorCenterSample(json isd, csm::WarningList *list) {
-  double sample;
+  double sample = 0.0;
   try {
     sample = isd.at("detector_center").at("sample");
   } catch (...) {
@@ -1623,7 +1664,7 @@ double getDetectorCenterSample(json isd, csm::WarningList *list) {
  * starting line cannot be found or parsed from the ISD.
  */
 double getDetectorStartingLine(json isd, csm::WarningList *list) {
-  double line;
+  double line = 0.0;
   try {
     line = isd.at("starting_detector_line");
   } catch (...) {
@@ -1650,7 +1691,7 @@ double getDetectorStartingLine(json isd, csm::WarningList *list) {
  * starting sample cannot be found or parsed from the ISD.
  */
 double getDetectorStartingSample(json isd, csm::WarningList *list) {
-  double sample;
+  double sample = 0.0;
   try {
     sample = isd.at("starting_detector_sample");
   } catch (...) {
@@ -2336,7 +2377,7 @@ std::vector<double> getSensorOrientations(json isd, csm::WarningList *list) {
  * parsed, 0.0 is returned.
  */
 double getExposureDuration(nlohmann::json isd, csm::WarningList *list) {
-  double duration;
+  double duration = 0.0;
   try {
     duration = isd.at("line_exposure_duration");
   } catch (...) {
@@ -2364,7 +2405,7 @@ double getExposureDuration(nlohmann::json isd, csm::WarningList *list) {
  * 0.0 is returned.
  */
 double getScaledPixelWidth(nlohmann::json isd, csm::WarningList *list) {
-  double width;
+  double width = 0.0;
   try {
     width = isd.at("scaled_pixel_width");
   } catch (...) {
@@ -2496,7 +2537,7 @@ double getWavelength(json isd, csm::WarningList *list) {
 }
 
 /**
- * @description Converts a model state string into a JSON object. This function 
+ * @description Converts a model state string into a JSON object. This function
  * first sanitizes the input string by removing non-printable characters and 
  * then parses the string from the first occurrence of "{" to the last 
  * occurrence of "}" into a JSON object.
@@ -2521,32 +2562,53 @@ json stateAsJson(std::string modelState) {
 }
 
 /**
- * @brief Check if a file is in msgpack binary format by peeking at the first byte.
- * @description Per the msgpack spec (github.com/msgpack/msgpack/blob/master/spec.md),
- * a map object starts with 0x80-0x8F (fixmap), 0xDE (map16), or 0xDF (map32).
- * JSON starts with '{' (0x7B), so there is no ambiguity.
+ * @brief Identify a serialization format from the leading bytes of a file's content.
+ * @description A STARDS file opens with the ASCII magic "STARDS". A msgpack model
+ * state is a map, which per the msgpack spec
+ * (github.com/msgpack/msgpack/blob/master/spec.md) opens with 0x80-0x8F (fixmap),
+ * 0xDE (map16), or 0xDF (map32). JSON opens with '{' (0x7B) and a .sup with a text
+ * preamble, so neither collides with the binary cases.
  *
- * @param filename The path to the file to check.
- * @return True if the file starts with a msgpack map byte, false otherwise.
+ * @param bytes The file content, or at least its first 6 bytes.
+ * @return The detected format; Unknown only for empty input.
  */
-bool isMsgpack(std::string const& filename) {
+ModelFormat modelFormatFromBytes(const std::string& bytes) {
+  if (bytes.empty()) {
+    return ModelFormat::Unknown;
+  }
+  if (bytes.size() >= 6 && bytes.compare(0, 6, "STARDS") == 0) {
+    return ModelFormat::Stards;
+  }
+  const uint8_t b0 = static_cast<uint8_t>(bytes[0]);
+  if ((b0 >= 0x80 && b0 <= 0x8F) || b0 == 0xDE || b0 == 0xDF) {
+    return ModelFormat::Msgpack;
+  }
+  return ModelFormat::Text;
+}
+
+/**
+ * @brief Identify a file's serialization format by peeking at its leading bytes.
+ * @param filename The path to the file to check.
+ * @return The detected format, or Unknown if the file cannot be read.
+ */
+ModelFormat modelFormatOfFile(std::string const& filename) {
 #ifdef __EMSCRIPTEN__
   // In WebAssembly, check if file exists in virtual filesystem first
   bool exists = EM_ASM_INT({
     return FS.analyzePath(UTF8ToString($0)).exists;
   }, filename.c_str());
   if (!exists) {
-    return false;
+    return ModelFormat::Unknown;
   }
 #endif
 
   std::ifstream ifs(filename, std::ios::binary);
   if (!ifs.is_open()) {
-    return false;
+    return ModelFormat::Unknown;
   }
-  uint8_t b = 0;
-  ifs.read(reinterpret_cast<char*>(&b), 1);
-  return (b >= 0x80 && b <= 0x8F) || b == 0xDE || b == 0xDF;
+  char magic[6] = {0};
+  ifs.read(magic, sizeof(magic));
+  return modelFormatFromBytes(std::string(magic, ifs.gcount()));
 }
 
 /**
@@ -2786,11 +2848,58 @@ VariantMap variantMapFromJson(const nlohmann::json& j) {
         result.set<std::vector<int>>(key, it->get<std::vector<int>>());
       } else if ((*it)[0].is_number()) {
         result.set<std::vector<double>>(key, it->get<std::vector<double>>());
+      } else if ((*it)[0].is_string()) {
+        result.set<std::vector<std::string>>(key, it->get<std::vector<std::string>>());
+      } else {
+        // Arrays of objects or of arrays are dropped: a VariantMap cannot hold
+        // them, and stuffing in their serialized text would come back out of
+        // jsonFromVariantMap() as strings rather than the structure it was.
+        LOG_DEBUG("variantMapFromJson dropping key '{}': array of {}", key,
+                  (*it)[0].type_name());
       }
+    } else {
+      // Objects and nulls have no VariantMap equivalent either.
+      LOG_DEBUG("variantMapFromJson dropping key '{}': unsupported type {}", key,
+                it->type_name());
     }
   }
 
   return result;
+}
+
+static csm::param::Type parameterTypeFromName(const std::string& name) {
+  if (name == "NONE") return csm::param::NONE;
+  if (name == "FICTITIOUS") return csm::param::FICTITIOUS;
+  if (name == "FIXED") return csm::param::FIXED;
+  // Anything unrecognized falls back to REAL, which is what every model
+  // defaults to anyway, so an odd name degrades instead of throwing.
+  return csm::param::REAL;
+}
+
+std::vector<csm::param::Type> parameterTypesFromState(const VariantMap& state,
+                                                      const std::string& key) {
+  std::vector<csm::param::Type> types;
+  if (!state.contains(key)) {
+    return types;
+  }
+
+  switch (state.getValueType(key)) {
+    case VariantMap::ValueType::VectorString:
+      for (const std::string& name : state.get<std::vector<std::string>>(key)) {
+        types.push_back(parameterTypeFromName(name));
+      }
+      break;
+    case VariantMap::ValueType::String:
+      types.push_back(parameterTypeFromName(state.get<std::string>(key)));
+      break;
+    default:
+      for (int value : state.get<std::vector<int>>(key)) {
+        types.push_back(static_cast<csm::param::Type>(value));
+      }
+      break;
+  }
+
+  return types;
 }
 
 nlohmann::json jsonFromVariantMap(const VariantMap& vm) {
@@ -2816,6 +2925,9 @@ nlohmann::json jsonFromVariantMap(const VariantMap& vm) {
       case VariantMap::ValueType::VectorInt:
         result[key] = vm.get<std::vector<int>>(key);
         break;
+      case VariantMap::ValueType::VectorString:
+        result[key] = vm.get<std::vector<std::string>>(key);
+        break;
       default:
         throw std::runtime_error("Unknown type for key: " + key);
     }
@@ -2827,9 +2939,7 @@ nlohmann::json jsonFromVariantMap(const VariantMap& vm) {
 #include "UsgsAstroFrameSensorModel.h"
 #include "UsgsAstroLsSensorModel.h"
 #include "UsgsAstroPushFrameSensorModel.h"
-#ifndef __EMSCRIPTEN__
 #include "UsgsAstroProjectedSensorModel.h"
-#endif
 #include "UsgsAstroSarSensorModel.h"
 
 csm::RasterGM *getUsgsCsmModelFromIsd(
@@ -2930,12 +3040,10 @@ csm::RasterGM *getUsgsCsmModelFromVariantMap(const VariantMap &vm, const std::st
     UsgsAstroLsSensorModel *model = new UsgsAstroLsSensorModel();
     model->populateModel(vm);
     return model;
-#ifndef __EMSCRIPTEN__
   } else if (modelName == UsgsAstroProjectedSensorModel::_SENSOR_MODEL_NAME) {
     UsgsAstroProjectedSensorModel *model = new UsgsAstroProjectedSensorModel();
     model->populateModel(vm);
     return model;
-#endif
   } else if (modelName == UsgsAstroPushFrameSensorModel::_SENSOR_MODEL_NAME) {
     UsgsAstroPushFrameSensorModel *model = new UsgsAstroPushFrameSensorModel();
     model->populateModel(vm);
@@ -2962,10 +3070,8 @@ std::string getUsgsCsmModelJson(csm::RasterGM *model) {
     return pf->getModelJson();
   if (auto *sar = dynamic_cast<UsgsAstroSarSensorModel*>(model))
     return sar->getModelJson();
-#ifndef __EMSCRIPTEN__
   if (auto *proj = dynamic_cast<UsgsAstroProjectedSensorModel*>(model))
     return proj->getModelJson();
-#endif
   csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
   std::string aMessage = "Unsupported model type in getUsgsCsmModelJson()";
   std::string aFunction = "getUsgsCsmModelJson()";
@@ -2982,10 +3088,8 @@ VariantMap getUsgsCsmModelMap(csm::RasterGM *model) {
     return pf->getModelMap();
   if (auto *sar = dynamic_cast<UsgsAstroSarSensorModel*>(model))
     return sar->getModelMap();
-#ifndef __EMSCRIPTEN__
   if (auto *proj = dynamic_cast<UsgsAstroProjectedSensorModel*>(model))
     return proj->getModelMap();
-#endif
   csm::Error::ErrorType aErrorType = csm::Error::SENSOR_MODEL_NOT_SUPPORTED;
   std::string aMessage = "Unsupported model type in getUsgsCsmModelMap()";
   std::string aFunction = "getUsgsCsmModelMap()";
@@ -3053,3 +3157,186 @@ bool isUsgsCsmState(const std::string &str, std::string &modelName) {
   return !modelName.empty();
 
 }
+
+#ifdef USGSCSM_ENABLE_STARDS
+
+namespace {
+
+// STARDS stores everything as an NDArray, so a scalar and a 1-element array are
+// indistinguishable coming back out. Metadata entries report their true element
+// count; array-namespace entries are multi-element by construction.
+enum class StardsArity { Scalar, Vector };
+
+// as<T>()/get<T>() require the exact stored element type, so read at the concrete
+// width StoredT and widen to Target -- the VariantMap's int or double.
+template <typename Target, typename StoredT, typename ArrayLike>
+void setNumericFrom(VariantMap &vm, const std::string &key, const ArrayLike &src,
+                    StardsArity arity) {
+  const star::NDArray<StoredT> arr = src.template as<StoredT>();
+  if (arity == StardsArity::Scalar) {
+    vm.set<Target>(key, static_cast<Target>(arr.flat(0)));
+    return;
+  }
+  std::vector<Target> vals;
+  vals.reserve(arr.data().size());
+  for (StoredT v : arr.data()) vals.push_back(static_cast<Target>(v));
+  vm.set<std::vector<Target>>(key, vals);
+}
+
+template <typename ArrayLike>
+void setFromStards(VariantMap &vm, const std::string &key, star::DataType dtype,
+                   StardsArity arity, const ArrayLike &src) {
+  switch (dtype) {
+    case star::DataType::STRING: {
+      const star::NDArray<std::string> arr = src.template as<std::string>();
+      if (arity == StardsArity::Scalar) vm.set<std::string>(key, arr.flat(0));
+      else vm.set<std::vector<std::string>>(key, arr.data());
+      break;
+    }
+    case star::DataType::FLOAT32: setNumericFrom<double, float>(vm, key, src, arity); break;
+    case star::DataType::FLOAT64: setNumericFrom<double, double>(vm, key, src, arity); break;
+    case star::DataType::INT8:    setNumericFrom<int, int8_t>(vm, key, src, arity); break;
+    case star::DataType::INT16:   setNumericFrom<int, int16_t>(vm, key, src, arity); break;
+    case star::DataType::INT32:   setNumericFrom<int, int32_t>(vm, key, src, arity); break;
+    case star::DataType::INT64:   setNumericFrom<int, int64_t>(vm, key, src, arity); break;
+    case star::DataType::UINT8:   setNumericFrom<int, uint8_t>(vm, key, src, arity); break;
+    case star::DataType::UINT16:  setNumericFrom<int, uint16_t>(vm, key, src, arity); break;
+    case star::DataType::UINT32:  setNumericFrom<int, uint32_t>(vm, key, src, arity); break;
+    case star::DataType::UINT64:  setNumericFrom<int, uint64_t>(vm, key, src, arity); break;
+    default: break;  // Unknown dtype: skip.
+  }
+}
+
+// Lets an array-namespace key be read through the metadata as<T>() interface.
+struct ArrayNamespaceSource {
+  star::StarDataset &ds;
+  const std::string &key;
+  template <typename T> star::NDArray<T> as() const { return ds.get<T>(key); }
+};
+
+template <typename StoredT>
+void storeStards(star::StarDataset &ds, const std::string &key,
+                 std::vector<StoredT> data, size_t arrayThreshold) {
+  const std::vector<size_t> shape{data.size()};
+  star::NDArray<StoredT> arr(std::move(data), shape);
+  if (arr.size() > arrayThreshold) {
+    ds.put(key, std::move(arr));
+  } else {
+    ds.meta.put(key, arr);
+  }
+}
+
+star::CompressionAlgorithm parseStardsCompression(const std::string &name) {
+  if (name == "none")         return star::CompressionAlgorithm::NONE;
+  if (name == "gzip")         return star::CompressionAlgorithm::GZIP;
+  if (name == "zstd")         return star::CompressionAlgorithm::ZSTD;
+  if (name == "lz4")          return star::CompressionAlgorithm::LZ4;
+  if (name == "gzip-shuffle") return star::CompressionAlgorithm::GZIP_SHUFFLE;
+  if (name == "lz4-shuffle")  return star::CompressionAlgorithm::LZ4_SHUFFLE;
+  throw csm::Error(csm::Error::INVALID_USE,
+                   "Unknown STARDS compression '" + name +
+                       "' (expected none, gzip, zstd, lz4, gzip-shuffle, "
+                       "lz4-shuffle)",
+                   "variantMapToStards");
+}
+
+}  // namespace
+
+// STARDS keys map 1-to-1 onto CSM state keys, so no ISD translation is needed.
+VariantMap variantMapFromStards(const std::string &path) {
+  VariantMap vm;
+
+  std::shared_ptr<star::StarDataset> ds;
+  try {
+    ds = star::StarDataset::open(path, "r");
+  } catch (const std::exception &e) {
+    throw csm::Error(csm::Error::FILE_READ,
+                     "Could not open STARDS file [" + path + "]: " + e.what(),
+                     "variantMapFromStards");
+  }
+
+  // Metadata namespace: scalars and small arrays.
+  for (const std::string &key : ds->get_metadata_keys()) {
+    std::shared_ptr<star::MetadataValue> mv = ds->meta.get(key);
+    if (mv) {
+      setFromStards(vm, key, mv->dtype,
+                    mv->size() == 1 ? StardsArity::Scalar : StardsArity::Vector,
+                    *mv);
+    }
+  }
+
+  // Array namespace: only values over the array threshold land here.
+  for (const std::string &key : ds->get_all_keys()) {
+    ArrayNamespaceSource src{*ds, key};
+    setFromStards(vm, key, ds->dtype_of(key), StardsArity::Vector, src);
+  }
+
+  return vm;
+}
+
+csm::RasterGM *getUsgsCsmModelFromStards(const std::string &path,
+                                         csm::WarningList *warnings) {
+  VariantMap vm = variantMapFromStards(path);
+  std::string modelName = vm.get<std::string>("m_modelName", std::string());
+  if (modelName.empty()) {
+    throw csm::Error(csm::Error::INVALID_SENSOR_MODEL_STATE,
+                     "STARDS file [" + path + "] has no m_modelName key",
+                     "getUsgsCsmModelFromStards");
+  }
+  return getUsgsCsmModelFromVariantMap(vm, modelName, warnings);
+}
+
+void variantMapToStards(const VariantMap &vm, const std::string &path,
+                        const std::string &compression, size_t blockSize,
+                        size_t arrayThreshold) {
+  star::StarConfig config;
+  config.compression = parseStardsCompression(compression);
+  config.metadata_compression = star::base_compression(config.compression);
+  config.block_size = blockSize;
+  std::shared_ptr<star::StarDataset> ds = star::StarDataset::create(path, config);
+
+  // int64_t and double are the only numeric widths written; STARDS has no bool
+  // dtype, so bools go out as 0/1 ints, matching star_translate.
+  for (const std::string &key : vm.keys()) {
+    switch (vm.getValueType(key)) {
+      case VariantMap::ValueType::String:
+        storeStards<std::string>(*ds, key, {vm.get<std::string>(key)}, arrayThreshold);
+        break;
+      case VariantMap::ValueType::Int:
+        storeStards<int64_t>(*ds, key, {vm.get<int>(key)}, arrayThreshold);
+        break;
+      case VariantMap::ValueType::Bool:
+        storeStards<int64_t>(*ds, key, {vm.get<bool>(key) ? 1 : 0}, arrayThreshold);
+        break;
+      case VariantMap::ValueType::Double:
+        storeStards<double>(*ds, key, {vm.get<double>(key)}, arrayThreshold);
+        break;
+      case VariantMap::ValueType::VectorInt: {
+        const std::vector<int> v = vm.get<std::vector<int>>(key);
+        storeStards<int64_t>(*ds, key, {v.begin(), v.end()}, arrayThreshold);
+        break;
+      }
+      case VariantMap::ValueType::VectorDouble:
+        storeStards<double>(*ds, key, vm.get<std::vector<double>>(key), arrayThreshold);
+        break;
+      case VariantMap::ValueType::VectorString:
+        storeStards<std::string>(*ds, key, vm.get<std::vector<std::string>>(key),
+                                 arrayThreshold);
+        break;
+      default:
+        throw csm::Error(csm::Error::INVALID_USE,
+                         "Cannot write key '" + key +
+                             "' to STARDS: unknown value type",
+                         "variantMapToStards");
+    }
+  }
+}
+
+void writeUsgsCsmModelToStards(csm::RasterGM *model, const std::string &path,
+                               const std::string &compression, size_t blockSize,
+                               size_t arrayThreshold) {
+  variantMapToStards(getUsgsCsmModelMap(model), path, compression, blockSize,
+                     arrayThreshold);
+}
+
+#endif  // USGSCSM_ENABLE_STARDS

@@ -41,8 +41,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
-const std::string UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME =
-    "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL";
 const int UsgsAstroLsSensorModel::NUM_PARAMETERS = 16;
 const std::string UsgsAstroLsSensorModel::PARAMETER_NAME[] = {
     "IT Pos. Bias   ",  //  0 - "In Track Position Bias" - a constant shift in the spacecraft's position parallel to the flight path 
@@ -271,12 +269,10 @@ void UsgsAstroLsSensorModel::populateModel(const VariantMap& state) {
   m_sunPosition = state.get<std::vector<double>>("m_sunPosition");
   m_sunVelocity = state.get<std::vector<double>>("m_sunVelocity");
 
-  if (state.contains("m_parameterType")) {
-    auto paramTypeInts = state.get<std::vector<int>>("m_parameterType");
-    m_parameterType.resize(paramTypeInts.size());
-    for (size_t i = 0; i < paramTypeInts.size(); ++i) {
-      m_parameterType[i] = static_cast<csm::param::Type>(paramTypeInts[i]);
-    }
+  std::vector<csm::param::Type> paramTypes =
+      parameterTypesFromState(state, "m_parameterType");
+  if (!paramTypes.empty()) {
+    m_parameterType = paramTypes;
   }
 
   // If computed state values are still default, then compute them
@@ -3126,8 +3122,10 @@ VariantMap UsgsAstroLsSensorModel::constructStateFromIsd(
       "m_maxElevation: {}",
       state["m_minElevation"].dump(), state["m_maxElevation"].dump());
 
-  // Default parameter types to REAL
-  state["m_parameterType"] = std::vector<std::string>(NUM_PARAMETERS, "REAL");
+  // Written as ints so the value survives msgpack and STARDS unchanged. Older
+  // states hold the type names instead; parameterTypesFromState reads both.
+  state["m_parameterType"] =
+      std::vector<int>(NUM_PARAMETERS, static_cast<int>(csm::param::REAL));
 
   // Default to identity covariance
   state["m_covariance"] =

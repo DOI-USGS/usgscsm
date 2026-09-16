@@ -262,18 +262,26 @@ conda activate usgscsm
 conda install -c conda-forge emscripten=3.1.58
 
 # Configure and build
-mkdir wasmbuild && cd wasmbuild
+mkdir build-wasm && cd build-wasm
 emcmake cmake ..
 emmake make
 
-# Output files are in wasmbuild/dist/
+# Output files are in build-wasm/dist/
 ls -lh dist/
 ```
 
-**Output files** (in `wasmbuild/dist/`):
-- `usgscsm.js` - JavaScript glue code (~123 KB, 30 KB gzipped)
-- `usgscsm.wasm` - WebAssembly binary (~911 KB, 254 KB gzipped)
+STARDS support is compiled in for WebAssembly as local-file (zlib + lz4) only;
+the HTTP (`/vsicurl/`) and S3 (`/vsis3/`) remote-read paths are disabled since a
+browser sandbox cannot use them. zlib is provided by the Emscripten `USE_ZLIB`
+port. STARDS can be turned off entirely with `-DUSGSCSM_ENABLE_STARDS=OFF`.
+
+**Output files** (in `build-wasm/dist/`):
+- `usgscsm.js` - JavaScript glue code (~140 KB)
+- `usgscsm.wasm` - WebAssembly binary (~12 MB, ~3 MB gzipped; includes PROJ and
+  the embedded proj.db)
 - `usgscsm.d.ts` - TypeScript definitions
+
+Serve the `.wasm` with gzip or brotli compression enabled.
 
 **Advanced Build Options:**
 ```bash
@@ -283,13 +291,94 @@ emcmake cmake .. -DUSGSCSM_WASM_DEBUG=ON
 # Disable optimization (faster build, larger binary)
 emcmake cmake .. -DUSGSCSM_WASM_OPTIMIZE=OFF
 
+# Build without STARDS support (smaller binary)
+emcmake cmake .. -DUSGSCSM_ENABLE_STARDS=OFF
+
 # Build with tests (requires googletest)
 emcmake cmake .. -DUSGSCSM_BUILD_TESTS=ON
 ```
 
-**Testing:**
+**Testing the WASM module (Node.js):**
+
+The repository includes a JS test suite for the WebAssembly bindings under
+`tests/wasm/`. It uses Node's built-in test runner (`node:test`), so it needs no
+extra dependencies. After building, run it from the repo root:
+
 ```bash
 npm test
+```
+
+`npm test` runs `node --test tests/wasm/*.test.mjs` (Node 18+; the tests use ESM
+and top-level `await`). The suite locates the built module automatically,
+checking `build-wasm/dist/`, `wasmbuild/dist/`, `build/dist/`, then `dist/`. If
+your build directory differs, point it at the module explicitly:
+
+```bash
+USGSCSM_WASM=/path/to/build/dist/usgscsm.js npm test
+```
+
+You can also load the ES module in Node directly and
+exercise the model API. From the build directory (`wasmbuild/`), the outputs are
+in `dist/`. Create a small ES-module script:
+
+```javascript
+// wasm_smoke.mjs
+import fs from 'fs';
+import USGSCSM from './dist/usgscsm.js';
+
+const Module = await USGSCSM();
+const model = new Module.USGSCSMModel();
+
+// Load a model from an ISD (or a serialized state with loadFromState).
+const isd = fs.readFileSync('model.json', 'utf8');
+if (!model.loadFromISD(isd, 'USGS_ASTRO_FRAME_SENSOR_MODEL')) {
+  throw new Error('failed to load model');
+}
+console.log('model:', model.getModelName());
+
+// Round-trip a coordinate: image -> ground -> image.
+const ground = model.imageToGround(8.0, 8.0, 0.0);
+const pixel = model.groundToImage(ground.x, ground.y, ground.z);
+console.log('ground:', ground, 'pixel:', pixel);
+```
+
+Run it with Node (18+; the module uses ESM and top-level `await`):
+
+```bash
+node wasm_smoke.mjs
+```
+
+You can generate a model state from an ISD with the native `usgscsm_cam_test`
+tool (`--output-model-state`), or with `csm_translate`.
+
+**Testing the WASM module (browser):** WebAssembly cannot be loaded over
+`file://`, so serve the build output and load it from a page. Save this next to
+`dist/` in your build directory:
+
+```html
+<!DOCTYPE html>
+<meta charset="utf-8">
+<pre id="out">Loading...</pre>
+<script type="module">
+  import USGSCSM from './dist/usgscsm.js';
+
+  const Module = await USGSCSM();
+  const model = new Module.USGSCSMModel();
+
+  const isd = await fetch('model.json').then(r => r.text());
+  model.loadFromISD(isd, 'USGS_ASTRO_FRAME_SENSOR_MODEL');
+
+  const ground = model.imageToGround(8, 8, 0);
+  const pixel = model.groundToImage(ground.x, ground.y, ground.z);
+  out.textContent = JSON.stringify({ ground, pixel }, null, 2);
+</script>
+```
+
+Then serve that directory and open the page:
+
+```bash
+cd build-wasm && python3 -m http.server 8000
+# then open http://localhost:8000/smoke.html
 ```
 
 ### Browser Usage
@@ -308,10 +397,13 @@ const model = new Module.USGSCSMModel();
 const isdJson = await fetch('model.json').then(r => r.text());
 model.loadFromISD(isdJson, 'USGS_ASTRO_FRAME_SENSOR_MODEL');
 
-// Transform coordinates
+// Transform coordinates.
 const ground = model.imageToGround(100, 200, 0);
 const pixel = model.groundToImage(ground.x, ground.y, ground.z);
 ```
+
+For the full API, see [docs/wasm_usage.md](docs/wasm_usage.md) and the
+TypeScript definitions in [src/wasm/usgscsm.d.ts](src/wasm/usgscsm.d.ts).
 
 ### Saving and Loading Model State
 
@@ -348,3 +440,4 @@ const ground = model2.imageToGround(100, 200, 0);
 - Line scanners (`USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL`)
 - Push frame cameras (`USGS_ASTRO_PUSH_FRAME_SENSOR_MODEL`)
 - SAR sensors (`USGS_ASTRO_SAR_SENSOR_MODEL`)
+- Projected images (`USGS_ASTRO_PROJECTED_SENSOR_MODEL`) - via embedded PROJ

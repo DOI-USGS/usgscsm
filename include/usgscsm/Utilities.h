@@ -193,16 +193,17 @@ std::vector<double> getSensorVelocities(nlohmann::json isd,
 std::vector<double> getSensorOrientations(nlohmann::json isd,
                                           csm::WarningList *list = nullptr);
 double getWavelength(nlohmann::json isd, csm::WarningList *list = nullptr);
+
 nlohmann::json stateAsJson(std::string modelState);
+
 
 VariantMap variantMapFromJson(const nlohmann::json& j);
 nlohmann::json jsonFromVariantMap(const VariantMap& vm);
 
-// Check if a file is in msgpack binary format by peeking at the first byte.
-// Per the msgpack spec (github.com/msgpack/msgpack/blob/master/spec.md),
-// a map object starts with 0x80-0x8F (fixmap), 0xDE (map16), or 0xDF (map32).
-// JSON starts with '{' (0x7B), so there is no ambiguity.
-bool isMsgpack(std::string const& filename);
+enum class ModelFormat { Unknown, Text, Msgpack, Stards };
+
+ModelFormat modelFormatFromBytes(const std::string& bytes);
+ModelFormat modelFormatOfFile(std::string const& filename);
 
 // Read the contents of the file out as a string
 bool readFileInString(std::string const& filename, std::string & str);
@@ -231,5 +232,32 @@ std::string getUsgsCsmModelJson(csm::RasterGM *model);
 VariantMap getUsgsCsmModelMap(csm::RasterGM *model);
 bool isUsgsCsmIsd(const std::string &str, std::string &modelName);
 bool isUsgsCsmState(const std::string &str, std::string &modelName);
+
+std::vector<csm::param::Type> parameterTypesFromState(const VariantMap &state,
+                                                      const std::string &key);
+
+#ifdef USGSCSM_ENABLE_STARDS
+
+// Inline rather than an extern symbol defined in the library: these are used as
+// default arguments below, so they are evaluated in the caller. A data symbol
+// crossing a DLL boundary needs __declspec(dllimport) on the declaration, which
+// WINDOWS_EXPORT_ALL_SYMBOLS cannot supply, so an extern one fails to link on MSVC.
+inline constexpr const char *STARDS_DEFAULT_COMPRESSION = "lz4-shuffle";
+constexpr size_t STARDS_DEFAULT_BLOCK_SIZE = 1024 * 1024;
+constexpr size_t STARDS_DEFAULT_ARRAY_THRESHOLD = 100;
+
+VariantMap variantMapFromStards(const std::string &path);
+csm::RasterGM *getUsgsCsmModelFromStards(const std::string &path, csm::WarningList *warnings);
+
+void variantMapToStards(const VariantMap &vm, const std::string &path,
+                        const std::string &compression = STARDS_DEFAULT_COMPRESSION,
+                        size_t blockSize = STARDS_DEFAULT_BLOCK_SIZE,
+                        size_t arrayThreshold = STARDS_DEFAULT_ARRAY_THRESHOLD);
+
+void writeUsgsCsmModelToStards(csm::RasterGM *model, const std::string &path,
+                               const std::string &compression = STARDS_DEFAULT_COMPRESSION,
+                               size_t blockSize = STARDS_DEFAULT_BLOCK_SIZE,
+                               size_t arrayThreshold = STARDS_DEFAULT_ARRAY_THRESHOLD);
+#endif
 
 #endif  // INCLUDE_USGSCSM_UTILITIES_H_

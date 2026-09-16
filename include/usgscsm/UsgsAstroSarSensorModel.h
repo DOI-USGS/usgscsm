@@ -225,7 +225,8 @@ class UsgsAstroSarSensorModel : public csm::RasterGM,
   // Model static variables //
   ////////////////////////////
 
-  static const std::string _SENSOR_MODEL_NAME;
+  inline static const std::string _SENSOR_MODEL_NAME =
+      "USGS_ASTRO_SAR_SENSOR_MODEL";
   static const int NUM_PARAM_TYPES;
   static const std::string PARAM_STRING_ALL[];
   static const csm::param::Type PARAM_CHAR_ALL[];

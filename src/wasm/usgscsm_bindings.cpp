@@ -9,11 +9,13 @@
 #include <emscripten/emscripten.h>
 
 #include "Utilities.h"
-#include "RasterGM.h"
 
-#include <Error.h>
+#include <csm/Error.h>
+#include <csm/RasterGM.h>
 #include <nlohmann/json.hpp>
 
+#include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -65,7 +67,6 @@ public:
 
       // Create JavaScript Error and throw it
       throw std::runtime_error(msg);
-      return false;  // Never reached, but satisfies compiler
 
     } catch (const std::exception& e) {
       // Convert std::exception to JavaScript Error object
@@ -75,7 +76,6 @@ public:
 
       // Create JavaScript Error and throw it
       throw std::runtime_error(msg);
-      return false;  // Never reached, but satisfies compiler
 
     } catch (...) {
       std::string msg = "Unknown exception in loadModelFromISD";
@@ -83,7 +83,6 @@ public:
 
       // Create JavaScript Error and throw it
       throw std::runtime_error(msg);
-      return false;  // Never reached, but satisfies compiler
     }
   }
 
@@ -122,7 +121,6 @@ public:
       std::cerr << msg << std::endl;
 
       throw std::runtime_error(msg);
-      return false;  // Never reached
 
     } catch (const std::exception& e) {
       // Convert std::exception to JavaScript Error object
@@ -131,14 +129,92 @@ public:
       std::cerr << msg << std::endl;
 
       throw std::runtime_error(msg);
-      return false;  // Never reached
 
     } catch (...) {
       std::string msg = "Unknown exception in loadModelFromState";
       std::cerr << msg << std::endl;
 
       throw std::runtime_error(msg);
-      return false;  // Never reached
+    }
+  }
+
+  /**
+   * Load a sensor model from a raw byte buffer, sniffing the format from the
+   * leading bytes as usgscsm_cam_test does. Used by the JS fetch helpers in
+   * usgscsm_post.js, which do the downloading and hand the bytes here.
+   *
+   * @param bytes A JavaScript Uint8Array (or other typed array) of file content.
+   * @return true if a model was loaded.
+   */
+  bool loadModelFromBytes(val bytes) {
+    // Copy the JS typed array into a std::string (byte buffer).
+    const size_t length = bytes["length"].as<size_t>();
+    std::string data;
+    data.resize(length);
+    if (length > 0) {
+      val memView = val(typed_memory_view(length,
+                                          reinterpret_cast<uint8_t*>(&data[0])));
+      memView.call<void>("set", bytes);
+    }
+
+    try {
+      switch (modelFormatFromBytes(data)) {
+        case ModelFormat::Stards: {
+#ifdef USGSCSM_ENABLE_STARDS
+          // STARDS reads from a path, so stage the bytes in MEMFS first. Emscripten
+          // gives every module its own filesystem, so a fixed name cannot collide
+          // with another process; the unlink below keeps it from accumulating.
+          const std::string tmpPath = "/tmp/usgscsm_load.stards";
+          {
+            std::ofstream ofs(tmpPath, std::ios::binary);
+            ofs.write(data.data(), static_cast<std::streamsize>(data.size()));
+          }
+          csm::RasterGM* raster = getUsgsCsmModelFromStards(tmpPath, nullptr);
+          std::remove(tmpPath.c_str());
+          if (!raster) return false;
+          model = std::shared_ptr<csm::RasterGM>(raster);
+          return true;
+#else
+          throw std::runtime_error(
+              "loadFromBytes: STARDS file, but this build has no STARDS support");
+#endif
+        }
+
+        case ModelFormat::Msgpack: {
+          const char* ptr = data.data();
+          json j = json::from_msgpack(ptr, ptr + data.size());
+          std::string modelName = j.at("m_modelName").get<std::string>();
+          csm::RasterGM* raster =
+              getUsgsCsmModelFromJsonState(j.dump(), modelName, nullptr);
+          if (!raster) return false;
+          model = std::shared_ptr<csm::RasterGM>(raster);
+          return true;
+        }
+
+        case ModelFormat::Text: {
+          // A JSON ISD, or a JSON/.sup model state.
+          std::string modelName;
+          if (isUsgsCsmIsd(data, modelName)) {
+            return loadModelFromISD(data, modelName);
+          }
+          if (isUsgsCsmState(data, modelName)) {
+            return loadModelFromState(data);
+          }
+          break;
+        }
+
+        case ModelFormat::Unknown:
+          break;
+      }
+
+      std::cerr << "loadFromBytes: unrecognized file format" << std::endl;
+      return false;
+
+    } catch (const std::exception& e) {
+      std::string msg = "loadFromBytes error: ";
+      msg += e.what();
+      std::cerr << msg << std::endl;
+      throw std::runtime_error(msg);
     }
   }
 
@@ -158,12 +234,12 @@ public:
    * @param line Image line coordinate (row)
    * @param sample Image sample coordinate (column)
    * @param height Height above reference ellipsoid (meters)
-   * @return JavaScript object with {x, y, z} ECEF coordinates, or null if no model loaded
+   * @return JavaScript object with {x, y, z} ECEF coordinates. Throws if no
+   *         model is loaded.
    */
   val imageToGround(double line, double sample, double height) const {
     if (!model) {
       throw std::runtime_error("No model loaded");
-      return val::null();  // Never reached
     }
 
     try {
@@ -180,7 +256,6 @@ public:
       std::string msg = "imageToGround error: ";
       msg += e.what();
       throw std::runtime_error(msg);
-      return val::null();  // Never reached
     }
   }
 
@@ -190,12 +265,12 @@ public:
    * @param x ECEF X coordinate (meters)
    * @param y ECEF Y coordinate (meters)
    * @param z ECEF Z coordinate (meters)
-   * @return JavaScript object with {line, sample} pixel coordinates, or null if no model loaded
+   * @return JavaScript object with {line, samp} pixel coordinates. Throws if no
+   *         model is loaded.
    */
   val groundToImage(double x, double y, double z) const {
     if (!model) {
       throw std::runtime_error("No model loaded");
-      return val::null();  // Never reached
     }
 
     try {
@@ -211,7 +286,6 @@ public:
       std::string msg = "groundToImage error: ";
       msg += e.what();
       throw std::runtime_error(msg);
-      return val::null();  // Never reached
     }
   }
 
@@ -220,12 +294,12 @@ public:
    *
    * @param line Image line coordinate
    * @param sample Image sample coordinate
-   * @return JavaScript object with {x, y, z} ECEF coordinates of sensor, or null if no model loaded
+   * @return JavaScript object with {x, y, z} ECEF coordinates of sensor. Throws
+   *         if no model is loaded.
    */
   val getSensorPosition(double line, double sample) const {
     if (!model) {
       throw std::runtime_error("No model loaded");
-      return val::null();  // Never reached
     }
 
     try {
@@ -242,7 +316,6 @@ public:
       std::string msg = "getSensorPosition error: ";
       msg += e.what();
       throw std::runtime_error(msg);
-      return val::null();  // Never reached
     }
   }
 
@@ -251,12 +324,12 @@ public:
    *
    * @param line Image line coordinate
    * @param sample Image sample coordinate
-   * @return JavaScript object with {x, y, z} ECEF velocity vector, or null if no model loaded
+   * @return JavaScript object with {x, y, z} ECEF velocity vector. Throws if no
+   *         model is loaded.
    */
   val getSensorVelocity(double line, double sample) const {
     if (!model) {
       throw std::runtime_error("No model loaded");
-      return val::null();  // Never reached
     }
 
     try {
@@ -273,7 +346,6 @@ public:
       std::string msg = "getSensorVelocity error: ";
       msg += e.what();
       throw std::runtime_error(msg);
-      return val::null();  // Never reached
     }
   }
 
@@ -283,12 +355,12 @@ public:
    * @param x ECEF X coordinate (meters)
    * @param y ECEF Y coordinate (meters)
    * @param z ECEF Z coordinate (meters)
-   * @return JavaScript object with {x, y, z} unit vector pointing from ground to sun, or null
+   * @return JavaScript object with {x, y, z} unit vector pointing from ground to
+   *         sun. Throws if no model is loaded.
    */
   val getIlluminationDirection(double x, double y, double z) const {
     if (!model) {
       throw std::runtime_error("No model loaded");
-      return val::null();  // Never reached
     }
 
     try {
@@ -305,19 +377,18 @@ public:
       std::string msg = "getIlluminationDirection error: ";
       msg += e.what();
       throw std::runtime_error(msg);
-      return val::null();  // Never reached
     }
   }
 
   /**
    * Get image dimensions.
    *
-   * @return JavaScript object with {lines, samples}, or null if no model loaded
+   * @return JavaScript object with {line, samp} counts. Throws if no model is
+   *         loaded.
    */
   val getImageSize() const {
     if (!model) {
       throw std::runtime_error("No model loaded");
-      return val::null();  // Never reached
     }
 
     try {
@@ -331,33 +402,30 @@ public:
       std::string msg = "getImageSize error: ";
       msg += e.what();
       throw std::runtime_error(msg);
-      return val::null();  // Never reached
     }
   }
 
   /**
    * Get the image start coordinates.
    *
-   * @return JavaScript object with {line, sample}, or null if no model loaded
+   * @return JavaScript object with {line, samp}. Throws if no model is loaded.
    */
   val getImageStart() const {
     if (!model) {
       throw std::runtime_error("No model loaded");
-      return val::null();  // Never reached
     }
 
     try {
       csm::ImageCoord start = model->getImageStart();
       val result = val::object();
       result.set("line", start.line);
-      result.set("sample", start.samp);
+      result.set("samp", start.samp);
       return result;
 
     } catch (const std::exception& e) {
       std::string msg = "getImageStart error: ";
       msg += e.what();
       throw std::runtime_error(msg);
-      return val::null();  // Never reached
     }
   }
 
@@ -517,6 +585,7 @@ EMSCRIPTEN_BINDINGS(usgscsm) {
     .constructor<>()
     .function("loadFromISD", &USGSCSMWrapper::loadModelFromISD)
     .function("loadFromState", &USGSCSMWrapper::loadModelFromState)
+    .function("loadFromBytes", &USGSCSMWrapper::loadModelFromBytes)
     .function("getModelState", &USGSCSMWrapper::getModelState)
     .function("imageToGround", &USGSCSMWrapper::imageToGround)
     .function("groundToImage", &USGSCSMWrapper::groundToImage)

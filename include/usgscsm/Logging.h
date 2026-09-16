@@ -15,8 +15,8 @@
 #include <mutex>
 #include <cstdlib>
 
-#ifndef PROJECT_NAME
-#define PROJECT_NAME "USGSCSM"
+#ifndef USGSCSM_PROJECT_NAME
+#define USGSCSM_PROJECT_NAME "USGSCSM"
 #endif
 
 namespace usgscsm {
@@ -137,7 +137,7 @@ namespace logger {
 #endif
 
             std::stringstream ss;
-            ss << "[" << PROJECT_NAME << "][" << LOG_LEVEL_STRINGS[level] << "]"
+            ss << "[" << USGSCSM_PROJECT_NAME << "][" << LOG_LEVEL_STRINGS[level] << "]"
                << "[" << std::put_time(&tm_buf, "%Y-%m-%d %H:%M:%S") << "]"
                << "[" << func << ":" << line << "] ";
 
@@ -164,7 +164,7 @@ namespace logger {
 #endif
 
             std::stringstream ss;
-            ss << "[" << PROJECT_NAME << "][" << LOG_LEVEL_STRINGS[level] << "]"
+            ss << "[" << USGSCSM_PROJECT_NAME << "][" << LOG_LEVEL_STRINGS[level] << "]"
                << "[" << std::put_time(&tm_buf, "%Y-%m-%d %H:%M:%S") << "]"
                << "[" << func << ":" << line << "] ";
             ss << msg << std::endl;

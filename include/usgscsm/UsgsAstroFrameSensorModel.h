@@ -348,7 +348,8 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM,
                              double &y, double &z,
                              csm::WarningList *warnings = NULL) const;
 
-  static const std::string _SENSOR_MODEL_NAME;
+  inline static const std::string _SENSOR_MODEL_NAME =
+      "USGS_ASTRO_FRAME_SENSOR_MODEL";
 
   // Input parameters
   static const int m_numParameters;

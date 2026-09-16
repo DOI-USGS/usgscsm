@@ -12,10 +12,10 @@
     "LICENSE.md"
   ],
   "scripts": {
-    "test": "node tests/wasm/test_wasm.js",
+    "test": "node --test tests/wasm/*.test.mjs",
     "build": "echo 'Note: WASM build requires Emscripten. See README for instructions.' && exit 1",
-    "size": "ls -lh wasmbuild/dist/ 2>/dev/null || ls -lh wasm/dist/ 2>/dev/null || ls -lh dist/ 2>/dev/null || echo 'No dist/ found'",
-    "clean": "rm -rf wasmbuild/ wasm/ build/ build-wasm/ dist/",
+    "size": "ls -lh build-wasm/dist/ 2>/dev/null || ls -lh wasmbuild/dist/ 2>/dev/null || ls -lh build/dist/ 2>/dev/null || ls -lh dist/ 2>/dev/null || echo 'No dist/ found; build the WASM target first'",
+    "clean": "rm -rf build-wasm/ wasmbuild/ build/ dist/",
     "prepublishOnly": "test -d dist || (echo 'Error: dist/ not found. Build WASM first.' && exit 1)"
   },
   "repository": {
@@ -44,7 +44,7 @@
   },
   "homepage": "https://github.com/USGS-Astrogeology/usgscsm#readme",
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   },
   "devDependencies": {},
   "peerDependencies": {},

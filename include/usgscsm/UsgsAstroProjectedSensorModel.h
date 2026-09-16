@@ -25,9 +25,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #ifndef INCLUDE_USGSCSM_USGSASTROPROJECTEDSENSORMODEL_H_
 #define INCLUDE_USGSCSM_USGSASTROPROJECTEDSENSORMODEL_H_
 
-#ifndef __EMSCRIPTEN__
-// ProjectedSensorModel requires PROJ library which is not available in WASM builds
-
 #include <csm/RasterGM.h>
 #include <csm/SettableEllipsoid.h>
 
@@ -90,7 +87,8 @@ public:
     std::string m_subModelName;
 
     // Hardcoded
-    static const std::string _SENSOR_MODEL_NAME; // state date element 0
+    inline static const std::string _SENSOR_MODEL_NAME = // state date element 0
+        "USGS_ASTRO_PROJECTED_SENSOR_MODEL";
 
     static const std::string _STATE_KEYWORD[];
 
@@ -835,7 +833,5 @@ public:
  protected:
   csm::RasterGM *m_camera = NULL;
 };
-
-#endif  // __EMSCRIPTEN__
 
 #endif  // INCLUDE_USGSCSM_USGSASTROPROJECTEDSENSORMODEL_H_

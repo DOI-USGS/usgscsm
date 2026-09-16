@@ -15,15 +15,62 @@ add_executable(runCSMCameraModelTests
                UtilitiesTests.cpp
                EigenUtilitiesTests.cpp
                LoggingTests.cpp
-               ../ale/src/Rotation.cpp
-               ../ale/src/InterpUtils.cpp)
+               StardsTests.cpp
+               ../external/ale/src/Rotation.cpp
+               ../external/ale/src/InterpUtils.cpp)
+
+# StardsTests.cpp needs the star:: headers and the gate define, both of which the
+# usgscsm_stards INTERFACE target carries.
+if(USGSCSM_ENABLE_STARDS)
+  target_link_libraries(runCSMCameraModelTests usgscsm_stards)
+
+  # Derived from ISDs already in data/, so not committed. The .stards is converted
+  # from the generated JSON state, not the ISD, so the two agree to
+  # EXPECT_DOUBLE_EQ. data/frameState.stards stays committed as a format golden.
+  set(STARDS_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/stards_fixtures")
+  set(STARDS_FIXTURES
+      "${STARDS_FIXTURE_DIR}/lineScanState.json"
+      "${STARDS_FIXTURE_DIR}/lineScanState.stards"
+      "${STARDS_FIXTURE_DIR}/frameState.json")
+  add_custom_command(
+    OUTPUT ${STARDS_FIXTURES}
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${STARDS_FIXTURE_DIR}"
+    COMMAND csm_translate "${CMAKE_CURRENT_SOURCE_DIR}/data/toughLroNacLineScan.json"
+                          "${STARDS_FIXTURE_DIR}/lineScanState.json"
+    COMMAND csm_translate "${STARDS_FIXTURE_DIR}/lineScanState.json"
+                          "${STARDS_FIXTURE_DIR}/lineScanState.stards"
+    COMMAND csm_translate "${CMAKE_CURRENT_SOURCE_DIR}/data/simpleFramerISD.json"
+                          "${STARDS_FIXTURE_DIR}/frameState.json"
+    DEPENDS csm_translate
+            "${CMAKE_CURRENT_SOURCE_DIR}/data/toughLroNacLineScan.json"
+            "${CMAKE_CURRENT_SOURCE_DIR}/data/simpleFramerISD.json"
+    COMMENT "Generating STARDS test fixtures from existing ISDs"
+    VERBATIM)
+  add_custom_target(stards_test_fixtures DEPENDS ${STARDS_FIXTURES})
+  add_dependencies(runCSMCameraModelTests stards_test_fixtures)
+  target_compile_definitions(runCSMCameraModelTests PRIVATE
+                             STARDS_FIXTURE_DIR="${STARDS_FIXTURE_DIR}")
+endif()
 if(WIN32)
   option(CMAKE_USE_WIN32_THREADS_INIT "using WIN32 threads" ON)
   option(gtest_disable_pthreads "Disable uses of pthreads in gtest." ON)
   target_link_libraries(runCSMCameraModelTests usgscsm ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES})
+
+  # Windows has no RPATH: the loader looks next to the .exe, and usgscsm.dll is built
+  # one directory up. Without this the exe cannot start at all (0xc0000135), which
+  # fails gtest_discover_tests' POST_BUILD probe as well as the tests themselves.
+  # Registered before gtest_discover_tests so it runs first.
+  add_custom_command(TARGET runCSMCameraModelTests POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:usgscsm> $<TARGET_FILE_DIR:runCSMCameraModelTests>)
 else()
   target_link_libraries(runCSMCameraModelTests usgscsm ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} pthread)
 endif()
+add_executable(pluginRegistryHost PluginRegistryHost.cpp)
+target_include_directories(pluginRegistryHost PRIVATE ${CSM_INCLUDE_DIR})
+target_link_libraries(pluginRegistryHost ${CSM_LIBRARY} ${CMAKE_DL_LIBS})
+add_test(NAME test_plugin_registers_with_host
+    COMMAND pluginRegistryHost $<TARGET_FILE:usgscsm>)
 
 # Test the test_usgscsm_cam_test program. Output files are written to build directory
 # with unique names to avoid race conditions during parallel test execution.
@@ -98,10 +145,5 @@ set_tests_properties(test_usgscsm_cam_test_load_binary_pushframe PROPERTIES DEPE
 set_tests_properties(test_usgscsm_cam_test_load_binary_sar PROPERTIES DEPENDS test_usgscsm_cam_test_save_binary_sar)
 set_tests_properties(test_usgscsm_cam_test_load_binary_projected PROPERTIES DEPENDS test_usgscsm_cam_test_save_binary_projected)
 
-# The projected sensor test fixture (constVelocityProj.json) uses a sinusoidal
-# projection with Mars radius (+R=3396190) but body radii of 10 m (synthetic
-# test body). Newer PROJ versions reject this mismatch. The test geometry is
-# intentionally synthetic, so suppress the check.
 gtest_discover_tests(runCSMCameraModelTests
-  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests
-  PROPERTIES ENVIRONMENT "PROJ_IGNORE_CELESTIAL_BODY=YES")
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)

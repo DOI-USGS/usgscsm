@@ -27,9 +27,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 
 #include "UsgsAstroFrameSensorModel.h"
 #include "UsgsAstroLsSensorModel.h"
-#ifndef __EMSCRIPTEN__
 #include "UsgsAstroProjectedSensorModel.h"
-#endif
 #include "UsgsAstroPushFrameSensorModel.h"
 #include "UsgsAstroSarSensorModel.h"
 
@@ -52,8 +50,11 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
+// A character set for find_last_of, not a separator to build paths with: Windows
+// accepts either slash so both must count, while on POSIX a backslash is a legal
+// filename character and must not split the path.
 #ifdef _WIN32
-#define DIR_DELIMITER_STR "\\"
+#define DIR_DELIMITER_STR "\\/"
 #else
 #define DIR_DELIMITER_STR "/"
 #endif
@@ -62,11 +63,7 @@ using json = nlohmann::json;
 const std::string UsgsAstroPlugin::_PLUGIN_NAME = "UsgsAstroPluginCSM";
 const std::string UsgsAstroPlugin::_MANUFACTURER_NAME = "UsgsAstrogeology";
 const std::string UsgsAstroPlugin::_RELEASE_DATE = "20190222";
-#ifdef __EMSCRIPTEN__
-const int UsgsAstroPlugin::_N_SENSOR_MODELS = 4;  // Excluding projected model for WASM
-#else
 const int UsgsAstroPlugin::_N_SENSOR_MODELS = 5;
-#endif
 
 // Static Instance of itself
 const UsgsAstroPlugin UsgsAstroPlugin::m_registeredPlugin;
@@ -159,9 +156,7 @@ std::string UsgsAstroPlugin::getModelName(size_t modelIndex) const {
   std::vector<std::string> supportedModelNames = {
       UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME,
       UsgsAstroLsSensorModel::_SENSOR_MODEL_NAME,
-#ifndef __EMSCRIPTEN__
       UsgsAstroProjectedSensorModel::_SENSOR_MODEL_NAME,
-#endif
       UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME,
       UsgsAstroPushFrameSensorModel::_SENSOR_MODEL_NAME};
   LOG_DEBUG( "Get Model Name: {}. Used index: {}",
@@ -489,16 +484,17 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(
     const csm::Isd &imageSupportDataOriginal, const std::string &modelName,
     csm::WarningList *warnings) const {
   LOG_INFO( "Running constructModelFromISD");
+
+#ifdef USGSCSM_ENABLE_STARDS
+  // A STARDS file holds a model state, not an ISD: skip the ISD pipeline.
+  if (modelFormatOfFile(imageSupportDataOriginal.filename()) == ModelFormat::Stards) {
+    LOG_DEBUG( "Constructing model from STARDS state file");
+    return getUsgsCsmModelFromStards(imageSupportDataOriginal.filename(), warnings);
+  }
+#endif
+
   std::string stringIsd = loadImageSupportData(imageSupportDataOriginal);
   LOG_TRACE( "ISD string: {}", stringIsd);
-#ifndef __EMSCRIPTEN__
-  // Attempt the projected sensor model only when the ISD actually declares a
-  // projection. A projected ISD carries a "geotransform"; a frame or unprojected
-  // linescan ISD does not, and attempting the projected model on it would always
-  // fail on the missing geotransform. So this attempt is made only for a
-  // projected ISD, in which case a failure here is a genuine error and is
-  // logged and thrown. A non-projected ISD falls straight through to the
-  // unprojected model.
   if (stringIsd.find("\"geotransform\"") != std::string::npos) {
     UsgsAstroProjectedSensorModel *projModel = new UsgsAstroProjectedSensorModel();
     try {
@@ -509,10 +505,6 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(
       return projModel;
     } catch (std::exception &e) {
       delete projModel;
-      // The ISD declares a projection, so a failure here is a genuine error.
-      // Log it and throw, rather than fall through to the unprojected model,
-      // which would either fail again with a less clear message or silently
-      // build a wrong model from projected data.
       csm::Error::ErrorType aErrorType =
           csm::Error::SENSOR_MODEL_NOT_CONSTRUCTIBLE;
       std::string aMessage = "Could not construct model [";
@@ -525,7 +517,6 @@ csm::Model *UsgsAstroPlugin::constructModelFromISD(
       throw csm::Error(aErrorType, aMessage, aFunction);
     }
   }
-#endif
 
   csm::Model *model = getUsgsCsmModelFromIsd(stringIsd, modelName, warnings);
   return model;

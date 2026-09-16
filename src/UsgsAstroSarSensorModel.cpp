@@ -14,8 +14,6 @@
 using json = nlohmann::json;
 using namespace std;
 
-const string UsgsAstroSarSensorModel::_SENSOR_MODEL_NAME =
-    "USGS_ASTRO_SAR_SENSOR_MODEL";
 const int UsgsAstroSarSensorModel::NUM_PARAMETERS = 6;
 const string UsgsAstroSarSensorModel::PARAMETER_NAME[] = {
     "X Pos. Bias   ",  // 0

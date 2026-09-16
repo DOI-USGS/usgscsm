@@ -1,5 +1,5 @@
 if (NOT TARGET gtest)
-  set(GOOGLETEST_ROOT gtest/googletest CACHE STRING "Google Test source root")
+  set(GOOGLETEST_ROOT external/gtest/googletest CACHE STRING "Google Test source root")
 
   include_directories(SYSTEM
       ${PROJECT_SOURCE_DIR}/${GOOGLETEST_ROOT}
@@ -11,9 +11,15 @@ if (NOT TARGET gtest)
       ${PROJECT_SOURCE_DIR}/${GOOGLETEST_ROOT}/src/gtest_main.cc
       )
 
-  foreach(_source ${GOOGLETEST_SOURCES})
-      set_source_files_properties(${_source} PROPERTIES GENERATED 1)
-  endforeach()
+  # These are submodule sources, not generated ones. Marking them GENERATED used
+  # to let configure succeed with an uninitialized submodule, turning a missing
+  # checkout into an obscure "No rule to make target" at build time.
+  if(NOT EXISTS ${PROJECT_SOURCE_DIR}/${GOOGLETEST_ROOT}/src/gtest-all.cc)
+    message(FATAL_ERROR
+      "Google Test sources not found at ${PROJECT_SOURCE_DIR}/${GOOGLETEST_ROOT}. "
+      "Run: git submodule update --init --recursive "
+      "(or configure with -DUSGSCSM_BUILD_TESTS=OFF)")
+  endif()
 
   add_library(gtest ${GOOGLETEST_SOURCES})
 endif()

@@ -15,8 +15,6 @@
 using json = nlohmann::json;
 
 // Declaration of static variables
-const std::string UsgsAstroFrameSensorModel::_SENSOR_MODEL_NAME =
-    "USGS_ASTRO_FRAME_SENSOR_MODEL";
 const int UsgsAstroFrameSensorModel::NUM_PARAMETERS = 7;
 const std::string UsgsAstroFrameSensorModel::m_parameterName[] = {
     "X Sensor Position (m)",  // 0
@@ -1284,6 +1282,7 @@ VariantMap UsgsAstroFrameSensorModel::getModelMap() const {
   state.set<std::string>("m_collectionIdentifier", m_collectionIdentifier);
   state.set<std::vector<double>>("m_referencePointXyz", {m_referencePointXyz.x, m_referencePointXyz.y, m_referencePointXyz.z});
   state.set<std::vector<double>>("m_currentParameterCovariance", m_currentParameterCovariance);
+
   LOG_TRACE( "Model state\n{}", state.dumps());
   return state;
 }

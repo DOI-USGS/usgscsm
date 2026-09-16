@@ -131,7 +131,8 @@ class UsgsAstroLsSensorModel : public csm::RasterGM,
   std::vector<double> m_sunVelocity;
 
   // Hardcoded
-  static const std::string _SENSOR_MODEL_NAME;  // state date element 0
+  inline static const std::string _SENSOR_MODEL_NAME =  // state date element 0
+      "USGS_ASTRO_LINE_SCANNER_SENSOR_MODEL";
 
   static const std::string _STATE_KEYWORD[];
   static const int NUM_PARAM_TYPES;

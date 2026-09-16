@@ -1012,3 +1012,81 @@ TEST(VariantMapTests, TypePreservation) {
   EXPECT_EQ(vm2.getValueType("vec_int"), VariantMap::ValueType::VectorInt);
   EXPECT_EQ(vm2.getValueType("vec_double"), VariantMap::ValueType::VectorDouble);
 }
+
+// A VariantMap is flat, so nested structure is dropped rather than flattened into
+// strings that would come back out of jsonFromVariantMap() as strings.
+TEST(VariantMapTests, NestedStructureIsDropped) {
+  nlohmann::json j = nlohmann::json::parse(R"({
+    "m_focalLength": 500.0,
+    "nestedObject": {"a": 1},
+    "arrayOfObjects": [{"a": 1}, {"a": 2}],
+    "arrayOfArrays": [[1, 2], [3, 4]]
+  })");
+
+  VariantMap vm = variantMapFromJson(j);
+
+  EXPECT_TRUE(vm.contains("m_focalLength"));
+  EXPECT_FALSE(vm.contains("nestedObject"));
+  EXPECT_FALSE(vm.contains("arrayOfObjects"));
+  EXPECT_FALSE(vm.contains("arrayOfArrays"));
+
+  // Whatever survives round-trips unchanged.
+  EXPECT_EQ(jsonFromVariantMap(vm), nlohmann::json({{"m_focalLength", 500.0}}));
+}
+
+// Older states wrote parameter types as their csm::param::Type names; current
+// ones write the enum values. Both must still read back.
+TEST(UtilitiesTests, parameterTypesFromStateNames) {
+  VariantMap state;
+  state.set<std::vector<std::string>>(
+      "m_parameterType", {"NONE", "FICTITIOUS", "REAL", "FIXED"});
+
+  std::vector<csm::param::Type> types =
+      parameterTypesFromState(state, "m_parameterType");
+  ASSERT_EQ(types.size(), 4);
+  EXPECT_EQ(types[0], csm::param::NONE);
+  EXPECT_EQ(types[1], csm::param::FICTITIOUS);
+  EXPECT_EQ(types[2], csm::param::REAL);
+  EXPECT_EQ(types[3], csm::param::FIXED);
+}
+
+TEST(UtilitiesTests, parameterTypesFromStateSingleName) {
+  VariantMap state;
+  state.set<std::string>("m_parameterType", "FIXED");
+
+  std::vector<csm::param::Type> types =
+      parameterTypesFromState(state, "m_parameterType");
+  ASSERT_EQ(types.size(), 1);
+  EXPECT_EQ(types[0], csm::param::FIXED);
+}
+
+// An unrecognized name degrades to REAL, the default every model uses, rather
+// than throwing on a state written by some other tool.
+TEST(UtilitiesTests, parameterTypesFromStateUnknownName) {
+  VariantMap state;
+  state.set<std::vector<std::string>>("m_parameterType", {"SOMETHING_ELSE"});
+
+  std::vector<csm::param::Type> types =
+      parameterTypesFromState(state, "m_parameterType");
+  ASSERT_EQ(types.size(), 1);
+  EXPECT_EQ(types[0], csm::param::REAL);
+}
+
+TEST(UtilitiesTests, parameterTypesFromStateInts) {
+  VariantMap state;
+  state.set<std::vector<int>>("m_parameterType",
+                              {csm::param::REAL, csm::param::FIXED});
+
+  std::vector<csm::param::Type> types =
+      parameterTypesFromState(state, "m_parameterType");
+  ASSERT_EQ(types.size(), 2);
+  EXPECT_EQ(types[0], csm::param::REAL);
+  EXPECT_EQ(types[1], csm::param::FIXED);
+}
+
+TEST(UtilitiesTests, parameterTypesFromStateAbsent) {
+  VariantMap state;
+  state.set<double>("m_focalLength", 500.0);
+
+  EXPECT_TRUE(parameterTypesFromState(state, "m_parameterType").empty());
+}
