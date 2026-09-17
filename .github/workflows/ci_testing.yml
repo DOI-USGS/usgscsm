@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   Build-and-Test-LinuxOsX:
@@ -80,9 +81,106 @@ jobs:
         with:
           name: usgscsm_py${{ matrix.python-version }}
           path: |
-            D:\a\usgscsm\usgscsm\build\Release\usgscsm.dll
-            D:\a\usgscsm\usgscsm\build\Release\usgscsm_cam_test.exe
+            build/Release/usgscsm.dll
+            build/Release/usgscsm_cam_test.exe
 
+      - name: Stage Windows dev bundle
+        if: matrix.python-version == '3.13'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path dev-bundle | Out-Null
+
+          # Take the exact csmapi the build linked against out of the CMake cache rather
+          # than guessing at the conda prefix layout.
+          $csmLib = (Select-String -Path build\CMakeCache.txt -Pattern '^CSM_LIBRARY:FILEPATH=' |
+                     Select-Object -First 1).Line -replace '^CSM_LIBRARY:FILEPATH=', ''
+          if (-not $csmLib) { throw "CSM_LIBRARY not found in build\CMakeCache.txt" }
+          $csmDll = Join-Path (Split-Path (Split-Path $csmLib -Parent) -Parent) 'bin\csmapi.dll'
+          Write-Host "csmapi import library: $csmLib"
+          Write-Host "csmapi runtime library: $csmDll"
+
+          foreach ($f in @('build\Release\usgscsm.dll', 'build\Release\usgscsm.lib', $csmLib, $csmDll)) {
+            if (-not (Test-Path $f)) { throw "Missing expected bundle file: $f" }
+            Copy-Item $f dev-bundle\
+          }
+
+          @(
+            "commit:    ${{ github.sha }}",
+            "run:       ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "generator: Visual Studio 17 2022 (Release, x64)",
+            "csmapi:    $csmDll"
+          ) | Set-Content dev-bundle\BUILDINFO.txt
+
+          Get-ChildItem dev-bundle | Format-Table Name, Length
+
+      # Diagnostic: the import list should name csmapi.dll plus system DLLs only. Anything
+      # else (ale.dll, proj*.dll, sqlite3.dll) means that dependency is not embedded after
+      # all and has to join the bundle.
+      - name: Report usgscsm.dll imports
+        if: matrix.python-version == '3.13'
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (-not (Test-Path $vswhere)) { Write-Host "vswhere not found; skipping"; exit 0 }
+          $dumpbin = & $vswhere -latest -find '**\Hostx64\x64\dumpbin.exe' | Select-Object -First 1
+          if (-not $dumpbin) { Write-Host "dumpbin not found; skipping"; exit 0 }
+          & $dumpbin /dependents dev-bundle\usgscsm.dll
+
+      - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392
+        if: matrix.python-version == '3.13'
+        with:
+          name: usgscsm-dev-win64
+          path: dev-bundle/
+
+  Publish-Dev-DLLs:
+    needs: Build-and-Test-Win
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: dev-release
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: usgscsm-dev-win64
+          path: dev-bundle
+
+      - name: Bundle as zip
+        run: zip -j usgscsm-dev-win64.zip dev-bundle/*
+
+      # Delete and recreate rather than update: `--target` re-points the `dev` tag at this
+      # commit, whereas updating an existing release would leave the tag on the old one and
+      # misreport which source the binaries came from.
+      - name: Refresh dev prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat > notes.md <<EOF
+          Unsigned Windows x64 development build of main at ${GITHUB_SHA:0:8}.
+
+          **usgscsm.dll needs csmapi.dll next to it** (or elsewhere on the DLL search path):
+          csmapi is the only dependency that is not statically embedded. The .lib files are
+          the import libraries, for linking against these DLLs.
+
+          Replaced on every push to main. Built by
+          ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+          EOF
+
+          gh release delete dev --yes --cleanup-tag || true
+          gh release create dev \
+            --prerelease \
+            --target "$GITHUB_SHA" \
+            --title "Development build (main)" \
+            --notes-file notes.md \
+            usgscsm-dev-win64.zip \
+            dev-bundle/usgscsm.dll \
+            dev-bundle/csmapi.dll \
+            dev-bundle/usgscsm.lib \
+            dev-bundle/csmapi.lib
 
   Build-Docs:
     runs-on: ubuntu-latest
