@@ -155,9 +155,11 @@ jobs:
       # Delete and recreate rather than update: `--target` re-points the `dev` tag at this
       # commit, whereas updating an existing release would leave the tag on the old one and
       # misreport which source the binaries came from.
+      # GH_REPO because this job has no checkout for gh to infer the repo from.
       - name: Refresh dev prerelease
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           cat > notes.md <<EOF
           Unsigned Windows x64 development build of main at ${GITHUB_SHA:0:8}.
