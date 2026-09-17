@@ -91,8 +91,8 @@ jobs:
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Force -Path dev-bundle | Out-Null
 
-          # Take the exact csmapi the build linked against out of the CMake cache rather
-          # than guessing at the conda prefix layout.
+          # Locate csmapi.dll from the import library the build actually linked against,
+          # rather than guessing at the conda prefix layout.
           $csmLib = (Select-String -Path build\CMakeCache.txt -Pattern '^CSM_LIBRARY:FILEPATH=' |
                      Select-Object -First 1).Line -replace '^CSM_LIBRARY:FILEPATH=', ''
           if (-not $csmLib) { throw "CSM_LIBRARY not found in build\CMakeCache.txt" }
@@ -100,7 +100,7 @@ jobs:
           Write-Host "csmapi import library: $csmLib"
           Write-Host "csmapi runtime library: $csmDll"
 
-          foreach ($f in @('build\Release\usgscsm.dll', 'build\Release\usgscsm.lib', $csmLib, $csmDll)) {
+          foreach ($f in @('build\Release\usgscsm.dll', $csmDll)) {
             if (-not (Test-Path $f)) { throw "Missing expected bundle file: $f" }
             Copy-Item $f dev-bundle\
           }
@@ -165,8 +165,8 @@ jobs:
           Unsigned Windows x64 development build of main at ${GITHUB_SHA:0:8}.
 
           **usgscsm.dll needs csmapi.dll next to it** (or elsewhere on the DLL search path):
-          csmapi is the only dependency that is not statically embedded. The .lib files are
-          the import libraries, for linking against these DLLs.
+          csmapi is the only dependency that is not statically embedded. usgscsm is a CSM
+          plugin, loaded at runtime, so no import libraries are needed.
 
           Replaced on every push to main. Built by
           ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
@@ -180,9 +180,7 @@ jobs:
             --notes-file notes.md \
             usgscsm-dev-win64.zip \
             dev-bundle/usgscsm.dll \
-            dev-bundle/csmapi.dll \
-            dev-bundle/usgscsm.lib \
-            dev-bundle/csmapi.lib
+            dev-bundle/csmapi.dll
 
   Build-Docs:
     runs-on: ubuntu-latest
