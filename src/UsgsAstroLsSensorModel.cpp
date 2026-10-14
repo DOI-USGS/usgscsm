@@ -2183,18 +2183,19 @@ void UsgsAstroLsSensorModel::getQuaternions(const double& time,
   double targetQ[4];
   lagrangeInterp(m_numTargetQuaternions / 4, &m_targetQuaternions[0], m_t0TargetQuat, m_dtTargetQuat,
                  time, 4, nOrderTargetQuat, targetQ);
-  ale::Rotation sensorToJ2000(sensorQ[3], sensorQ[0], sensorQ[1], sensorQ[2]);
+  ale::Rotation j2000ToSensor(sensorQ[3], sensorQ[0], sensorQ[1], sensorQ[2]);
   ale::Rotation j2000ToTarget(targetQ[3], targetQ[0], targetQ[1], targetQ[2]);
-  ale::Rotation sensorToTarget = j2000ToTarget * sensorToJ2000;
+  ale::Rotation sensorToTarget = j2000ToTarget * j2000ToSensor.inverse();
   std::vector<double> finalQuat = sensorToTarget.toQuaternion();
   LOG_DEBUG(
       "Computed final Quat {}, {}, {}, {} at time {}",
       finalQuat[1], finalQuat[2], finalQuat[3], finalQuat[0], time);
-  // std::cout << finalQuat[0] << ", " << finalQuat[1] << ", " << finalQuat[2] << ", " << finalQuat[3] << std::endl;
   q[0] = finalQuat[1];
   q[1] = finalQuat[2];
   q[2] = finalQuat[3];
   q[3] = finalQuat[0];
+  std::cout << std::setprecision(15);
+  std::cout << time << ", " << q[0] << ", " << q[1] << ", " << q[2] << ", " << q[3] << std::endl;
 }
 
 /**
