@@ -2922,48 +2922,33 @@ VariantMap UsgsAstroLsSensorModel::constructStateFromIsd(
       "m_referencePointXyz: {} ",
       state["m_referencePointXyz"].dump());
 
-  // Sun position and sensor position use the same times so compute that now
-  ale::States inst_state = ale::getInstrumentPosition(jsonIsd);
-  std::vector<double> ephemTime = inst_state.getTimes();
-  double startTime = ephemTime.front();
-  double stopTime = ephemTime.back();
-  // Force at least 25 nodes to help with lagrange interpolation
-  // These also have to be equally spaced for lagrange interpolation
-  if (ephemTime.size() < 25) {
-    ephemTime.resize(25);
-  }
-  double timeStep = (stopTime - startTime) / (ephemTime.size() - 1);
-  for (size_t i = 0; i < ephemTime.size(); i++) {
-    ephemTime[i] = startTime + i * timeStep;
-  }
-
-  try {
-    state["m_dtEphem"] = timeStep;
-    LOG_TRACE(
-        "m_dtEphem: {} ",
-        state["m_dtEphem"].dump());
-  } catch (...) {
-    parsingWarnings->push_back(csm::Warning(
-        csm::Warning::DATA_NOT_AVAILABLE, "dt_ephemeris not in ISD",
-        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
-    LOG_WARN( "m_dtEphem not in ISD");
-  }
-
-  try {
-    state["m_t0Ephem"] = startTime - ale::getCenterTime(jsonIsd);
-    LOG_TRACE(
-        "t0_ephemeris: {}",
-        state["m_t0Ephem"].dump());
-  } catch (...) {
-    parsingWarnings->push_back(csm::Warning(
-        csm::Warning::DATA_NOT_AVAILABLE, "t0_ephemeris not in ISD",
-        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
-    LOG_WARN( "t0_ephemeris not in ISD");
-  }
-
-  ale::States sunState = ale::getSunPosition(jsonIsd);
   ale::Orientations j2000_to_target = ale::getBodyRotation(jsonIsd);
-  ephemTime = j2000_to_target.getTimes();
+  ale::Orientations j2000_to_sensor = ale::getInstrumentPointing(jsonIsd);
+
+  // Work-around for issues in ALE <=0.8.5 where Orientations without angular
+  // velocities seg fault when you multiply them. This will make the angular
+  // velocities in the final Orientations dubious but they are not used
+  // in any calculations so this is okay.
+  if (j2000_to_sensor.getAngularVelocities().empty()) {
+    j2000_to_sensor = ale::Orientations(
+        j2000_to_sensor.getRotations(),
+        j2000_to_sensor.getTimes(),
+        std::vector<ale::Vec3d>(j2000_to_sensor.getTimes().size()),
+        j2000_to_sensor.getConstantRotation(),
+        j2000_to_sensor.getConstantFrames(),
+        j2000_to_sensor.getTimeDependentFrames());
+  }
+  if (j2000_to_target.getAngularVelocities().empty()) {
+    j2000_to_target = ale::Orientations(
+        j2000_to_target.getRotations(),
+        j2000_to_target.getTimes(),
+        std::vector<ale::Vec3d>(j2000_to_target.getTimes().size()),
+        j2000_to_target.getConstantRotation(),
+        j2000_to_target.getConstantFrames(),
+        j2000_to_target.getTimeDependentFrames());
+  }
+
+  std::vector<double> ephemTime = j2000_to_target.getTimes();
   double quatStep =
       (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
   try {
@@ -3013,7 +2998,7 @@ VariantMap UsgsAstroLsSensorModel::constructStateFromIsd(
           ephemTime.front() + quatStep * i);
       angularVelocities[avIdx++] = angularVelocity.x;
       angularVelocities[avIdx++] = angularVelocity.y;
-      angularVelocities[avIdx++] = angularVelocity.z;      
+      angularVelocities[avIdx++] = angularVelocity.z;
     }
   }
 
@@ -3025,6 +3010,47 @@ VariantMap UsgsAstroLsSensorModel::constructStateFromIsd(
       "m_targetAvs: {}"
       "m_numTargetQuaternions: {}",
       state["m_targetQuaternions"].dump(), state["m_targetAvs"].dump(), state["m_numTargetQuaternions"].dump());
+
+  // Sun position and sensor position use the same times so compute that now
+  ale::States inst_state = ale::getInstrumentPosition(jsonIsd);
+  ephemTime = inst_state.getTimes();
+  double startTime = ephemTime.front();
+  double stopTime = ephemTime.back();
+  // Force at least 25 nodes to help with lagrange interpolation
+  // These also have to be equally spaced for lagrange interpolation
+  if (ephemTime.size() < 25) {
+    ephemTime.resize(25);
+  }
+  double timeStep = (stopTime - startTime) / (ephemTime.size() - 1);
+  for (size_t i = 0; i < ephemTime.size(); i++) {
+    ephemTime[i] = startTime + i * timeStep;
+  }
+
+  try {
+    state["m_dtEphem"] = timeStep;
+    LOG_TRACE(
+        "m_dtEphem: {} ",
+        state["m_dtEphem"].dump());
+  } catch (...) {
+    parsingWarnings->push_back(csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE, "dt_ephemeris not in ISD",
+        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    LOG_WARN( "m_dtEphem not in ISD");
+  }
+
+  try {
+    state["m_t0Ephem"] = startTime - ale::getCenterTime(jsonIsd);
+    LOG_TRACE(
+        "t0_ephemeris: {}",
+        state["m_t0Ephem"].dump());
+  } catch (...) {
+    parsingWarnings->push_back(csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE, "t0_ephemeris not in ISD",
+        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    LOG_WARN( "t0_ephemeris not in ISD");
+  }
+
+  ale::States sunState = ale::getSunPosition(jsonIsd);
   ale::State interpSunState, rotatedSunState;
   std::vector<double> sunPositions(ephemTime.size() * 3, 0.0);
   std::vector<double> sunVelocities(ephemTime.size() * 3, 0.0);
@@ -3099,8 +3125,6 @@ VariantMap UsgsAstroLsSensorModel::constructStateFromIsd(
       state["m_detectorSampleOrigin"].dump(),
       state["m_detectorLineOrigin"].dump());
 
-  ale::Orientations j2000_to_sensor = ale::getInstrumentPointing(jsonIsd);
-  ephemTime = inst_state.getTimes();
   ale::State interpInstState, rotatedInstState;
   std::vector<double> positions(ephemTime.size() * 3, 0.0);
   std::vector<double> velocities(ephemTime.size() * 3, 0.0);
@@ -3131,30 +3155,6 @@ VariantMap UsgsAstroLsSensorModel::constructStateFromIsd(
       "m_velocities: {}",
       state["m_velocities"].dump());
 
-  // Work-around for issues in ALE <=0.8.5 where Orientations without angular
-  // velocities seg fault when you multiply them. This will make the angular
-  // velocities in the final Orientations dubious but they are not used
-  // in any calculations so this is okay.
-  if (j2000_to_sensor.getAngularVelocities().empty()) {
-    j2000_to_sensor = ale::Orientations(
-        j2000_to_sensor.getRotations(),
-        j2000_to_sensor.getTimes(),
-        std::vector<ale::Vec3d>(j2000_to_sensor.getTimes().size()),
-        j2000_to_sensor.getConstantRotation(),
-        j2000_to_sensor.getConstantFrames(),
-        j2000_to_sensor.getTimeDependentFrames());
-  }
-  if (j2000_to_target.getAngularVelocities().empty()) {
-    j2000_to_target = ale::Orientations(
-        j2000_to_target.getRotations(),
-        j2000_to_target.getTimes(),
-        std::vector<ale::Vec3d>(j2000_to_target.getTimes().size()),
-        j2000_to_target.getConstantRotation(),
-        j2000_to_target.getConstantFrames(),
-        j2000_to_target.getTimeDependentFrames());
-  }
-
-  // ale::Orientations sensor_to_j2000 = j2000_to_sensor.inverse();
   ephemTime = j2000_to_sensor.getTimes();
   quatStep = (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
   try {
