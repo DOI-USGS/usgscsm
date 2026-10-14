@@ -2218,6 +2218,30 @@ VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
   LOG_INFO("m_referencePointXyz: {} ", state["m_referencePointXyz"].dump());
 
   ale::Orientations j2000_to_target = ale::getBodyRotation(jsonIsd);
+  ale::Orientations j2000_to_sensor = ale::getInstrumentPointing(jsonIsd);
+  // Work-around for issues in ALE <=0.8.5 where Orientations without angular
+  // velocities seg fault when you multiply them. This will make the angular
+  // velocities in the final Orientations dubious but they are not used
+  // in any calculations so this is okay.
+  if (j2000_to_sensor.getAngularVelocities().empty()) {
+    j2000_to_sensor = ale::Orientations(
+        j2000_to_sensor.getRotations(),
+        j2000_to_sensor.getTimes(),
+        std::vector<ale::Vec3d>(j2000_to_sensor.getTimes().size()),
+        j2000_to_sensor.getConstantRotation(),
+        j2000_to_sensor.getConstantFrames(),
+        j2000_to_sensor.getTimeDependentFrames());
+  }
+  if (j2000_to_target.getAngularVelocities().empty()) {
+    j2000_to_target = ale::Orientations(
+        j2000_to_target.getRotations(),
+        j2000_to_target.getTimes(),
+        std::vector<ale::Vec3d>(j2000_to_target.getTimes().size()),
+        j2000_to_target.getConstantRotation(),
+        j2000_to_target.getConstantFrames(),
+        j2000_to_target.getTimeDependentFrames());
+  }
+
   std::vector<double> ephemTime = j2000_to_target.getTimes();
   double quatStep =
       (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
@@ -2425,7 +2449,6 @@ VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
   state["m_velocities"] = velocities;
   LOG_INFO("m_velocities: {}", state["m_velocities"].dump());
 
-  ale::Orientations j2000_to_sensor = ale::getInstrumentPointing(jsonIsd);
   ephemTime = j2000_to_sensor.getTimes();
   quatStep = (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
   try {
@@ -2474,29 +2497,6 @@ VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
       "m_sensorQuaternions: {}"
       "m_numSensorQuaternions: {}",
       state["m_sensorQuaternions"].dump(), state["m_numSensorQuaternions"].dump());
-
-  // Work-around for issues in ALE <=0.8.5 where Orientations without angular
-  // velocities seg fault when you multiply them. This will make the angular
-  // velocities in the final Orientations dubious but they are not used
-  // in any calculations so this is okay.
-  if (j2000_to_sensor.getAngularVelocities().empty()) {
-    j2000_to_sensor = ale::Orientations(
-        j2000_to_sensor.getRotations(),
-        j2000_to_sensor.getTimes(),
-        std::vector<ale::Vec3d>(j2000_to_sensor.getTimes().size()),
-        j2000_to_sensor.getConstantRotation(),
-        j2000_to_sensor.getConstantFrames(),
-        j2000_to_sensor.getTimeDependentFrames());
-  }
-  if (j2000_to_target.getAngularVelocities().empty()) {
-    j2000_to_target = ale::Orientations(
-        j2000_to_target.getRotations(),
-        j2000_to_target.getTimes(),
-        std::vector<ale::Vec3d>(j2000_to_target.getTimes().size()),
-        j2000_to_target.getConstantRotation(),
-        j2000_to_target.getConstantFrames(),
-        j2000_to_target.getTimeDependentFrames());
-  }
 
   state["m_currentParameterValue"] = std::vector<double>(NUM_PARAMETERS, 0.0);
   LOG_INFO("m_currentParameterValue: {}",
