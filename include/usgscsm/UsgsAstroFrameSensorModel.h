@@ -362,8 +362,12 @@ class UsgsAstroFrameSensorModel : public csm::RasterGM,
   std::vector<double> m_opticalDistCoeffs;
   std::vector<double> m_transX;
   std::vector<double> m_transY;
+  std::vector<double> m_angularVelocity;
+  std::vector<double> m_targetQuaternion;
+  std::vector<double> m_targetAngularVelocity;
   std::vector<double> m_spacecraftVelocity;
   std::vector<double> m_sunPosition;
+  std::vector<double> m_sunVelocity;
   std::vector<double> m_ccdCenter;
   std::vector<double> m_iTransS;
   std::vector<double> m_iTransL;
