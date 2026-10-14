@@ -3100,6 +3100,7 @@ VariantMap UsgsAstroLsSensorModel::constructStateFromIsd(
       state["m_detectorLineOrigin"].dump());
 
   ale::Orientations j2000_to_sensor = ale::getInstrumentPointing(jsonIsd);
+  ephemTime = inst_state.getTimes();
   ale::State interpInstState, rotatedInstState;
   std::vector<double> positions(ephemTime.size() * 3, 0.0);
   std::vector<double> velocities(ephemTime.size() * 3, 0.0);
