@@ -173,8 +173,8 @@ void computeDistortedFocalPlaneCoordinates(
     const double &lineSumming, const double &startingSample,
     const double &startingLine, const double iTransS[], const double iTransL[],
     double &distortedX, double &distortedY) {
-  double detSample = sample * sampleSumming + startingSample;
-  double detLine = line * lineSumming + startingLine;
+  double detSample = sample * sampleSumming - sampleOrigin + startingSample;
+  double detLine = line * lineSumming - lineOrigin + startingLine;
   double m11 = iTransL[1];
   double m12 = iTransL[2];
   double m21 = iTransS[1];
