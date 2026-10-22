@@ -1266,9 +1266,7 @@ VariantMap UsgsAstroFrameSensorModel::getModelMap() const {
   state.set<std::vector<double>>("m_targetAngularVelocity", {m_targetAngularVelocity[0], m_targetAngularVelocity[1], m_targetAngularVelocity[2]});
   state.set<std::vector<double>>("m_angularVelocity", {m_angularVelocity[0], m_angularVelocity[1], m_angularVelocity[2]});
   state.set<std::vector<double>>("m_spacecraftVelocity", {m_spacecraftVelocity[0], m_spacecraftVelocity[1], m_spacecraftVelocity[2]});
-  std::cout << m_sunPosition.size() << std::endl;
   state.set<std::vector<double>>("m_sunPosition", {m_sunPosition[0], m_sunPosition[1], m_sunPosition[2]});
-  std::cout << m_sunVelocity.size() << std::endl;
   state.set<std::vector<double>>("m_sunVelocity", {m_sunVelocity[0], m_sunVelocity[1], m_sunVelocity[2]});
   state.set<double>("m_startingDetectorSample", m_startingDetectorSample);
   state.set<double>("m_startingDetectorLine", m_startingDetectorLine);
@@ -1835,9 +1833,7 @@ VariantMap UsgsAstroFrameSensorModel::constructStateFromIsd(
         j2000_to_target.getTimeDependentFrames());
   }
 
-  ale::Orientations sensor_to_j2000 = j2000_to_sensor.inverse();
-  ale::Orientations sensor_to_target = j2000_to_target * sensor_to_j2000;
-  ephemTime = sensor_to_target.getTimes();
+  ephemTime = j2000_to_sensor.getTimes();
   quaternions.clear();
   angularVelocities.clear();
 
