@@ -28,7 +28,7 @@ const std::string kFrameJson =
     std::string(STARDS_FIXTURE_DIR) + "/frameState.json";
 // Committed golden, so a STARDS format change still fails a test. Relative to
 // the ctest working directory, which is the source tests/ dir.
-const std::string kFrameStards = std::string(STARDS_FIXTURE_DIR) + "/frameState.stards";
+const std::string kFrameStards = "data/frameState.stards";
 
 std::string scratchPath(const std::string &name) {
   return std::string(STARDS_FIXTURE_DIR) + "/" + name;
