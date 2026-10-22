@@ -1721,10 +1721,10 @@ void UsgsAstroPushFrameSensorModel::getQuaternions(const double& time,
       time, nOrderSensorQuat);
   // Should this be replaced with the ale::Orientations interpolation?
   double sensorQ[4];
-  lagrangeInterp(m_numSensorQuaternions / 4, &m_sensorQuaternions[0], m_t0SensorQuat, m_dtSensorQuat,
+  lagrangeInterp(m_numSensorQuaternions, &m_sensorQuaternions[0], m_t0SensorQuat, m_dtSensorQuat,
                  time, 4, nOrderSensorQuat, sensorQ);
   double targetQ[4];
-  lagrangeInterp(m_numTargetQuaternions / 4, &m_targetQuaternions[0], m_t0TargetQuat, m_dtTargetQuat,
+  lagrangeInterp(m_numTargetQuaternions, &m_targetQuaternions[0], m_t0TargetQuat, m_dtTargetQuat,
                  time, 4, nOrderTargetQuat, targetQ);
   ale::Rotation j2000ToSensor(sensorQ[3], sensorQ[0], sensorQ[1], sensorQ[2]);
   ale::Rotation j2000ToTarget(targetQ[3], targetQ[0], targetQ[1], targetQ[2]);
@@ -2287,7 +2287,7 @@ VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
 
   state["m_targetQuaternions"] = quaternions;
   state["m_targetAngularVelocities"] = angularVelocities;
-  state["m_numTargetQuaternions"] = quaternions.size();
+  state["m_numTargetQuaternions"] = quaternions.size()/4;
   LOG_INFO(
       "m_targetQuaternions: {}"
       "m_numTargetQuaternions: {}",
@@ -2492,7 +2492,7 @@ VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
 
   state["m_sensorQuaternions"] = quaternions;
   state["m_sensorAngularVelocities"] = angularVelocities;
-  state["m_numSensorQuaternions"] = quaternions.size();
+  state["m_numSensorQuaternions"] = quaternions.size()/4;
   LOG_INFO(
       "m_sensorQuaternions: {}"
       "m_numSensorQuaternions: {}",
