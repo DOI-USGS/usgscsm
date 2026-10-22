@@ -28,7 +28,7 @@ const std::string kFrameJson =
     std::string(STARDS_FIXTURE_DIR) + "/frameState.json";
 // Committed golden, so a STARDS format change still fails a test. Relative to
 // the ctest working directory, which is the source tests/ dir.
-const std::string kFrameStards = "data/frameState.stards";
+const std::string kFrameStards = std::string(STARDS_FIXTURE_DIR) + "/frameState.stards";
 
 std::string scratchPath(const std::string &name) {
   return std::string(STARDS_FIXTURE_DIR) + "/" + name;
@@ -83,12 +83,12 @@ TEST(Stards, VariantMapMatchesJsonState) {
   // A representative scalar and a large array agree.
   EXPECT_DOUBLE_EQ(fromJson.get<double>("m_focalLength"),
                    fromStards.get<double>("m_focalLength"));
-  std::vector<double> qJson = fromJson.get<std::vector<double>>("m_quaternions");
+  std::vector<double> qJson = fromJson.get<std::vector<double>>("m_sensorQuaternions");
   std::vector<double> qStards =
-      fromStards.get<std::vector<double>>("m_quaternions");
+      fromStards.get<std::vector<double>>("m_sensorQuaternions");
   ASSERT_EQ(qJson.size(), qStards.size());
   for (size_t i = 0; i < qJson.size(); ++i) {
-    EXPECT_DOUBLE_EQ(qJson[i], qStards[i]) << "quaternion element " << i;
+    EXPECT_DOUBLE_EQ(qJson[i], qStards[i]) << "sensor quaternion element " << i;
   }
 }
 
