@@ -11,6 +11,7 @@
 #include <csm/Version.h>
 
 #include "ale/Util.h"
+#include <kerneless/utcet.h>
 
 using json = nlohmann::json;
 
@@ -1187,7 +1188,9 @@ std::string UsgsAstroFrameSensorModel::getReferenceDateAndTime() const {
   // Keep a double; a time_t cast would truncate the sub-second part.
   double ephemTime = m_ephemerisTime;
 
-  return ephemTimeToCalendarTime(ephemTime);
+  std::string utcTime = ephemTimeToCalendarTime(ephemTime, "ISOC", 6, 30);
+  utcTime += "Z";
+  return utcTime;
 }
 
 /**

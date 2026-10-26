@@ -8,6 +8,7 @@
 #include <iomanip>
 
 #include <nlohmann/json.hpp>
+#include <kerneless/utcet.h>
 
 #include "ale/Util.h"
 
@@ -561,6 +562,9 @@ csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
     double timeTolerance = m_exposureDuration * desiredPrecision / 2.0;
 
     double time = dopplerShift(groundPt, timeTolerance, adj);
+    LOG_INFO(
+        "Get time {} from dopplerShift with tolerance {}",
+        time, timeTolerance);
     double slantRangeValue = slantRange(groundPt, time, adj);
 
     // Find the ground range, based on the ground-range-to-slant-range
@@ -610,8 +614,7 @@ double UsgsAstroSarSensorModel::dopplerShift(
   csm::EcefVector groundVec(groundPt.x, groundPt.y, groundPt.z);
   std::function<double(double)> dopplerShiftFunction = [this, groundVec,
                                                         adj](double time) {
-    csm::EcefVector spacecraftPosition =
-        getAdjustedSpacecraftPosition(time, adj);
+    csm::EcefVector spacecraftPosition = getAdjustedSpacecraftPosition(time, adj);
     csm::EcefVector spacecraftVelocity = getAdjustedSensorVelocity(time, adj);
     csm::EcefVector lookVector = spacecraftPosition - groundVec;
 
@@ -1864,12 +1867,12 @@ string UsgsAstroSarSensorModel::getSensorMode() const { return "STRIP"; }
  */
 string UsgsAstroSarSensorModel::getReferenceDateAndTime() const {
   csm::ImageCoord referencePointImage = groundToImage(m_referencePointXyz);
-  double relativeTime =
-    UsgsAstroSarSensorModel::getImageTime(referencePointImage);
+  double relativeTime = UsgsAstroSarSensorModel::getImageTime(referencePointImage);
   // Keep a double; a time_t cast would truncate the sub-second part.
   double ephemTime = m_centerEphemerisTime + relativeTime;
-
-  return ephemTimeToCalendarTime(ephemTime);
+  std::string utcTime = ephemTimeToCalendarTime(ephemTime, "ISOC", 6, 30);
+  utcTime += "Z";
+  return utcTime;
 }
 
 /**
