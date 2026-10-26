@@ -96,8 +96,6 @@ else()
   message(STATUS "Found CSM Include Directory: ${CSM_INCLUDE_DIR}")
 endif()
 
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/kerneless/include")
-
 if(USGSCSM_EXTERNAL_DEPS)
   message(STATUS "Using external dependencies")
 
@@ -788,6 +786,16 @@ target_include_directories(usgscsm
                            ${USGSCSM_INCLUDE_DIRS}
                            ${CSM_INCLUDE_DIR}
 )
+
+set(KERNELESS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/kerneless/include/kerneless")
+message("${KERNELESS_INCLUDE_DIR}/utcet.h")
+if(NOT EXISTS "${KERNELESS_INCLUDE_DIR}/utcet.h")
+  message(FATAL_ERROR
+    "Kerneless header not found at ${KERNELESS_INCLUDE_DIR}. The kerneless submodule is "
+    "missing; run: git submodule update --init --recursive")
+endif()
+
+target_include_directories(usgscsm INTERFACE "${KERNELESS_INCLUDE_DIR}")
 
 # STARDS support: consume the header-only reader from external/StarDS through our
 # own INTERFACE target rather than the submodule's CMakeLists, which would also
