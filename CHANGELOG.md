@@ -41,6 +41,7 @@ release.
 
 ### Changed
 - Resolve the distortion type from an ISD using usgscsm's own `DistortionType` enum rather than mapping through ale's enum, and throw on an unknown or missing distortion model instead of silently defaulting to `TRANSVERSE`. [#526](https://github.com/DOI-USGS/usgscsm/pull/526)
+- Changed the construction process for stored ephemeris data to use vector index access instead of `push_back`. This improves instantiation speed of USGSCSM cameras. [#540](https://github.com/DOI-USGS/usgscsm/pull/540)
 
 ### Fixed
 - `getReferenceDateAndTime` no longer truncates the ephemeris time to whole seconds, which gave framelets of a framing instrument such as JunoCam an identical reference time and serial number, so jigsaw rejected them as duplicates. The time is kept as a `double`, and the calendar string is now emitted to microseconds, the resolution many satellites use since several scan lines can be acquired within a millisecond. [#534](https://github.com/DOI-USGS/usgscsm/pull/534)
