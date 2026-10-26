@@ -33,4 +33,4 @@
 	url = https://github.com/madler/zlib
 [submodule "external/kerneless"]
 	path = external/kerneless
-	url = git@github.com:DOI-USGS/kerneless.git
+	url = https://github.com/DOI-USGS/kerneless.git
