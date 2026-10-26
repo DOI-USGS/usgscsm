@@ -794,7 +794,7 @@ if(NOT EXISTS "${KERNELESS_INCLUDE_DIR}/kerneless/utcet.h")
     "missing; run: git submodule update --init --recursive")
 endif()
 
-target_include_directories(usgscsm INTERFACE "${KERNELESS_INCLUDE_DIR}")
+target_include_directories(usgscsm PRIVATE "${KERNELESS_INCLUDE_DIR}")
 
 # STARDS support: consume the header-only reader from external/StarDS through our
 # own INTERFACE target rather than the submodule's CMakeLists, which would also
