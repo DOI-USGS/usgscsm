@@ -1746,9 +1746,9 @@ VariantMap UsgsAstroFrameSensorModel::constructStateFromIsd(
   for (int i = 0; i < ephemTime.size(); i++) {
     rotatedSunState = j2000_to_target.rotateStateAt(ephemTime[i], sunStates[i]);
     // ALE operates in km and we want m
-    sunPositions[idx++] = rotatedSunState.position.x * 1000;
-    sunPositions[idx++] = rotatedSunState.position.y * 1000;
-    sunPositions[idx++] = rotatedSunState.position.z * 1000;
+    sunPositions[sunIdx++] = rotatedSunState.position.x * 1000;
+    sunPositions[sunIdx++] = rotatedSunState.position.y * 1000;
+    sunPositions[sunIdx++] = rotatedSunState.position.z * 1000;
   }
 
   state["m_sunPosition"] = sunPositions;
