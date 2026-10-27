@@ -31,3 +31,6 @@
 [submodule "external/zlib"]
 	path = external/zlib
 	url = https://github.com/madler/zlib
+[submodule "external/kerneless"]
+	path = external/kerneless
+	url = https://github.com/DOI-USGS/kerneless.git

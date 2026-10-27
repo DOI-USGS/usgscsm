@@ -780,7 +780,7 @@ TEST_F(FrameSensorModel, losEllipsoidIntersect) {
 
 TEST_F(OrbitalFrameSensorModel, ReferenceDateTime) {
   std::string date = sensorModel->getReferenceDateAndTime();
-  EXPECT_EQ(date, "2000-01-01T12:15:35.816000Z");
+  EXPECT_EQ(date, "2000-01-01T12:15:35.816072Z");
 }
 
 // JunoCam framelets are a few milliseconds apart, so their reference times (which

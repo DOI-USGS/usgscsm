@@ -8,6 +8,7 @@
 #include <iomanip>
 
 #include <nlohmann/json.hpp>
+#include <kerneless/utcet.h>
 
 #include "ale/Util.h"
 
@@ -610,8 +611,7 @@ double UsgsAstroSarSensorModel::dopplerShift(
   csm::EcefVector groundVec(groundPt.x, groundPt.y, groundPt.z);
   std::function<double(double)> dopplerShiftFunction = [this, groundVec,
                                                         adj](double time) {
-    csm::EcefVector spacecraftPosition =
-        getAdjustedSpacecraftPosition(time, adj);
+    csm::EcefVector spacecraftPosition = getAdjustedSpacecraftPosition(time, adj);
     csm::EcefVector spacecraftVelocity = getAdjustedSensorVelocity(time, adj);
     csm::EcefVector lookVector = spacecraftPosition - groundVec;
 
@@ -1864,12 +1864,12 @@ string UsgsAstroSarSensorModel::getSensorMode() const { return "STRIP"; }
  */
 string UsgsAstroSarSensorModel::getReferenceDateAndTime() const {
   csm::ImageCoord referencePointImage = groundToImage(m_referencePointXyz);
-  double relativeTime =
-    UsgsAstroSarSensorModel::getImageTime(referencePointImage);
+  double relativeTime = UsgsAstroSarSensorModel::getImageTime(referencePointImage);
   // Keep a double; a time_t cast would truncate the sub-second part.
   double ephemTime = m_centerEphemerisTime + relativeTime;
-
-  return ephemTimeToCalendarTime(ephemTime);
+  std::string utcTime = ephemTimeToCalendarTime(ephemTime, "ISOC", 6, 30);
+  utcTime += "Z";
+  return utcTime;
 }
 
 /**

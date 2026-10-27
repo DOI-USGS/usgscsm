@@ -273,7 +273,7 @@ TEST_F(OrbitalLineScanSensorModel, InversionReallyHigh) {
 
 TEST_F(OrbitalLineScanSensorModel, ReferenceDateTime) {
   std::string date = sensorModel->getReferenceDateAndTime();
-  EXPECT_EQ(date, "2000-01-01T12:15:35.766000Z");
+  EXPECT_EQ(date, "2000-01-01T12:15:35.766072Z");
 }
 
 TEST_F(FlippedOrbitalLineScanSensorModel, OppositeFlightDetector) {

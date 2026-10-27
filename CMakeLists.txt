@@ -787,6 +787,15 @@ target_include_directories(usgscsm
                            ${CSM_INCLUDE_DIR}
 )
 
+set(KERNELESS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/kerneless/include/")
+if(NOT EXISTS "${KERNELESS_INCLUDE_DIR}/kerneless/utcet.h")
+  message(FATAL_ERROR
+    "Kerneless header not found at ${KERNELESS_INCLUDE_DIR}. The kerneless submodule is "
+    "missing; run: git submodule update --init --recursive")
+endif()
+
+target_include_directories(usgscsm PRIVATE "${KERNELESS_INCLUDE_DIR}")
+
 # STARDS support: consume the header-only reader from external/StarDS through our
 # own INTERFACE target rather than the submodule's CMakeLists, which would also
 # build its tools/tests and resolve the compression deps to dynamic system libs.

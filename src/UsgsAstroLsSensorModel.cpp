@@ -37,6 +37,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
 #include <csm/Error.h>
 
 #include "ale/Util.h"
+#include <kerneless/utcet.h>
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
@@ -1524,8 +1525,10 @@ std::string UsgsAstroLsSensorModel::getReferenceDateAndTime() const {
     UsgsAstroLsSensorModel::getImageTime(referencePointImage);
   // Keep a double; a time_t cast would truncate the sub-second part.
   double ephemTime = m_centerEphemerisTime + relativeTime;
-
-  return ephemTimeToCalendarTime(ephemTime);
+  
+  std::string utcTime = ephemTimeToCalendarTime(ephemTime, "ISOC", 6, 30);
+  utcTime += "Z";
+  return utcTime;
 }
 
 /**
