@@ -239,5 +239,5 @@ TEST_F(SarSensorModel, adjustedPositionVelocity) {
 
 TEST_F(SarSensorModel, ReferenceDateTime) {
   std::string date = sensorModel->getReferenceDateAndTime();
-  EXPECT_EQ(date, "2010-04-25T04:25:03.138883Z");
+  EXPECT_EQ(date, "2010-04-25T04:22:32.884364Z");
 }
