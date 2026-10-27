@@ -125,28 +125,16 @@ TEST_F(SarSensorModel, GroundToImage) {
 
 TEST_F(SarSensorModel, spacecraftPosition) {
   csm::EcefVector position = sensorModel->getSpacecraftPosition(-0.0025);
-<<<<<<< HEAD
-  EXPECT_REL_NEAR(position.x, -1635995.5201821502,  1e-10);
-  EXPECT_REL_NEAR(position.y, -546309.45251960948,  1e-10);
-  EXPECT_REL_NEAR(position.z, 502939.540595520055, 1e-10);
-=======
   EXPECT_REL_NEAR(position.x, -1553518.1072211678,  1e-10);
   EXPECT_REL_NEAR(position.y, -521679.20450949093,  1e-10);
   EXPECT_REL_NEAR(position.z, 734980.13675154676, 1e-10);
->>>>>>> 3c3422a (Update SAR tests)
 }
 
 TEST_F(SarSensorModel, spacecraftVelocity) {
   csm::EcefVector velocity = sensorModel->getSensorVelocity(-0.0025);
-<<<<<<< HEAD
-  EXPECT_REL_NEAR(velocity.x, -446.56426047540089, 1e-10);
-  EXPECT_REL_NEAR(velocity.y, -129.48096007870419, 1e-10);
-  EXPECT_REL_NEAR(velocity.z, -1581.3529467251019,  1e-10);
-=======
   EXPECT_REL_NEAR(velocity.x, -649.57989722428533, 1e-10);
   EXPECT_REL_NEAR(velocity.y, -197.87621449916597, 1e-10);
   EXPECT_REL_NEAR(velocity.z, -1502.4247941033825,  1e-10);
->>>>>>> 3c3422a (Update SAR tests)
 }
 
 // Lagrange interpolation accumulates rounding differently across platforms,
@@ -154,17 +142,10 @@ TEST_F(SarSensorModel, spacecraftVelocity) {
 // coeffs[0] is ~4.3e-10. Use 1e-9 to barely pass.
 TEST_F(SarSensorModel, getRangeCoefficients) {
   std::vector<double> coeffs = sensorModel->getRangeCoefficients(-0.0025);
-<<<<<<< HEAD
-  EXPECT_REL_NEAR(coeffs[0], 79942.373146987447, 1e-9);
-  EXPECT_REL_NEAR(coeffs[1], 0.68371231709117253, 1e-10);
-  EXPECT_REL_NEAR(coeffs[2], 3.476165898286063e-06, 1e-10);
-  EXPECT_REL_NEAR(coeffs[3], -2.4293810986426765e-11, 1e-15);
-=======
   EXPECT_REL_NEAR(coeffs[0], 79942.38073214989, 1e-9);
   EXPECT_REL_NEAR(coeffs[1], 0.69198121098329701, 1e-10);
   EXPECT_REL_NEAR(coeffs[2], 3.4032008455376583e-06, 1e-10);
   EXPECT_REL_NEAR(coeffs[3], -2.3997833126639931e-11, 1e-10);
->>>>>>> 3c3422a (Update SAR tests)
 }
 
 // computeGroundPartials uses finite differences with groundToImage(), whose
@@ -181,11 +162,7 @@ TEST_F(SarSensorModel, computeGroundPartials) {
   ASSERT_EQ(partials.size(), 6);
   // Line partials: limited by Doppler root-finding tolerance (0.001)
   EXPECT_REL_NEAR(partials[0], -0.052475430922178629, 2e-3);
-<<<<<<< HEAD
-  EXPECT_REL_NEAR(partials[1], -0.016084150736514858, 7e-3);
-=======
   EXPECT_REL_NEAR(partials[1], -0.01603172188094959, 7e-3);
->>>>>>> 3c3422a (Update SAR tests)
   EXPECT_REL_NEAR(partials[2], -0.12147919510717504,  2e-3);
   // Sample partials: polynomial root-finding converges much tighter
   EXPECT_REL_NEAR(partials[3], 0.075598918597946374,  1e-6);
