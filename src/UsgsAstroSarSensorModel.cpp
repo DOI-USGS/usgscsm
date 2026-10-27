@@ -91,6 +91,8 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
     // Re-compute times so that they are linearly spaced
     double startTime = ephemTime.front();
     double timeStep = (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
+
+    // Scale the times to be relative to the center time
     state["m_t0Ephem"] = startTime - ale::getCenterTime(isd);
     state["m_dtEphem"] = timeStep;
     for (int i = 0; i < ephemTime.size(); i++) {
@@ -141,6 +143,7 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
       getScaleConversionCoefficients(isd, parsingWarnings.get());
   std::vector<double> coeffsTimeVector = getScaleConversionTimes(isd, parsingWarnings.get());
   for (size_t i = 0; i < coeffsTimeVector.size(); i++) {
+    // Scale the times to be relative to the center time
     coeffsTimeVector[i] = coeffsTimeVector[i] - ale::getCenterTime(isd);
   }
   state["m_scaleConversionTimes"] = coeffsTimeVector;
