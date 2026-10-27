@@ -102,20 +102,22 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
   ale::States sunState = ale::getSunPosition(isd);
   ale::Orientations j2000_to_target = ale::getBodyRotation(isd);
   
-  std::vector<double> sunPositions = {};
-  std::vector<double> sunVelocities = {};
+  std::vector<double> sunPositions(ephemTime.size()*3, 0.0);
+  std::vector<double> sunVelocities(ephemTime.size()*3, 0.0);
+
+  int sunIdx = 0;
   for (int i = 0; i < ephemTime.size(); i++) {
 
     ale::State j2000SunState = sunState.getState(ephemTime[i], ale::SPLINE);
     ale::State rotatedSunState =
         j2000_to_target.rotateStateAt(ephemTime[i], j2000SunState, ale::SLERP);
     // ALE operates in km and we want m
-    sunPositions.push_back(rotatedSunState.position.x * 1000);
-    sunPositions.push_back(rotatedSunState.position.y * 1000);
-    sunPositions.push_back(rotatedSunState.position.z * 1000);
-    sunVelocities.push_back(rotatedSunState.velocity.x * 1000);
-    sunVelocities.push_back(rotatedSunState.velocity.y * 1000);
-    sunVelocities.push_back(rotatedSunState.velocity.z * 1000);
+    sunPositions[sunIdx] = rotatedSunState.position.x * 1000;
+    sunVelocities[sunIdx++] = rotatedSunState.velocity.x * 1000;
+    sunPositions[sunIdx] = rotatedSunState.position.y * 1000;
+    sunVelocities[sunIdx++] = rotatedSunState.velocity.y * 1000;
+    sunPositions[sunIdx] = rotatedSunState.position.z * 1000;
+    sunVelocities[sunIdx++] = rotatedSunState.velocity.z * 1000;
   }
   state["m_sunPosition"] = sunPositions;
   state["m_sunVelocity"] = sunVelocities;
@@ -146,8 +148,10 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
 
   // Process positions and velocities
   ale::State interpInstState, rotatedInstState;
-  std::vector<double> instPositions = {};
-  std::vector<double> instVelocities = {};
+  std::vector<double> instPositions(ephemTime.size()*3, 0.0);
+  std::vector<double> instVelocities(ephemTime.size()*3, 0.0);
+
+  int idx = 0;
   for (int i = 0; i < ephemTime.size(); i++) {
     
     interpInstState = inst_state.getState(ephemTime[i], ale::SPLINE);
@@ -155,12 +159,12 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
       j2000_to_target.rotateStateAt(ephemTime[i], interpInstState, ale::SLERP);
     
     // ALE operates in km and we want m
-    instPositions.push_back(rotatedInstState.position.x * 1000);
-    instPositions.push_back(rotatedInstState.position.y * 1000);
-    instPositions.push_back(rotatedInstState.position.z * 1000);
-    instVelocities.push_back(rotatedInstState.velocity.x * 1000);
-    instVelocities.push_back(rotatedInstState.velocity.y * 1000);
-    instVelocities.push_back(rotatedInstState.velocity.z * 1000);
+    instPositions[idx] = rotatedInstState.position.x * 1000;
+    instVelocities[idx++] = rotatedInstState.velocity.x * 1000;
+    instPositions[idx] = rotatedInstState.position.y * 1000;
+    instVelocities[idx++] = rotatedInstState.velocity.y * 1000;
+    instPositions[idx] = rotatedInstState.position.z * 1000;
+    instVelocities[idx++] = rotatedInstState.velocity.z * 1000;
 
   }
   state["m_positions"] = instPositions;

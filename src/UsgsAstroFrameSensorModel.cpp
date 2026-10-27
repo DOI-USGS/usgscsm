@@ -1689,19 +1689,20 @@ VariantMap UsgsAstroFrameSensorModel::constructStateFromIsd(
   std::vector<ale::State> instStates = inst_state.getStates();
   ale::Orientations j2000_to_target = ale::getBodyRotation(parsedIsd);
   ale::State rotatedInstState;
-  std::vector<double> positions = {};
-  std::vector<double> velocities = {};
+  std::vector<double> positions(ephemTime.size()*3, 0.0);
+  std::vector<double> velocities(ephemTime.size()*3, 0.0);
 
+  int idx = 0;
   for (int i = 0; i < ephemTime.size(); i++) {
     rotatedInstState =
         j2000_to_target.rotateStateAt(ephemTime[i], instStates[i], ale::SLERP);
     // ALE operates in km and we want m
-    positions.push_back(rotatedInstState.position.x * 1000);
-    positions.push_back(rotatedInstState.position.y * 1000);
-    positions.push_back(rotatedInstState.position.z * 1000);
-    velocities.push_back(rotatedInstState.velocity.x * 1000);
-    velocities.push_back(rotatedInstState.velocity.y * 1000);
-    velocities.push_back(rotatedInstState.velocity.z * 1000);
+    positions[idx] = rotatedInstState.position.x * 1000;
+    velocities[idx++] = rotatedInstState.velocity.x * 1000;
+    positions[idx] = rotatedInstState.position.y * 1000;
+    velocities[idx++] = rotatedInstState.velocity.y * 1000;
+    positions[idx] = rotatedInstState.position.z * 1000;
+    velocities[idx++] = rotatedInstState.velocity.z * 1000;
   }
 
   if (!positions.empty() && positions.size() != 3) {
@@ -1739,14 +1740,15 @@ VariantMap UsgsAstroFrameSensorModel::constructStateFromIsd(
   std::vector<ale::State> sunStates = sunState.getStates();
   ephemTime = sunState.getTimes();
   ale::State rotatedSunState;
-  std::vector<double> sunPositions = {};
+  std::vector<double> sunPositions(ephemTime.size()*3, 0.0);
 
+  int sunIdx = 0;
   for (int i = 0; i < ephemTime.size(); i++) {
     rotatedSunState = j2000_to_target.rotateStateAt(ephemTime[i], sunStates[i]);
     // ALE operates in km and we want m
-    sunPositions.push_back(rotatedSunState.position.x * 1000);
-    sunPositions.push_back(rotatedSunState.position.y * 1000);
-    sunPositions.push_back(rotatedSunState.position.z * 1000);
+    sunPositions[sunIdx++] = rotatedSunState.position.x * 1000;
+    sunPositions[sunIdx++] = rotatedSunState.position.y * 1000;
+    sunPositions[sunIdx++] = rotatedSunState.position.z * 1000;
   }
 
   state["m_sunPosition"] = sunPositions;
