@@ -168,7 +168,6 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
 
   // Make the Sun positions and velocities be in target body coordinates
   ale::States sunState = ale::getSunPosition(isd);
-  
   std::vector<double> sunPositions(ephemTime.size()*3, 0.0);
   std::vector<double> sunVelocities(ephemTime.size()*3, 0.0);
 
@@ -2024,7 +2023,7 @@ string UsgsAstroSarSensorModel::getReferenceDateAndTime() const {
   double relativeTime = UsgsAstroSarSensorModel::getImageTime(referencePointImage);
   // Keep a double; a time_t cast would truncate the sub-second part.
   double ephemTime = m_centerEphemerisTime + relativeTime;
-  std::string utcTime = ephemTimeToCalendarTime(ephemTime, "ISOC", 6, 30);
+  std::string utcTime = ephemTimeToCalendarTime(ephemTime, "ISOC", 5, 30);
   utcTime += "Z";
   return utcTime;
 }
