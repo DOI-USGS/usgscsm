@@ -562,9 +562,6 @@ csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
     double timeTolerance = m_exposureDuration * desiredPrecision / 2.0;
 
     double time = dopplerShift(groundPt, timeTolerance, adj);
-    LOG_INFO(
-        "Get time {} from dopplerShift with tolerance {}",
-        time, timeTolerance);
     double slantRangeValue = slantRange(groundPt, time, adj);
 
     // Find the ground range, based on the ground-range-to-slant-range
