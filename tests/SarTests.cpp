@@ -125,16 +125,16 @@ TEST_F(SarSensorModel, GroundToImage) {
 
 TEST_F(SarSensorModel, spacecraftPosition) {
   csm::EcefVector position = sensorModel->getSpacecraftPosition(-0.0025);
-  EXPECT_REL_NEAR(position.x, 212048065766.25,  1e-10);
-  EXPECT_REL_NEAR(position.y, 64616398201.375,  1e-10);
-  EXPECT_REL_NEAR(position.z, 488643469101.125, 1e-10);
+  EXPECT_REL_NEAR(position.x, -1635995.5201821502,  1e-10);
+  EXPECT_REL_NEAR(position.y, -546309.45251960948,  1e-10);
+  EXPECT_REL_NEAR(position.z, 502939.540595520055, 1e-10);
 }
 
 TEST_F(SarSensorModel, spacecraftVelocity) {
   csm::EcefVector velocity = sensorModel->getSensorVelocity(-0.0025);
-  EXPECT_REL_NEAR(velocity.x, -427443125.77587891, 1e-10);
-  EXPECT_REL_NEAR(velocity.y, -144589932.36868286, 1e-10);
-  EXPECT_REL_NEAR(velocity.z, 203454745.77563477,  1e-10);
+  EXPECT_REL_NEAR(velocity.x, -446.56426047540089, 1e-10);
+  EXPECT_REL_NEAR(velocity.y, -129.48096007870419, 1e-10);
+  EXPECT_REL_NEAR(velocity.z, -1581.3529467251019,  1e-10);
 }
 
 // Lagrange interpolation accumulates rounding differently across platforms,
@@ -142,10 +142,10 @@ TEST_F(SarSensorModel, spacecraftVelocity) {
 // coeffs[0] is ~4.3e-10. Use 1e-9 to barely pass.
 TEST_F(SarSensorModel, getRangeCoefficients) {
   std::vector<double> coeffs = sensorModel->getRangeCoefficients(-0.0025);
-  EXPECT_REL_NEAR(coeffs[0], 108115.564453125, 1e-9);
-  EXPECT_REL_NEAR(coeffs[1], 28749.89952051267, 1e-10);
-  EXPECT_REL_NEAR(coeffs[2], -0.25643537028547314, 1e-10);
-  EXPECT_REL_NEAR(coeffs[3], 1.0983187306945561e-06, 1e-10);
+  EXPECT_REL_NEAR(coeffs[0], 79942.373146987447, 1e-9);
+  EXPECT_REL_NEAR(coeffs[1], 0.68371231709117253, 1e-10);
+  EXPECT_REL_NEAR(coeffs[2], 3.476165898286063e-06, 1e-10);
+  EXPECT_REL_NEAR(coeffs[3], -2.4293810986426765e-11, 1e-15);
 }
 
 // computeGroundPartials uses finite differences with groundToImage(), whose
@@ -162,7 +162,7 @@ TEST_F(SarSensorModel, computeGroundPartials) {
   ASSERT_EQ(partials.size(), 6);
   // Line partials: limited by Doppler root-finding tolerance (0.001)
   EXPECT_REL_NEAR(partials[0], -0.052475430922178629, 2e-3);
-  EXPECT_REL_NEAR(partials[1], -0.015883011992733977, 7e-3);
+  EXPECT_REL_NEAR(partials[1], -0.016084150736514858, 7e-3);
   EXPECT_REL_NEAR(partials[2], -0.12147919510717504,  2e-3);
   // Sample partials: polynomial root-finding converges much tighter
   EXPECT_REL_NEAR(partials[3], 0.075598918597946374,  1e-6);
@@ -239,5 +239,5 @@ TEST_F(SarSensorModel, adjustedPositionVelocity) {
 
 TEST_F(SarSensorModel, ReferenceDateTime) {
   std::string date = sensorModel->getReferenceDateAndTime();
-  EXPECT_EQ(date, "2020-08-16T20:51:09.467166Z");
+  EXPECT_EQ(date, "2010-04-25T04:25:03.140431Z");
 }

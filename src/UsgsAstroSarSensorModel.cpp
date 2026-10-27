@@ -91,7 +91,9 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
     // Re-compute times so that they are linearly spaced
     double startTime = ephemTime.front();
     double timeStep = (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
-    state["m_t0Ephem"] = startTime;
+
+    // Scale the times to be relative to the center time
+    state["m_t0Ephem"] = startTime - ale::getCenterTime(isd);
     state["m_dtEphem"] = timeStep;
     for (int i = 0; i < ephemTime.size(); i++) {
       ephemTime[i] = startTime + i * timeStep;
@@ -141,8 +143,12 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
   state["m_scaledPixelWidth"] = getScaledPixelWidth(isd, parsingWarnings.get());
   state["m_scaleConversionCoefficients"] =
       getScaleConversionCoefficients(isd, parsingWarnings.get());
-  state["m_scaleConversionTimes"] =
-      getScaleConversionTimes(isd, parsingWarnings.get());
+  std::vector<double> coeffsTimeVector = getScaleConversionTimes(isd, parsingWarnings.get());
+  for (size_t i = 0; i < coeffsTimeVector.size(); i++) {
+    // Scale the times to be relative to the center time
+    coeffsTimeVector[i] = coeffsTimeVector[i] - ale::getCenterTime(isd);
+  }
+  state["m_scaleConversionTimes"] = coeffsTimeVector;
   state["m_wavelength"] = getWavelength(isd, parsingWarnings.get());
   state["m_lookDirection"] = getLookDirection(isd, parsingWarnings.get());
 
@@ -564,8 +570,11 @@ csm::ImageCoord UsgsAstroSarSensorModel::groundToImage(
     double groundRange = slantRangeToGroundRange(
         groundPt, time, slantRangeValue, groundTolerance);
 
-    double line = (time - m_startingEphemerisTime) / m_exposureDuration + 0.5;
+    double line = (time - m_t0Ephem) / m_exposureDuration + 0.5;
     double sample = groundRange / m_scaledPixelWidth + 0.5;
+    LOG_INFO(
+        "Computed line sample {}, {}",
+        line, sample);
     return csm::ImageCoord(line, sample);
   } catch (std::exception& error) {
     std::string message = "Could not calculate groundToImage, with error [";
@@ -616,8 +625,10 @@ double UsgsAstroSarSensorModel::dopplerShift(
 
   // Do root-finding for "dopplerShift"
   double timePadding = m_exposureDuration * m_nLines * 0.25;
-  return brentRoot(m_startingEphemerisTime - timePadding,
-                   m_endingEphemerisTime + timePadding, dopplerShiftFunction,
+  double start = m_startingEphemerisTime - m_centerEphemerisTime;
+  double end = m_endingEphemerisTime - m_centerEphemerisTime;
+  return brentRoot(start - timePadding,
+                   end + timePadding, dopplerShiftFunction,
                    tolerance);
 }
 
@@ -778,8 +789,7 @@ csm::EcefCoord UsgsAstroSarSensorModel::imageToGround(
     double* achievedPrecision, csm::WarningList* warnings) const {
   LOG_INFO("Calculating imageToGround with: {}, {}, {}, {}", imagePt.samp,
               imagePt.line, height, desiredPrecision);
-  double time =
-    m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
+  double time = m_t0Ephem + (imagePt.line - 0.5) * m_exposureDuration;
   double groundRange = (imagePt.samp - 0.5) * m_scaledPixelWidth;
   LOG_INFO("Ground range: {}", groundRange);
 
@@ -962,8 +972,7 @@ csm::EcefLocus UsgsAstroSarSensorModel::imageToProximateImagingLocus(
     double desiredPrecision, double* achievedPrecision,
     csm::WarningList* warnings) const {
   // Compute the slant range
-  double time =
-      m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
+  double time = m_t0Ephem + (imagePt.line - 0.5) * m_exposureDuration;
   double groundRange = (imagePt.samp - 0.5) * m_scaledPixelWidth;
   std::vector<double> coeffs = getRangeCoefficients(time);
   double slantRange = groundRangeToSlantRange(groundRange, coeffs);
@@ -1113,7 +1122,7 @@ csm::EcefVector UsgsAstroSarSensorModel::getIlluminationDirection(
  */
 double UsgsAstroSarSensorModel::getImageTime(
     const csm::ImageCoord& imagePt) const {
-  return m_startingEphemerisTime + (imagePt.line - 0.5) * m_exposureDuration;
+  return m_t0Ephem + (imagePt.line - 0.5) * m_exposureDuration;
 }
 
 /**
