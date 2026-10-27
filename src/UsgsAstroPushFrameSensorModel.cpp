@@ -2265,23 +2265,28 @@ VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
     LOG_INFO("m_t0TargetQuat not in ISD");
   }
   std::vector<double> quaternion;
-  std::vector<double> quaternions;
-  std::vector<double> angularVelocities;
+  std::vector<double> quaternions(ephemTime.size() * 4, 0.0);
+  std::vector<double> angularVelocities(0);
+  if (!j2000_to_target.getAngularVelocities().empty()) {
+    angularVelocities.resize(ephemTime.size() * 3, 0.0);
+  }
 
+  size_t quatIdx = 0;
+  size_t avIdx = 0;
   for (size_t i = 0; i < ephemTime.size(); i++) {
     ale::Rotation rotation = j2000_to_target.interpolate(
         ephemTime.front() + quatStep * i, ale::SLERP);
     quaternion = rotation.toQuaternion();
-    quaternions.push_back(quaternion[1]);
-    quaternions.push_back(quaternion[2]);
-    quaternions.push_back(quaternion[3]);
-    quaternions.push_back(quaternion[0]);
+    quaternions[quatIdx++] = quaternion[1];
+    quaternions[quatIdx++] = quaternion[2];
+    quaternions[quatIdx++] = quaternion[3];
+    quaternions[quatIdx++] = quaternion[0];
     if (!j2000_to_target.getAngularVelocities().empty()) {
       ale::Vec3d angularVelocity = j2000_to_target.interpolateAV(
           ephemTime.front() + quatStep * i);
-      angularVelocities.push_back(angularVelocity.x);
-      angularVelocities.push_back(angularVelocity.y);
-      angularVelocities.push_back(angularVelocity.z);
+      angularVelocities[avIdx++] = angularVelocity.x;
+      angularVelocities[avIdx++] = angularVelocity.y;
+      angularVelocities[avIdx++] = angularVelocity.z;
     }    
   }
 
@@ -2472,21 +2477,30 @@ VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
   }
   quaternions.clear();
   angularVelocities.clear();
+  
+  quaternions.resize(ephemTime.size() * 4, 0.0);
+  angularVelocities.resize(0);
+  if (!j2000_to_target.getAngularVelocities().empty()) {
+    angularVelocities.resize(ephemTime.size() * 3, 0.0);
+  }
+
+  quatIdx = 0;
+  avIdx = 0;
 
   for (size_t i = 0; i < ephemTime.size(); i++) {
     ale::Rotation rotation = j2000_to_sensor.interpolate(
         ephemTime.front() + quatStep * i, ale::SLERP);
     quaternion = rotation.toQuaternion();
-    quaternions.push_back(quaternion[1]);
-    quaternions.push_back(quaternion[2]);
-    quaternions.push_back(quaternion[3]);
-    quaternions.push_back(quaternion[0]);
+    quaternions[quatIdx++] = quaternion[1];
+    quaternions[quatIdx++] = quaternion[2];
+    quaternions[quatIdx++] = quaternion[3];
+    quaternions[quatIdx++] = quaternion[0];
     if (!j2000_to_sensor.getAngularVelocities().empty()) {
       ale::Vec3d angularVelocity = j2000_to_sensor.interpolateAV(
           ephemTime.front() + quatStep * i);
-      angularVelocities.push_back(angularVelocity.x);
-      angularVelocities.push_back(angularVelocity.y);
-      angularVelocities.push_back(angularVelocity.z);
+      angularVelocities[avIdx++] = angularVelocity.x;
+      angularVelocities[avIdx++] = angularVelocity.y;
+      angularVelocities[avIdx++] = angularVelocity.z;
     }
   }
 
