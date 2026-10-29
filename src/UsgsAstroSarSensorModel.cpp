@@ -2023,7 +2023,7 @@ string UsgsAstroSarSensorModel::getReferenceDateAndTime() const {
   double relativeTime = UsgsAstroSarSensorModel::getImageTime(referencePointImage);
   // Keep a double; a time_t cast would truncate the sub-second part.
   double ephemTime = m_centerEphemerisTime + relativeTime;
-  std::string utcTime = ephemTimeToCalendarTime(ephemTime, "ISOC", 4, 30);
+  std::string utcTime = ephemTimeToCalendarTime(ephemTime, "ISOC", 6, 30);
   utcTime += "Z";
   return utcTime;
 }

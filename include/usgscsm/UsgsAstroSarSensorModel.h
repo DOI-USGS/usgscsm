@@ -39,7 +39,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM,
                                     std::string& stateString);
   
   virtual csm::ImageCoord groundToImage(
-      const csm::EcefCoord& groundPt, double desiredPrecision = 0.001,
+      const csm::EcefCoord& groundPt, double desiredPrecision = 0.0001,
       double* achievedPrecision = NULL,
       csm::WarningList* warnings = NULL) const;
 
@@ -49,13 +49,13 @@ class UsgsAstroSarSensorModel : public csm::RasterGM,
       csm::WarningList* warnings = NULL) const;
 
   virtual csm::ImageCoordCovar groundToImage(
-      const csm::EcefCoordCovar& groundPt, double desiredPrecision = 0.001,
+      const csm::EcefCoordCovar& groundPt, double desiredPrecision = 0.0001,
       double* achievedPrecision = NULL,
       csm::WarningList* warnings = NULL) const;
 
   virtual csm::EcefCoord imageToGround(const csm::ImageCoord& imagePt,
                                        double height,
-                                       double desiredPrecision = 0.001,
+                                       double desiredPrecision = 0.0001,
                                        double* achievedPrecision = NULL,
                                        csm::WarningList* warnings = NULL) const;
 
@@ -70,7 +70,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM,
       csm::WarningList* warnings = NULL) const;
 
   virtual csm::EcefLocus imageToRemoteImagingLocus(
-      const csm::ImageCoord& imagePt, double desiredPrecision = 0.001,
+      const csm::ImageCoord& imagePt, double desiredPrecision = 0.0001,
       double* achievedPrecision = NULL,
       csm::WarningList* warnings = NULL) const;
 
