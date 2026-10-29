@@ -417,9 +417,9 @@ TEST_F(FrameSensorModel, X1e9_SlightlyOffCenter) {
 
 // Angle rotations:
 TEST_F(FrameSensorModel, Rotation_omegaPi_Center) {
-  sensorModel->setParameterValue(3, 1.0);
-  sensorModel->setParameterValue(4, 1.0);
-  sensorModel->setParameterValue(5, 1.0);
+  sensorModel->setParameterValue(3, -1.0);
+  sensorModel->setParameterValue(4, -1.0);
+  sensorModel->setParameterValue(5, -1.0);
 
   sensorModel->setParameterValue(6, 1.0);
 

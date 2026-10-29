@@ -97,13 +97,19 @@ const std::string UsgsAstroPushFrameSensorModel::_STATE_KEYWORD[] = {
     "m_maxElevation",
     "m_dtEphem",
     "m_t0Ephem",
-    "m_dtQuat",
-    "m_t0Quat",
+    "m_dtSensorQuat",
+    "m_t0SensorQuat",
+    "m_dtTargetQuat",
+    "m_t0TargetQuat",
     "m_numPositions",
-    "m_numQuaternions",
+    "m_numSensorQuaternions",
+    "m_numTargetQuaternions",
     "m_positions",
     "m_velocities",
-    "m_quaternions",
+    "m_sensorQuaternions",
+    "m_sensorAngularVelocities",
+    "m_targetQuaternions",
+    "m_targetAngularVelocities",
     "m_currentParameterValue",
     "m_parameterType",
     "m_referencePointXyz",
@@ -224,27 +230,33 @@ void UsgsAstroPushFrameSensorModel::populateModel(const VariantMap& state) {
 
   m_dtEphem = state.get<double>("m_dtEphem");
   m_t0Ephem = state.get<double>("m_t0Ephem");
-  m_dtQuat = state.get<double>("m_dtQuat");
-  m_t0Quat = state.get<double>("m_t0Quat");
+  m_dtSensorQuat = state.get<double>("m_dtSensorQuat");
+  m_t0SensorQuat = state.get<double>("m_t0SensorQuat");
+  m_dtTargetQuat = state.get<double>("m_dtTargetQuat");
+  m_t0TargetQuat = state.get<double>("m_t0TargetQuat");
   m_numPositions = state.get<int>("m_numPositions");
   LOG_INFO(
       "m_dtEphem: {} "
       "m_t0Ephem: {} "
-      "m_dtQuat: {} "
-      "m_t0Quat: {} ",
-      m_dtEphem, m_t0Ephem, m_dtQuat, m_t0Quat);
+      "m_dtSensorQuat: {} "
+      "m_t0SensorQuat: {} "
+      "m_dtTargetQuat: {} "
+      "m_t0TargetQuat: {} ",
+      m_dtEphem, m_t0Ephem, m_dtSensorQuat, m_t0SensorQuat, m_dtTargetQuat, m_t0TargetQuat);
 
-  m_numQuaternions = state.get<int>("m_numQuaternions");
+  m_numSensorQuaternions = state.get<int>("m_numSensorQuaternions");
+  m_numTargetQuaternions = state.get<int>("m_numTargetQuaternions");
   std::vector<double> referencePointXyz = state.get<std::vector<double>>("m_referencePointXyz");
   m_referencePointXyz.x = referencePointXyz[0];
   m_referencePointXyz.y = referencePointXyz[1];
   m_referencePointXyz.z = referencePointXyz[2];
   LOG_INFO(
-      "m_numQuaternions: {} "
+      "m_numSensorQuaternions: {} "
+      "m_numTargetQuaternions: {} "
       "m_referencePointX: {} "
       "m_referencePointY: {} "
       "m_referencePointZ: {} ",
-      m_numQuaternions, m_referencePointXyz.x,
+      m_numSensorQuaternions, m_numTargetQuaternions, m_referencePointXyz.x,
       m_referencePointXyz.y, m_referencePointXyz.z);
 
   m_gsd = state.get<double>("m_gsd");
@@ -260,7 +272,10 @@ void UsgsAstroPushFrameSensorModel::populateModel(const VariantMap& state) {
 
   m_positions = state.get<std::vector<double>>("m_positions");
   m_velocities = state.get<std::vector<double>>("m_velocities");
-  m_quaternions = state.get<std::vector<double>>("m_quaternions");
+  m_sensorQuaternions = state.get<std::vector<double>>("m_sensorQuaternions");
+  m_sensorAngularVelocities = state.get<std::vector<double>>("m_sensorAngularVelocities");
+  m_targetQuaternions = state.get<std::vector<double>>("m_targetQuaternions");
+  m_targetAngularVelocities = state.get<std::vector<double>>("m_targetAngularVelocities");
   m_currentParameterValue = state.get<std::vector<double>>("m_currentParameterValue");
   m_covariance = state.get<std::vector<double>>("m_covariance");
   m_sunPosition = state.get<std::vector<double>>("m_sunPosition");
@@ -407,23 +422,32 @@ VariantMap UsgsAstroPushFrameSensorModel::getModelMap() const {
       m_platformIdentifier, m_sensorIdentifier, m_minElevation, m_maxElevation);
   state.set<double>("m_dtEphem", m_dtEphem);
   state.set<double>("m_t0Ephem", m_t0Ephem);
-  state.set<double>("m_dtQuat", m_dtQuat);
-  state.set<double>("m_t0Quat", m_t0Quat);
+  state.set<double>("m_dtSensorQuat", m_dtSensorQuat);
+  state.set<double>("m_t0SensorQuat", m_t0SensorQuat);
+  state.set<double>("m_dtTargetQuat", m_dtTargetQuat);
+  state.set<double>("m_t0TargetQuat", m_t0TargetQuat);
   LOG_INFO(
       "m_dtEphem: {} "
       "m_t0Ephem: {} "
-      "m_dtQuat: {} "
-      "m_t0Quat: {} ",
-      m_dtEphem, m_t0Ephem, m_dtQuat, m_t0Quat);
+      "m_dtSensorQuat: {} "
+      "m_t0SensorQuat: {} "
+      "m_dtTargetQuat: {} "
+      "m_t0TargetQuat: {} ",
+      m_dtEphem, m_t0Ephem, m_dtSensorQuat, m_t0SensorQuat, m_dtTargetQuat, m_t0TargetQuat);
   state.set<int>("m_numPositions", m_numPositions);
-  state.set<int>("m_numQuaternions", m_numQuaternions);
+  state.set<int>("m_numSensorQuaternions", m_numSensorQuaternions);
+  state.set<int>("m_numTargetQuaternions", m_numTargetQuaternions);
   state.set<std::vector<double>>("m_positions", m_positions);
   state.set<std::vector<double>>("m_velocities", m_velocities);
-  state.set<std::vector<double>>("m_quaternions", m_quaternions);
+  state.set<std::vector<double>>("m_sensorQuaternions", m_sensorQuaternions);
+  state.set<std::vector<double>>("m_sensorAngularVelocities", m_sensorAngularVelocities);
+  state.set<std::vector<double>>("m_targetQuaternions", m_targetQuaternions);
+  state.set<std::vector<double>>("m_targetAngularVelocities", m_targetAngularVelocities);
   LOG_INFO(
       "m_numPositions: {} "
-      "m_numQuaternions: {} ",
-      m_numPositions, m_numQuaternions);
+      "m_numSensorQuaternions: {} "
+      "m_numTargetQuaternions: {} ",
+      m_numPositions, m_numSensorQuaternions, m_numTargetQuaternions);
   state.set<std::vector<double>>("m_currentParameterValue", m_currentParameterValue);
   std::vector<int> paramTypeInts(m_parameterType.size());
   for (size_t i = 0; i < m_parameterType.size(); ++i) {
@@ -481,9 +505,9 @@ void UsgsAstroPushFrameSensorModel::applyTransformToState(ale::Rotation const& r
   nlohmann::json j = stateAsJson(stateString);
 
   // Apply rotation to quaternions
-  std::vector<double> quaternions = j["m_quaternions"].get<std::vector<double>>();
+  std::vector<double> quaternions = j["m_sensorQuaternions"].get<std::vector<double>>();
   applyRotationToQuatVec(r, quaternions);
-  j["m_quaternions"] = quaternions;
+  j["m_sensorQuaternions"] = quaternions;
 
   // Apply rotation and translation to positions
   std::vector<double> positions = j["m_positions"].get<std::vector<double>>();;
@@ -552,13 +576,19 @@ void UsgsAstroPushFrameSensorModel::reset() {
   m_maxElevation = 8000.0;          // 35
   m_dtEphem = 2.0;                  // 36
   m_t0Ephem = -70.0;                // 37
-  m_dtQuat = 0.1;                   // 38
-  m_t0Quat = -40.0;                 // 39
+  m_dtSensorQuat = 0.1;             // 38
+  m_t0SensorQuat = -40.0;           // 39
+  m_dtTargetQuat = 0.1;             // 38
+  m_t0TargetQuat = -40.0;           // 39
   m_numPositions = 0;               // 40
-  m_numQuaternions = 0;             // 41
+  m_numSensorQuaternions = 0;       // 41
+  m_numTargetQuaternions = 0;       // 41
   m_positions.clear();              // 42
   m_velocities.clear();             // 43
-  m_quaternions.clear();            // 44
+  m_sensorQuaternions.clear();       // 44
+  m_sensorAngularVelocities.clear(); // 44
+  m_targetQuaternions.clear();       // 44
+  m_targetAngularVelocities.clear(); // 44
 
   m_currentParameterValue.assign(NUM_PARAMETERS, 0.0);
   m_parameterType.assign(NUM_PARAMETERS, csm::param::REAL);
@@ -1680,15 +1710,33 @@ void UsgsAstroPushFrameSensorModel::getQuaternions(const double& time,
                                             double q[4]) const {
   int nOrder = 8;
   if (m_platformFlag == 0) nOrder = 4;
-  int nOrderQuat = nOrder;
-  if (m_numQuaternions < 6 && nOrder == 8) nOrderQuat = 4;
+  int nOrderSensorQuat = nOrder;
+  int nOrderTargetQuat = nOrder;
+  if (m_numSensorQuaternions < 6 && nOrder == 8) nOrderSensorQuat = 4;
+  if (m_numTargetQuaternions < 6 && nOrder == 8) nOrderTargetQuat = 4;
 
-  LOG_INFO(
+  LOG_DEBUG(
       "Calculating getQuaternions for time {} with {}"
       "order lagrange",
-      time, nOrder);
-  lagrangeInterp(m_numQuaternions / 4, &m_quaternions[0], m_t0Quat, m_dtQuat,
-                 time, 4, nOrderQuat, q);
+      time, nOrderSensorQuat);
+  // Should this be replaced with the ale::Orientations interpolation?
+  double sensorQ[4];
+  lagrangeInterp(m_numSensorQuaternions, &m_sensorQuaternions[0], m_t0SensorQuat, m_dtSensorQuat,
+                 time, 4, nOrderSensorQuat, sensorQ);
+  double targetQ[4];
+  lagrangeInterp(m_numTargetQuaternions, &m_targetQuaternions[0], m_t0TargetQuat, m_dtTargetQuat,
+                 time, 4, nOrderTargetQuat, targetQ);
+  ale::Rotation j2000ToSensor(sensorQ[3], sensorQ[0], sensorQ[1], sensorQ[2]);
+  ale::Rotation j2000ToTarget(targetQ[3], targetQ[0], targetQ[1], targetQ[2]);
+  ale::Rotation sensorToTarget = j2000ToTarget * j2000ToSensor.inverse();
+  std::vector<double> finalQuat = sensorToTarget.toQuaternion();
+  q[0] = finalQuat[1];
+  q[1] = finalQuat[2];
+  q[2] = finalQuat[3];
+  q[3] = finalQuat[0];
+  LOG_DEBUG(
+      "Computed final Quat {}, {}, {}, {} at time {}",
+      q[0], q[1], q[2], q[3], time);
 }
 
 //***************************************************************************
@@ -1701,7 +1749,7 @@ void UsgsAstroPushFrameSensorModel::calculateAttitudeCorrection(
       "Computing calculateAttitudeCorrection (with adjustment)"
       "for time {}",
       time);
-  double aTime = time - m_t0Quat;
+  double aTime = time - m_t0SensorQuat;
   double euler[3];
   double nTime = aTime / m_halfTime;
   double nTime2 = nTime * nTime;
@@ -2169,9 +2217,90 @@ VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
   state["m_referencePointXyz"] = std::vector<double>(3, 0.0);
   LOG_INFO("m_referencePointXyz: {} ", state["m_referencePointXyz"].dump());
 
+  ale::Orientations j2000_to_target = ale::getBodyRotation(jsonIsd);
+  ale::Orientations j2000_to_sensor = ale::getInstrumentPointing(jsonIsd);
+  // Work-around for issues in ALE <=0.8.5 where Orientations without angular
+  // velocities seg fault when you multiply them. This will make the angular
+  // velocities in the final Orientations dubious but they are not used
+  // in any calculations so this is okay.
+  if (j2000_to_sensor.getAngularVelocities().empty()) {
+    j2000_to_sensor = ale::Orientations(
+        j2000_to_sensor.getRotations(),
+        j2000_to_sensor.getTimes(),
+        std::vector<ale::Vec3d>(j2000_to_sensor.getTimes().size()),
+        j2000_to_sensor.getConstantRotation(),
+        j2000_to_sensor.getConstantFrames(),
+        j2000_to_sensor.getTimeDependentFrames());
+  }
+  if (j2000_to_target.getAngularVelocities().empty()) {
+    j2000_to_target = ale::Orientations(
+        j2000_to_target.getRotations(),
+        j2000_to_target.getTimes(),
+        std::vector<ale::Vec3d>(j2000_to_target.getTimes().size()),
+        j2000_to_target.getConstantRotation(),
+        j2000_to_target.getConstantFrames(),
+        j2000_to_target.getTimeDependentFrames());
+  }
+
+  std::vector<double> ephemTime = j2000_to_target.getTimes();
+  double quatStep =
+      (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
+  try {
+    state["m_dtTargetQuat"] = quatStep;
+    LOG_INFO("m_dtTargetQuat: {}", state["m_dtTargetQuat"].dump());
+  } catch (...) {
+    parsingWarnings->push_back(csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE, "dt_quaternion not in ISD",
+        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    LOG_INFO("dt_quaternion not in ISD");
+  }
+
+  try {
+    state["m_t0TargetQuat"] = ephemTime[0] - ale::getCenterTime(jsonIsd);
+    LOG_INFO("m_t0TargetQuat: {}", state["m_t0TargetQuat"].dump());
+  } catch (...) {
+    parsingWarnings->push_back(csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE, "m_t0TargetQuat not in ISD",
+        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    LOG_INFO("m_t0TargetQuat not in ISD");
+  }
+  std::vector<double> quaternion;
+  std::vector<double> quaternions(ephemTime.size() * 4, 0.0);
+  std::vector<double> angularVelocities(0);
+  if (!j2000_to_target.getAngularVelocities().empty()) {
+    angularVelocities.resize(ephemTime.size() * 3, 0.0);
+  }
+
+  size_t quatIdx = 0;
+  size_t avIdx = 0;
+  for (size_t i = 0; i < ephemTime.size(); i++) {
+    ale::Rotation rotation = j2000_to_target.interpolate(
+        ephemTime.front() + quatStep * i, ale::SLERP);
+    quaternion = rotation.toQuaternion();
+    quaternions[quatIdx++] = quaternion[1];
+    quaternions[quatIdx++] = quaternion[2];
+    quaternions[quatIdx++] = quaternion[3];
+    quaternions[quatIdx++] = quaternion[0];
+    if (!j2000_to_target.getAngularVelocities().empty()) {
+      ale::Vec3d angularVelocity = j2000_to_target.interpolateAV(
+          ephemTime.front() + quatStep * i);
+      angularVelocities[avIdx++] = angularVelocity.x;
+      angularVelocities[avIdx++] = angularVelocity.y;
+      angularVelocities[avIdx++] = angularVelocity.z;
+    }    
+  }
+
+  state["m_targetQuaternions"] = quaternions;
+  state["m_targetAngularVelocities"] = angularVelocities;
+  state["m_numTargetQuaternions"] = quaternions.size()/4;
+  LOG_INFO(
+      "m_targetQuaternions: {}"
+      "m_numTargetQuaternions: {}",
+      state["m_targetQuaternions"].dump(), state["m_numTargetQuaternions"].dump());
+
   // Sun position and sensor position use the same times so compute that now
   ale::States inst_state = ale::getInstrumentPosition(jsonIsd);
-  std::vector<double> ephemTime = inst_state.getTimes();
+  ephemTime = inst_state.getTimes();
   double startTime = ephemTime.front();
   double stopTime = ephemTime.back();
   // Force at least 25 nodes to help with lagrange interpolation
@@ -2205,7 +2334,6 @@ VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
   }
 
   ale::States sunState = ale::getSunPosition(jsonIsd);
-  ale::Orientations j2000_to_target = ale::getBodyRotation(jsonIsd);
   ale::State interpSunState, rotatedSunState;
   std::vector<double> sunPositions(ephemTime.size() * 3, 0.0);
   std::vector<double> sunVelocities(ephemTime.size() * 3, 0.0);
@@ -2298,7 +2426,6 @@ VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
       state["m_detectorSampleOrigin"].dump(),
       state["m_detectorLineOrigin"].dump());
 
-  ale::Orientations j2000_to_sensor = ale::getInstrumentPointing(jsonIsd);
   ale::State interpInstState, rotatedInstState;
   std::vector<double> positions(ephemTime.size() * 3, 0.0);
   std::vector<double> velocities(ephemTime.size() * 3, 0.0);
@@ -2327,72 +2454,63 @@ VariantMap UsgsAstroPushFrameSensorModel::constructStateFromIsd(
   state["m_velocities"] = velocities;
   LOG_INFO("m_velocities: {}", state["m_velocities"].dump());
 
-  // Work-around for issues in ALE <=0.8.5 where Orientations without angular
-  // velocities seg fault when you multiply them. This will make the angular
-  // velocities in the final Orientations dubious but they are not used
-  // in any calculations so this is okay.
-  if (j2000_to_sensor.getAngularVelocities().empty()) {
-    j2000_to_sensor = ale::Orientations(
-        j2000_to_sensor.getRotations(),
-        j2000_to_sensor.getTimes(),
-        std::vector<ale::Vec3d>(j2000_to_sensor.getTimes().size()),
-        j2000_to_sensor.getConstantRotation(),
-        j2000_to_sensor.getConstantFrames(),
-        j2000_to_sensor.getTimeDependentFrames());
-  }
-  if (j2000_to_target.getAngularVelocities().empty()) {
-    j2000_to_target = ale::Orientations(
-        j2000_to_target.getRotations(),
-        j2000_to_target.getTimes(),
-        std::vector<ale::Vec3d>(j2000_to_target.getTimes().size()),
-        j2000_to_target.getConstantRotation(),
-        j2000_to_target.getConstantFrames(),
-        j2000_to_target.getTimeDependentFrames());
-  }
-
-  ale::Orientations sensor_to_j2000 = j2000_to_sensor.inverse();
-  ale::Orientations sensor_to_target = j2000_to_target * sensor_to_j2000;
-  ephemTime = sensor_to_target.getTimes();
-  double quatStep =
-      (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
+  ephemTime = j2000_to_sensor.getTimes();
+  quatStep = (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
   try {
-    state["m_dtQuat"] = quatStep;
-    LOG_INFO("dt_quaternion: {}", state["m_dtQuat"].dump());
+    state["m_dtSensorQuat"] = quatStep;
+    LOG_INFO("m_dtSensorQuat: {}", state["m_dtSensorQuat"].dump());
   } catch (...) {
     parsingWarnings->push_back(csm::Warning(
-        csm::Warning::DATA_NOT_AVAILABLE, "dt_quaternion not in ISD",
+        csm::Warning::DATA_NOT_AVAILABLE, "m_dtSensorQuat not in ISD",
         "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
-    LOG_INFO("dt_quaternion not in ISD");
+    LOG_INFO("m_dtSensorQuat not in ISD");
   }
 
   try {
-    state["m_t0Quat"] = ephemTime[0] - ale::getCenterTime(jsonIsd);
-    LOG_INFO("m_t0Quat: {}", state["m_t0Quat"].dump());
+    state["m_t0SensorQuat"] = ephemTime[0] - ale::getCenterTime(jsonIsd);
+    LOG_INFO("m_t0SensorQuat: {}", state["m_t0SensorQuat"].dump());
   } catch (...) {
     parsingWarnings->push_back(csm::Warning(
-        csm::Warning::DATA_NOT_AVAILABLE, "t0_quaternion not in ISD",
+        csm::Warning::DATA_NOT_AVAILABLE, "m_t0SensorQuat not in ISD",
         "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
-    LOG_INFO("t0_quaternion not in ISD");
+    LOG_INFO("m_t0SensorQuat not in ISD");
   }
-  std::vector<double> quaternion;
-  std::vector<double> quaternions;
+  quaternions.clear();
+  angularVelocities.clear();
+  
+  quaternions.resize(ephemTime.size() * 4, 0.0);
+  angularVelocities.resize(0);
+  if (!j2000_to_target.getAngularVelocities().empty()) {
+    angularVelocities.resize(ephemTime.size() * 3, 0.0);
+  }
+
+  quatIdx = 0;
+  avIdx = 0;
 
   for (size_t i = 0; i < ephemTime.size(); i++) {
-    ale::Rotation rotation = sensor_to_target.interpolate(
+    ale::Rotation rotation = j2000_to_sensor.interpolate(
         ephemTime.front() + quatStep * i, ale::SLERP);
     quaternion = rotation.toQuaternion();
-    quaternions.push_back(quaternion[1]);
-    quaternions.push_back(quaternion[2]);
-    quaternions.push_back(quaternion[3]);
-    quaternions.push_back(quaternion[0]);
+    quaternions[quatIdx++] = quaternion[1];
+    quaternions[quatIdx++] = quaternion[2];
+    quaternions[quatIdx++] = quaternion[3];
+    quaternions[quatIdx++] = quaternion[0];
+    if (!j2000_to_sensor.getAngularVelocities().empty()) {
+      ale::Vec3d angularVelocity = j2000_to_sensor.interpolateAV(
+          ephemTime.front() + quatStep * i);
+      angularVelocities[avIdx++] = angularVelocity.x;
+      angularVelocities[avIdx++] = angularVelocity.y;
+      angularVelocities[avIdx++] = angularVelocity.z;
+    }
   }
 
-  state["m_quaternions"] = quaternions;
-  state["m_numQuaternions"] = quaternions.size();
+  state["m_sensorQuaternions"] = quaternions;
+  state["m_sensorAngularVelocities"] = angularVelocities;
+  state["m_numSensorQuaternions"] = quaternions.size()/4;
   LOG_INFO(
-      "m_quaternions: {}"
-      "m_numQuaternions: {}",
-      state["m_quaternions"].dump(), state["m_numQuaternions"].dump());
+      "m_sensorQuaternions: {}"
+      "m_numSensorQuaternions: {}",
+      state["m_sensorQuaternions"].dump(), state["m_numSensorQuaternions"].dump());
 
   state["m_currentParameterValue"] = std::vector<double>(NUM_PARAMETERS, 0.0);
   LOG_INFO("m_currentParameterValue: {}",

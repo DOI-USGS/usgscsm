@@ -80,8 +80,73 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
       "m_nSamples: {} ",
       state["m_nLines"].dump(), state["m_nSamples"].dump());
 
+  ale::Orientations j2000_to_target = ale::getBodyRotation(isd);
+
+  std::vector<double> ephemTime = j2000_to_target.getTimes();
+  double quatStep =
+      (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
+  try {
+    state["m_dtTargetQuat"] = quatStep;
+    LOG_TRACE(
+        "m_dtTargetQuat: {}",
+        state["m_dtTargetQuat"].dump());
+  } catch (...) {
+    parsingWarnings->push_back(csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE, "dt_quaternion not in ISD",
+        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    LOG_WARN(
+        "m_dtTargetQuat not in ISD");
+  }
+
+  try {
+    state["m_t0TargetQuat"] = ephemTime[0] - ale::getCenterTime(isd);
+    LOG_TRACE(
+        "m_t0TargetQuat: {}",
+        state["m_t0TargetQuat"].dump());
+  } catch (...) {
+    parsingWarnings->push_back(csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE, "t0_quaternion not in ISD",
+        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    LOG_WARN(
+        "t0_quaternion not in ISD");
+  }
+  std::vector<double> quaternion;
+  std::vector<double> quaternions(ephemTime.size() * 4, 0.0);
+  std::vector<double> angularVelocities(0);
+  if (!j2000_to_target.getAngularVelocities().empty()) {
+    angularVelocities.resize(ephemTime.size() * 3, 0.0);
+  }
+
+  size_t quatIdx = 0;
+  size_t avIdx = 0;
+  for (size_t i = 0; i < ephemTime.size(); i++) {
+    ale::Rotation rotation = j2000_to_target.interpolate(
+        ephemTime.front() + quatStep * i, ale::SLERP);
+    quaternion = rotation.toQuaternion();
+    quaternions[quatIdx++] = quaternion[0];
+    quaternions[quatIdx++] = quaternion[1];
+    quaternions[quatIdx++] = quaternion[2];
+    quaternions[quatIdx++] = quaternion[3];
+    if (!j2000_to_target.getAngularVelocities().empty()) {
+      ale::Vec3d angularVelocity = j2000_to_target.interpolateAV(
+          ephemTime.front() + quatStep * i);
+      angularVelocities[avIdx++] = angularVelocity.x;
+      angularVelocities[avIdx++] = angularVelocity.y;
+      angularVelocities[avIdx++] = angularVelocity.z;
+    }
+  }
+
+  state["m_targetQuaternions"] = quaternions;
+  state["m_targetAngularVelocities"] = angularVelocities;
+  state["m_numTargetQuaternions"] = quaternions.size()/4;
+  LOG_TRACE(
+      "m_targetQuaternions: {}"
+      "m_targetAvs: {}"
+      "m_numTargetQuaternions: {}",
+      state["m_targetQuaternions"].dump(), state["m_targetAvs"].dump(), state["m_numTargetQuaternions"].dump());
+
   ale::States inst_state = ale::getInstrumentPosition(isd);
-  std::vector<double> ephemTime = inst_state.getTimes();
+  ephemTime = inst_state.getTimes();
   if (ephemTime.size() < 2) {
     parsingWarnings->push_back(csm::Warning(
         csm::Warning::DATA_NOT_AVAILABLE, "Instrument position has less than 2 states.",
@@ -103,8 +168,6 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
 
   // Make the Sun positions and velocities be in target body coordinates
   ale::States sunState = ale::getSunPosition(isd);
-  ale::Orientations j2000_to_target = ale::getBodyRotation(isd);
-  
   std::vector<double> sunPositions(ephemTime.size()*3, 0.0);
   std::vector<double> sunVelocities(ephemTime.size()*3, 0.0);
 
@@ -176,6 +239,69 @@ VariantMap UsgsAstroSarSensorModel::constructStateFromIsd(
   }
   state["m_positions"] = instPositions;
   state["m_velocities"] = instVelocities;
+
+  ale::Orientations j2000_to_sensor = ale::getInstrumentPointing(isd);
+  ephemTime = j2000_to_sensor.getTimes();
+  quatStep = (ephemTime.back() - ephemTime.front()) / (ephemTime.size() - 1);
+  try {
+    state["m_dtSensorQuat"] = quatStep;
+    LOG_TRACE(
+        "m_dtSensorQuat: {}",
+        state["m_dtSensorQuat"].dump());
+  } catch (...) {
+    parsingWarnings->push_back(csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE, "m_dtSensorQuat not in ISD",
+        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    LOG_WARN(
+        "m_dtSensorQuat not in ISD");
+  }
+
+  try {
+    state["m_t0SensorQuat"] = ephemTime[0] - ale::getCenterTime(isd);
+    LOG_TRACE(
+        "m_t0SensorQuat: {}",
+        state["m_t0SensorQuat"].dump());
+  } catch (...) {
+    parsingWarnings->push_back(csm::Warning(
+        csm::Warning::DATA_NOT_AVAILABLE, "m_t0SensorQuat not in ISD",
+        "UsgsAstroFrameSensorModel::constructStateFromIsd()"));
+    LOG_WARN(
+        "m_t0SensorQuat not in ISD");
+  }
+  quaternions.clear();
+  quaternions.resize(ephemTime.size() * 4);
+  angularVelocities.resize(0);
+  if (!j2000_to_sensor.getAngularVelocities().empty()) {
+    angularVelocities.resize(ephemTime.size() * 3, 0.0);
+  }
+
+  quatIdx = 0;
+  avIdx = 0;
+  for (size_t i = 0; i < ephemTime.size(); i++) {
+    ale::Rotation rotation = j2000_to_sensor.interpolate(
+        ephemTime.front() + quatStep * i, ale::SLERP);
+    quaternion = rotation.toQuaternion();
+    quaternions[quatIdx++] = quaternion[0];
+    quaternions[quatIdx++] = quaternion[1];
+    quaternions[quatIdx++] = quaternion[2];
+    quaternions[quatIdx++] = quaternion[3];
+    if (!j2000_to_sensor.getAngularVelocities().empty()) {
+      ale::Vec3d angularVelocity = j2000_to_sensor.interpolateAV(
+          ephemTime.front() + quatStep * i);
+      angularVelocities[avIdx++] = angularVelocity.x;
+      angularVelocities[avIdx++] = angularVelocity.y;
+      angularVelocities[avIdx++] = angularVelocity.z;      
+    }
+  }
+
+  state["m_sensorQuaternions"] = quaternions;
+  state["m_sensorAngularVelocities"] = angularVelocities;
+  state["m_numSensorQuaternions"] = quaternions.size()/4;
+  LOG_TRACE(
+      "m_sensorQuaternions: {}"
+      "m_sensorAvs: {}"
+      "m_numSensorQuaternions: {}",
+      state["m_sensorQuaternions"].dump(), state["m_sensorAvs"].dump(), state["m_numSensorQuaternions"].dump());
 
   // Get radii
   // ALE operates in km and we want m
@@ -305,8 +431,18 @@ void UsgsAstroSarSensorModel::reset() {
   m_maxElevation = 1000;
   m_dtEphem = 0;
   m_t0Ephem = 0;
+  m_dtSensorQuat = 0;
+  m_t0SensorQuat = 0;
+  m_dtTargetQuat = 0;
+  m_t0TargetQuat = 0;
   m_scaleConversionCoefficients.clear();
   m_scaleConversionTimes.clear();
+  m_numSensorQuaternions = 0;
+  m_numTargetQuaternions = 0;
+  m_sensorQuaternions.clear();
+  m_sensorAngularVelocities.clear();
+  m_targetQuaternions.clear();
+  m_targetAngularVelocities.clear();
   m_positions.clear();
   m_velocities.clear();
   m_currentParameterValue = vector<double>(NUM_PARAMETERS, 0.0);
@@ -370,10 +506,20 @@ void UsgsAstroSarSensorModel::populateModel(const VariantMap& state) {
   m_maxElevation = state.get<double>("m_maxElevation");
   m_dtEphem = state.get<double>("m_dtEphem");
   m_t0Ephem = state.get<double>("m_t0Ephem");
+  m_dtSensorQuat = state.get<double>("m_dtSensorQuat");
+  m_t0SensorQuat = state.get<double>("m_t0SensorQuat");
+  m_dtTargetQuat = state.get<double>("m_dtTargetQuat");
+  m_t0TargetQuat = state.get<double>("m_t0TargetQuat");
   m_scaleConversionCoefficients = state.get<std::vector<double>>("m_scaleConversionCoefficients");
   m_scaleConversionTimes = state.get<std::vector<double>>("m_scaleConversionTimes");
   m_positions = state.get<std::vector<double>>("m_positions");
   m_velocities = state.get<std::vector<double>>("m_velocities");
+  m_numSensorQuaternions = state.get<double>("m_numSensorQuaternions");
+  m_numTargetQuaternions = state.get<double>("m_numTargetQuaternions");
+  m_sensorQuaternions = state.get<std::vector<double>>("m_sensorQuaternions");
+  m_sensorAngularVelocities = state.get<std::vector<double>>("m_sensorAngularVelocities");
+  m_targetQuaternions = state.get<std::vector<double>>("m_targetQuaternions");
+  m_targetAngularVelocities = state.get<std::vector<double>>("m_targetAngularVelocities");
   m_currentParameterValue = state.get<std::vector<double>>("m_currentParameterValue");
   std::vector<double> refPt = state.get<std::vector<double>>("m_referencePointXyz");
   m_referencePointXyz.x = refPt[0];
@@ -418,8 +564,18 @@ VariantMap UsgsAstroSarSensorModel::getModelMap() const {
   state.set<double>("m_exposureDuration", m_exposureDuration);
   state.set<double>("m_dtEphem", m_dtEphem);
   state.set<double>("m_t0Ephem", m_t0Ephem);
+  state.set<double>("m_dtSensorQuat", m_dtSensorQuat);
+  state.set<double>("m_t0SensorQuat", m_t0SensorQuat);
+  state.set<double>("m_dtTargetQuat", m_dtTargetQuat);
+  state.set<double>("m_t0TargetQuat", m_t0TargetQuat);
+  state.set<int>("m_numSensorQuaternions", m_numSensorQuaternions);
+  state.set<int>("m_numTargetQuaternions", m_numTargetQuaternions);
   state.set<std::vector<double>>("m_positions", m_positions);
   state.set<std::vector<double>>("m_velocities", m_velocities);
+  state.set<std::vector<double>>("m_sensorQuaternions", m_sensorQuaternions);
+  state.set<std::vector<double>>("m_sensorAngularVelocities", m_sensorAngularVelocities);
+  state.set<std::vector<double>>("m_targetQuaternions", m_targetQuaternions);
+  state.set<std::vector<double>>("m_targetAngularVelocities", m_targetAngularVelocities);
   state.set<std::vector<double>>("m_currentParameterValue", m_currentParameterValue);
   state.set<double>("m_minorAxis", m_minorAxis);
   state.set<double>("m_majorAxis", m_majorAxis);

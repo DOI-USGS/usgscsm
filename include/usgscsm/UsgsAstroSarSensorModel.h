@@ -39,7 +39,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM,
                                     std::string& stateString);
   
   virtual csm::ImageCoord groundToImage(
-      const csm::EcefCoord& groundPt, double desiredPrecision = 0.001,
+      const csm::EcefCoord& groundPt, double desiredPrecision = 0.0001,
       double* achievedPrecision = NULL,
       csm::WarningList* warnings = NULL) const;
 
@@ -49,13 +49,13 @@ class UsgsAstroSarSensorModel : public csm::RasterGM,
       csm::WarningList* warnings = NULL) const;
 
   virtual csm::ImageCoordCovar groundToImage(
-      const csm::EcefCoordCovar& groundPt, double desiredPrecision = 0.001,
+      const csm::EcefCoordCovar& groundPt, double desiredPrecision = 0.0001,
       double* achievedPrecision = NULL,
       csm::WarningList* warnings = NULL) const;
 
   virtual csm::EcefCoord imageToGround(const csm::ImageCoord& imagePt,
                                        double height,
-                                       double desiredPrecision = 0.001,
+                                       double desiredPrecision = 0.0001,
                                        double* achievedPrecision = NULL,
                                        csm::WarningList* warnings = NULL) const;
 
@@ -70,7 +70,7 @@ class UsgsAstroSarSensorModel : public csm::RasterGM,
       csm::WarningList* warnings = NULL) const;
 
   virtual csm::EcefLocus imageToRemoteImagingLocus(
-      const csm::ImageCoord& imagePt, double desiredPrecision = 0.001,
+      const csm::ImageCoord& imagePt, double desiredPrecision = 0.0001,
       double* achievedPrecision = NULL,
       csm::WarningList* warnings = NULL) const;
 
@@ -260,8 +260,18 @@ class UsgsAstroSarSensorModel : public csm::RasterGM,
   double m_maxElevation;
   double m_dtEphem;
   double m_t0Ephem;
+  double m_dtSensorQuat;
+  double m_t0SensorQuat;
+  double m_dtTargetQuat;
+  double m_t0TargetQuat;
   std::vector<double> m_scaleConversionCoefficients;
   std::vector<double> m_scaleConversionTimes;
+  double m_numSensorQuaternions;
+  double m_numTargetQuaternions;
+  std::vector<double> m_sensorQuaternions;
+  std::vector<double> m_sensorAngularVelocities;
+  std::vector<double> m_targetQuaternions;
+  std::vector<double> m_targetAngularVelocities;
   std::vector<double> m_positions;
   std::vector<double> m_velocities;
   std::vector<double> m_currentParameterValue;

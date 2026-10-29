@@ -77,8 +77,12 @@ void UsgsAstroFrameSensorModel::reset() {
   }
   m_noAdjustments = std::vector<double>(NUM_PARAMETERS, 0.0);
   m_ccdCenter = std::vector<double>(2, 0.0);
+  m_targetQuaternion = std::vector<double>(4, 0.0);
+  m_targetAngularVelocity = std::vector<double>(3, 0.0);
+  m_angularVelocity = std::vector<double>(3, 0.0);
   m_spacecraftVelocity = std::vector<double>(3, 0.0);
   m_sunPosition = std::vector<double>(3, 0.0);
+  m_sunVelocity = std::vector<double>(3, 0.0);
   m_distortionType = DistortionType::TRANSVERSE;
   m_opticalDistCoeffs = std::vector<double>(20, 0.0);
   m_transX = std::vector<double>(3, 0.0);
@@ -1258,8 +1262,12 @@ VariantMap UsgsAstroFrameSensorModel::getModelMap() const {
   state.set<std::vector<double>>("m_lineTimes", m_lineTimes);
   state.set<double>("m_majorAxis", m_majorAxis);
   state.set<double>("m_minorAxis", m_minorAxis);
+  state.set<std::vector<double>>("m_targetQuaternion", {m_targetQuaternion[0], m_targetQuaternion[1], m_targetQuaternion[2], m_targetQuaternion[3]});
+  state.set<std::vector<double>>("m_targetAngularVelocity", {m_targetAngularVelocity[0], m_targetAngularVelocity[1], m_targetAngularVelocity[2]});
+  state.set<std::vector<double>>("m_angularVelocity", {m_angularVelocity[0], m_angularVelocity[1], m_angularVelocity[2]});
   state.set<std::vector<double>>("m_spacecraftVelocity", {m_spacecraftVelocity[0], m_spacecraftVelocity[1], m_spacecraftVelocity[2]});
   state.set<std::vector<double>>("m_sunPosition", {m_sunPosition[0], m_sunPosition[1], m_sunPosition[2]});
+  state.set<std::vector<double>>("m_sunVelocity", {m_sunVelocity[0], m_sunVelocity[1], m_sunVelocity[2]});
   state.set<double>("m_startingDetectorSample", m_startingDetectorSample);
   state.set<double>("m_startingDetectorLine", m_startingDetectorLine);
   state.set<double>("m_detectorSampleSumming", m_detectorSampleSumming);
@@ -1391,8 +1399,12 @@ bool UsgsAstroFrameSensorModel::isValidModelState(
                                                "m_nSamples",
                                                "m_currentParameterValue",
                                                "m_ccdCenter",
+                                               "m_targetQuaternion",
+                                               "m_targetAngularVelocity",
+                                               "m_angularVelocity",
                                                "m_spacecraftVelocity",
                                                "m_sunPosition",
+                                               "m_sunVelocity",
                                                "m_distortionType",
                                                "m_opticalDistCoeffs",
                                                "m_transX",
@@ -1533,12 +1545,24 @@ void UsgsAstroFrameSensorModel::populateModel(const VariantMap& state) {
     LOG_TRACE( "Getting m_ccdCenter");
     m_ccdCenter = state.get<std::vector<double>>("m_ccdCenter");
     
+    LOG_TRACE( "Getting m_targetQuaternion");
+    m_targetQuaternion = state.get<std::vector<double>>("m_targetQuaternion");
+
+    LOG_TRACE( "Getting m_targetAngularVelocity");
+    m_targetAngularVelocity = state.get<std::vector<double>>("m_targetAngularVelocity");
+
+    LOG_TRACE( "Getting m_angularVelocity");
+    m_angularVelocity = state.get<std::vector<double>>("m_angularVelocity");
+
     LOG_TRACE( "Getting m_spacecraftVelocity");
     m_spacecraftVelocity = state.get<std::vector<double>>("m_spacecraftVelocity");
     
     LOG_TRACE( "Getting m_sunPosition");
     m_sunPosition = state.get<std::vector<double>>("m_sunPosition");
     
+    LOG_TRACE( "Getting m_sunVelocity");
+    m_sunVelocity = state.get<std::vector<double>>("m_sunVelocity");
+
     LOG_TRACE( "Getting m_distortionType");
     m_distortionType = (DistortionType)state.get<int>("m_distortionType");
     
@@ -1686,11 +1710,33 @@ VariantMap UsgsAstroFrameSensorModel::constructStateFromIsd(
   }
 
   state["m_currentParameterValue"] = json();
+  ale::Orientations j2000_to_target = ale::getBodyRotation(parsedIsd);
+  std::vector<double> ephemTime = j2000_to_target.getTimes();
+  std::vector<double> quaternion;
+  std::vector<double> quaternions;
+  std::vector<double> angularVelocities;
+
+  for (int i = 0; i < ephemTime.size(); i++) {
+    ale::Rotation rotation =
+        j2000_to_target.interpolate(ephemTime[i], ale::SLERP);
+    quaternion = rotation.toQuaternion();
+    quaternions.push_back(quaternion[1]);
+    quaternions.push_back(quaternion[2]);
+    quaternions.push_back(quaternion[3]);
+    quaternions.push_back(quaternion[0]);
+    if (!j2000_to_target.getAngularVelocities().empty()) {
+      ale::Vec3d angularVelocity = j2000_to_target.interpolateAV(ephemTime[i]);
+      angularVelocities.push_back(angularVelocity.x);
+      angularVelocities.push_back(angularVelocity.y);
+      angularVelocities.push_back(angularVelocity.z);
+    }
+  }
+  state["m_targetQuaternion"] = quaternions;
+  state["m_targetAngularVelocity"] = angularVelocities;
 
   ale::States inst_state = ale::getInstrumentPosition(parsedIsd);
-  std::vector<double> ephemTime = inst_state.getTimes();
+  ephemTime = inst_state.getTimes();
   std::vector<ale::State> instStates = inst_state.getStates();
-  ale::Orientations j2000_to_target = ale::getBodyRotation(parsedIsd);
   ale::State rotatedInstState;
   std::vector<double> positions(ephemTime.size()*3, 0.0);
   std::vector<double> velocities(ephemTime.size()*3, 0.0);
@@ -1743,18 +1789,23 @@ VariantMap UsgsAstroFrameSensorModel::constructStateFromIsd(
   std::vector<ale::State> sunStates = sunState.getStates();
   ephemTime = sunState.getTimes();
   ale::State rotatedSunState;
-  std::vector<double> sunPositions(ephemTime.size()*3, 0.0);
+  std::vector<double> sunPositions = {};
+  std::vector<double> sunVelocities = {};
 
   int sunIdx = 0;
   for (int i = 0; i < ephemTime.size(); i++) {
     rotatedSunState = j2000_to_target.rotateStateAt(ephemTime[i], sunStates[i]);
     // ALE operates in km and we want m
-    sunPositions[sunIdx++] = rotatedSunState.position.x * 1000;
-    sunPositions[sunIdx++] = rotatedSunState.position.y * 1000;
-    sunPositions[sunIdx++] = rotatedSunState.position.z * 1000;
+    sunPositions.push_back(rotatedSunState.position.x * 1000);
+    sunPositions.push_back(rotatedSunState.position.y * 1000);
+    sunPositions.push_back(rotatedSunState.position.z * 1000);
+    sunVelocities.push_back(rotatedSunState.velocity.x * 1000);
+    sunVelocities.push_back(rotatedSunState.velocity.y * 1000);
+    sunVelocities.push_back(rotatedSunState.velocity.z * 1000);
   }
 
   state["m_sunPosition"] = sunPositions;
+  state["m_sunVelocity"] = sunVelocities;
 
   // get sensor_orientation quaternion
   ale::Orientations j2000_to_sensor = ale::getInstrumentPointing(parsedIsd);
@@ -1782,20 +1833,24 @@ VariantMap UsgsAstroFrameSensorModel::constructStateFromIsd(
         j2000_to_target.getTimeDependentFrames());
   }
 
-  ale::Orientations sensor_to_j2000 = j2000_to_sensor.inverse();
-  ale::Orientations sensor_to_target = j2000_to_target * sensor_to_j2000;
-  ephemTime = sensor_to_target.getTimes();
-  std::vector<double> quaternion;
-  std::vector<double> quaternions;
+  ephemTime = j2000_to_sensor.getTimes();
+  quaternions.clear();
+  angularVelocities.clear();
 
   for (int i = 0; i < ephemTime.size(); i++) {
     ale::Rotation rotation =
-        sensor_to_target.interpolate(ephemTime[i], ale::SLERP);
+        j2000_to_sensor.interpolate(ephemTime[i], ale::SLERP);
     quaternion = rotation.toQuaternion();
     quaternions.push_back(quaternion[1]);
     quaternions.push_back(quaternion[2]);
     quaternions.push_back(quaternion[3]);
     quaternions.push_back(quaternion[0]);
+    if (!j2000_to_sensor.getAngularVelocities().empty()) {
+      ale::Vec3d angularVelocity = j2000_to_sensor.interpolateAV(ephemTime[i]);
+      angularVelocities.push_back(angularVelocity.x);
+      angularVelocities.push_back(angularVelocity.y);
+      angularVelocities.push_back(angularVelocity.z);
+    }
   }
 
   if (quaternions.size() != 4) {
@@ -1812,6 +1867,7 @@ VariantMap UsgsAstroFrameSensorModel::constructStateFromIsd(
     state["m_currentParameterValue"][5] = quaternions[2];
     state["m_currentParameterValue"][6] = quaternions[3];
   }
+  state["m_angularVelocity"] = angularVelocities;
 
   // get optical_distortion
   state["m_distortionType"] = getDistortionModel(parsedIsd);
@@ -2252,10 +2308,14 @@ void UsgsAstroFrameSensorModel::setEllipsoid(const csm::Ellipsoid &ellipsoid) {
 void UsgsAstroFrameSensorModel::calcRotationMatrix(double m[3][3]) const {
   LOG_TRACE( "Calculating rotation matrix");
   // Trigonometric functions for rotation matrix
-  double x = m_currentParameterValue[3];
-  double y = m_currentParameterValue[4];
-  double z = m_currentParameterValue[5];
-  double w = m_currentParameterValue[6];
+  ale::Rotation j2000ToSensor(m_currentParameterValue[6], m_currentParameterValue[3], m_currentParameterValue[4], m_currentParameterValue[5]);
+  ale::Rotation j2000ToTarget(m_targetQuaternion[3], m_targetQuaternion[0], m_targetQuaternion[1], m_targetQuaternion[2]);
+  ale::Rotation sensorToTarget = j2000ToTarget * j2000ToSensor.inverse();
+  std::vector<double> quat = sensorToTarget.toQuaternion();
+  double x = quat[1];
+  double y = quat[2];
+  double z = quat[3];
+  double w = quat[0];
 
   double norm = sqrt(x * x + y * y + z * z + w * w);
   x /= norm;
@@ -2287,10 +2347,20 @@ void UsgsAstroFrameSensorModel::calcRotationMatrix(
     double m[3][3], const std::vector<double> &adjustments) const {
   LOG_TRACE( "Calculating rotation matrix with adjustments");
   // Trigonometric functions for rotation matrix
-  double x = getValue(3, adjustments);
-  double y = getValue(4, adjustments);
-  double z = getValue(5, adjustments);
-  double w = getValue(6, adjustments);
+  ale::Rotation j2000ToSensor(getValue(6, adjustments), getValue(3, adjustments), getValue(4, adjustments), getValue(5, adjustments));
+  ale::Rotation j2000ToTarget(m_targetQuaternion[3], m_targetQuaternion[0], m_targetQuaternion[1], m_targetQuaternion[2]);
+  ale::Rotation sensorToTarget = j2000ToTarget * j2000ToSensor.inverse();
+  std::vector<double> quat = sensorToTarget.toQuaternion();
+  double x = quat[1];
+  double y = quat[2];
+  double z = quat[3];
+  double w = quat[0];
+
+  double norm = sqrt(x * x + y * y + z * z + w * w);
+  x /= norm;
+  y /= norm;
+  w /= norm;
+  z /= norm;
 
   m[0][0] = w * w + x * x - y * y - z * z;
   m[0][1] = 2 * (x * y - w * z);
