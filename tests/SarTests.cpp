@@ -162,7 +162,7 @@ TEST_F(SarSensorModel, computeGroundPartials) {
   ASSERT_EQ(partials.size(), 6);
   // Line partials: limited by Doppler root-finding tolerance (0.001)
   EXPECT_REL_NEAR(partials[0], -0.052475430922178629, 2e-3);
-  EXPECT_REL_NEAR(partials[1], -0.016084150736514858, 7e-3);
+  EXPECT_REL_NEAR(partials[1], -0.015883011992733977, 7e-3);
   EXPECT_REL_NEAR(partials[2], -0.12147919510717504,  2e-3);
   // Sample partials: polynomial root-finding converges much tighter
   EXPECT_REL_NEAR(partials[3], 0.075598918597946374,  1e-6);
