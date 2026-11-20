@@ -463,12 +463,47 @@ void removeDistortion(double dx, double dy, double &ux, double &uy,
       return;
     } break;
 
-    // LUNARORBITER is declared and emitted by ALE but not implemented here.
-    case LUNARORBITER:
-      throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                       "LUNARORBITER distortion is not implemented.",
-                       "removeDistortion");
-      break;
+    // Lunar Orbiter distortion model.
+    // Ported from ISIS LoHighDistortionMap::SetFocalPlane
+    case LUNARORBITER: {
+      if (opticalDistCoeffs.size() != 6) {
+        csm::Error::ErrorType errorType = csm::Error::INDEX_OUT_OF_RANGE;
+        std::string message =
+            "Distortion coefficients for LUNARORBITER must be of size 6 "
+            "(perspective_x, perspective_y, center_point_x, center_point_y, k0, k1), "
+            "current size: " +
+            std::to_string(opticalDistCoeffs.size()) +
+            ". The radial coefficients k0 and k1 (OD_K) are currently missing from ALE "
+            "(tracked in DOI-USGS/ale#729).";
+        std::string function = "removeDistortion";
+        throw csm::Error(errorType, message, function);
+      }
+
+      double xPerspective = opticalDistCoeffs[0];
+      double yPerspective = opticalDistCoeffs[1];
+      double x0 = opticalDistCoeffs[2];
+      double y0 = opticalDistCoeffs[3];
+      double k0 = opticalDistCoeffs[4];
+      double k1 = opticalDistCoeffs[5];
+
+      // Apply perspective correction factors to get perspective corrected x/y
+      double perspectiveFactor = 1.0 + (xPerspective * dx) + (yPerspective * dy);
+      double pcx = dx * perspectiveFactor;
+      double pcy = dy * perspectiveFactor;
+
+      // Translate the perspective-corrected x/y coordinate to be relative to the
+      // distortion point of symmetry
+      double distx = pcx - x0;
+      double disty = pcy - y0;
+
+      // Get the distance from the focal plane center
+      double r2 = distx * distx + disty * disty;
+
+      // Otherwise remove distortion
+      double drOverR = k0 + k1 * r2;
+      ux = pcx - (drOverR * distx);
+      uy = pcy - (drOverR * disty);
+    } break;
 
     // Throw on an unrecognized distortion type instead of silently ignoring it.
     default:
@@ -856,12 +891,49 @@ void applyDistortion(double ux, double uy, double &dx, double &dy,
     }
     break;
 
-    // LUNARORBITER is declared and emitted by ALE but not implemented here.
-    case LUNARORBITER:
-      throw csm::Error(csm::Error::UNSUPPORTED_FUNCTION,
-                       "LUNARORBITER distortion is not implemented.",
-                       "applyDistortion");
-      break;
+    // Lunar Orbiter distortion model.
+    // Ported from ISIS LoHighDistortionMap::SetUndistortedFocalPlane.
+    case LUNARORBITER: {
+      if (opticalDistCoeffs.size() != 6) {
+        csm::Error::ErrorType errorType = csm::Error::INDEX_OUT_OF_RANGE;
+        std::string message =
+            "Distortion coefficients for LUNARORBITER must be of size 6 "
+            "(perspective_x, perspective_y, center_point_x, center_point_y, k0, k1), "
+            "current size: " +
+            std::to_string(opticalDistCoeffs.size()) +
+            ". The radial coefficients k0 and k1 (OD_K) are currently missing from ALE "
+            "(tracked in DOI-USGS/ale#729).";
+        std::string function = "applyDistortion";
+        throw csm::Error(errorType, message, function);
+      }
+
+      double xPerspective = opticalDistCoeffs[0];
+      double yPerspective = opticalDistCoeffs[1];
+      double x0 = opticalDistCoeffs[2];
+      double y0 = opticalDistCoeffs[3];
+      double k0 = opticalDistCoeffs[4];
+      double k1 = opticalDistCoeffs[5];
+
+      // Translate the distorted x/y coordinate to be relative to the
+      // distortion point of symmetry
+      double distux = ux - x0;
+      double distuy = uy - y0;
+
+      // Compute the distance from the focal plane center
+      double rp2 = distux * distux + distuy * distuy;
+
+      // Add distortion.  First compute fractional distortion at rp (r-prime)
+      double drOverR = k0 + k1 * rp2;
+
+      // Compute the perspective corrected x/y
+      double pcx = ux + (distux * drOverR);
+      double pcy = uy + (distuy * drOverR);
+
+      // Add the perspective error
+      double perspectiveCorrection = 1.0 - (xPerspective * pcx) - (yPerspective * pcy);
+      dx = pcx * perspectiveCorrection;
+      dy = pcy * perspectiveCorrection;
+    } break;
 
     // Throw on an unrecognized distortion type instead of silently ignoring it.
     default:

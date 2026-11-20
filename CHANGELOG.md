@@ -38,6 +38,7 @@ release.
 ### Added
 - Support for instantiating models from STARDS state files, including remote reads over HTTP (`/vsicurl/`) and S3 (`/vsis3/`) on native builds; the WASM build is local-file only, since a browser sandbox cannot use the remote paths. Turn it off with `-DUSGSCSM_ENABLE_STARDS=OFF`. [#528](https://github.com/DOI-USGS/usgscsm/pull/528)
 - A `CASSIS` distortion type implementing the TGO CaSSIS rational ratio-of-quadratics distortion model, matching ISIS `TgoCassisDistortionMap`, with the json-name, ALE integer-enum, and coefficient-extraction dispatch wired in. Pairs with the ALE TGO CaSSIS driver. [#512](https://github.com/DOI-USGS/usgscsm/pull/512)
+- Implementation of the `LUNARORBITER` distortion model, ported from ISIS `LoHighDistortionMap`. [$522](https://github.com/DOI-USGS/usgscsm/issues/522)
 
 ### Changed
 - Resolve the distortion type from an ISD using usgscsm's own `DistortionType` enum rather than mapping through ale's enum, and throw on an unknown or missing distortion model instead of silently defaulting to `TRANSVERSE`. [#526](https://github.com/DOI-USGS/usgscsm/pull/526)

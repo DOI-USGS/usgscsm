@@ -590,8 +590,7 @@ TEST(UnsupportedDistortion, removeThrows) {
 
 TEST(LunarOrbiter, applyThrows) {
   double dx, dy;
-  std::vector<double> coeffs;
-  // LUNARORBITER is unimplemented, so it must throw.
+  std::vector<double> coeffs = {-3e-06, 8e-07, -1.11, 0.3};
   EXPECT_THROW(applyDistortion(10.0, 10.0, dx, dy, coeffs, 1000.0,
                                DistortionType::LUNARORBITER, 1e-7),
                csm::Error);
@@ -599,8 +598,37 @@ TEST(LunarOrbiter, applyThrows) {
 
 TEST(LunarOrbiter, removeThrows) {
   double ux, uy;
-  std::vector<double> coeffs;
+  std::vector<double> coeffs = {-3e-06, 8e-07, -1.11, 0.3};
   EXPECT_THROW(removeDistortion(10.0, 10.0, ux, uy, coeffs, 1000.0,
                                 DistortionType::LUNARORBITER, 1e-7),
                csm::Error);
 }
+
+static const std::vector<double> loCoeffs = {-3.0e-06, 8.0e-07, -1.11, 0.3, 2.7963e-04, -2.869e-08};
+
+TEST(LunarOrbiter, removeDistortion) {
+  double ux, uy;
+  removeDistortion(50.0, 50.0, ux, uy, loCoeffs, 610.0, DistortionType::LUNARORBITER, 1e-10);
+  EXPECT_NEAR(ux, 49.98765966309185, 1e-9);
+  EXPECT_NEAR(uy, 49.98784839158035, 1e-9);
+}
+
+TEST(LunarOrbiter, applyDistortion) {
+  double dx, dy;
+  applyDistortion(45.0, 45.0, dx, dy, loCoeffs, 610.0, DistortionType::LUNARORBITER, 1e-7, 1e-10);
+  EXPECT_NEAR(dx, 45.01189430379308, 1e-9);
+  EXPECT_NEAR(dy, 45.0116668397168, 1e-9);
+}
+
+TEST(LunarOrbiter, roundTripApplyRemove) {
+  double dx, dy;
+  applyDistortion(30.0, 40.0, dx, dy, loCoeffs, 610.0, DistortionType::LUNARORBITER, 1e-7, 1e-10);
+
+  double ux_final, uy_final;
+  removeDistortion(dx, dy, ux_final, uy_final, loCoeffs, 610.0, DistortionType::LUNARORBITER, 1e-10);
+
+  EXPECT_NEAR(30.0, ux_final, 1e-6);
+  EXPECT_NEAR(40.0, uy_final, 1e-6);
+}
+
+
